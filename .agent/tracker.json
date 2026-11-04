@@ -1,0 +1,91 @@
+{
+  "curriculum": "That Open Company — Master BIM Software Development",
+  "developer": "Abdellah BELMAARIS",
+  "company": "BIMPulse Digital",
+  "updatedAt": "2026-11-04T10:44:00Z",
+  "overallStats": {
+    "totalModules": 7,
+    "totalLessons": 130,
+    "completedLessons": 6,
+    "masterclassesCount": 14,
+    "completedMasterclasses": 0,
+    "overallProgress": "4.6%"
+  },
+  "modules": [
+    {
+      "id": 1,
+      "folder": "1-Static_website",
+      "name": "Creating Static Websites",
+      "duration": "01:19:00",
+      "lessonsTotal": 16,
+      "lessonsCompleted": 6,
+      "progress": "37%",
+      "status": "in_progress",
+      "activeLesson": {
+        "id": "2.6",
+        "title": "Getting started with CSS. Part II.",
+        "duration": "05:10"
+      }
+    },
+    {
+      "id": 2,
+      "folder": "2-Interactive_Website",
+      "name": "Creating Interactive Websites",
+      "duration": "02:44:00",
+      "lessonsTotal": 29,
+      "lessonsCompleted": 0,
+      "progress": "0%",
+      "status": "queued"
+    },
+    {
+      "id": 3,
+      "folder": "3-Reactive_Apps",
+      "name": "Creating Reactive Apps",
+      "duration": "03:18:00",
+      "lessonsTotal": 27,
+      "lessonsCompleted": 0,
+      "progress": "0%",
+      "status": "queued"
+    },
+    {
+      "id": 4,
+      "folder": "4-BIM_Apps",
+      "name": "Creating BIM Apps",
+      "duration": "03:36:00",
+      "lessonsTotal": 30,
+      "lessonsCompleted": 0,
+      "progress": "0%",
+      "status": "queued"
+    },
+    {
+      "id": 5,
+      "folder": "5-Connecting_Workflows",
+      "name": "Connecting Workflows with Third Party Services",
+      "duration": "01:43:00",
+      "lessonsTotal": 20,
+      "lessonsCompleted": 0,
+      "progress": "0%",
+      "status": "queued"
+    },
+    {
+      "id": 6,
+      "folder": "6-AI_BIM_Developers",
+      "name": "AI for BIM Developers",
+      "duration": "00:59:00",
+      "lessonsTotal": 8,
+      "lessonsCompleted": 0,
+      "progress": "0%",
+      "status": "queued"
+    },
+    {
+      "id": 7,
+      "folder": "7-Freedom_Course",
+      "name": "Recorded Live Masterclasses",
+      "duration": "14 Masterclasses",
+      "lessonsTotal": 14,
+      "lessonsCompleted": 0,
+      "progress": "0%",
+      "status": "reference"
+    }
+  ]
+}

@@ -56,3 +56,33 @@
   - `AGENTS.md` (Rule #1 and Rule #3)
   - `.agent/rules/03-always-log-discussions.md`
   - Mirrored discussion file in Obsidian vault.
+
+---
+
+## 🚀 Added BIM Architecture Reference & Obsidian Sprint Hub (User Approved)
+1. **Created `.agent/bim-reference/` (5 Reference Guides):**
+   - `01-bim-app-shell-and-css-grid/README.md`
+   - `02-typescript-oop-data-management/README.md`
+   - `03-threejs-webgl-lifecycle/README.md`
+   - `04-thatopen-components-fragments/README.md`
+   - `05-connected-workflows-mcp-ai/README.md`
+   - `README.md` (Root Reference Catalog)
+2. **Created Course Progress Tracker (`.agent/tracker.json`):**
+   - Machine-readable status of all 7 modules, 130 lessons, 14 masterclasses, and Module 1 current lesson (`2.6`).
+3. **Created Obsidian Enhancements (`ThatOpenCompany_BIM/`):**
+   - `BIM Learning Sprint Board.md` (Dedicated Obsidian Kanban board)
+   - `01.1 - Semantic Layout & App Shell.md`
+   - `01.2 - CSS Grid & Responsive Cards.md`
+   - `01.3 - HTML Dialog Modal.md`
+   - `BIM Developer Glossary & Architecture Guide.md` (IFC, expressID, Fragments, BVH, FlatBuffers, MCP)
+4. **Mirrored all logs to Obsidian:**
+   - Synchronized `D:\MyDocs\Obsidien\Myspace\Snippets & Agent Logs\Discussions - ThatOpenCompany BIM.md`.
+
+---
+
+## 💻 Module 1 (Lesson 2.4: Structuring the Main Page) Applied
+- **User Instruction:** Applied the initial HTML structure to `Master_BIM_Software/1-Static_website/index.html` strictly covering Lesson 2.4 concepts:
+  - `html:5` base skeleton
+  - Semantic container `<aside id="sidebar">` enclosing `<img id="company-logo">` and `<ul id="nav-buttons"><li>Projects</li></ul>`
+  - Semantic container `<main id="content">` enclosing `<header>`
+  - No extra CSS or extraneous markup added as instructed.
