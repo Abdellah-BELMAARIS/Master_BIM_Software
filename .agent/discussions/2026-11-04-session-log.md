@@ -339,3 +339,32 @@
   - `02 - ⚡ Creating Interactive Websites.md`
   - `BIM Learning Sprint Board.md`
   - `Discussions - ThatOpenCompany BIM.md`
+
+
+---
+
+## 📌 Part 10 — Module 2 Lesson 3.6: Projects Manager & The 3 Assignments (2026-11-04)
+
+### 1. Concepts Mastered & Python Comparison
+- **Manager Pattern (Repository Pattern):**
+  - Just like Django's `Project.objects.all()` or custom model managers (`models.Manager`), `ProjectsManager` acts as the single source of truth for all projects in memory.
+  - Keeps a typed collection `list: Project[] = []`.
+  - Encapsulates creation logic via `newProject(data: IProject): Project`, automatically appending `project.ui` to the DOM and pushing to `this.list`.
+- **Assignment 1 Solved (Toggle Modal):** Unified `showModal` and `closeModal` into `toggleModal(id: string, show: boolean = true)`.
+- **Assignment 2 Solved (Cancel Button):** Handled `#cancel-btn` click to invoke `toggleModal("new-project-modal", false)` cleanly.
+- **Assignment 3 Solved (Dynamic Default Project):** Cleaned static hardcoded cards from HTML `#projects-list`; `ProjectsManager` constructor creates the default project dynamically on startup.
+
+### 2. Actions Executed
+- Created [`src/classes/ProjectsManager.ts`](file:///D:/Coding/MyLearning/ThatOpenCompany/Master_BIM_Software/2-Interactive_Website/src/classes/ProjectsManager.ts).
+- Updated [`src/index.ts`](file:///D:/Coding/MyLearning/ThatOpenCompany/Master_BIM_Software/2-Interactive_Website/src/index.ts).
+- Cleaned hardcoded static cards from `<section id="projects-list">` in [`index.html`](file:///D:/Coding/MyLearning/ThatOpenCompany/Master_BIM_Software/2-Interactive_Website/index.html).
+- Verified build with `npx vite build` (130ms).
+
+### 3. Curriculum & Obsidian Milestones
+- **Module 2 Progress:** 12 / 29 lessons (`41%`).
+- **Overall Curriculum Progress:** 28 / 130 lessons (`21.5%`).
+- **Next Target:** `3.7. Coding some useful methods in Projects Manager (08:12)`.
+- **Obsidian Synced:**
+  - `02 - ⚡ Creating Interactive Websites.md`
+  - `BIM Learning Sprint Board.md`
+  - `Discussions - ThatOpenCompany BIM.md`

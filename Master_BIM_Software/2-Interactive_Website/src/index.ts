@@ -1,12 +1,16 @@
-// Lesson 3.4: Using custom types for the Project class
-import { Project, IProject, ProjectStatus, UserRole } from "./classes/Project";
+// Lesson 3.6: Managing the projects
+import { IProject, ProjectStatus, UserRole } from "./classes/Project";
+import { ProjectsManager } from "./classes/ProjectsManager";
 
-// Statically typed function parameter (id: string)
-// Type Guard using 'instanceof HTMLDialogElement'
-const showModal = (id: string) => {
+// Assignment 1: Reusable toggleModal function controlling open / close state
+const toggleModal = (id: string, show: boolean = true) => {
     const modal = document.getElementById(id);
     if (modal && modal instanceof HTMLDialogElement) {
-        modal.showModal();
+        if (show) {
+            modal.showModal();
+        } else {
+            modal.close();
+        }
     } else {
         console.warn(`The provided modal with id "${id}" was not found`);
     }
@@ -16,11 +20,23 @@ const showModal = (id: string) => {
 const newProjectBtn = document.getElementById("new-project-btn");
 if (newProjectBtn) {
     newProjectBtn.addEventListener("click", () => {
-        showModal("new-project-modal");
+        toggleModal("new-project-modal", true);
     });
 } else {
     console.warn("New projects button was not found");
 }
+
+// Assignment 2: Cancel button listener closes the modal without submitting
+const cancelProjectBtn = document.getElementById("cancel-btn");
+if (cancelProjectBtn) {
+    cancelProjectBtn.addEventListener("click", () => {
+        toggleModal("new-project-modal", false);
+    });
+}
+
+// Referencing the projects grid container with safe type assertion
+const projectsListUI = document.getElementById("projects-list") as HTMLDivElement;
+const projectsManager = new ProjectsManager(projectsListUI);
 
 // Referencing the project form
 const projectForm = document.getElementById("new-project-form");
@@ -31,9 +47,6 @@ if (projectForm && projectForm instanceof HTMLFormElement) {
 
         const formData = new FormData(projectForm);
 
-        // Lesson 3.4: Constraining projectData to the IProject interface
-        // Using Type Assertion ('as') because formData.get() returns FormDataEntryValue
-        // Converting finishDate string into a real Date instance via new Date(...)
         const projectData: IProject = {
             name: formData.get("name") as string,
             description: formData.get("description") as string,
@@ -42,9 +55,15 @@ if (projectForm && projectForm instanceof HTMLFormElement) {
             finishDate: new Date(formData.get("finishDate") as string),
         };
 
-        // Instantiating the typed Project class
-        const project = new Project(projectData);
-        console.log("New Project Instance Created:", project);
+        // Delegating creation and UI rendering to the ProjectsManager
+        const project = projectsManager.newProject(projectData);
+        console.log("New Project Created & Rendered:", project);
+
+        // Clean up form inputs
+        projectForm.reset();
+
+        // Close the dialog after successful submission
+        toggleModal("new-project-modal", false);
     });
 } else {
     console.warn("Project form was not found or is not an HTMLFormElement");

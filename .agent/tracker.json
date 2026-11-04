@@ -6,10 +6,10 @@
   "overallStats": {
     "totalModules": 7,
     "totalLessons": 130,
-    "completedLessons": 27,
+    "completedLessons": 28,
     "masterclassesCount": 14,
     "completedMasterclasses": 0,
-    "overallProgress": "20.8%"
+    "overallProgress": "21.5%"
   },
   "modules": [
     {
@@ -29,13 +29,13 @@
       "name": "Creating Interactive Websites",
       "duration": "02:44:00",
       "lessonsTotal": 29,
-      "lessonsCompleted": 11,
-      "progress": "38%",
+      "lessonsCompleted": 12,
+      "progress": "41%",
       "status": "in_progress",
       "activeLesson": {
-        "id": "3.6",
-        "title": "Managing the projects",
-        "duration": "09:21"
+        "id": "3.7",
+        "title": "Coding some useful methods in Projects Manager",
+        "duration": "08:12"
       }
     },
     {
