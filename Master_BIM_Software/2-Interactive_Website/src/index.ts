@@ -1,8 +1,8 @@
-// Lesson 3.3: Introducing Typescript to the code
-import { Project } from "./classes/Project";
+// Lesson 3.4: Using custom types for the Project class
+import { Project, IProject, ProjectStatus, UserRole } from "./classes/Project";
 
-// 1. Statically typed function parameter (id: string)
-// 2. Type Guard using 'instanceof HTMLDialogElement' to safely invoke .showModal()
+// Statically typed function parameter (id: string)
+// Type Guard using 'instanceof HTMLDialogElement'
 const showModal = (id: string) => {
     const modal = document.getElementById(id);
     if (modal && modal instanceof HTMLDialogElement) {
@@ -25,22 +25,24 @@ if (newProjectBtn) {
 // Referencing the project form
 const projectForm = document.getElementById("new-project-form");
 
-// Lesson 3.3 Assignment: Type guard with 'instanceof HTMLFormElement'
-// Explanation: getElementById returns HTMLElement, but FormData constructor requires HTMLFormElement.
 if (projectForm && projectForm instanceof HTMLFormElement) {
     projectForm.addEventListener("submit", (e) => {
         e.preventDefault();
 
         const formData = new FormData(projectForm);
 
-        const projectData = {
-            name: formData.get("name"),
-            description: formData.get("description"),
-            userRole: formData.get("userRole"),
-            status: formData.get("status"),
-            finishDate: formData.get("finishDate"),
+        // Lesson 3.4: Constraining projectData to the IProject interface
+        // Using Type Assertion ('as') because formData.get() returns FormDataEntryValue
+        // Converting finishDate string into a real Date instance via new Date(...)
+        const projectData: IProject = {
+            name: formData.get("name") as string,
+            description: formData.get("description") as string,
+            userRole: formData.get("userRole") as UserRole,
+            status: formData.get("status") as ProjectStatus,
+            finishDate: new Date(formData.get("finishDate") as string),
         };
 
+        // Instantiating the typed Project class
         const project = new Project(projectData);
         console.log("New Project Instance Created:", project);
     });

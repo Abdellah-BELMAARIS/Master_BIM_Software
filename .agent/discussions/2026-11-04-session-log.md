@@ -277,3 +277,38 @@
   - `02 - ⚡ Creating Interactive Websites.md`
   - `BIM Learning Sprint Board.md`
   - `Discussions - ThatOpenCompany BIM.md`
+
+
+---
+
+## 📌 Part 8 — Module 2 Lesson 3.4: Custom Types, Interfaces & Type Assertions (2026-11-04)
+
+### 1. Concepts Mastered & Python Comparison
+- **Union Types (`type` keyword):**
+  - Defining closed choice sets: `type ProjectStatus = "pending" | "active" | "finished"`.
+  - Analogous to Python `Literal["pending", "active", "finished"]` or `enum.Enum`.
+- **Interfaces (`interface` keyword):**
+  - Named with standard prefix: `IProject`.
+  - Analogous to Python `typing.Protocol` or Pydantic `BaseModel`.
+  - Defines the required contract for project state (`name`, `description`, `userRole`, `status`, `finishDate`).
+- **Interface Implementation (`implements`):**
+  - `class Project implements IProject`: Enforces that the class implements all fields defined by the interface.
+- **Type Assertion (`as`):**
+  - When extracting values from `FormData`, the browser returns `FormDataEntryValue` (`string | File`).
+  - Using `as string`, `as UserRole`, and `as ProjectStatus` explicitly coerces the type.
+- **Date Construction:**
+  - Date input strings (e.g. `"2026-11-04"`) are parsed into native JS `Date` objects via `new Date(dateString)`.
+
+### 2. Actions Executed
+- Updated [`src/classes/Project.ts`](file:///D:/Coding/MyLearning/ThatOpenCompany/Master_BIM_Software/2-Interactive_Website/src/classes/Project.ts) with `ProjectStatus`, `UserRole`, `IProject`, and `implements IProject`.
+- Updated [`src/index.ts`](file:///D:/Coding/MyLearning/ThatOpenCompany/Master_BIM_Software/2-Interactive_Website/src/index.ts) to type `projectData: IProject` and use safe type assertions.
+- Verified build with `npx vite build` (161ms).
+
+### 3. Curriculum & Obsidian Milestones
+- **Module 2 Progress:** 10 / 29 lessons (`34%`).
+- **Overall Curriculum Progress:** 26 / 130 lessons (`20.0%`).
+- **Next Target:** `3.5. Creating project cards from code (09:02)`.
+- **Obsidian Synced:**
+  - `02 - ⚡ Creating Interactive Websites.md`
+  - `BIM Learning Sprint Board.md`
+  - `Discussions - ThatOpenCompany BIM.md`
