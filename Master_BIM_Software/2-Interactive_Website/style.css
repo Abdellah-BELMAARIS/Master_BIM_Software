@@ -790,24 +790,25 @@ dialog#new-user-modal::backdrop {
 }
 
 #users-header {
-    height: 60px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-bottom: 1px solid var(--border-color);
-    margin-bottom: 1.5rem;
+    padding: 1.75rem 2.5rem 1.25rem 2.5rem;
+    border-bottom: 1px solid transparent;
     flex-shrink: 0;
 }
 
 #users-header h2 {
-    font-size: 1.35rem;
+    font-size: 1.5rem;
     font-weight: 600;
+    color: var(--text-primary);
 }
 
 .users-content-area {
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
+    gap: 1.5rem;
+    padding: 0 2.5rem 2.5rem 2.5rem;
     flex: 1;
     overflow-y: auto;
 }
@@ -974,4 +975,315 @@ dialog#new-user-modal::backdrop {
 
 .status-offline::before {
     background-color: #9ca3af;
+}
+
+/* ==========================================================================
+   Action Dropdown Menu (User 3-dots Context Menu)
+   ========================================================================== */
+.user-options-btn {
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    border-radius: 6px;
+    padding: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.user-options-btn:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+    color: #ffffff;
+}
+
+.dropdown-menu {
+    position: fixed;
+    background-color: #27292d;
+    border: 1px solid #3d4047;
+    border-radius: 8px;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.7);
+    padding: 0.35rem 0;
+    z-index: 999999;
+    min-width: 175px;
+    display: flex;
+    flex-direction: column;
+}
+
+.dropdown-item {
+    background: transparent;
+    border: none;
+    padding: 0.6rem 1rem;
+    font-size: 0.8rem;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    font-family: inherit;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.dropdown-item:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.dropdown-item.text-danger {
+    color: #ef4444;
+}
+
+.dropdown-item.text-danger:hover {
+    background-color: rgba(239, 68, 68, 0.15);
+}
+
+.dropdown-item .material-icons-round {
+    font-size: 1.15rem;
+}
+
+/* ==========================================================================
+   Responsive Breakpoints: Laptops, Tablets, and Mobile Phones
+   ========================================================================== */
+
+/* Tablet & Compact Laptops (max-width: 1024px) */
+@media (max-width: 1024px) {
+    body {
+        grid-template-columns: 200px 1fr;
+    }
+
+    #sidebar {
+        padding: 24px 12px;
+        row-gap: 24px;
+    }
+
+    #main-header,
+    #details-header,
+    #users-header {
+        padding: 1.25rem 1.75rem 1rem 1.75rem;
+    }
+
+    #projects-list {
+        padding: 0 1.75rem 2rem 1.75rem;
+        gap: 1.25rem;
+    }
+
+    #project-details > .main-page-content {
+        grid-template-columns: 320px 1fr;
+        padding: 0.75rem 1.75rem 2rem 1.75rem;
+        gap: 1.25rem;
+    }
+
+    .users-content-area {
+        padding: 0 1.75rem 2rem 1.75rem;
+    }
+}
+
+/* Medium Tablets & Vertical Screens (max-width: 900px) */
+@media (max-width: 900px) {
+    #project-details > .main-page-content {
+        grid-template-columns: 1fr;
+        overflow-y: auto;
+    }
+
+    .details-left-column {
+        overflow-y: visible;
+    }
+
+    #viewer-container {
+        min-height: 380px;
+        height: 380px;
+    }
+}
+
+/* Mobile Phones & Small Tablets (max-width: 767px) */
+@media (max-width: 767px) {
+    body {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        overflow: hidden;
+    }
+
+    /* Transform Sidebar into an App-Style Bottom Navigation Bar on Phones */
+    #sidebar {
+        order: 2;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        height: 60px;
+        padding: 0 1rem;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-around;
+        border-right: none;
+        border-top: 1px solid var(--border-color);
+        background-color: var(--bg-sidebar);
+        z-index: 1000;
+        box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.4);
+    }
+
+    #company-logo {
+        display: none;
+    }
+
+    #nav-buttons {
+        flex-direction: row;
+        justify-content: space-around;
+        width: 100%;
+        gap: 0.5rem;
+    }
+
+    .nav-item {
+        flex-direction: column;
+        justify-content: center;
+        gap: 0.2rem;
+        padding: 0.35rem 0.75rem;
+        font-size: 0.7rem;
+        border-radius: 6px;
+    }
+
+    .nav-item .material-icons-round {
+        font-size: 1.25rem;
+    }
+
+    /* Main Content Area adjustments on Phones */
+    #content {
+        order: 1;
+        flex: 1;
+        height: calc(100vh - 60px);
+        width: 100vw;
+    }
+
+    /* Headers on Phones */
+    #main-header,
+    #details-header,
+    #users-header {
+        padding: 1rem 1rem 0.75rem 1rem;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    #main-header h2,
+    #details-header h2,
+    #users-header h2 {
+        font-size: 1.25rem;
+    }
+
+    .header-actions {
+        gap: 0.5rem;
+    }
+
+    .btn-primary {
+        padding: 0.45rem 0.85rem;
+        font-size: 0.8rem;
+    }
+
+    /* Projects Grid on Phones */
+    #projects-list {
+        grid-template-columns: 1fr;
+        padding: 0 1rem 5rem 1rem;
+        gap: 1rem;
+    }
+
+    .fab-btn {
+        bottom: 72px;
+        right: 16px;
+        width: 44px;
+        height: 44px;
+    }
+
+    /* Project Details Page on Phones */
+    #project-details > .main-page-content {
+        grid-template-columns: 1fr;
+        padding: 0.5rem 1rem 5rem 1rem;
+        overflow-y: auto;
+        gap: 1rem;
+    }
+
+    .details-card {
+        padding: 1.15rem;
+    }
+
+    .details-properties-row {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.85rem 1rem;
+    }
+
+    .todos-container {
+        padding: 1rem;
+    }
+
+    .todos-header-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .todos-actions-group {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .search-input-pill {
+        width: 100%;
+    }
+
+    .search-input-pill input {
+        width: 100%;
+    }
+
+    #viewer-container {
+        min-height: 280px;
+        height: 280px;
+        border-radius: 6px;
+    }
+
+    /* Users Page on Phones */
+    .users-content-area {
+        padding: 0 1rem 5rem 1rem;
+        gap: 1rem;
+    }
+
+    .users-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+
+    .users-toolbar .search-input-pill {
+        width: 100% !important;
+    }
+
+    .users-filter-group {
+        overflow-x: auto;
+        padding-bottom: 4px;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .users-table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .users-table th,
+    .users-table td {
+        padding: 0.75rem 0.85rem;
+        font-size: 0.78rem;
+    }
+
+    /* Dialog Modals on Phones */
+    #new-project-form,
+    #new-user-form {
+        width: 94vw;
+        max-width: 94vw;
+        padding: 1.25rem 1rem;
+    }
+
+    .form-actions {
+        gap: 0.5rem;
+    }
 }

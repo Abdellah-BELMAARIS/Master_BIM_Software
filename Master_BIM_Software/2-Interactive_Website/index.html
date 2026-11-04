@@ -47,7 +47,7 @@
             <!-- Projects Grid -->
             <section id="projects-list">
                 <!-- Project 1: Hospital Center (Clickable to view details) -->
-                <article class="project-card" id="hospital-center-card" style="cursor: pointer;" title="Click to view Project Details">
+                <article class="project-card" id="hospital-center-card" data-project-id="hospital-center" style="cursor: pointer;" title="Click to view Project Details">
                     <div class="card-header">
                         <div class="card-avatar badge-orange">HC</div>
                         <div class="card-title-group">
@@ -76,7 +76,7 @@
                 </article>
 
                 <!-- Project 2: Default Project -->
-                <article class="project-card">
+                <article class="project-card" data-project-id="default-project">
                     <div class="card-header">
                         <div class="card-avatar badge-green">DE</div>
                         <div class="card-title-group">
@@ -105,7 +105,7 @@
                 </article>
 
                 <!-- Project 3: Urban Oasis Park -->
-                <article class="project-card">
+                <article class="project-card" data-project-id="urban-oasis-park">
                     <div class="card-header">
                         <div class="card-avatar badge-purple">UR</div>
                         <div class="card-title-group">
@@ -124,46 +124,46 @@
                         </div>
                         <div class="detail-row">
                             <span class="detail-label">Cost</span>
-                            <span class="detail-value">$ 0</span>
+                            <span class="detail-value">$ 1'200.000</span>
                         </div>
                         <div class="detail-row">
                             <span class="detail-label">Estimated Progress</span>
-                            <span class="detail-value">0%</span>
+                            <span class="detail-value">15%</span>
                         </div>
                     </div>
                 </article>
 
                 <!-- Project 4: TechHub Innovation -->
-                <article class="project-card">
+                <article class="project-card" data-project-id="techhub-innovation">
                     <div class="card-header">
                         <div class="card-avatar badge-green">TE</div>
                         <div class="card-title-group">
                             <h3>TechHub Innovation</h3>
-                            <p>Tech collaboration center.</p>
+                            <p>Cutting-edge technology center.</p>
                         </div>
                     </div>
                     <div class="card-details">
                         <div class="detail-row">
                             <span class="detail-label">Status</span>
-                            <span class="detail-value">Pending</span>
+                            <span class="detail-value">Active</span>
                         </div>
                         <div class="detail-row">
                             <span class="detail-label">Role</span>
-                            <span class="detail-value">Architect</span>
+                            <span class="detail-value">Developer</span>
                         </div>
                         <div class="detail-row">
                             <span class="detail-label">Cost</span>
-                            <span class="detail-value">$ 0</span>
+                            <span class="detail-value">$ 3'500.000</span>
                         </div>
                         <div class="detail-row">
                             <span class="detail-label">Estimated Progress</span>
-                            <span class="detail-value">0%</span>
+                            <span class="detail-value">72%</span>
                         </div>
                     </div>
                 </article>
 
                 <!-- Project 5: Sustainable Housing -->
-                <article class="project-card">
+                <article class="project-card" data-project-id="sustainable-housing">
                     <div class="card-header">
                         <div class="card-avatar badge-green">SU</div>
                         <div class="card-title-group">
@@ -182,22 +182,51 @@
                         </div>
                         <div class="detail-row">
                             <span class="detail-label">Cost</span>
-                            <span class="detail-value">$ 0</span>
+                            <span class="detail-value">$ 1'850.000</span>
                         </div>
                         <div class="detail-row">
                             <span class="detail-label">Estimated Progress</span>
-                            <span class="detail-value">0%</span>
+                            <span class="detail-value">60%</span>
                         </div>
                     </div>
                 </article>
 
                 <!-- Project 6: Heritage Restoration -->
-                <article class="project-card">
+                <article class="project-card" data-project-id="heritage-restoration">
                     <div class="card-header">
                         <div class="card-avatar badge-magenta">HE</div>
                         <div class="card-title-group">
                             <h3>Heritage Restoration</h3>
                             <p>Reviving historic landmark.</p>
+                        </div>
+                    </div>
+                    <div class="card-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Status</span>
+                            <span class="detail-value">Pending</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Role</span>
+                            <span class="detail-value">Architect</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Cost</span>
+                            <span class="detail-value">$ 950.000</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Estimated Progress</span>
+                            <span class="detail-value">25%</span>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Project 7: Educational Outreach -->
+                <article class="project-card" data-project-id="educational-outreach">
+                    <div class="card-header">
+                        <div class="card-avatar badge-blue">ED</div>
+                        <div class="card-title-group">
+                            <h3>Educational Outreach</h3>
+                            <p>Empowering underserved students.</p>
                         </div>
                     </div>
                     <div class="card-details">
@@ -211,40 +240,11 @@
                         </div>
                         <div class="detail-row">
                             <span class="detail-label">Cost</span>
-                            <span class="detail-value">$ 0</span>
+                            <span class="detail-value">$ 2'100.000</span>
                         </div>
                         <div class="detail-row">
                             <span class="detail-label">Estimated Progress</span>
-                            <span class="detail-value">0%</span>
-                        </div>
-                    </div>
-                </article>
-
-                <!-- Project 7: Educational Outreach -->
-                <article class="project-card">
-                    <div class="card-header">
-                        <div class="card-avatar badge-blue">ED</div>
-                        <div class="card-title-group">
-                            <h3>Educational Outreach</h3>
-                            <p>Empowering underserved students.</p>
-                        </div>
-                    </div>
-                    <div class="card-details">
-                        <div class="detail-row">
-                            <span class="detail-label">Status</span>
-                            <span class="detail-value">Active</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label">Role</span>
-                            <span class="detail-value">Architect</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label">Cost</span>
-                            <span class="detail-value">$ 0</span>
-                        </div>
-                        <div class="detail-row">
-                            <span class="detail-label">Estimated Progress</span>
-                            <span class="detail-value">0%</span>
+                            <span class="detail-value">100%</span>
                         </div>
                     </div>
                 </article>
@@ -411,7 +411,7 @@
                                 <td>Hospital Center, Urban Oasis</td>
                                 <td><span class="status-indicator status-online">Active</span></td>
                                 <td style="text-align: right;">
-                                    <button class="btn-icon" title="Options"><span class="material-icons-round">more_vert</span></button>
+                                    <button type="button" class="btn-icon user-options-btn" title="Options"><span class="material-icons-round">more_vert</span></button>
                                 </td>
                             </tr>
                             <tr>
@@ -428,7 +428,7 @@
                                 <td>Hospital Center, TechHub</td>
                                 <td><span class="status-indicator status-online">Active</span></td>
                                 <td style="text-align: right;">
-                                    <button class="btn-icon" title="Options"><span class="material-icons-round">more_vert</span></button>
+                                    <button type="button" class="btn-icon user-options-btn" title="Options"><span class="material-icons-round">more_vert</span></button>
                                 </td>
                             </tr>
                             <tr>
@@ -445,7 +445,7 @@
                                 <td>Sustainable Housing</td>
                                 <td><span class="status-indicator status-online">Active</span></td>
                                 <td style="text-align: right;">
-                                    <button class="btn-icon" title="Options"><span class="material-icons-round">more_vert</span></button>
+                                    <button type="button" class="btn-icon user-options-btn" title="Options"><span class="material-icons-round">more_vert</span></button>
                                 </td>
                             </tr>
                             <tr>
@@ -462,7 +462,7 @@
                                 <td>Heritage Restoration</td>
                                 <td><span class="status-indicator status-offline">Away</span></td>
                                 <td style="text-align: right;">
-                                    <button class="btn-icon" title="Options"><span class="material-icons-round">more_vert</span></button>
+                                    <button type="button" class="btn-icon user-options-btn" title="Options"><span class="material-icons-round">more_vert</span></button>
                                 </td>
                             </tr>
                         </tbody>
@@ -474,7 +474,7 @@
         <!-- New User Modal Dialog (Module 1 Challenge) -->
         <dialog id="new-user-modal">
             <form id="new-user-form">
-                <h2>New User</h2>
+                <h2 id="user-modal-title">New User</h2>
                 <div class="input-list">
                     <div class="form-field">
                         <label><span class="material-icons-round">person</span> Full Name</label>
@@ -508,7 +508,7 @@
 
                 <div class="form-actions">
                     <button type="button" id="cancel-user-btn" class="btn-cancel">Cancel</button>
-                    <button type="submit" class="btn-accept">Create User</button>
+                    <button type="submit" id="user-submit-btn" class="btn-accept">Create User</button>
                 </div>
             </form>
         </dialog>
@@ -561,10 +561,146 @@
         </dialog>
     </main>
 
+    <!-- Floating User Actions Dropdown Menu (Direct child of body, position: fixed) -->
+    <div id="user-actions-dropdown" class="dropdown-menu" style="display: none;">
+        <button type="button" class="dropdown-item" id="user-menu-edit">
+            <span class="material-icons-round">edit</span>
+            <span>Edit User</span>
+        </button>
+        <button type="button" class="dropdown-item" id="user-menu-status">
+            <span class="material-icons-round">swap_horiz</span>
+            <span>Toggle Status</span>
+        </button>
+        <button type="button" class="dropdown-item text-danger" id="user-menu-delete">
+            <span class="material-icons-round">delete</span>
+            <span>Delete User</span>
+        </button>
+    </div>
+
     <!-- Page Switching & Modal Scripts -->
     <script>
         // =========================================================================
-        // State & Navigation
+        // 1. Projects Data Store (Distinct Info & Unique To-Dos for Every Project)
+        // =========================================================================
+        const projectsData = {
+            "hospital-center": {
+                id: "hospital-center",
+                name: "Hospital Center",
+                desc: "Community hospital located at downtown",
+                initials: "HC",
+                badgeColor: "badge-orange",
+                status: "Active",
+                role: "Engineer",
+                cost: "$ 2'000.000",
+                progress: "43%",
+                finishDate: "2023-05-01",
+                todos: [
+                    { id: 1, text: "Verify structural seismic joints in Block B", date: "Fri, 20 Sep", completed: false },
+                    { id: 2, text: "Review HVAC mechanical room collision report in IFC viewer", date: "Tue, 24 Sep", completed: false },
+                    { id: 3, text: "Approve electrical distribution schematics with municipal engineer", date: "Mon, 30 Sep", completed: true }
+                ]
+            },
+            "default-project": {
+                id: "default-project",
+                name: "Default Project",
+                desc: "This is just a default project. You may delete it if you want.",
+                initials: "DE",
+                badgeColor: "badge-green",
+                status: "Active",
+                role: "Architect",
+                cost: "$ 0",
+                progress: "0%",
+                finishDate: "2024-01-15",
+                todos: [
+                    { id: 4, text: "Configure initial BIM model coordinate origin (EPSG:4326)", date: "Mon, 15 Jan", completed: false },
+                    { id: 5, text: "Set up project IFC classification schema (IfcWall, IfcSlab)", date: "Thu, 18 Jan", completed: true }
+                ]
+            },
+            "urban-oasis-park": {
+                id: "urban-oasis-park",
+                name: "Urban Oasis Park",
+                desc: "City park with green spaces and community events.",
+                initials: "UR",
+                badgeColor: "badge-purple",
+                status: "Pending",
+                role: "Architect",
+                cost: "$ 1'200.000",
+                progress: "15%",
+                finishDate: "2024-08-30",
+                todos: [
+                    { id: 6, text: "Perform topographic laser grading & soil permeability test", date: "Wed, 10 Jul", completed: false },
+                    { id: 7, text: "Draft sustainable landscape stormwater runoff masterplan", date: "Fri, 19 Jul", completed: false }
+                ]
+            },
+            "techhub-innovation": {
+                id: "techhub-innovation",
+                name: "TechHub Innovation",
+                desc: "Cutting-edge technology center and research labs.",
+                initials: "TE",
+                badgeColor: "badge-green",
+                status: "Active",
+                role: "Developer",
+                cost: "$ 3'500.000",
+                progress: "72%",
+                finishDate: "2023-11-20",
+                todos: [
+                    { id: 8, text: "Finalize server room cooling infrastructure & backup genset", date: "Mon, 5 Aug", completed: true },
+                    { id: 9, text: "Review fiber-optic cable routing with MEP engineering lead", date: "Wed, 14 Aug", completed: false },
+                    { id: 10, text: "Conduct acoustic reverberation testing in main auditorium", date: "Fri, 23 Aug", completed: false }
+                ]
+            },
+            "sustainable-housing": {
+                id: "sustainable-housing",
+                name: "Sustainable Housing",
+                desc: "Eco-friendly homes community with net-zero energy design.",
+                initials: "SU",
+                badgeColor: "badge-green",
+                status: "Active",
+                role: "Engineer",
+                cost: "$ 1'850.000",
+                progress: "60%",
+                finishDate: "2024-04-10",
+                todos: [
+                    { id: 11, text: "Calculate solar PV rooftop tilt angle & annual kWh yield", date: "Thu, 2 May", completed: true },
+                    { id: 12, text: "Inspect rainwater harvesting cistern waterproofing membranes", date: "Tue, 14 May", completed: false }
+                ]
+            },
+            "heritage-restoration": {
+                id: "heritage-restoration",
+                name: "Heritage Restoration",
+                desc: "Reviving historic landmark with seismic retrofitting.",
+                initials: "HE",
+                badgeColor: "badge-magenta",
+                status: "Pending",
+                role: "Architect",
+                cost: "$ 950.000",
+                progress: "25%",
+                finishDate: "2024-12-05",
+                todos: [
+                    { id: 13, text: "Laser scan facade stonework for photogrammetry point-cloud", date: "Wed, 12 Jun", completed: true },
+                    { id: 14, text: "Obtain municipal historic landmark preservation board permits", date: "Mon, 24 Jun", completed: false }
+                ]
+            },
+            "educational-outreach": {
+                id: "educational-outreach",
+                name: "Educational Outreach",
+                desc: "Modern educational facility empowering underserved students.",
+                initials: "ED",
+                badgeColor: "badge-blue",
+                status: "Finished",
+                role: "Developer",
+                cost: "$ 2'100.000",
+                progress: "100%",
+                finishDate: "2023-03-15",
+                todos: [
+                    { id: 15, text: "Final sign-off on sprinkler & fire suppression safety systems", date: "Fri, 10 Mar", completed: true },
+                    { id: 16, text: "Handover BIM digital twin & operational manuals to client", date: "Wed, 15 Mar", completed: true }
+                ]
+            }
+        };
+
+        // =========================================================================
+        // 2. Navigation State
         // =========================================================================
         const pages = {
             projects: document.getElementById("projects-page"),
@@ -574,7 +710,7 @@
 
         const navProjects = document.getElementById("nav-projects-btn");
         const navUsers = document.getElementById("nav-users-btn");
-        let currentActiveCard = document.getElementById("hospital-center-card");
+        let currentProjectId = "hospital-center";
         let isEditingProject = false;
 
         function navigateTo(targetPage) {
@@ -594,69 +730,142 @@
         if (navUsers) navUsers.addEventListener("click", () => navigateTo("users"));
 
         // =========================================================================
-        // Project Details Population & Card Binding
+        // 3. Render To-Dos & Dynamic Project Details
         // =========================================================================
-        function populateDetailsFromCard(card) {
-            currentActiveCard = card;
+        const todosList = document.getElementById("todos-list");
+        const addTodoBtn = document.getElementById("add-todo-btn");
+        const todoSearchInput = document.getElementById("todo-search-input");
 
-            const name = card.querySelector(".card-title-group h3")?.textContent || "Project Details";
-            const desc = card.querySelector(".card-title-group p")?.textContent || "";
-            const avatar = card.querySelector(".card-avatar");
-            const initials = avatar?.textContent || "PR";
-            const badgeClass = Array.from(avatar?.classList || []).find(c => c.startsWith("badge-")) || "badge-orange";
+        function renderTodos(todos) {
+            if (!todosList) return;
+            todosList.innerHTML = "";
 
-            // Extract detail rows
-            const detailsMap = {};
-            card.querySelectorAll(".detail-row").forEach(row => {
-                const label = row.querySelector(".detail-label")?.textContent?.trim();
-                const val = row.querySelector(".detail-value")?.textContent?.trim();
-                if (label) detailsMap[label] = val;
+            if (!todos || todos.length === 0) {
+                todosList.innerHTML = `<p style="color: var(--text-secondary); font-size: 0.85rem; padding: 1rem 0; text-align: center;">No To-Dos for this project yet. Click '+' to add one!</p>`;
+                return;
+            }
+
+            todos.forEach(todo => {
+                const item = document.createElement("div");
+                item.className = `todo-card-item ${todo.completed ? 'completed' : ''}`;
+                item.title = "Click to toggle completion";
+                item.innerHTML = `
+                    <div class="todo-card-left">
+                        <div class="todo-icon-box">
+                            <span class="material-icons-round">${todo.completed ? 'check_circle' : 'construction'}</span>
+                        </div>
+                        <p class="todo-desc">${todo.text}</p>
+                    </div>
+                    <span class="todo-date-tag">${todo.date}</span>
+                `;
+
+                item.addEventListener("click", () => {
+                    todo.completed = !todo.completed;
+                    renderTodos(projectsData[currentProjectId].todos);
+                });
+
+                todosList.appendChild(item);
             });
+        }
 
-            // Update Details Header
+        function populateProjectDetails(projectId) {
+            const proj = projectsData[projectId];
+            if (!proj) return;
+
+            currentProjectId = projectId;
+
+            // Details Header
             const pageTitle = document.getElementById("details-page-title");
             const pageDesc = document.getElementById("details-page-desc");
-            if (pageTitle) pageTitle.textContent = name;
-            if (pageDesc) pageDesc.textContent = desc;
+            if (pageTitle) pageTitle.textContent = proj.name;
+            if (pageDesc) pageDesc.textContent = proj.desc;
 
-            // Update Details Card
+            // Details Card Top
             const detailsAvatar = document.getElementById("details-avatar");
             const detailsCardTitle = document.getElementById("details-card-title");
             const detailsCardDesc = document.getElementById("details-card-desc");
             const detailsStatus = document.getElementById("details-status");
             const detailsCost = document.getElementById("details-cost");
             const detailsRole = document.getElementById("details-role");
+            const detailsDate = document.getElementById("details-date");
             const detailsFill = document.getElementById("details-progress-fill");
 
             if (detailsAvatar) {
-                detailsAvatar.textContent = initials;
-                detailsAvatar.className = `card-avatar-circle ${badgeClass}`;
+                detailsAvatar.textContent = proj.initials;
+                detailsAvatar.className = `card-avatar-circle ${proj.badgeColor}`;
             }
-            if (detailsCardTitle) detailsCardTitle.textContent = name;
-            if (detailsCardDesc) detailsCardDesc.textContent = desc;
-            if (detailsStatus) detailsStatus.textContent = detailsMap["Status"] || "Active";
-            if (detailsCost) detailsCost.textContent = detailsMap["Cost"] || "$ 0";
-            if (detailsRole) detailsRole.textContent = detailsMap["Role"] || "Engineer";
+            if (detailsCardTitle) detailsCardTitle.textContent = proj.name;
+            if (detailsCardDesc) detailsCardDesc.textContent = proj.desc;
+            if (detailsStatus) detailsStatus.textContent = proj.status;
+            if (detailsCost) detailsCost.textContent = proj.cost;
+            if (detailsRole) detailsRole.textContent = proj.role;
+            if (detailsDate) detailsDate.textContent = proj.finishDate;
 
-            const progressVal = detailsMap["Estimated Progress"] || "50%";
             if (detailsFill) {
-                detailsFill.style.width = progressVal;
-                detailsFill.textContent = progressVal;
+                detailsFill.style.width = proj.progress;
+                detailsFill.textContent = proj.progress;
             }
 
+            // Render specific project To-Dos
+            renderTodos(proj.todos);
+
+            // Switch view
             navigateTo("details");
         }
 
         function bindProjectCard(card) {
             card.style.cursor = "pointer";
-            card.addEventListener("click", () => populateDetailsFromCard(card));
+            card.addEventListener("click", () => {
+                const projId = card.dataset.projectId;
+                if (projId && projectsData[projId]) {
+                    populateProjectDetails(projId);
+                }
+            });
         }
 
-        // Bind all existing project cards
+        // Bind all initial project cards
         document.querySelectorAll("#projects-list .project-card").forEach(bindProjectCard);
 
         // =========================================================================
-        // Project Modal & Form (Create + Edit)
+        // 4. To-Do Actions (Add New & Live Search)
+        // =========================================================================
+        if (addTodoBtn) {
+            addTodoBtn.addEventListener("click", () => {
+                const currentProj = projectsData[currentProjectId];
+                if (!currentProj) return;
+
+                const text = prompt(`Enter new To-Do task for "${currentProj.name}":`);
+                if (!text || text.trim() === "") return;
+
+                const now = new Date();
+                const options = { weekday: 'short', day: 'numeric', month: 'short' };
+                const dateStr = now.toLocaleDateString('en-US', options);
+
+                const newTodo = {
+                    id: Date.now(),
+                    text: text.trim(),
+                    date: dateStr,
+                    completed: false
+                };
+
+                currentProj.todos.unshift(newTodo);
+                renderTodos(currentProj.todos);
+            });
+        }
+
+        if (todoSearchInput) {
+            todoSearchInput.addEventListener("input", (e) => {
+                const query = e.target.value.toLowerCase().trim();
+                const currentProj = projectsData[currentProjectId];
+                if (!currentProj) return;
+
+                const filtered = currentProj.todos.filter(t => t.text.toLowerCase().includes(query));
+                renderTodos(filtered);
+            });
+        }
+
+        // =========================================================================
+        // 5. Project Modal (Create & Edit Project)
         // =========================================================================
         const projectModal = document.getElementById("new-project-modal");
         const projectForm = document.getElementById("new-project-form");
@@ -680,7 +889,6 @@
                 projectModalTitle.textContent = "New project";
                 projectSubmitBtn.textContent = "Accept";
                 projectForm.reset();
-                // Set default date (today) if empty
                 if (projectDateInput) projectDateInput.value = new Date().toISOString().split("T")[0];
                 projectModal.showModal();
             });
@@ -689,22 +897,19 @@
         // Open in Edit mode
         if (editProjectBtn && projectModal) {
             editProjectBtn.addEventListener("click", () => {
+                const proj = projectsData[currentProjectId];
+                if (!proj) return;
+
                 isEditingProject = true;
                 projectModalTitle.textContent = "Edit Project";
                 projectSubmitBtn.textContent = "Save Changes";
 
-                if (currentActiveCard) {
-                    projectNameInput.value = currentActiveCard.querySelector(".card-title-group h3")?.textContent || "";
-                    projectDescInput.value = currentActiveCard.querySelector(".card-title-group p")?.textContent || "";
+                projectNameInput.value = proj.name;
+                projectDescInput.value = proj.desc;
+                projectRoleInput.value = proj.role;
+                projectStatusInput.value = proj.status;
+                projectDateInput.value = proj.finishDate || new Date().toISOString().split("T")[0];
 
-                    const rows = currentActiveCard.querySelectorAll(".detail-row");
-                    rows.forEach(r => {
-                        const label = r.querySelector(".detail-label")?.textContent?.trim();
-                        const val = r.querySelector(".detail-value")?.textContent?.trim();
-                        if (label === "Role" && projectRoleInput) projectRoleInput.value = val;
-                        if (label === "Status" && projectStatusInput) projectStatusInput.value = val;
-                    });
-                }
                 projectModal.showModal();
             });
         }
@@ -718,7 +923,7 @@
             });
         }
 
-        // Handle Project Form Submission (Create / Edit)
+        // Save Project (Create / Edit)
         if (projectForm) {
             projectForm.addEventListener("submit", (e) => {
                 e.preventDefault();
@@ -729,41 +934,70 @@
                 const status = projectStatusInput.value;
                 const date = projectDateInput.value || new Date().toISOString().split("T")[0];
 
-                // Input validation: min 5 chars (Challenge requirement)
                 if (name.length < 5) {
                     alert("Project name must be at least 5 characters long!");
                     return;
                 }
 
-                // First two letters uppercased
                 const initials = name.slice(0, 2).toUpperCase();
 
-                if (isEditingProject && currentActiveCard) {
-                    // Update existing card in grid
-                    const titleEl = currentActiveCard.querySelector(".card-title-group h3");
-                    const descEl = currentActiveCard.querySelector(".card-title-group p");
-                    const avatarEl = currentActiveCard.querySelector(".card-avatar");
+                if (isEditingProject) {
+                    const proj = projectsData[currentProjectId];
+                    if (proj) {
+                        proj.name = name;
+                        proj.desc = desc;
+                        proj.role = role;
+                        proj.status = status;
+                        proj.finishDate = date;
+                        proj.initials = initials;
 
-                    if (titleEl) titleEl.textContent = name;
-                    if (descEl) descEl.textContent = desc;
-                    if (avatarEl) avatarEl.textContent = initials;
+                        // Update the card in projects list
+                        const card = document.querySelector(`.project-card[data-project-id="${currentProjectId}"]`);
+                        if (card) {
+                            const titleEl = card.querySelector(".card-title-group h3");
+                            const descEl = card.querySelector(".card-title-group p");
+                            const avatarEl = card.querySelector(".card-avatar");
 
-                    currentActiveCard.querySelectorAll(".detail-row").forEach(r => {
-                        const label = r.querySelector(".detail-label")?.textContent?.trim();
-                        const val = r.querySelector(".detail-value");
-                        if (label === "Role" && val) val.textContent = role;
-                        if (label === "Status" && val) val.textContent = status;
-                    });
+                            if (titleEl) titleEl.textContent = name;
+                            if (descEl) descEl.textContent = desc;
+                            if (avatarEl) avatarEl.textContent = initials;
 
-                    // Update details view immediately
-                    populateDetailsFromCard(currentActiveCard);
+                            card.querySelectorAll(".detail-row").forEach(r => {
+                                const label = r.querySelector(".detail-label")?.textContent?.trim();
+                                const val = r.querySelector(".detail-value");
+                                if (label === "Role" && val) val.textContent = role;
+                                if (label === "Status" && val) val.textContent = status;
+                            });
+                        }
+
+                        // Re-populate details page
+                        populateProjectDetails(currentProjectId);
+                    }
                 } else {
-                    // Create new project card
+                    // Create New Project
+                    const newId = `project-${Date.now()}`;
                     const colors = ["badge-orange", "badge-green", "badge-purple", "badge-blue"];
                     const randomColor = colors[Math.floor(Math.random() * colors.length)];
 
+                    projectsData[newId] = {
+                        id: newId,
+                        name: name,
+                        desc: desc,
+                        initials: initials,
+                        badgeColor: randomColor,
+                        status: status,
+                        role: role,
+                        cost: "$ 0",
+                        progress: "0%",
+                        finishDate: date,
+                        todos: [
+                            { id: Date.now(), text: "Set up project IFC model and spatial structure", date: "Just now", completed: false }
+                        ]
+                    };
+
                     const card = document.createElement("article");
                     card.className = "project-card";
+                    card.dataset.projectId = newId;
                     card.innerHTML = `
                         <div class="card-header">
                             <div class="card-avatar ${randomColor}">${initials}</div>
@@ -803,73 +1037,131 @@
         }
 
         // =========================================================================
-        // To-Do System (Add, Toggle Complete, Search)
+        // 6. Users Actions (3-Dots Menu: Edit, Toggle Status, Delete)
         // =========================================================================
-        const todosList = document.getElementById("todos-list");
-        const addTodoBtn = document.getElementById("add-todo-btn");
-        const todoSearchInput = document.getElementById("todo-search-input");
+        const userActionsDropdown = document.getElementById("user-actions-dropdown");
+        const userMenuEdit = document.getElementById("user-menu-edit");
+        const userMenuStatus = document.getElementById("user-menu-status");
+        const userMenuDelete = document.getElementById("user-menu-delete");
 
-        // Toggle To-Do completion
-        function bindTodoItem(item) {
-            item.addEventListener("click", () => {
-                item.classList.toggle("completed");
-            });
-        }
-        document.querySelectorAll(".todo-card-item").forEach(bindTodoItem);
-
-        // Add new To-Do
-        if (addTodoBtn && todosList) {
-            addTodoBtn.addEventListener("click", () => {
-                const text = prompt("Enter new To-Do item:");
-                if (!text || text.trim() === "") return;
-
-                const now = new Date();
-                const options = { weekday: 'short', day: 'numeric', month: 'short' };
-                const dateStr = now.toLocaleDateString('en-US', options);
-
-                const item = document.createElement("div");
-                item.className = "todo-card-item";
-                item.innerHTML = `
-                    <div class="todo-card-left">
-                        <div class="todo-icon-box">
-                            <span class="material-icons-round">construction</span>
-                        </div>
-                        <p class="todo-desc">${text.trim()}</p>
-                    </div>
-                    <span class="todo-date-tag">${dateStr}</span>
-                `;
-
-                bindTodoItem(item);
-                todosList.prepend(item);
-            });
-        }
-
-        // Search To-Do by text
-        if (todoSearchInput && todosList) {
-            todoSearchInput.addEventListener("input", (e) => {
-                const query = e.target.value.toLowerCase().trim();
-                todosList.querySelectorAll(".todo-card-item").forEach(item => {
-                    const desc = item.querySelector(".todo-desc")?.textContent.toLowerCase() || "";
-                    item.style.display = desc.includes(query) ? "flex" : "none";
-                });
-            });
-        }
-
-        // =========================================================================
-        // Users Management (Create User Modal & Filter Pills)
-        // =========================================================================
         const userModal = document.getElementById("new-user-modal");
         const userForm = document.getElementById("new-user-form");
+        const userModalTitle = document.getElementById("user-modal-title");
+        const userSubmitBtn = document.getElementById("user-submit-btn");
         const newUserBtn = document.getElementById("new-user-btn");
         const cancelUserBtn = document.getElementById("cancel-user-btn");
         const usersTableBody = document.querySelector(".users-table tbody");
 
+        let activeUserRow = null;
+        let isEditingUser = false;
+
+        function hideUserMenu() {
+            if (userActionsDropdown) userActionsDropdown.style.display = "none";
+        }
+
+        // Close dropdown when clicking outside or scrolling
+        document.addEventListener("click", (e) => {
+            if (userActionsDropdown && !userActionsDropdown.contains(e.target) && !e.target.closest(".user-options-btn")) {
+                hideUserMenu();
+            }
+        });
+        window.addEventListener("scroll", hideUserMenu, true);
+
+        function bindUserRow(tr) {
+            const btn = tr.querySelector(".user-options-btn") || tr.querySelector(".btn-icon");
+            if (btn) {
+                btn.classList.add("user-options-btn");
+                btn.style.cursor = "pointer";
+                btn.addEventListener("click", (e) => {
+                    e.stopPropagation();
+                    activeUserRow = tr;
+
+                    const rect = btn.getBoundingClientRect();
+                    userActionsDropdown.style.top = `${rect.bottom + 4}px`;
+                    userActionsDropdown.style.left = `${Math.max(10, rect.right - 175)}px`;
+                    userActionsDropdown.style.display = "flex";
+                });
+            }
+        }
+
+        // Bind all initial user rows
+        document.querySelectorAll(".users-table tbody tr").forEach(bindUserRow);
+
+        // Action 1: Edit User
+        if (userMenuEdit) {
+            userMenuEdit.addEventListener("click", () => {
+                hideUserMenu();
+                if (!activeUserRow) return;
+
+                isEditingUser = true;
+                userModalTitle.textContent = "Edit User";
+                userSubmitBtn.textContent = "Save Changes";
+
+                const name = activeUserRow.querySelector(".user-name")?.textContent || "";
+                const email = activeUserRow.querySelector(".user-email")?.textContent || "";
+                const role = activeUserRow.querySelector(".role-badge")?.textContent || "Developer";
+                const isOnline = activeUserRow.querySelector(".status-indicator")?.classList.contains("status-online");
+
+                document.getElementById("user-name-input").value = name;
+                document.getElementById("user-email-input").value = email;
+                document.getElementById("user-role-input").value = role.includes("Dev") ? "Developer" : (role.includes("Arch") ? "Architect" : (role.includes("Eng") ? "Engineer" : "BIM Coordinator"));
+                document.getElementById("user-status-input").value = isOnline ? "Active" : "Away";
+
+                userModal.showModal();
+            });
+        }
+
+        // Action 2: Toggle Status
+        if (userMenuStatus) {
+            userMenuStatus.addEventListener("click", () => {
+                hideUserMenu();
+                if (!activeUserRow) return;
+
+                const indicator = activeUserRow.querySelector(".status-indicator");
+                if (indicator) {
+                    if (indicator.classList.contains("status-online")) {
+                        indicator.className = "status-indicator status-offline";
+                        indicator.textContent = "Away";
+                    } else {
+                        indicator.className = "status-indicator status-online";
+                        indicator.textContent = "Active";
+                    }
+                }
+            });
+        }
+
+        // Action 3: Delete User
+        if (userMenuDelete) {
+            userMenuDelete.addEventListener("click", () => {
+                hideUserMenu();
+                if (!activeUserRow) return;
+
+                const userName = activeUserRow.querySelector(".user-name")?.textContent || "this user";
+                if (confirm(`Are you sure you want to delete ${userName}?`)) {
+                    activeUserRow.remove();
+                    activeUserRow = null;
+
+                    // Update counter
+                    const allPill = document.querySelector(".users-filter-group .filter-pill:first-child");
+                    if (allPill && usersTableBody) {
+                        const count = usersTableBody.querySelectorAll("tr").length;
+                        allPill.textContent = `All (${count})`;
+                    }
+                }
+            });
+        }
+
+        // Open User Modal in Create Mode
         if (newUserBtn && userModal) {
             newUserBtn.addEventListener("click", () => {
+                isEditingUser = false;
+                userModalTitle.textContent = "New User";
+                userSubmitBtn.textContent = "Create User";
                 userForm.reset();
                 userModal.showModal();
             });
         }
+
         if (cancelUserBtn && userModal) {
             cancelUserBtn.addEventListener("click", () => userModal.close());
         }
@@ -879,7 +1171,7 @@
             });
         }
 
-        // Add User Form Submission
+        // Add or Update User Form Submission
         if (userForm && usersTableBody) {
             userForm.addEventListener("submit", (e) => {
                 e.preventDefault();
@@ -889,13 +1181,11 @@
                 const role = document.getElementById("user-role-input").value;
                 const status = document.getElementById("user-status-input").value;
 
-                // Initials
                 const parts = name.split(" ").filter(Boolean);
                 const initials = parts.length > 1
                     ? (parts[0][0] + parts[1][0]).toUpperCase()
                     : name.slice(0, 2).toUpperCase();
 
-                // Role Badge class mapping
                 const roleClassMap = {
                     "Developer": "role-dev",
                     "Architect": "role-arch",
@@ -905,35 +1195,57 @@
                 const roleClass = roleClassMap[role] || "role-dev";
                 const isOnline = status === "Active";
 
-                const colors = ["badge-blue", "badge-purple", "badge-orange", "badge-green"];
-                const avatarColor = colors[Math.floor(Math.random() * colors.length)];
+                if (isEditingUser && activeUserRow) {
+                    // Update existing row
+                    const nameEl = activeUserRow.querySelector(".user-name");
+                    const emailEl = activeUserRow.querySelector(".user-email");
+                    const avatarEl = activeUserRow.querySelector(".user-avatar-circle");
+                    const badgeEl = activeUserRow.querySelector(".role-badge");
+                    const statusEl = activeUserRow.querySelector(".status-indicator");
 
-                const tr = document.createElement("tr");
-                tr.innerHTML = `
-                    <td>
-                        <div class="user-cell">
-                            <div class="user-avatar-circle ${avatarColor}">${initials}</div>
-                            <div>
-                                <div class="user-name">${name}</div>
-                                <div class="user-email">${email}</div>
+                    if (nameEl) nameEl.textContent = name;
+                    if (emailEl) emailEl.textContent = email;
+                    if (avatarEl) avatarEl.textContent = initials;
+                    if (badgeEl) {
+                        badgeEl.className = `role-badge ${roleClass}`;
+                        badgeEl.textContent = role;
+                    }
+                    if (statusEl) {
+                        statusEl.className = `status-indicator ${isOnline ? 'status-online' : 'status-offline'}`;
+                        statusEl.textContent = status;
+                    }
+                } else {
+                    // Create new row
+                    const colors = ["badge-blue", "badge-purple", "badge-orange", "badge-green"];
+                    const avatarColor = colors[Math.floor(Math.random() * colors.length)];
+
+                    const tr = document.createElement("tr");
+                    tr.innerHTML = `
+                        <td>
+                            <div class="user-cell">
+                                <div class="user-avatar-circle ${avatarColor}">${initials}</div>
+                                <div>
+                                    <div class="user-name">${name}</div>
+                                    <div class="user-email">${email}</div>
+                                </div>
                             </div>
-                        </div>
-                    </td>
-                    <td><span class="role-badge ${roleClass}">${role}</span></td>
-                    <td>General</td>
-                    <td><span class="status-indicator ${isOnline ? 'status-online' : 'status-offline'}">${status}</span></td>
-                    <td style="text-align: right;">
-                        <button class="btn-icon" title="Options"><span class="material-icons-round">more_vert</span></button>
-                    </td>
-                `;
+                        </td>
+                        <td><span class="role-badge ${roleClass}">${role}</span></td>
+                        <td>Hospital Center</td>
+                        <td><span class="status-indicator ${isOnline ? 'status-online' : 'status-offline'}">${status}</span></td>
+                        <td style="text-align: right;">
+                            <button type="button" class="btn-icon user-options-btn" title="Options"><span class="material-icons-round">more_vert</span></button>
+                        </td>
+                    `;
 
-                usersTableBody.prepend(tr);
+                    bindUserRow(tr);
+                    usersTableBody.prepend(tr);
 
-                // Update All (N) count
-                const allPill = document.querySelector(".users-filter-group .filter-pill:first-child");
-                if (allPill) {
-                    const currentCount = usersTableBody.querySelectorAll("tr").length;
-                    allPill.textContent = `All (${currentCount})`;
+                    const allPill = document.querySelector(".users-filter-group .filter-pill:first-child");
+                    if (allPill) {
+                        const count = usersTableBody.querySelectorAll("tr").length;
+                        allPill.textContent = `All (${count})`;
+                    }
                 }
 
                 userModal.close();
@@ -941,7 +1253,9 @@
             });
         }
 
-        // Role Filter Pills
+        // =========================================================================
+        // 7. Role Filter Pills
+        // =========================================================================
         const filterPills = document.querySelectorAll(".users-filter-group .filter-pill");
         filterPills.forEach(pill => {
             pill.addEventListener("click", () => {
@@ -959,7 +1273,7 @@
                         row.style.display = "";
                     } else if (filterText.includes("engineer") && roleText.includes("engineer")) {
                         row.style.display = "";
-                    } else if (filterText.includes("developer") && roleText.includes("dev")) {
+                    } else if (filterText.includes("developer") && (roleText.includes("dev") || roleText.includes("full-stack"))) {
                         row.style.display = "";
                     } else {
                         row.style.display = "none";
