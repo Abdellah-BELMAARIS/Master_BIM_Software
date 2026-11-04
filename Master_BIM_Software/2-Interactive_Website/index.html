@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,21 +10,33 @@
     <!-- Main Stylesheet -->
     <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
     <!-- Sidebar Navigation -->
     <aside id="sidebar">
-        <img id="company-logo" src="./assets/company-logo.svg" alt="Construction Company">
+        <div class="sidebar-header">
+            <img id="company-logo" src="./assets/company-logo.svg" alt="Construction Company — BIM Platform">
+            <div class="sidebar-brand-badge">AEC · BIM PLATFORM</div>
+        </div>
 
         <ul id="nav-buttons">
             <li class="nav-item active" id="nav-projects-btn">
-                <span class="material-icons-round">apartment</span>
-                <span>Projects</span>
+                <span class="material-icons-round">domain</span>
+                <span class="nav-label">BIM Projects</span>
             </li>
             <li class="nav-item" id="nav-users-btn">
-                <span class="material-icons-round">person</span>
-                <span>Users</span>
+                <span class="material-icons-round">engineering</span>
+                <span class="nav-label">AEC Team</span>
             </li>
         </ul>
+
+        <div class="sidebar-footer">
+            <div class="system-status">
+                <span class="status-dot"></span>
+                <span class="status-text">IFC VIEWER READY</span>
+            </div>
+            <span class="status-version">IFC4 · 3D</span>
+        </div>
     </aside>
 
     <!-- Main Content Area -->
@@ -32,13 +45,18 @@
         <div class="page" id="projects-page">
             <!-- Top Action Header -->
             <header id="main-header">
-                <h2>Projects</h2>
+                <div class="header-title-box">
+                    <span class="header-eyebrow">CDE WORKSPACE / MODELS</span>
+                    <h2>BIM Projects</h2>
+                </div>
                 <div class="header-actions">
-                    <button class="btn-icon" id="import-projects-btn" title="Import Projects (JSON)">
-                        <span class="material-icons-round">upload</span>
+                    <button class="btn-icon btn-action-tool" id="import-projects-btn" title="Import Projects (JSON)">
+                        <span class="material-icons-round">upload_file</span>
+                        <span class="btn-tool-label">Import JSON</span>
                     </button>
-                    <button class="btn-icon" id="export-projects-btn" title="Export Projects (JSON)">
-                        <span class="material-icons-round">download</span>
+                    <button class="btn-icon btn-action-tool" id="export-projects-btn" title="Export Projects (JSON)">
+                        <span class="material-icons-round">file_download</span>
+                        <span class="btn-tool-label">Export JSON</span>
                     </button>
                     <button class="btn-primary" id="new-project-btn">
                         <span class="material-icons-round">add</span>
@@ -57,13 +75,27 @@
             </button>
         </div>
 
-        <!-- Page 2: Project Details Page (Matches 4.png) -->
+        <!-- Page 2: Project Details Page (Lesson 4.3 Dynamic Data Attributes + BIM 3D Viewport) -->
         <div class="page" id="project-details" style="display: none;">
             <!-- Details Header -->
             <header id="details-header">
-                <div>
-                    <h2 id="details-page-title">Hospital Center</h2>
-                    <p id="details-page-desc" style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.25rem;">Community hospital located at downtown</p>
+                <div class="details-header-left">
+                    <button type="button" class="btn-back-projects" id="back-to-projects-btn"
+                        title="Back to Projects List">
+                        <span class="material-icons-round">arrow_back</span>
+                    </button>
+                    <div class="header-title-box">
+                        <span class="header-eyebrow">PROJECT CDE / 3D COORDINATION</span>
+                        <h2 id="details-page-title" data-project-info="name">Hospital Center</h2>
+                        <p id="details-page-desc" data-project-info="description">Community hospital located at downtown
+                        </p>
+                    </div>
+                </div>
+                <div class="details-header-right">
+                    <span class="bim-coord-badge">
+                        <span class="material-icons-round">view_in_ar</span>
+                        <span>IFC4 · LOD 350</span>
+                    </span>
                 </div>
             </header>
 
@@ -71,12 +103,16 @@
             <div class="main-page-content">
                 <!-- Left Column: Details Card & To-Do List -->
                 <div class="details-left-column">
-                    <!-- Project Details Card (Matches 4.png) -->
+                    <!-- Project Details Card (Lesson 4.3 data-project-info targets) -->
                     <article class="project-card details-card">
                         <div class="details-card-top">
-                            <div class="card-avatar-circle badge-orange" id="details-avatar">HC</div>
+                            <div class="card-avatar-circle badge-orange" id="details-avatar" data-project-info="avatar">
+                                HC</div>
                             <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                <button class="btn-edit" id="edit-project-btn">Edit</button>
+                                <button class="btn-edit" id="edit-project-btn">
+                                    <span class="material-icons-round" style="font-size: 1rem;">edit</span>
+                                    <span>Edit</span>
+                                </button>
                                 <button class="btn-delete" id="delete-project-btn" title="Delete Project">
                                     <span class="material-icons-round" style="font-size: 1.1rem;">delete</span>
                                 </button>
@@ -84,45 +120,48 @@
                         </div>
 
                         <div class="details-title-group">
-                            <h3 id="details-card-title">Hospital Center</h3>
-                            <p id="details-card-desc">Community hospital located at downtown</p>
+                            <h3 id="details-card-title" data-project-info="name">Hospital Center</h3>
+                            <p id="details-card-desc" data-project-info="description">Community hospital located at
+                                downtown</p>
                         </div>
 
                         <div class="details-properties-row">
                             <div class="prop-col">
                                 <span class="prop-label">Status</span>
-                                <span class="prop-val" id="details-status">Active</span>
+                                <span class="prop-val" id="details-status" data-project-info="status">Active</span>
                             </div>
                             <div class="prop-col">
                                 <span class="prop-label">Cost</span>
-                                <span class="prop-val" id="details-cost">$ 2'000.000</span>
+                                <span class="prop-val" id="details-cost" data-project-info="cost">$ 2,000,000</span>
                             </div>
                             <div class="prop-col">
                                 <span class="prop-label">Role</span>
-                                <span class="prop-val" id="details-role">Engineer</span>
+                                <span class="prop-val" id="details-role" data-project-info="role">Engineer</span>
                             </div>
                             <div class="prop-col">
                                 <span class="prop-label">Finish Date</span>
-                                <span class="prop-val" id="details-date">2023-05-01</span>
+                                <span class="prop-val" id="details-date"
+                                    data-project-info="finishDate">2023-05-01</span>
                             </div>
                         </div>
 
-                        <!-- Progress Bar (Matches 4.png 80% Green) -->
+                        <!-- Progress Bar -->
                         <div class="progress-bar-container">
-                            <div class="progress-bar-fill" id="details-progress-fill" style="width: 80%;">80%</div>
+                            <div class="progress-bar-fill" id="details-progress-fill" data-project-info="progress"
+                                style="width: 80%;">80%</div>
                         </div>
                     </article>
 
-                    <!-- To-Do List Container (Matches 4.png) -->
+                    <!-- To-Do / BCF Issues Container -->
                     <div class="todos-container">
                         <div class="todos-header-row">
-                            <h4>To-Do</h4>
+                            <h4>Tasks & BCF Issues</h4>
                             <div class="todos-actions-group">
                                 <div class="search-input-pill">
                                     <span class="material-icons-round">search</span>
-                                    <input type="text" id="todo-search-input" placeholder="Search To-Do's by name">
+                                    <input type="text" id="todo-search-input" placeholder="Search tasks or clashes...">
                                 </div>
-                                <button class="btn-icon-box" id="add-todo-btn" title="Add To-Do">
+                                <button class="btn-icon-box" id="add-todo-btn" title="Add Task">
                                     <span class="material-icons-round">add</span>
                                 </button>
                             </div>
@@ -133,29 +172,28 @@
                             <div class="todo-card-item">
                                 <div class="todo-card-left">
                                     <div class="todo-icon-box">
-                                        <span class="material-icons-round">construction</span>
+                                        <span class="material-icons-round">architecture</span>
                                     </div>
-                                    <p class="todo-desc">Make anything here as you want, even something longer.</p>
+                                    <p class="todo-desc">Verify structural column grid alignment on Level 02.</p>
                                 </div>
-                                <span class="todo-date-tag">Fri, 20 sep</span>
+                                <span class="todo-date-tag">Fri, 20 Sep</span>
                             </div>
 
                             <div class="todo-card-item">
                                 <div class="todo-card-left">
                                     <div class="todo-icon-box">
-                                        <span class="material-icons-round">construction</span>
+                                        <span class="material-icons-round">plumbing</span>
                                     </div>
-                                    <p class="todo-desc">Make anything here as you want, even something longer.</p>
+                                    <p class="todo-desc">Resolve MEP HVAC duct clearance clash at Corridor B.</p>
                                 </div>
-                                <span class="todo-date-tag">Fri, 20 sep</span>
+                                <span class="todo-date-tag">Mon, 23 Sep</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Right Column: IFC 3D Viewer Viewport (Matches 4.png) -->
-                <div id="viewer-container">
-                </div>
+                <!-- Right Column: IFC 3D Viewer Viewport (Empty container for Three.js canvas) -->
+                <div id="viewer-container"></div>
             </div>
         </div>
 
@@ -163,14 +201,14 @@
         <div class="page" id="users-page" style="display: none;">
             <!-- Users Header -->
             <header id="users-header">
-                <div>
-                    <h2>Users</h2>
-                    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.25rem;">Manage team members, roles, and BIM model permissions</p>
+                <div class="header-title-box">
+                    <span class="header-eyebrow">CDE ACCESS / STAKEHOLDERS</span>
+                    <h2>AEC Team & Roles</h2>
                 </div>
                 <div class="header-actions">
                     <button class="btn-primary" id="new-user-btn">
                         <span class="material-icons-round">person_add</span>
-                        <span>New User</span>
+                        <span>New Member</span>
                     </button>
                 </div>
             </header>
@@ -180,13 +218,13 @@
                 <div class="users-toolbar">
                     <div class="search-input-pill" style="width: 280px;">
                         <span class="material-icons-round">search</span>
-                        <input type="text" placeholder="Search users by name or email..." style="width: 100%;">
+                        <input type="text" placeholder="Search team by name or discipline..." style="width: 100%;">
                     </div>
                     <div class="users-filter-group">
                         <span class="filter-pill active">All (4)</span>
                         <span class="filter-pill">Architects</span>
                         <span class="filter-pill">Engineers</span>
-                        <span class="filter-pill">Developers</span>
+                        <span class="filter-pill">BIM Leads</span>
                     </div>
                 </div>
 
@@ -195,9 +233,9 @@
                     <table class="users-table">
                         <thead>
                             <tr>
-                                <th>User</th>
-                                <th>Role</th>
-                                <th>Assigned Projects</th>
+                                <th>Member</th>
+                                <th>Discipline / Role</th>
+                                <th>Assigned Models</th>
                                 <th>Status</th>
                                 <th style="text-align: right;">Actions</th>
                             </tr>
@@ -213,11 +251,12 @@
                                         </div>
                                     </div>
                                 </td>
-                                <td><span class="role-badge role-dev">Full-Stack Dev</span></td>
+                                <td><span class="role-badge role-dev">BIM Software Lead</span></td>
                                 <td>Hospital Center, Urban Oasis</td>
                                 <td><span class="status-indicator status-online">Active</span></td>
                                 <td style="text-align: right;">
-                                    <button type="button" class="btn-icon user-options-btn" title="Options"><span class="material-icons-round">more_vert</span></button>
+                                    <button type="button" class="btn-icon user-options-btn" title="Options"><span
+                                            class="material-icons-round">more_vert</span></button>
                                 </td>
                             </tr>
                             <tr>
@@ -234,7 +273,8 @@
                                 <td>Hospital Center, TechHub</td>
                                 <td><span class="status-indicator status-online">Active</span></td>
                                 <td style="text-align: right;">
-                                    <button type="button" class="btn-icon user-options-btn" title="Options"><span class="material-icons-round">more_vert</span></button>
+                                    <button type="button" class="btn-icon user-options-btn" title="Options"><span
+                                            class="material-icons-round">more_vert</span></button>
                                 </td>
                             </tr>
                             <tr>
@@ -251,7 +291,8 @@
                                 <td>Sustainable Housing</td>
                                 <td><span class="status-indicator status-online">Active</span></td>
                                 <td style="text-align: right;">
-                                    <button type="button" class="btn-icon user-options-btn" title="Options"><span class="material-icons-round">more_vert</span></button>
+                                    <button type="button" class="btn-icon user-options-btn" title="Options"><span
+                                            class="material-icons-round">more_vert</span></button>
                                 </td>
                             </tr>
                             <tr>
@@ -268,7 +309,8 @@
                                 <td>Heritage Restoration</td>
                                 <td><span class="status-indicator status-offline">Away</span></td>
                                 <td style="text-align: right;">
-                                    <button type="button" class="btn-icon user-options-btn" title="Options"><span class="material-icons-round">more_vert</span></button>
+                                    <button type="button" class="btn-icon user-options-btn" title="Options"><span
+                                            class="material-icons-round">more_vert</span></button>
                                 </td>
                             </tr>
                         </tbody>
@@ -326,13 +368,16 @@
                 <div class="input-list">
                     <div class="form-field">
                         <label><span class="material-icons-round">corporate_fare</span> Name</label>
-                        <input name="name" type="text" id="project-name-input" placeholder="Riverfront Promenade" required>
+                        <input name="name" type="text" id="project-name-input" placeholder="Riverfront Promenade"
+                            required>
                         <p class="input-tip">TIP: Give it a short name (min. 5 chars).</p>
                     </div>
 
                     <div class="form-field">
                         <label><span class="material-icons-round">subject</span> Description</label>
-                        <textarea name="description" id="project-desc-input" placeholder="Give your project a nice description! So people is jealous about it." rows="3"></textarea>
+                        <textarea name="description" id="project-desc-input"
+                            placeholder="Give your project a nice description! So people is jealous about it."
+                            rows="3"></textarea>
                     </div>
 
                     <div class="form-field">
@@ -410,4 +455,5 @@
     <!-- Main Application Logic (Vite TypeScript Module from src/) -->
     <script type="module" src="./src/index.ts"></script>
 </body>
+
 </html>

@@ -35,9 +35,87 @@ export class ProjectsManager {
         }
 
         const project = new Project(data);
+
+        // Lesson 4.1 & 4.3: Navigate to Project Details page and populate dynamic data on card click
+        project.ui.addEventListener("click", () => {
+            const projectsPage = document.getElementById("projects-page");
+            const detailsPage = document.getElementById("project-details");
+            if (!projectsPage || !detailsPage) { return; }
+
+            // Call the private method before displaying
+            this.setDetailsPage(project);
+
+            projectsPage.style.display = "none";
+            detailsPage.style.display = "flex";
+        });
+
         this.ui.append(project.ui);
         this.list.push(project);
         return project;
+    }
+
+    // Lesson 4.3: Internal private method to update all project details UI elements via data-project-info
+    private setDetailsPage(project: Project): void {
+        const detailsPage = document.getElementById("project-details");
+        if (!detailsPage) { return; }
+
+        // 1. Update Project Name across header and card title
+        const nameElements = detailsPage.querySelectorAll("[data-project-info='name']");
+        nameElements.forEach((el) => {
+            el.textContent = project.name;
+        });
+
+        // 2. Update Project Description across header and card
+        const descElements = detailsPage.querySelectorAll("[data-project-info='description']");
+        descElements.forEach((el) => {
+            el.textContent = project.description;
+        });
+
+        // 3. Update Status
+        const status = detailsPage.querySelector("[data-project-info='status']");
+        if (status) {
+            status.textContent = project.status;
+        }
+
+        // 4. Update Cost (Formatted as currency)
+        const cost = detailsPage.querySelector("[data-project-info='cost']");
+        if (cost) {
+            cost.textContent = `$ ${Number(project.cost || 0).toLocaleString("en-US")}`;
+        }
+
+        // 5. Update User Role
+        const role = detailsPage.querySelector("[data-project-info='role']");
+        if (role) {
+            role.textContent = project.userRole;
+        }
+
+        // 6. Update Finish Date (Formatted as readable date)
+        const finishDate = detailsPage.querySelector("[data-project-info='finishDate']");
+        if (finishDate) {
+            const dateObj = new Date(project.finishDate);
+            finishDate.textContent = isNaN(dateObj.getTime())
+                ? String(project.finishDate)
+                : dateObj.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+        }
+
+        // 7. Update Progress Bar Width & Percentage Text
+        const progress = detailsPage.querySelector("[data-project-info='progress']") as HTMLDivElement | null;
+        if (progress) {
+            const percentage = Math.round((project.progress || 0) * 100);
+            progress.style.width = `${percentage}%`;
+            progress.textContent = `${percentage}%`;
+        }
+
+        // 8. Update Avatar Initials & Role Badge Color
+        const avatar = detailsPage.querySelector("[data-project-info='avatar']") as HTMLDivElement | null;
+        if (avatar) {
+            avatar.textContent = project.name.slice(0, 2).toUpperCase();
+            avatar.className = "card-avatar-circle";
+            if (project.userRole === "Architect") avatar.classList.add("badge-purple");
+            else if (project.userRole === "Engineer") avatar.classList.add("badge-orange");
+            else if (project.userRole === "Developer") avatar.classList.add("badge-green");
+            else avatar.classList.add("badge-blue");
+        }
     }
 
     // Query a project by unique UUID

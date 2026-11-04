@@ -555,3 +555,123 @@
 - **Module 2 Progress:** 16 / 29 lessons (`55.2%`).
 - **Overall Curriculum Progress:** 32 / 130 core lessons (`24.6%`).
 - **Next Target:** `4.1 Switching between pages (03:48)` *(Launching Section 4: Architecture & Git)*.
+
+
+---
+
+## 📌 Part 16 — Signature Architectural Obsidian & Electric Indigo Theme (Straight Geometry) (2026-11-04)
+
+### 1. Distinct Identity & Complete Aesthetic Overhaul
+- **Departed Completely from That Open Company's Default Look:**
+  - That Open Company uses dark charcoal gray (`#141619`) with basic sky blue pills (`#029ae0`, `border-radius: 20px`).
+  - Implemented the **Architectural Obsidian & Electric Indigo Theme**:
+    - Deep pitch carbon obsidian (`#08090d`, `#0d0f17`, `#121420`).
+    - Signature **Electric Indigo & Cyber Mint** accents (`--primary-indigo: #6366f1`, `--accent-mint: #10b981`, `--accent-rose: #f43f5e`, `--accent-amber: #f59e0b`).
+- **"Make Full Project Straight" (Architectural Precision Geometry):**
+  - Eliminated all bubbly rounded pills across the entire application (`border-radius: 20px` $\rightarrow$ `border-radius: 4px` / `2px`).
+  - Straight precision tokens:
+    - `--radius-sharp: 2px;`
+    - `--radius-straight: 4px;`
+    - `--radius-box: 6px;`
+  - Applied straight corners to project cards, avatars, status tags, progress bars, buttons, form fields, modal containers, and action dropdowns.
+  - Status badges now render as technical monospace rectangular chips (`letter-spacing: 0.05em; font-family: monospace`).
+- **Improved Sidebar:**
+  - Added dedicated `.sidebar-header` with brand badge: `BIM SUITE · ARCHITECTURE`.
+  - Upgraded `.nav-item` to straight rectangular buttons with electric indigo left accent borders (`3px solid #6366f1`) and subtle background glow.
+  - Added `.sidebar-footer` displaying real-time system status: `● ENGINE CONNECTED` and version badge `V2.4 · STABLE`.
+- **Improved Top Bar:**
+  - Redesigned `#main-header` into a high-precision architectural toolbar.
+  - Added workspace breadcrumb eyebrow tag (`WORKSPACE / OVERVIEW`) above the title.
+  - Introduced `.btn-action-tool` buttons with icons and explicit text labels ("Import JSON", "Export JSON").
+  - Straight `.btn-primary` ("+ New Project") with electric indigo gradient and straight corners.
+- **Verification:**
+  - Executed `npm run build` — 27 modules transformed, completed in 645ms, 0 errors.
+
+
+---
+
+## 📐 Part 17 — Module 2 Lesson 4.1: Switching Between Pages & Architectural Top Bar / Sidebar Alignment for All Devices (2026-11-04)
+
+### 1. Lesson 4.1 Core Concepts & Architectural Bridge (Full-Stack / DRF to Frontend)
+- **Concept:** Client-side page navigation within a Single Page Application (SPA).
+- **The "Datum Line" UI Engineering Challenge:**
+  - In CAD/BIM applications (Revit, ACC, Trimble Connect, Figma), visual hierarchy relies on **architectural datums** — continuous straight reference lines.
+  - In the current layout:
+    - `.sidebar-header` had arbitrary padding and reached `~118px` height before its `border-bottom`.
+    - `#main-header` had `padding: 1.25rem 2.5rem` and reached `~84px` height before its `border-bottom`.
+    - **Visual Defect:** A 34px jagged break between the horizontal rule in the sidebar and the top bar.
+- **The Architectural Fix:**
+  - Enforce an exact uniform height (`72px` / `4.5rem`) for both `.sidebar-header` and `#main-header`.
+  - Align their `border-bottom` to form an unbroken, razor-straight horizontal datum across the entire viewport.
+  - Standardize horizontal grid alignment so `#main-header` and `#projects-list` share identical padding (`2.5rem` on desktop, `1.5rem` on tablet, `1rem` on mobile).
+  - Add responsive collapsing (`btn-tool-label` hidden on smaller tablets, flexible toolbars on mobile) to prevent button wrapping and broken heights on all devices.
+- **Lesson 4.1 Code Implementation:**
+  - In `ProjectsManager.ts`: Attached `click` event listener to `project.ui` with double-pipe guard (`if (!projectsPage || !detailsPage) return;`) setting `projectsPage.style.display = 'none'` and `detailsPage.style.display = 'flex'`.
+  - In `src/index.ts` (Assignment): Attached `click` event listener to `#nav-projects-btn` in the sidebar to return to the projects list (`projectsPage.style.display = 'flex'`, `detailsPage.style.display = 'none'`).
+
+
+### 2. Execution & Build Verification
+- **Files Modified with Explicit User Permission:**
+  - `Master_BIM_Software/2-Interactive_Website/style.css`:
+    - Locked unified `height: 72px` across `.sidebar-header`, `#main-header`, and `#details-header`.
+    - Aligned bottom border into a continuous, laser-straight architectural datum line.
+    - Synchronized horizontal padding (`2.5rem` on desktop, `1.5rem` on tablet, `1rem` on mobile) between `#main-header` and `#projects-list`.
+    - Added `cursor: pointer` to `.project-card`.
+    - Collapsed `.btn-tool-label` on tablets and mobile to prevent toolbar wrapping.
+  - `Master_BIM_Software/2-Interactive_Website/src/classes/ProjectsManager.ts`:
+    - Wired `project.ui.addEventListener("click", ...)` with double-pipe guard (`if (!projectsPage || !detailsPage) return;`) to show details and hide projects.
+  - `Master_BIM_Software/2-Interactive_Website/src/index.ts`:
+    - Implemented lesson assignment by wiring `#nav-projects-btn` click listener to return to projects list.
+- **Vite Build Result:**
+  - 27 modules transformed, completed in 656ms with 0 errors.
+
+
+---
+
+## 🏗️ Part 18 — Module 2 Lesson 4.3: Updating Project Details Page UI & Authentic BIM 3D Viewport Design (2026-11-04)
+
+### 1. Lesson 4.3 Architecture & Core Concepts
+- **Problem Statement:** Clicking a project card opened the details page with hardcoded static dummy text ("Hospital Center", "$ 2'000.000", "80%"), rather than reflecting the selected project instance.
+- **Git Branching Strategy:** Introduced feature branching (`git branch project-details` / `git checkout project-details`) to segregate feature development from `main`.
+- **Custom HTML Attributes (`data-*`):** Used `data-project-info="<field>"` (`name`, `description`, `status`, `cost`, `role`, `finishDate`, `progress`, `avatar`) to decoupled DOM structure from data binding.
+- **`querySelector` & `querySelectorAll`:** Queried scoped elements within the master `#project-details` container.
+- **TypeScript `private` Access Modifier:** Declared `private setDetailsPage(project: Project)` in `ProjectsManager` to enforce encapsulation, ensuring external callers cannot manipulate details state without going through proper manager workflows.
+- **Authentic BIM / AEC Design (No Sci-Fi / AI Theme):**
+  - Designed the `#viewer-container` strictly as an authentic CAD / BIM 3D Viewport:
+    - ViewCube / Navigation Gizmo in top-right corner.
+    - AEC 3D Viewport Toolbar: Orbit, Pan, Zoom Extents, Section Box, Model Hierarchy Tree, Wireframe/Shaded mode, Measurement ruler.
+    - Viewport status bar: Coordinate axes (X, Y, Z), scale, and IFC Fragment loader status.
+    - Pure professional AEC Obsidian & Slate palette with clean architectural typography.
+
+
+### 2. Full Execution — Lesson 4.3, Authentic AEC/BIM 3D Viewport & Multi-Device Responsiveness
+- **Git Branching:** Created and checked out `project-details` branch (`git checkout -b project-details`).
+- **Lesson 4.3 Dynamic Details Binding ([`ProjectsManager.ts`](../Master_BIM_Software/2-Interactive_Website/src/classes/ProjectsManager.ts)):**
+  - Implemented `private setDetailsPage(project: Project)` using `detailsPage.querySelector("[data-project-info='...']")`.
+  - Updated all 9 project-specific targets: `name`, `card-name`, `description`, `card-description`, `status`, `cost` (formatted currency), `userRole`, `finishDate` (formatted date), `progress` (bar width + `%` text), `initials` (dynamic 2-letter initials + discipline color class), and `viewer-model-name` (`<PROJECT_SLUG>_ARC_STR.ifc`).
+- **Authentic AEC / BIM 3D Viewer Theme (Removed AI Dev Indigo Theme):**
+  - Replaced AI purple/indigo (`#6366f1`) with **CAD Engineering Blue (`#0ea5e9` / `#0284c7`)**, **Structural Emerald (`#10b981`)**, and **Architectural Dark Slate (`#090d14` / `#0e131d` / `#131a26`)**.
+  - Built a complete **IFC 3D Viewport** inside `#viewer-container` featuring:
+    1. Top-left active IFC model badge (`DEFAULT_PROJECT_ARC_STR.ifc`) + camera pill (`PERSPECTIVE · ORBIT`).
+    2. Top-right 3D **ViewCube** with `X` (red), `Y` (green), `Z` (blue) axes and `N 0°` compass.
+    3. Center isometric 3-storey structural BIM wireframe preview SVG (`+0.00m L01`, `+4.00m L02`, `+8.00m ROOF`).
+    4. Bottom-center floating CAD toolbar (Orbit, Pan, Fit to View, Section Cut, Laser Measure, IFC Spatial Hierarchy Tree, `IfcPropertySet` Inspector).
+    5. Bottom-left engineering telemetry bar (`GRID: 1.00m · UNITS: METRIC (m) · X: 0.00 Y: 0.00 Z: 0.00`).
+- **Full Multi-Device Responsiveness (Laptops, Tablets, Mobile Phones):**
+  - **Laptops (`<= 1280px`):** `230px` sidebar, `350px 1fr` details split, balanced `1.75rem` horizontal datum padding.
+  - **Tablets Landscape (`<= 1024px`):** `205px` sidebar, icon-only header tools, `320px 1fr` details split.
+  - **Tablets Portrait (`<= 900px`):** Single-column scrollable details layout with full-width `400px`-high 3D BIM viewport.
+  - **Mobile Phones (`<= 767px` & `<= 420px`):** `100dvh` viewport height, fixed `60px` bottom navigation bar, straight single-row `64px` top bar across all 3 pages, `2x2` property grid on details card, compact `320px` 3D viewport with scrollable floating toolbar.
+- **Verification:** `npm run build` succeeded in **509ms** with 0 errors.
+
+
+- **Attribute Alignment Confirmation:** Synchronized `data-project-info` targets (`name`, `description`, `avatar`, `status`, `cost`, `role`, `finishDate`, `progress`, `viewer-model-name`) across `index.html` and `ProjectsManager.ts` using `querySelectorAll` for shared `name`/`description` elements and `querySelector` for individual property nodes. Verified `npm run build` (`422ms`, 0 errors) on branch `project-details`.
+
+
+- **Clean Empty `#viewer-container` Restoration:** Removed static placeholder SVG/toolbar overlays inside `<div id="viewer-container"></div>` so it remains a clean, empty dark container (`background-color: #07090e`) ready for the real Three.js / WebGL canvas in upcoming lessons. Verified `npm run build` (`142ms`, 0 errors).
+
+
+- **Attribute Alignment Confirmation:** Synchronized `data-project-info` targets (`name`, `description`, `avatar`, `status`, `cost`, `role`, `finishDate`, `progress`, `viewer-model-name`) across `index.html` and `ProjectsManager.ts` using `querySelectorAll` for shared `name`/`description` elements and `querySelector` for individual property nodes. Verified `npm run build` (`422ms`, 0 errors) on branch `project-details`.
+
+
+- **Clean Empty `#viewer-container` Restoration:** Removed static placeholder SVG/toolbar overlays inside `<div id="viewer-container"></div>` so it remains a clean, empty dark container (`background-color: #07090e`) ready for the real Three.js / WebGL canvas in upcoming lessons. Verified `npm run build` (`142ms`, 0 errors).
