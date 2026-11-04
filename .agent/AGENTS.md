@@ -23,11 +23,14 @@
 
 ---
 
-## 🧠 RULE #3: ALWAYS UPDATE `.agent/discussions/` (NEVER FORGET PROTOCOL)
-- **Continuous Discussion Memory:** After **every** discussion, Q&A, code review, bug fix, progress update, or architectural change, you **MUST** log and update:
-  1. `D:\Coding\MyLearning\ThatOpenCompany\.agent\discussions\00-discussion-index.md`
-  2. The current date's session log in `D:\Coding\MyLearning\ThatOpenCompany\.agent\discussions\YYYY-MM-DD-session-log.md`
-- Keep lesson completion progress synchronized between `.agent/`, `Master_BIM_Software/`, and the Obsidian Vault (`D:\MyDocs\Obsidien\Myspace\ThatOpenCompany_BIM`).
+## 🧠 RULE #3: ALWAYS UPDATE & PRESERVE DISCUSSIONS (NEVER FORGET PROTOCOL)
+- **Continuous Discussion Memory & Obsidian Sync:** After **every** discussion, Q&A, code review, bug fix, progress update, or architectural change, you **MUST**:
+  1. Append to `D:\Coding\MyLearning\ThatOpenCompany\.agent\discussions\00-discussion-index.md`
+  2. Append to the current date's session log in `D:\Coding\MyLearning\ThatOpenCompany\.agent\discussions\YYYY-MM-DD-session-log.md`
+  3. Mirror and save the discussion log into Obsidian: `D:\MyDocs\Obsidien\Myspace\Snippets & Agent Logs\Discussions - ThatOpenCompany BIM.md`
+- **Never Delete History:** Logs are permanent append-only records. Never delete or overwrite previous logs.
+- **Do Not Add/Modify Without Asking:** Never add or modify any project file without informing the user first.
+- **Verification Prompt:** When delivering critical architectural points, code reviews, or updates, always ask the user to recheck before proceeding.
 
 ---
 

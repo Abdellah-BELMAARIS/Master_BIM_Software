@@ -43,3 +43,16 @@
   - `06 - 🤖 AI for BIM Developers (Fragments Edit API & Agents).md` (0/8 lessons · 0%)
   - `07 - 🎓 Recorded Live Masterclasses (Freedom Course).md` (14 Masterclasses)
   - Updated `00 - 🚀 My Dashboard.md`, `Projects/FullStack Roadmap Board.md`, and `Snippets & Agent Logs/00 - 🤖 Agent Rules, Snippets & Reference Hub.md`.
+
+---
+
+## 📌 Update: Strict Retention, Notification & Obsidian Mirror Protocol
+- **Instruction received:**
+  1. Always save discussions and **never delete past logs**.
+  2. Before making additions or changes, always inform the user first.
+  3. Prompt the user to recheck after critical messages.
+  4. Always save and synchronize discussion logs to Obsidian (`D:\MyDocs\Obsidien\Myspace\Snippets & Agent Logs\Discussions - ThatOpenCompany BIM.md`).
+- **Enforced via:**
+  - `AGENTS.md` (Rule #1 and Rule #3)
+  - `.agent/rules/03-always-log-discussions.md`
+  - Mirrored discussion file in Obsidian vault.
