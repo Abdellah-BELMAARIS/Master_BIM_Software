@@ -312,3 +312,30 @@
   - `02 - ⚡ Creating Interactive Websites.md`
   - `BIM Learning Sprint Board.md`
   - `Discussions - ThatOpenCompany BIM.md`
+
+
+---
+
+## 📌 Part 9 — Module 2 Lesson 3.5: Dynamic Project Card UI Generation (2026-11-04)
+
+### 1. Concepts Mastered & Full-Stack Bridge
+- **Separation of Concerns & Encapsulation:** Moving DOM card generation out of the constructor into a dedicated `setUI()` method improves code readability and maintainability.
+- **Idempotency Guard:** `if (this.ui) { return; }` ensures that invoking `setUI()` multiple times does not recreate redundant DOM nodes in memory.
+- **Template Literals (Backticks):** Multi-line string interpolation (`${this.name}`, `${this.cost}`) dynamically produces the HTML markup for each project card.
+- **Class Properties vs Interface Contracts:**
+  - `IProject` represents data attributes (`name`, `description`, `status`, etc.).
+  - `Project` class encapsulates additional operational state, such as `cost: number = 0`, `progress: number = 0`, and the `ui: HTMLDivElement` node reference.
+
+### 2. Actions Executed
+- Updated [`src/classes/Project.ts`](file:///D:/Coding/MyLearning/ThatOpenCompany/Master_BIM_Software/2-Interactive_Website/src/classes/Project.ts) with `setUI()`, `ui!: HTMLDivElement`, `cost`, and `progress`.
+- Automatically called `this.setUI()` inside the constructor.
+- Verified build with `npx vite build` (165ms).
+
+### 3. Curriculum & Obsidian Milestones
+- **Module 2 Progress:** 11 / 29 lessons (`38%`).
+- **Overall Curriculum Progress:** 27 / 130 lessons (`20.8%`).
+- **Next Target:** `3.6. Managing the projects (09:21)`.
+- **Obsidian Synced:**
+  - `02 - ⚡ Creating Interactive Websites.md`
+  - `BIM Learning Sprint Board.md`
+  - `Discussions - ThatOpenCompany BIM.md`
