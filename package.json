@@ -1,0 +1,9 @@
+{
+  "name": "that-open-company-curriculum",
+  "private": true,
+  "description": "Master BIM Software Development Workspace",
+  "scripts": {
+    "dev": "npm --prefix Master_BIM_Software/2-Interactive_Website run dev",
+    "dev:m2": "npm --prefix Master_BIM_Software/2-Interactive_Website run dev"
+  }
+}
