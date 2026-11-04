@@ -1,0 +1,972 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projects Dashboard — Construction Company</title>
+    <!-- Google Material Icons Round -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons+Round">
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar">
+        <img id="company-logo" src="./assets/company-logo.svg" alt="Construction Company">
+
+        <ul id="nav-buttons">
+            <li class="nav-item active" id="nav-projects-btn">
+                <span class="material-icons-round">apartment</span>
+                <span>Projects</span>
+            </li>
+            <li class="nav-item" id="nav-users-btn">
+                <span class="material-icons-round">person</span>
+                <span>Users</span>
+            </li>
+        </ul>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main id="content">
+        <!-- Page 1: Projects List Page (Enclosed in .page container) -->
+        <div class="page" id="projects-page">
+            <!-- Top Action Header -->
+            <header id="main-header">
+                <h2>Projects</h2>
+                <div class="header-actions">
+                    <button class="btn-icon" title="Import Projects">
+                        <span class="material-icons-round">upload</span>
+                    </button>
+                    <button class="btn-primary" id="new-project-btn">
+                        <span class="material-icons-round">add</span>
+                        <span>New Project</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Projects Grid -->
+            <section id="projects-list">
+                <!-- Project 1: Hospital Center (Clickable to view details) -->
+                <article class="project-card" id="hospital-center-card" style="cursor: pointer;" title="Click to view Project Details">
+                    <div class="card-header">
+                        <div class="card-avatar badge-orange">HC</div>
+                        <div class="card-title-group">
+                            <h3>Hospital Center</h3>
+                            <p>Community hospital located at downtown</p>
+                        </div>
+                    </div>
+                    <div class="card-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Status</span>
+                            <span class="detail-value">Active</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Role</span>
+                            <span class="detail-value">Engineer</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Cost</span>
+                            <span class="detail-value">$ 2'000.000</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Estimated Progress</span>
+                            <span class="detail-value">43%</span>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Project 2: Default Project -->
+                <article class="project-card">
+                    <div class="card-header">
+                        <div class="card-avatar badge-green">DE</div>
+                        <div class="card-title-group">
+                            <h3>Default Project</h3>
+                            <p>This is just a default project. You may deleted if you want.</p>
+                        </div>
+                    </div>
+                    <div class="card-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Status</span>
+                            <span class="detail-value">Active</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Role</span>
+                            <span class="detail-value">Architect</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Cost</span>
+                            <span class="detail-value">$ 0</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Estimated Progress</span>
+                            <span class="detail-value">0%</span>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Project 3: Urban Oasis Park -->
+                <article class="project-card">
+                    <div class="card-header">
+                        <div class="card-avatar badge-purple">UR</div>
+                        <div class="card-title-group">
+                            <h3>Urban Oasis Park</h3>
+                            <p>City park with green spaces and events.</p>
+                        </div>
+                    </div>
+                    <div class="card-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Status</span>
+                            <span class="detail-value">Pending</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Role</span>
+                            <span class="detail-value">Architect</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Cost</span>
+                            <span class="detail-value">$ 0</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Estimated Progress</span>
+                            <span class="detail-value">0%</span>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Project 4: TechHub Innovation -->
+                <article class="project-card">
+                    <div class="card-header">
+                        <div class="card-avatar badge-green">TE</div>
+                        <div class="card-title-group">
+                            <h3>TechHub Innovation</h3>
+                            <p>Tech collaboration center.</p>
+                        </div>
+                    </div>
+                    <div class="card-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Status</span>
+                            <span class="detail-value">Pending</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Role</span>
+                            <span class="detail-value">Architect</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Cost</span>
+                            <span class="detail-value">$ 0</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Estimated Progress</span>
+                            <span class="detail-value">0%</span>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Project 5: Sustainable Housing -->
+                <article class="project-card">
+                    <div class="card-header">
+                        <div class="card-avatar badge-green">SU</div>
+                        <div class="card-title-group">
+                            <h3>Sustainable Housing</h3>
+                            <p>Eco-friendly homes community.</p>
+                        </div>
+                    </div>
+                    <div class="card-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Status</span>
+                            <span class="detail-value">Active</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Role</span>
+                            <span class="detail-value">Engineer</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Cost</span>
+                            <span class="detail-value">$ 0</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Estimated Progress</span>
+                            <span class="detail-value">0%</span>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Project 6: Heritage Restoration -->
+                <article class="project-card">
+                    <div class="card-header">
+                        <div class="card-avatar badge-magenta">HE</div>
+                        <div class="card-title-group">
+                            <h3>Heritage Restoration</h3>
+                            <p>Reviving historic landmark.</p>
+                        </div>
+                    </div>
+                    <div class="card-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Status</span>
+                            <span class="detail-value">Finished</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Role</span>
+                            <span class="detail-value">Developer</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Cost</span>
+                            <span class="detail-value">$ 0</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Estimated Progress</span>
+                            <span class="detail-value">0%</span>
+                        </div>
+                    </div>
+                </article>
+
+                <!-- Project 7: Educational Outreach -->
+                <article class="project-card">
+                    <div class="card-header">
+                        <div class="card-avatar badge-blue">ED</div>
+                        <div class="card-title-group">
+                            <h3>Educational Outreach</h3>
+                            <p>Empowering underserved students.</p>
+                        </div>
+                    </div>
+                    <div class="card-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Status</span>
+                            <span class="detail-value">Active</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Role</span>
+                            <span class="detail-value">Architect</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Cost</span>
+                            <span class="detail-value">$ 0</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Estimated Progress</span>
+                            <span class="detail-value">0%</span>
+                        </div>
+                    </div>
+                </article>
+            </section>
+
+            <!-- Floating Export Button -->
+            <button id="floating-export-btn" class="fab-btn" title="Export Projects">
+                <span class="material-icons-round">download</span>
+            </button>
+        </div>
+
+        <!-- Page 2: Project Details Page (Matches 4.png) -->
+        <div class="page" id="project-details" style="display: none;">
+            <!-- Details Header -->
+            <header id="details-header">
+                <div>
+                    <h2 id="details-page-title">Hospital Center</h2>
+                    <p id="details-page-desc" style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.25rem;">Community hospital located at downtown</p>
+                </div>
+            </header>
+
+            <!-- Details Content Grid: Left Column (Cards/ToDos) + Right Column (IFC 3D Viewer) -->
+            <div class="main-page-content">
+                <!-- Left Column: Details Card & To-Do List -->
+                <div class="details-left-column">
+                    <!-- Project Details Card (Matches 4.png) -->
+                    <article class="project-card details-card">
+                        <div class="details-card-top">
+                            <div class="card-avatar-circle badge-orange" id="details-avatar">HC</div>
+                            <button class="btn-edit" id="edit-project-btn">Edit</button>
+                        </div>
+
+                        <div class="details-title-group">
+                            <h3 id="details-card-title">Hospital Center</h3>
+                            <p id="details-card-desc">Community hospital located at downtown</p>
+                        </div>
+
+                        <div class="details-properties-row">
+                            <div class="prop-col">
+                                <span class="prop-label">Status</span>
+                                <span class="prop-val" id="details-status">Active</span>
+                            </div>
+                            <div class="prop-col">
+                                <span class="prop-label">Cost</span>
+                                <span class="prop-val" id="details-cost">$ 2'000.000</span>
+                            </div>
+                            <div class="prop-col">
+                                <span class="prop-label">Role</span>
+                                <span class="prop-val" id="details-role">Engineer</span>
+                            </div>
+                            <div class="prop-col">
+                                <span class="prop-label">Finish Date</span>
+                                <span class="prop-val" id="details-date">2023-05-01</span>
+                            </div>
+                        </div>
+
+                        <!-- Progress Bar (Matches 4.png 80% Green) -->
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" id="details-progress-fill" style="width: 80%;">80%</div>
+                        </div>
+                    </article>
+
+                    <!-- To-Do List Container (Matches 4.png) -->
+                    <div class="todos-container">
+                        <div class="todos-header-row">
+                            <h4>To-Do</h4>
+                            <div class="todos-actions-group">
+                                <div class="search-input-pill">
+                                    <span class="material-icons-round">search</span>
+                                    <input type="text" id="todo-search-input" placeholder="Search To-Do's by name">
+                                </div>
+                                <button class="btn-icon-box" id="add-todo-btn" title="Add To-Do">
+                                    <span class="material-icons-round">add</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- To-Do Items List -->
+                        <div class="todos-list" id="todos-list">
+                            <div class="todo-card-item">
+                                <div class="todo-card-left">
+                                    <div class="todo-icon-box">
+                                        <span class="material-icons-round">construction</span>
+                                    </div>
+                                    <p class="todo-desc">Make anything here as you want, even something longer.</p>
+                                </div>
+                                <span class="todo-date-tag">Fri, 20 sep</span>
+                            </div>
+
+                            <div class="todo-card-item">
+                                <div class="todo-card-left">
+                                    <div class="todo-icon-box">
+                                        <span class="material-icons-round">construction</span>
+                                    </div>
+                                    <p class="todo-desc">Make anything here as you want, even something longer.</p>
+                                </div>
+                                <span class="todo-date-tag">Fri, 20 sep</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: IFC 3D Viewer Viewport (Matches 4.png) -->
+                <div id="viewer-container">
+                </div>
+            </div>
+        </div>
+
+        <!-- Page 3: Users / Team Page (Module 1 Challenge) -->
+        <div class="page" id="users-page" style="display: none;">
+            <!-- Users Header -->
+            <header id="users-header">
+                <div>
+                    <h2>Users</h2>
+                    <p style="color: var(--text-secondary); font-size: 0.85rem; margin-top: 0.25rem;">Manage team members, roles, and BIM model permissions</p>
+                </div>
+                <div class="header-actions">
+                    <button class="btn-primary" id="new-user-btn">
+                        <span class="material-icons-round">person_add</span>
+                        <span>New User</span>
+                    </button>
+                </div>
+            </header>
+
+            <div class="users-content-area">
+                <!-- Search & Role Filter Toolbar -->
+                <div class="users-toolbar">
+                    <div class="search-input-pill" style="width: 280px;">
+                        <span class="material-icons-round">search</span>
+                        <input type="text" placeholder="Search users by name or email..." style="width: 100%;">
+                    </div>
+                    <div class="users-filter-group">
+                        <span class="filter-pill active">All (4)</span>
+                        <span class="filter-pill">Architects</span>
+                        <span class="filter-pill">Engineers</span>
+                        <span class="filter-pill">Developers</span>
+                    </div>
+                </div>
+
+                <!-- Modern BIM Users Table Layout (Distinct from cards) -->
+                <div class="users-table-container">
+                    <table class="users-table">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Role</th>
+                                <th>Assigned Projects</th>
+                                <th>Status</th>
+                                <th style="text-align: right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>
+                                    <div class="user-cell">
+                                        <div class="user-avatar-circle badge-blue">AB</div>
+                                        <div>
+                                            <div class="user-name">Abdellah Belmaaris</div>
+                                            <div class="user-email">a.belmaaris@bimpulse.com</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="role-badge role-dev">Full-Stack Dev</span></td>
+                                <td>Hospital Center, Urban Oasis</td>
+                                <td><span class="status-indicator status-online">Active</span></td>
+                                <td style="text-align: right;">
+                                    <button class="btn-icon" title="Options"><span class="material-icons-round">more_vert</span></button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="user-cell">
+                                        <div class="user-avatar-circle badge-orange">JB</div>
+                                        <div>
+                                            <div class="user-name">Juan Brunetta</div>
+                                            <div class="user-email">j.brunetta@thatopen.com</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="role-badge role-arch">Lead Architect</span></td>
+                                <td>Hospital Center, TechHub</td>
+                                <td><span class="status-indicator status-online">Active</span></td>
+                                <td style="text-align: right;">
+                                    <button class="btn-icon" title="Options"><span class="material-icons-round">more_vert</span></button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="user-cell">
+                                        <div class="user-avatar-circle badge-green">VA</div>
+                                        <div>
+                                            <div class="user-name">Valeria Alarcon</div>
+                                            <div class="user-email">v.alarcon@thatopen.com</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="role-badge role-eng">Structural Engineer</span></td>
+                                <td>Sustainable Housing</td>
+                                <td><span class="status-indicator status-online">Active</span></td>
+                                <td style="text-align: right;">
+                                    <button class="btn-icon" title="Options"><span class="material-icons-round">more_vert</span></button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="user-cell">
+                                        <div class="user-avatar-circle badge-purple">SC</div>
+                                        <div>
+                                            <div class="user-name">Sarah Connor</div>
+                                            <div class="user-email">s.connor@bimpulse.com</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="role-badge role-bim">BIM Coordinator</span></td>
+                                <td>Heritage Restoration</td>
+                                <td><span class="status-indicator status-offline">Away</span></td>
+                                <td style="text-align: right;">
+                                    <button class="btn-icon" title="Options"><span class="material-icons-round">more_vert</span></button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- New User Modal Dialog (Module 1 Challenge) -->
+        <dialog id="new-user-modal">
+            <form id="new-user-form">
+                <h2>New User</h2>
+                <div class="input-list">
+                    <div class="form-field">
+                        <label><span class="material-icons-round">person</span> Full Name</label>
+                        <input type="text" id="user-name-input" placeholder="e.g. Alex Morgan" required>
+                    </div>
+
+                    <div class="form-field">
+                        <label><span class="material-icons-round">email</span> Email</label>
+                        <input type="email" id="user-email-input" placeholder="alex@company.com" required>
+                    </div>
+
+                    <div class="form-field">
+                        <label><span class="material-icons-round">badge</span> Role</label>
+                        <select id="user-role-input">
+                            <option value="Architect">Architect</option>
+                            <option value="Engineer">Engineer</option>
+                            <option value="Developer">Developer</option>
+                            <option value="BIM Coordinator">BIM Coordinator</option>
+                        </select>
+                    </div>
+
+                    <div class="form-field">
+                        <label><span class="material-icons-round">check_circle</span> Status</label>
+                        <select id="user-status-input">
+                            <option value="Active">Active</option>
+                            <option value="Away">Away</option>
+                            <option value="Offline">Offline</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" id="cancel-user-btn" class="btn-cancel">Cancel</button>
+                    <button type="submit" class="btn-accept">Create User</button>
+                </div>
+            </form>
+        </dialog>
+
+        <!-- New Project Modal Dialog (Matches 2.png) -->
+        <dialog id="new-project-modal">
+            <form id="new-project-form">
+                <h2 id="project-modal-title">New project</h2>
+                <div class="input-list">
+                    <div class="form-field">
+                        <label><span class="material-icons-round">corporate_fare</span> Name</label>
+                        <input type="text" id="project-name-input" placeholder="Riverfront Promenade" required>
+                        <p class="input-tip">TIP: Give it a short name (min. 5 chars).</p>
+                    </div>
+
+                    <div class="form-field">
+                        <label><span class="material-icons-round">subject</span> Description</label>
+                        <textarea id="project-desc-input" placeholder="Give your project a nice description! So people is jealous about it." rows="3"></textarea>
+                    </div>
+
+                    <div class="form-field">
+                        <label><span class="material-icons-round">person</span> Role</label>
+                        <select id="project-role-input">
+                            <option value="Architect">Architect</option>
+                            <option value="Engineer">Engineer</option>
+                            <option value="Developer">Developer</option>
+                        </select>
+                    </div>
+
+                    <div class="form-field">
+                        <label><span class="material-icons-round">help_outline</span> Status</label>
+                        <select id="project-status-input">
+                            <option value="Pending">Pending</option>
+                            <option value="Active">Active</option>
+                            <option value="Finished">Finished</option>
+                        </select>
+                    </div>
+
+                    <div class="form-field">
+                        <label><span class="material-icons-round">calendar_today</span> Finish Date</label>
+                        <input type="date" id="project-date-input">
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" id="cancel-btn" class="btn-cancel">Cancel</button>
+                    <button type="submit" id="project-submit-btn" class="btn-accept">Accept</button>
+                </div>
+            </form>
+        </dialog>
+    </main>
+
+    <!-- Page Switching & Modal Scripts -->
+    <script>
+        // =========================================================================
+        // State & Navigation
+        // =========================================================================
+        const pages = {
+            projects: document.getElementById("projects-page"),
+            details: document.getElementById("project-details"),
+            users: document.getElementById("users-page")
+        };
+
+        const navProjects = document.getElementById("nav-projects-btn");
+        const navUsers = document.getElementById("nav-users-btn");
+        let currentActiveCard = document.getElementById("hospital-center-card");
+        let isEditingProject = false;
+
+        function navigateTo(targetPage) {
+            Object.values(pages).forEach(page => {
+                if (page) page.style.display = "none";
+            });
+
+            if (pages[targetPage]) {
+                pages[targetPage].style.display = "flex";
+            }
+
+            if (navProjects) navProjects.classList.toggle("active", targetPage === "projects" || targetPage === "details");
+            if (navUsers) navUsers.classList.toggle("active", targetPage === "users");
+        }
+
+        if (navProjects) navProjects.addEventListener("click", () => navigateTo("projects"));
+        if (navUsers) navUsers.addEventListener("click", () => navigateTo("users"));
+
+        // =========================================================================
+        // Project Details Population & Card Binding
+        // =========================================================================
+        function populateDetailsFromCard(card) {
+            currentActiveCard = card;
+
+            const name = card.querySelector(".card-title-group h3")?.textContent || "Project Details";
+            const desc = card.querySelector(".card-title-group p")?.textContent || "";
+            const avatar = card.querySelector(".card-avatar");
+            const initials = avatar?.textContent || "PR";
+            const badgeClass = Array.from(avatar?.classList || []).find(c => c.startsWith("badge-")) || "badge-orange";
+
+            // Extract detail rows
+            const detailsMap = {};
+            card.querySelectorAll(".detail-row").forEach(row => {
+                const label = row.querySelector(".detail-label")?.textContent?.trim();
+                const val = row.querySelector(".detail-value")?.textContent?.trim();
+                if (label) detailsMap[label] = val;
+            });
+
+            // Update Details Header
+            const pageTitle = document.getElementById("details-page-title");
+            const pageDesc = document.getElementById("details-page-desc");
+            if (pageTitle) pageTitle.textContent = name;
+            if (pageDesc) pageDesc.textContent = desc;
+
+            // Update Details Card
+            const detailsAvatar = document.getElementById("details-avatar");
+            const detailsCardTitle = document.getElementById("details-card-title");
+            const detailsCardDesc = document.getElementById("details-card-desc");
+            const detailsStatus = document.getElementById("details-status");
+            const detailsCost = document.getElementById("details-cost");
+            const detailsRole = document.getElementById("details-role");
+            const detailsFill = document.getElementById("details-progress-fill");
+
+            if (detailsAvatar) {
+                detailsAvatar.textContent = initials;
+                detailsAvatar.className = `card-avatar-circle ${badgeClass}`;
+            }
+            if (detailsCardTitle) detailsCardTitle.textContent = name;
+            if (detailsCardDesc) detailsCardDesc.textContent = desc;
+            if (detailsStatus) detailsStatus.textContent = detailsMap["Status"] || "Active";
+            if (detailsCost) detailsCost.textContent = detailsMap["Cost"] || "$ 0";
+            if (detailsRole) detailsRole.textContent = detailsMap["Role"] || "Engineer";
+
+            const progressVal = detailsMap["Estimated Progress"] || "50%";
+            if (detailsFill) {
+                detailsFill.style.width = progressVal;
+                detailsFill.textContent = progressVal;
+            }
+
+            navigateTo("details");
+        }
+
+        function bindProjectCard(card) {
+            card.style.cursor = "pointer";
+            card.addEventListener("click", () => populateDetailsFromCard(card));
+        }
+
+        // Bind all existing project cards
+        document.querySelectorAll("#projects-list .project-card").forEach(bindProjectCard);
+
+        // =========================================================================
+        // Project Modal & Form (Create + Edit)
+        // =========================================================================
+        const projectModal = document.getElementById("new-project-modal");
+        const projectForm = document.getElementById("new-project-form");
+        const newProjectBtn = document.getElementById("new-project-btn");
+        const cancelProjectBtn = document.getElementById("cancel-btn");
+        const projectModalTitle = document.getElementById("project-modal-title");
+        const projectSubmitBtn = document.getElementById("project-submit-btn");
+
+        const projectNameInput = document.getElementById("project-name-input");
+        const projectDescInput = document.getElementById("project-desc-input");
+        const projectRoleInput = document.getElementById("project-role-input");
+        const projectStatusInput = document.getElementById("project-status-input");
+        const projectDateInput = document.getElementById("project-date-input");
+
+        const editProjectBtn = document.getElementById("edit-project-btn");
+
+        // Open in Create mode
+        if (newProjectBtn && projectModal) {
+            newProjectBtn.addEventListener("click", () => {
+                isEditingProject = false;
+                projectModalTitle.textContent = "New project";
+                projectSubmitBtn.textContent = "Accept";
+                projectForm.reset();
+                // Set default date (today) if empty
+                if (projectDateInput) projectDateInput.value = new Date().toISOString().split("T")[0];
+                projectModal.showModal();
+            });
+        }
+
+        // Open in Edit mode
+        if (editProjectBtn && projectModal) {
+            editProjectBtn.addEventListener("click", () => {
+                isEditingProject = true;
+                projectModalTitle.textContent = "Edit Project";
+                projectSubmitBtn.textContent = "Save Changes";
+
+                if (currentActiveCard) {
+                    projectNameInput.value = currentActiveCard.querySelector(".card-title-group h3")?.textContent || "";
+                    projectDescInput.value = currentActiveCard.querySelector(".card-title-group p")?.textContent || "";
+
+                    const rows = currentActiveCard.querySelectorAll(".detail-row");
+                    rows.forEach(r => {
+                        const label = r.querySelector(".detail-label")?.textContent?.trim();
+                        const val = r.querySelector(".detail-value")?.textContent?.trim();
+                        if (label === "Role" && projectRoleInput) projectRoleInput.value = val;
+                        if (label === "Status" && projectStatusInput) projectStatusInput.value = val;
+                    });
+                }
+                projectModal.showModal();
+            });
+        }
+
+        if (cancelProjectBtn && projectModal) {
+            cancelProjectBtn.addEventListener("click", () => projectModal.close());
+        }
+        if (projectModal) {
+            projectModal.addEventListener("click", (e) => {
+                if (e.target === projectModal) projectModal.close();
+            });
+        }
+
+        // Handle Project Form Submission (Create / Edit)
+        if (projectForm) {
+            projectForm.addEventListener("submit", (e) => {
+                e.preventDefault();
+
+                const name = projectNameInput.value.trim();
+                const desc = projectDescInput.value.trim() || "No description provided.";
+                const role = projectRoleInput.value;
+                const status = projectStatusInput.value;
+                const date = projectDateInput.value || new Date().toISOString().split("T")[0];
+
+                // Input validation: min 5 chars (Challenge requirement)
+                if (name.length < 5) {
+                    alert("Project name must be at least 5 characters long!");
+                    return;
+                }
+
+                // First two letters uppercased
+                const initials = name.slice(0, 2).toUpperCase();
+
+                if (isEditingProject && currentActiveCard) {
+                    // Update existing card in grid
+                    const titleEl = currentActiveCard.querySelector(".card-title-group h3");
+                    const descEl = currentActiveCard.querySelector(".card-title-group p");
+                    const avatarEl = currentActiveCard.querySelector(".card-avatar");
+
+                    if (titleEl) titleEl.textContent = name;
+                    if (descEl) descEl.textContent = desc;
+                    if (avatarEl) avatarEl.textContent = initials;
+
+                    currentActiveCard.querySelectorAll(".detail-row").forEach(r => {
+                        const label = r.querySelector(".detail-label")?.textContent?.trim();
+                        const val = r.querySelector(".detail-value");
+                        if (label === "Role" && val) val.textContent = role;
+                        if (label === "Status" && val) val.textContent = status;
+                    });
+
+                    // Update details view immediately
+                    populateDetailsFromCard(currentActiveCard);
+                } else {
+                    // Create new project card
+                    const colors = ["badge-orange", "badge-green", "badge-purple", "badge-blue"];
+                    const randomColor = colors[Math.floor(Math.random() * colors.length)];
+
+                    const card = document.createElement("article");
+                    card.className = "project-card";
+                    card.innerHTML = `
+                        <div class="card-header">
+                            <div class="card-avatar ${randomColor}">${initials}</div>
+                            <div class="card-title-group">
+                                <h3>${name}</h3>
+                                <p>${desc}</p>
+                            </div>
+                        </div>
+                        <div class="card-details">
+                            <div class="detail-row">
+                                <span class="detail-label">Status</span>
+                                <span class="detail-value">${status}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Role</span>
+                                <span class="detail-value">${role}</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Cost</span>
+                                <span class="detail-value">$ 0</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Estimated Progress</span>
+                                <span class="detail-value">0%</span>
+                            </div>
+                        </div>
+                    `;
+
+                    bindProjectCard(card);
+                    const projectsList = document.getElementById("projects-list");
+                    if (projectsList) projectsList.prepend(card);
+                }
+
+                projectModal.close();
+                projectForm.reset();
+            });
+        }
+
+        // =========================================================================
+        // To-Do System (Add, Toggle Complete, Search)
+        // =========================================================================
+        const todosList = document.getElementById("todos-list");
+        const addTodoBtn = document.getElementById("add-todo-btn");
+        const todoSearchInput = document.getElementById("todo-search-input");
+
+        // Toggle To-Do completion
+        function bindTodoItem(item) {
+            item.addEventListener("click", () => {
+                item.classList.toggle("completed");
+            });
+        }
+        document.querySelectorAll(".todo-card-item").forEach(bindTodoItem);
+
+        // Add new To-Do
+        if (addTodoBtn && todosList) {
+            addTodoBtn.addEventListener("click", () => {
+                const text = prompt("Enter new To-Do item:");
+                if (!text || text.trim() === "") return;
+
+                const now = new Date();
+                const options = { weekday: 'short', day: 'numeric', month: 'short' };
+                const dateStr = now.toLocaleDateString('en-US', options);
+
+                const item = document.createElement("div");
+                item.className = "todo-card-item";
+                item.innerHTML = `
+                    <div class="todo-card-left">
+                        <div class="todo-icon-box">
+                            <span class="material-icons-round">construction</span>
+                        </div>
+                        <p class="todo-desc">${text.trim()}</p>
+                    </div>
+                    <span class="todo-date-tag">${dateStr}</span>
+                `;
+
+                bindTodoItem(item);
+                todosList.prepend(item);
+            });
+        }
+
+        // Search To-Do by text
+        if (todoSearchInput && todosList) {
+            todoSearchInput.addEventListener("input", (e) => {
+                const query = e.target.value.toLowerCase().trim();
+                todosList.querySelectorAll(".todo-card-item").forEach(item => {
+                    const desc = item.querySelector(".todo-desc")?.textContent.toLowerCase() || "";
+                    item.style.display = desc.includes(query) ? "flex" : "none";
+                });
+            });
+        }
+
+        // =========================================================================
+        // Users Management (Create User Modal & Filter Pills)
+        // =========================================================================
+        const userModal = document.getElementById("new-user-modal");
+        const userForm = document.getElementById("new-user-form");
+        const newUserBtn = document.getElementById("new-user-btn");
+        const cancelUserBtn = document.getElementById("cancel-user-btn");
+        const usersTableBody = document.querySelector(".users-table tbody");
+
+        if (newUserBtn && userModal) {
+            newUserBtn.addEventListener("click", () => {
+                userForm.reset();
+                userModal.showModal();
+            });
+        }
+        if (cancelUserBtn && userModal) {
+            cancelUserBtn.addEventListener("click", () => userModal.close());
+        }
+        if (userModal) {
+            userModal.addEventListener("click", (e) => {
+                if (e.target === userModal) userModal.close();
+            });
+        }
+
+        // Add User Form Submission
+        if (userForm && usersTableBody) {
+            userForm.addEventListener("submit", (e) => {
+                e.preventDefault();
+
+                const name = document.getElementById("user-name-input").value.trim();
+                const email = document.getElementById("user-email-input").value.trim();
+                const role = document.getElementById("user-role-input").value;
+                const status = document.getElementById("user-status-input").value;
+
+                // Initials
+                const parts = name.split(" ").filter(Boolean);
+                const initials = parts.length > 1
+                    ? (parts[0][0] + parts[1][0]).toUpperCase()
+                    : name.slice(0, 2).toUpperCase();
+
+                // Role Badge class mapping
+                const roleClassMap = {
+                    "Developer": "role-dev",
+                    "Architect": "role-arch",
+                    "Engineer": "role-eng",
+                    "BIM Coordinator": "role-bim"
+                };
+                const roleClass = roleClassMap[role] || "role-dev";
+                const isOnline = status === "Active";
+
+                const colors = ["badge-blue", "badge-purple", "badge-orange", "badge-green"];
+                const avatarColor = colors[Math.floor(Math.random() * colors.length)];
+
+                const tr = document.createElement("tr");
+                tr.innerHTML = `
+                    <td>
+                        <div class="user-cell">
+                            <div class="user-avatar-circle ${avatarColor}">${initials}</div>
+                            <div>
+                                <div class="user-name">${name}</div>
+                                <div class="user-email">${email}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td><span class="role-badge ${roleClass}">${role}</span></td>
+                    <td>General</td>
+                    <td><span class="status-indicator ${isOnline ? 'status-online' : 'status-offline'}">${status}</span></td>
+                    <td style="text-align: right;">
+                        <button class="btn-icon" title="Options"><span class="material-icons-round">more_vert</span></button>
+                    </td>
+                `;
+
+                usersTableBody.prepend(tr);
+
+                // Update All (N) count
+                const allPill = document.querySelector(".users-filter-group .filter-pill:first-child");
+                if (allPill) {
+                    const currentCount = usersTableBody.querySelectorAll("tr").length;
+                    allPill.textContent = `All (${currentCount})`;
+                }
+
+                userModal.close();
+                userForm.reset();
+            });
+        }
+
+        // Role Filter Pills
+        const filterPills = document.querySelectorAll(".users-filter-group .filter-pill");
+        filterPills.forEach(pill => {
+            pill.addEventListener("click", () => {
+                filterPills.forEach(p => p.classList.remove("active"));
+                pill.classList.add("active");
+
+                const filterText = pill.textContent.toLowerCase();
+                const rows = usersTableBody.querySelectorAll("tr");
+
+                rows.forEach(row => {
+                    const roleText = row.querySelector(".role-badge")?.textContent.toLowerCase() || "";
+                    if (filterText.includes("all")) {
+                        row.style.display = "";
+                    } else if (filterText.includes("architect") && roleText.includes("architect")) {
+                        row.style.display = "";
+                    } else if (filterText.includes("engineer") && roleText.includes("engineer")) {
+                        row.style.display = "";
+                    } else if (filterText.includes("developer") && roleText.includes("dev")) {
+                        row.style.display = "";
+                    } else {
+                        row.style.display = "none";
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

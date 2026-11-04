@@ -34,7 +34,7 @@ Welcome to the `.agent` workspace directory for **Abdellah BELMAARIS** (`ThatOpe
 
 | # | Folder | Course Module | Sections | Lessons | Duration | Progress | Status |
 |:---:|:---|:---|:---:|:---:|:---:|:---:|:---:|
-| **01** | `1-Static_website` | **Creating Static Websites** | 4 | `9 / 16` | `1 hr 19 min` | **56%** | 🔄 In Progress (Next: `2.9 Structuring and styling a project card`) |
+| **01** | `1-Static_website` | **Creating Static Websites** | 4 | `10 / 16` | `1 hr 19 min` | **63%** | 🔄 In Progress (Next: `2.10 Making the projects page responsive`) |
 | **02** | `2-Interactive_Website` | **Creating Interactive Websites** | 6 | `0 / 29` | `2 hr 44 min` | **0%** | 📅 Queued |
 | **03** | `3-Reactive_Apps` | **Creating Reactive Apps** | 5 | `0 / 27` | `3 hr 18 min` | **0%** | 📅 Queued |
 | **04** | `4-BIM_Apps` | **Creating BIM Apps** | 6 | `0 / 30` | `3 hr 36 min` | **0%** | 📅 Queued |
@@ -43,7 +43,7 @@ Welcome to the `.agent` workspace directory for **Abdellah BELMAARIS** (`ThatOpe
 | **07** | `7-Freedom_Course` | **Recorded Live Masterclasses** | 1 | `0 / 14` | `14 Sessions` | **0%** | 📅 Reference / Deep Dive |
 
 - **Total Core Curriculum:** `6 Modules` · `29 Sections` · `130 Lessons` · **`13 hr 39 min`** (+ `14 Recorded Live Masterclasses`).
-- **Current Active Lesson:** **Module 1 — Lesson 2.9: Structuring and styling a project card (`07:47`)** (Lessons `1.1` through `2.8` completed).
+- **Current Active Lesson:** **Module 1 — Lesson 2.10: Making the projects page responsive (`03:34`)** (Lessons `1.1` through `2.9` completed).
 
 ---
 
