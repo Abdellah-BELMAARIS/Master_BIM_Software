@@ -1,12 +1,11 @@
-// Lesson 3.2: Creating a project class
-// 1. Importing the Project class blueprint from its module
-import { Project } from "./classes/Project.js";
+// Lesson 3.3: Introducing Typescript to the code
+import { Project } from "./classes/Project";
 
-// Lesson 2.4: Flow control with conditional statements
-// Dynamic function to show dialogs safely
-const showModal = (id) => {
+// 1. Statically typed function parameter (id: string)
+// 2. Type Guard using 'instanceof HTMLDialogElement' to safely invoke .showModal()
+const showModal = (id: string) => {
     const modal = document.getElementById(id);
-    if (modal && "showModal" in modal) {
+    if (modal && modal instanceof HTMLDialogElement) {
         modal.showModal();
     } else {
         console.warn(`The provided modal with id "${id}" was not found`);
@@ -23,18 +22,17 @@ if (newProjectBtn) {
     console.warn("New projects button was not found");
 }
 
-// Lesson 2.5 & 3.2: Catching up form data & creating Project instances
+// Referencing the project form
 const projectForm = document.getElementById("new-project-form");
 
-if (projectForm) {
+// Lesson 3.3 Assignment: Type guard with 'instanceof HTMLFormElement'
+// Explanation: getElementById returns HTMLElement, but FormData constructor requires HTMLFormElement.
+if (projectForm && projectForm instanceof HTMLFormElement) {
     projectForm.addEventListener("submit", (e) => {
-        // Prevent default browser behavior (page reload)
         e.preventDefault();
 
-        // Getting form data using FormData class
         const formData = new FormData(projectForm);
 
-        // Gathering input data into a project data object
         const projectData = {
             name: formData.get("name"),
             description: formData.get("description"),
@@ -43,12 +41,9 @@ if (projectForm) {
             finishDate: formData.get("finishDate"),
         };
 
-        // Lesson 3.2: Creating a new instance of the Project class
         const project = new Project(projectData);
-
-        // Logging the created instance to the console
         console.log("New Project Instance Created:", project);
     });
 } else {
-    console.warn("Project form was not found");
+    console.warn("Project form was not found or is not an HTMLFormElement");
 }

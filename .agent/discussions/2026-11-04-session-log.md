@@ -243,3 +243,37 @@
   - `02 - ⚡ Creating Interactive Websites.md`
   - `BIM Learning Sprint Board.md`
   - `Discussions - ThatOpenCompany BIM.md`
+
+
+---
+
+## 📌 Part 7 — Module 2 Lesson 3.3: Introducing TypeScript & Type Guards (2026-11-04)
+
+### 1. Concepts Mastered & Python Comparison
+- **Dynamic Typing Pitfall:** `5 + "10"` producing `"510"` without compile errors illustrates how dynamically typed languages (JS/Python) defer errors to runtime.
+- **Static Typing in BIM Engineering:** TypeScript enforces contract types at write-time, preventing silent data corruption across BIM property sets and IFC schemas.
+- **Type Guards with `instanceof`:**
+  - `document.getElementById` returns `HTMLElement | null`.
+  - Calling `.showModal()` fails TypeScript compilation because generic `HTMLElement` doesn't have dialog methods.
+  - Solution: Type guard `if (modal && modal instanceof HTMLDialogElement) { modal.showModal(); }`.
+- **Lesson Assignment Solved:**
+  - *Warning:* `new FormData(projectForm)` triggers a type error if `projectForm` is typed as `HTMLElement`.
+  - *Cause:* `FormData` expects `HTMLFormElement | undefined`.
+  - *Fix:* Type guard `if (projectForm && projectForm instanceof HTMLFormElement)`.
+
+### 2. Actions Executed
+- Installed `typescript` via `npm i typescript --save-dev` in `Master_BIM_Software/2-Interactive_Website`.
+- Renamed and migrated files to `.ts`:
+  - [`src/index.ts`](file:///D:/Coding/MyLearning/ThatOpenCompany/Master_BIM_Software/2-Interactive_Website/src/index.ts)
+  - [`src/classes/Project.ts`](file:///D:/Coding/MyLearning/ThatOpenCompany/Master_BIM_Software/2-Interactive_Website/src/classes/Project.ts)
+- Updated `index.html` to reference `<script type="module" src="./src/index.ts"></script>`.
+- Verified clean compilation with `npx vite build` (188ms).
+
+### 3. Curriculum & Obsidian Milestones
+- **Module 2 Progress:** 9 / 29 lessons (`31%`).
+- **Overall Curriculum Progress:** 25 / 130 lessons (`19.2%`).
+- **Next Target:** `3.4. Using custom types for the Project class (08:21)`.
+- **Obsidian Synced:**
+  - `02 - ⚡ Creating Interactive Websites.md`
+  - `BIM Learning Sprint Board.md`
+  - `Discussions - ThatOpenCompany BIM.md`

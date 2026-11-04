@@ -1,5 +1,11 @@
 export class Project {
-    constructor(data) {
+    name: string;
+    description: string;
+    userRole: string;
+    status: string;
+    finishDate: string;
+
+    constructor(data: any) {
         // 'this' refers to the newly created instance in memory
         this.name = data.name;
         this.description = data.description;
