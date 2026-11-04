@@ -525,18 +525,18 @@
                 <div class="input-list">
                     <div class="form-field">
                         <label><span class="material-icons-round">corporate_fare</span> Name</label>
-                        <input type="text" id="project-name-input" placeholder="Riverfront Promenade" required>
+                        <input name="name" type="text" id="project-name-input" placeholder="Riverfront Promenade" required>
                         <p class="input-tip">TIP: Give it a short name (min. 5 chars).</p>
                     </div>
 
                     <div class="form-field">
                         <label><span class="material-icons-round">subject</span> Description</label>
-                        <textarea id="project-desc-input" placeholder="Give your project a nice description! So people is jealous about it." rows="3"></textarea>
+                        <textarea name="description" id="project-desc-input" placeholder="Give your project a nice description! So people is jealous about it." rows="3"></textarea>
                     </div>
 
                     <div class="form-field">
                         <label><span class="material-icons-round">person</span> Role</label>
-                        <select id="project-role-input">
+                        <select name="userRole" id="project-role-input">
                             <option value="Architect">Architect</option>
                             <option value="Engineer">Engineer</option>
                             <option value="Developer">Developer</option>
@@ -545,7 +545,7 @@
 
                     <div class="form-field">
                         <label><span class="material-icons-round">help_outline</span> Status</label>
-                        <select id="project-status-input">
+                        <select name="status" id="project-status-input">
                             <option value="Pending">Pending</option>
                             <option value="Active">Active</option>
                             <option value="Finished">Finished</option>
@@ -554,7 +554,7 @@
 
                     <div class="form-field">
                         <label><span class="material-icons-round">calendar_today</span> Finish Date</label>
-                        <input type="date" id="project-date-input">
+                        <input name="finishDate" type="date" id="project-date-input">
                     </div>
                 </div>
 

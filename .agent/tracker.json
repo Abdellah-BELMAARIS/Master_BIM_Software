@@ -6,10 +6,10 @@
   "overallStats": {
     "totalModules": 7,
     "totalLessons": 130,
-    "completedLessons": 18,
+    "completedLessons": 22,
     "masterclassesCount": 14,
     "completedMasterclasses": 0,
-    "overallProgress": "13.8%"
+    "overallProgress": "16.9%"
   },
   "modules": [
     {
@@ -29,13 +29,13 @@
       "name": "Creating Interactive Websites",
       "duration": "02:44:00",
       "lessonsTotal": 29,
-      "lessonsCompleted": 2,
-      "progress": "7%",
+      "lessonsCompleted": 6,
+      "progress": "21%",
       "status": "in_progress",
       "activeLesson": {
-        "id": "2.2",
-        "title": "Working with events and functions",
-        "duration": "06:23"
+        "id": "3.1",
+        "title": "Introducing bundling and the package manager",
+        "duration": "09:36"
       }
     },
     {
