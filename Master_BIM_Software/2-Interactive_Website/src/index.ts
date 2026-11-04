@@ -114,3 +114,56 @@ if (projectForm && projectForm instanceof HTMLFormElement) {
 } else {
     console.warn("Project form was not found or is not an HTMLFormElement");
 }
+
+// Lesson 4.1 Assignment & SPA Navigation: Switch between Projects, Details, and Users pages
+const navProjectsBtn = document.getElementById("nav-projects-btn");
+const navUsersBtn = document.getElementById("nav-users-btn");
+const backToProjectsBtn = document.getElementById("back-to-projects-btn");
+
+const showProjectsPage = () => {
+    const projectsPage = document.getElementById("projects-page");
+    const detailsPage = document.getElementById("project-details");
+    const usersPage = document.getElementById("users-page");
+    if (!projectsPage || !detailsPage) { return; }
+
+    projectsPage.style.display = "flex";
+    detailsPage.style.display = "none";
+    if (usersPage) { usersPage.style.display = "none"; }
+
+    navProjectsBtn?.classList.add("active");
+    navUsersBtn?.classList.remove("active");
+};
+
+if (navProjectsBtn) {
+    navProjectsBtn.addEventListener("click", showProjectsPage);
+}
+
+if (backToProjectsBtn) {
+    backToProjectsBtn.addEventListener("click", showProjectsPage);
+}
+
+if (navUsersBtn) {
+    navUsersBtn.addEventListener("click", () => {
+        const projectsPage = document.getElementById("projects-page");
+        const detailsPage = document.getElementById("project-details");
+        const usersPage = document.getElementById("users-page");
+        if (!projectsPage || !detailsPage || !usersPage) { return; }
+
+        projectsPage.style.display = "none";
+        detailsPage.style.display = "none";
+        usersPage.style.display = "flex";
+
+        navUsersBtn.classList.add("active");
+        navProjectsBtn?.classList.remove("active");
+    });
+}
+
+// Wire Users Modal open/close buttons
+const newUserBtn = document.getElementById("new-user-btn");
+if (newUserBtn) {
+    newUserBtn.addEventListener("click", () => toggleModal("new-user-modal", true));
+}
+const cancelUserBtn = document.getElementById("cancel-user-btn");
+if (cancelUserBtn) {
+    cancelUserBtn.addEventListener("click", () => toggleModal("new-user-modal", false));
+}

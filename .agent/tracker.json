@@ -2,14 +2,14 @@
   "curriculum": "That Open Company — Master BIM Software Development",
   "developer": "Abdellah BELMAARIS",
   "company": "BIMPulse Digital",
-  "updatedAt": "2026-11-04T10:44:00Z",
+  "updatedAt": "2026-11-04T17:04:00Z",
   "overallStats": {
     "totalModules": 7,
     "totalLessons": 130,
-    "completedLessons": 32,
+    "completedLessons": 35,
     "masterclassesCount": 14,
     "completedMasterclasses": 0,
-    "overallProgress": "24.6%"
+    "overallProgress": "26.9%"
   },
   "modules": [
     {
@@ -29,13 +29,13 @@
       "name": "Creating Interactive Websites",
       "duration": "02:44:00",
       "lessonsTotal": 29,
-      "lessonsCompleted": 16,
-      "progress": "55.2%",
+      "lessonsCompleted": 19,
+      "progress": "65.5%",
       "status": "in_progress",
       "activeLesson": {
-        "id": "4.1",
-        "title": "Switching between pages",
-        "duration": "03:48"
+        "id": "4.4",
+        "title": "Homework: Finishing the project details page",
+        "duration": "04:00"
       }
     },
     {
