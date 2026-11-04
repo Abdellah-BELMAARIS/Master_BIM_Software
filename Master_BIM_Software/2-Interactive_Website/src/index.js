@@ -1,6 +1,9 @@
-// Lesson 2.4: Flow control with conditional statements
+// Lesson 3.2: Creating a project class
+// 1. Importing the Project class blueprint from its module
+import { Project } from "./classes/Project.js";
 
-// 1. Dynamic function that accepts an argument (id) instead of hardcoding the modal ID
+// Lesson 2.4: Flow control with conditional statements
+// Dynamic function to show dialogs safely
 const showModal = (id) => {
     const modal = document.getElementById(id);
     if (modal && "showModal" in modal) {
@@ -10,36 +13,28 @@ const showModal = (id) => {
     }
 };
 
-// 2. Referencing the button element
+// Referencing the 'New Project' button
 const newProjectBtn = document.getElementById("new-project-btn");
-
-// 3. Flow control with if/else (truthy check: if newProjectBtn is not null)
 if (newProjectBtn) {
-    // Enclosing the call in an anonymous arrow function to avoid premature invocation
     newProjectBtn.addEventListener("click", () => {
         showModal("new-project-modal");
     });
 } else {
-    // Warning with yellow background in console if the element was not found
     console.warn("New projects button was not found");
 }
 
-// Lesson 2.5: Catching up form data
-
-// 1. Referencing the form element
+// Lesson 2.5 & 3.2: Catching up form data & creating Project instances
 const projectForm = document.getElementById("new-project-form");
 
-// 2. Flow control: only attach listener if projectForm exists
 if (projectForm) {
-    // 3. Listening to the form 'submit' event
     projectForm.addEventListener("submit", (e) => {
         // Prevent default browser behavior (page reload)
         e.preventDefault();
 
-        // 4. Instantiating FormData with the 'new' keyword (class blueprint instantiation)
+        // Getting form data using FormData class
         const formData = new FormData(projectForm);
 
-        // 5. Lesson Challenge: Construct a project data object using formData.get()
+        // Gathering input data into a project data object
         const projectData = {
             name: formData.get("name"),
             description: formData.get("description"),
@@ -48,8 +43,11 @@ if (projectForm) {
             finishDate: formData.get("finishDate"),
         };
 
-        // 6. Log the structured project object to the console
-        console.log("Project Data Submitted:", projectData);
+        // Lesson 3.2: Creating a new instance of the Project class
+        const project = new Project(projectData);
+
+        // Logging the created instance to the console
+        console.log("New Project Instance Created:", project);
     });
 } else {
     console.warn("Project form was not found");

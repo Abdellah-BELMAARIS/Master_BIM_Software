@@ -157,3 +157,89 @@
   - `02 - ⚡ Creating Interactive Websites.md`
   - `BIM Learning Sprint Board.md`
   - `Discussions - ThatOpenCompany BIM.md`
+
+
+---
+
+## 📌 Part 4 — Module 2 Lesson 3.1: Bundling, Package Managers & Vite Integration
+
+### 1. Concepts Mastered & Full-Stack Analogies
+- **Monolithic Script Problem:** Writing full applications inside one `index.js` quickly causes thousands of unmanageable lines.
+- **Modularity vs Browser Bundling:** Developers organize code into clean single-responsibility files and folders (classes, managers, utils); **bundlers** (Vite/Rollup/Webpack) compile them into high-performance web assets.
+- **Package Manager Analogy (Python `pip` / `poetry` $\leftrightarrow$ JS `npm` / `pnpm`):**
+  - `requirements.txt` / `pyproject.toml` $\approx$ `package.json`
+  - `pip install <pkg>` $\approx$ `npm i <pkg>`
+  - Python virtual environment `.venv/Lib/site-packages/` $\approx$ `node_modules/`
+- **Dependencies vs DevDependencies:**
+  - `dependencies`: Shipped with runtime bundle.
+  - `devDependencies` (`--save-dev`): Tooling only (bundlers, linters, TypeScript compilers). Vite is installed as a devDependency.
+- **NPM Scripts:**
+  - Added `"dev": "vite"` to `package.json`.
+  - Running `npm run dev` replaces basic live server extensions with an ultra-fast HMR (Hot Module Replacement) development server.
+
+### 2. Actions Executed
+- Executed `npm init -y` inside `Master_BIM_Software/2-Interactive_Website/`.
+- Installed `vite` via `npm i vite --save-dev` (installed `vite@8.3.5`).
+- Configured `"dev": "vite"` in `package.json`.
+- Updated `index.html` script tag to modern ESM: `<script type="module" src="./index.js"></script>`.
+- Verified compilation with `npx vite build` (compiled clean in 374ms).
+- Created `.gitignore` ignoring `node_modules/` and `dist/`.
+
+### 3. Curriculum & Obsidian Milestones
+- **Module 2 Progress:** 7 / 29 lessons (`24%`).
+- **Overall Curriculum Progress:** 23 / 130 lessons (`17.7%`).
+- **Next Target:** `3.2. Creating a project class (09:03)`.
+- **Obsidian Synced:**
+  - `02 - ⚡ Creating Interactive Websites.md`
+  - `BIM Learning Sprint Board.md`
+  - `Discussions - ThatOpenCompany BIM.md`
+
+
+---
+
+## 📌 Part 5 — Troubleshooting: Resolving Root Node Duplication & Vite Pathing (2026-11-04)
+
+### 1. Root Cause Analysis
+- **Terminal Working Directory Mismatch:** The terminal was opened in `D:\Coding\MyLearning\ThatOpenCompany` instead of `Master_BIM_Software\2-Interactive_Website`. Running `npm init -y` and `npm i vite --save-dev` at the repository root duplicated `package.json` and `node_modules`.
+- **`vite` Command Not Found:** Local npm packages are installed into `./node_modules/.bin/` and are not in the Windows system `PATH`. They must be invoked via `npx vite` or via an npm script (`npm run dev`).
+- **`Missing script: "dev"`:** The newly initialized root `package.json` lacked `"dev": "vite"` in its `"scripts"` field.
+
+### 2. Resolution Implemented
+- Cleaned up duplicate root `node_modules/`, `package.json`, and `package-lock.json` from `D:\Coding\MyLearning\ThatOpenCompany\`.
+- Validated that `Master_BIM_Software\2-Interactive_Website\package.json` and `node_modules/` remain healthy with `"dev": "vite"` configured.
+- Created root `.gitignore` ignoring all `node_modules/` and build directories.
+- Verified workflow: `cd Master_BIM_Software\2-Interactive_Website` $\rightarrow$ `npm run dev`.
+
+
+---
+
+## 📌 Part 6 — Module 2 Lesson 3.2: Creating a Project Class & ES Modules (2026-11-04)
+
+### 1. Concepts Mastered & Python/Django Bridge
+- **Source Directory Organization:** Grouping application logic inside `src/` (`src/classes/`, `src/index.js`), updating HTML script paths.
+- **OOP Class Syntax:**
+  - `class Project` PascalCase naming convention.
+  - `constructor(data)` method $\approx$ Python `__init__(self, data)`. Automatically invoked once upon instantiation via `new Project(data)`.
+  - `this.name = data.name` $\approx$ Python `self.name = data.name`. Refers to the newly allocated object instance in memory.
+- **ES Modules (`import` / `export`):**
+  - Named export: `export class Project { ... }`.
+  - Named import: `import { Project } from "./classes/Project.js"`.
+  - Top-of-file import requirement in modern JavaScript.
+  - HTML connection: `<script type="module" src="./src/index.js"></script>`.
+- **Typing Problem Preview:** Passing incorrect or incomplete object arguments to constructors silently leads to `undefined` property values without throwing compile-time errors in plain JavaScript—leading to the motivation for **TypeScript** in Lesson 3.3.
+
+### 2. File Architecture Implemented
+- Created [`src/classes/Project.js`](file:///D:/Coding/MyLearning/ThatOpenCompany/Master_BIM_Software/2-Interactive_Website/src/classes/Project.js).
+- Migrated code into [`src/index.js`](file:///D:/Coding/MyLearning/ThatOpenCompany/Master_BIM_Software/2-Interactive_Website/src/index.js).
+- Removed legacy root `index.js`.
+- Updated [`index.html`](file:///D:/Coding/MyLearning/ThatOpenCompany/Master_BIM_Software/2-Interactive_Website/index.html) to `<script type="module" src="./src/index.js"></script>`.
+- Verified compilation with `npx vite build` (149ms).
+
+### 3. Curriculum & Obsidian Milestones
+- **Module 2 Progress:** 8 / 29 lessons (`28%`).
+- **Overall Curriculum Progress:** 24 / 130 lessons (`18.5%`).
+- **Next Target:** `3.3. Introducing Typescript to the code (08:46)`.
+- **Obsidian Synced:**
+  - `02 - ⚡ Creating Interactive Websites.md`
+  - `BIM Learning Sprint Board.md`
+  - `Discussions - ThatOpenCompany BIM.md`

@@ -6,10 +6,10 @@
   "overallStats": {
     "totalModules": 7,
     "totalLessons": 130,
-    "completedLessons": 22,
+    "completedLessons": 24,
     "masterclassesCount": 14,
     "completedMasterclasses": 0,
-    "overallProgress": "16.9%"
+    "overallProgress": "18.5%"
   },
   "modules": [
     {
@@ -29,13 +29,13 @@
       "name": "Creating Interactive Websites",
       "duration": "02:44:00",
       "lessonsTotal": 29,
-      "lessonsCompleted": 6,
-      "progress": "21%",
+      "lessonsCompleted": 8,
+      "progress": "28%",
       "status": "in_progress",
       "activeLesson": {
-        "id": "3.1",
-        "title": "Introducing bundling and the package manager",
-        "duration": "09:36"
+        "id": "3.3",
+        "title": "Introducing Typescript to the code",
+        "duration": "08:46"
       }
     },
     {
