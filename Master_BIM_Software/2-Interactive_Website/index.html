@@ -274,7 +274,12 @@
                     <article class="project-card details-card">
                         <div class="details-card-top">
                             <div class="card-avatar-circle badge-orange" id="details-avatar">HC</div>
-                            <button class="btn-edit" id="edit-project-btn">Edit</button>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <button class="btn-edit" id="edit-project-btn">Edit</button>
+                                <button class="btn-delete" id="delete-project-btn" title="Delete Project">
+                                    <span class="material-icons-round" style="font-size: 1.1rem;">delete</span>
+                                </button>
+                            </div>
                         </div>
 
                         <div class="details-title-group">
@@ -580,9 +585,12 @@
     <!-- Page Switching & Modal Scripts -->
     <script>
         // =========================================================================
-        // 1. Projects Data Store (Distinct Info & Unique To-Dos for Every Project)
+        // 1. Persistent Storage Keys & Initial Data Defaults
         // =========================================================================
-        const projectsData = {
+        const STORAGE_PROJECTS_KEY = "bim_pulse_projects_data_v1";
+        const STORAGE_USERS_KEY = "bim_pulse_users_data_v1";
+
+        const defaultProjects = {
             "hospital-center": {
                 id: "hospital-center",
                 name: "Hospital Center",
@@ -699,6 +707,90 @@
             }
         };
 
+        const defaultUsers = [
+            {
+                id: "user-1",
+                name: "Abdellah Belmaaris",
+                email: "a.belmaaris@bimpulse.com",
+                initials: "AB",
+                avatarColor: "badge-blue",
+                role: "Full-Stack Dev",
+                roleType: "Developer",
+                projects: "Hospital Center, Urban Oasis",
+                status: "Active"
+            },
+            {
+                id: "user-2",
+                name: "Juan Brunetta",
+                email: "j.brunetta@thatopen.com",
+                initials: "JB",
+                avatarColor: "badge-orange",
+                role: "Lead Architect",
+                roleType: "Architect",
+                projects: "Hospital Center, TechHub",
+                status: "Active"
+            },
+            {
+                id: "user-3",
+                name: "Valeria Alarcon",
+                email: "v.alarcon@thatopen.com",
+                initials: "VA",
+                avatarColor: "badge-green",
+                role: "Structural Engineer",
+                roleType: "Engineer",
+                projects: "Sustainable Housing",
+                status: "Active"
+            },
+            {
+                id: "user-4",
+                name: "Sarah Connor",
+                email: "s.connor@bimpulse.com",
+                initials: "SC",
+                avatarColor: "badge-purple",
+                role: "BIM Coordinator",
+                roleType: "BIM Coordinator",
+                projects: "Heritage Restoration",
+                status: "Away"
+            }
+        ];
+
+        function loadProjects() {
+            const raw = localStorage.getItem(STORAGE_PROJECTS_KEY);
+            if (raw) {
+                try {
+                    return JSON.parse(raw);
+                } catch (e) {
+                    console.error("Failed to parse stored projects", e);
+                }
+            }
+            return JSON.parse(JSON.stringify(defaultProjects));
+        }
+
+        function saveProjects() {
+            localStorage.setItem(STORAGE_PROJECTS_KEY, JSON.stringify(projectsData));
+        }
+
+        function loadUsers() {
+            const raw = localStorage.getItem(STORAGE_USERS_KEY);
+            if (raw) {
+                try {
+                    return JSON.parse(raw);
+                } catch (e) {
+                    console.error("Failed to parse stored users", e);
+                }
+            }
+            return JSON.parse(JSON.stringify(defaultUsers));
+        }
+
+        function saveUsers() {
+            localStorage.setItem(STORAGE_USERS_KEY, JSON.stringify(usersData));
+        }
+
+        // Active State
+        let projectsData = loadProjects();
+        let usersData = loadUsers();
+        let currentFilter = "all";
+
         // =========================================================================
         // 2. Navigation State
         // =========================================================================
@@ -710,7 +802,7 @@
 
         const navProjects = document.getElementById("nav-projects-btn");
         const navUsers = document.getElementById("nav-users-btn");
-        let currentProjectId = "hospital-center";
+        let currentProjectId = Object.keys(projectsData)[0] || "hospital-center";
         let isEditingProject = false;
 
         function navigateTo(targetPage) {
@@ -730,11 +822,71 @@
         if (navUsers) navUsers.addEventListener("click", () => navigateTo("users"));
 
         // =========================================================================
-        // 3. Render To-Dos & Dynamic Project Details
+        // 3. Render Projects Grid (Dynamic & Persistent)
+        // =========================================================================
+        const projectsListEl = document.getElementById("projects-list");
+
+        function renderProjectsGrid() {
+            if (!projectsListEl) return;
+            projectsListEl.innerHTML = "";
+
+            const projects = Object.values(projectsData);
+            if (projects.length === 0) {
+                projectsListEl.innerHTML = `
+                    <div style="grid-column: 1 / -1; padding: 4rem 1rem; text-align: center; color: var(--text-secondary);">
+                        <span class="material-icons-round" style="font-size: 3rem; opacity: 0.4;">apartment</span>
+                        <p style="margin-top: 0.75rem; font-size: 1rem;">No projects yet. Click '+ New Project' to create your first BIM project!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            projects.forEach(proj => {
+                const card = document.createElement("article");
+                card.className = "project-card";
+                card.dataset.projectId = proj.id;
+                card.style.cursor = "pointer";
+                card.title = `Click to view ${proj.name} details`;
+                card.innerHTML = `
+                    <div class="card-header">
+                        <div class="card-avatar ${proj.badgeColor}">${proj.initials}</div>
+                        <div class="card-title-group">
+                            <h3>${proj.name}</h3>
+                            <p>${proj.desc}</p>
+                        </div>
+                    </div>
+                    <div class="card-details">
+                        <div class="detail-row">
+                            <span class="detail-label">Status</span>
+                            <span class="detail-value">${proj.status}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Role</span>
+                            <span class="detail-value">${proj.role}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Cost</span>
+                            <span class="detail-value">${proj.cost}</span>
+                        </div>
+                        <div class="detail-row">
+                            <span class="detail-label">Estimated Progress</span>
+                            <span class="detail-value">${proj.progress}</span>
+                        </div>
+                    </div>
+                `;
+
+                card.addEventListener("click", () => populateProjectDetails(proj.id));
+                projectsListEl.appendChild(card);
+            });
+        }
+
+        // =========================================================================
+        // 4. Render To-Dos & Project Details
         // =========================================================================
         const todosList = document.getElementById("todos-list");
         const addTodoBtn = document.getElementById("add-todo-btn");
         const todoSearchInput = document.getElementById("todo-search-input");
+        const deleteProjectBtn = document.getElementById("delete-project-btn");
 
         function renderTodos(todos) {
             if (!todosList) return;
@@ -761,6 +913,7 @@
 
                 item.addEventListener("click", () => {
                     todo.completed = !todo.completed;
+                    saveProjects();
                     renderTodos(projectsData[currentProjectId].todos);
                 });
 
@@ -806,29 +959,11 @@
                 detailsFill.textContent = proj.progress;
             }
 
-            // Render specific project To-Dos
             renderTodos(proj.todos);
-
-            // Switch view
             navigateTo("details");
         }
 
-        function bindProjectCard(card) {
-            card.style.cursor = "pointer";
-            card.addEventListener("click", () => {
-                const projId = card.dataset.projectId;
-                if (projId && projectsData[projId]) {
-                    populateProjectDetails(projId);
-                }
-            });
-        }
-
-        // Bind all initial project cards
-        document.querySelectorAll("#projects-list .project-card").forEach(bindProjectCard);
-
-        // =========================================================================
-        // 4. To-Do Actions (Add New & Live Search)
-        // =========================================================================
+        // Add To-Do
         if (addTodoBtn) {
             addTodoBtn.addEventListener("click", () => {
                 const currentProj = projectsData[currentProjectId];
@@ -841,18 +976,19 @@
                 const options = { weekday: 'short', day: 'numeric', month: 'short' };
                 const dateStr = now.toLocaleDateString('en-US', options);
 
-                const newTodo = {
+                currentProj.todos.unshift({
                     id: Date.now(),
                     text: text.trim(),
                     date: dateStr,
                     completed: false
-                };
+                });
 
-                currentProj.todos.unshift(newTodo);
+                saveProjects();
                 renderTodos(currentProj.todos);
             });
         }
 
+        // Live Search To-Dos
         if (todoSearchInput) {
             todoSearchInput.addEventListener("input", (e) => {
                 const query = e.target.value.toLowerCase().trim();
@@ -861,6 +997,21 @@
 
                 const filtered = currentProj.todos.filter(t => t.text.toLowerCase().includes(query));
                 renderTodos(filtered);
+            });
+        }
+
+        // Delete Project Button
+        if (deleteProjectBtn) {
+            deleteProjectBtn.addEventListener("click", () => {
+                const proj = projectsData[currentProjectId];
+                if (!proj) return;
+
+                if (confirm(`Are you sure you want to delete project "${proj.name}"? This action cannot be undone.`)) {
+                    delete projectsData[currentProjectId];
+                    saveProjects();
+                    renderProjectsGrid();
+                    navigateTo("projects");
+                }
             });
         }
 
@@ -879,10 +1030,8 @@
         const projectRoleInput = document.getElementById("project-role-input");
         const projectStatusInput = document.getElementById("project-status-input");
         const projectDateInput = document.getElementById("project-date-input");
-
         const editProjectBtn = document.getElementById("edit-project-btn");
 
-        // Open in Create mode
         if (newProjectBtn && projectModal) {
             newProjectBtn.addEventListener("click", () => {
                 isEditingProject = false;
@@ -894,7 +1043,6 @@
             });
         }
 
-        // Open in Edit mode
         if (editProjectBtn && projectModal) {
             editProjectBtn.addEventListener("click", () => {
                 const proj = projectsData[currentProjectId];
@@ -923,7 +1071,6 @@
             });
         }
 
-        // Save Project (Create / Edit)
         if (projectForm) {
             projectForm.addEventListener("submit", (e) => {
                 e.preventDefault();
@@ -951,30 +1098,11 @@
                         proj.finishDate = date;
                         proj.initials = initials;
 
-                        // Update the card in projects list
-                        const card = document.querySelector(`.project-card[data-project-id="${currentProjectId}"]`);
-                        if (card) {
-                            const titleEl = card.querySelector(".card-title-group h3");
-                            const descEl = card.querySelector(".card-title-group p");
-                            const avatarEl = card.querySelector(".card-avatar");
-
-                            if (titleEl) titleEl.textContent = name;
-                            if (descEl) descEl.textContent = desc;
-                            if (avatarEl) avatarEl.textContent = initials;
-
-                            card.querySelectorAll(".detail-row").forEach(r => {
-                                const label = r.querySelector(".detail-label")?.textContent?.trim();
-                                const val = r.querySelector(".detail-value");
-                                if (label === "Role" && val) val.textContent = role;
-                                if (label === "Status" && val) val.textContent = status;
-                            });
-                        }
-
-                        // Re-populate details page
+                        saveProjects();
+                        renderProjectsGrid();
                         populateProjectDetails(currentProjectId);
                     }
                 } else {
-                    // Create New Project
                     const newId = `project-${Date.now()}`;
                     const colors = ["badge-orange", "badge-green", "badge-purple", "badge-blue"];
                     const randomColor = colors[Math.floor(Math.random() * colors.length)];
@@ -991,44 +1119,12 @@
                         progress: "0%",
                         finishDate: date,
                         todos: [
-                            { id: Date.now(), text: "Set up project IFC model and spatial structure", date: "Just now", completed: false }
+                            { id: Date.now(), text: "Set up project IFC model and coordinate system", date: "Just now", completed: false }
                         ]
                     };
 
-                    const card = document.createElement("article");
-                    card.className = "project-card";
-                    card.dataset.projectId = newId;
-                    card.innerHTML = `
-                        <div class="card-header">
-                            <div class="card-avatar ${randomColor}">${initials}</div>
-                            <div class="card-title-group">
-                                <h3>${name}</h3>
-                                <p>${desc}</p>
-                            </div>
-                        </div>
-                        <div class="card-details">
-                            <div class="detail-row">
-                                <span class="detail-label">Status</span>
-                                <span class="detail-value">${status}</span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Role</span>
-                                <span class="detail-value">${role}</span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Cost</span>
-                                <span class="detail-value">$ 0</span>
-                            </div>
-                            <div class="detail-row">
-                                <span class="detail-label">Estimated Progress</span>
-                                <span class="detail-value">0%</span>
-                            </div>
-                        </div>
-                    `;
-
-                    bindProjectCard(card);
-                    const projectsList = document.getElementById("projects-list");
-                    if (projectsList) projectsList.prepend(card);
+                    saveProjects();
+                    renderProjectsGrid();
                 }
 
                 projectModal.close();
@@ -1037,7 +1133,7 @@
         }
 
         // =========================================================================
-        // 6. Users Actions (3-Dots Menu: Edit, Toggle Status, Delete)
+        // 6. Users System (Dynamic Rendering, Actions & LocalStorage Persistence)
         // =========================================================================
         const userActionsDropdown = document.getElementById("user-actions-dropdown");
         const userMenuEdit = document.getElementById("user-menu-edit");
@@ -1052,14 +1148,13 @@
         const cancelUserBtn = document.getElementById("cancel-user-btn");
         const usersTableBody = document.querySelector(".users-table tbody");
 
-        let activeUserRow = null;
+        let activeUserId = null;
         let isEditingUser = false;
 
         function hideUserMenu() {
             if (userActionsDropdown) userActionsDropdown.style.display = "none";
         }
 
-        // Close dropdown when clicking outside or scrolling
         document.addEventListener("click", (e) => {
             if (userActionsDropdown && !userActionsDropdown.contains(e.target) && !e.target.closest(".user-options-btn")) {
                 hideUserMenu();
@@ -1067,45 +1162,99 @@
         });
         window.addEventListener("scroll", hideUserMenu, true);
 
-        function bindUserRow(tr) {
-            const btn = tr.querySelector(".user-options-btn") || tr.querySelector(".btn-icon");
-            if (btn) {
-                btn.classList.add("user-options-btn");
-                btn.style.cursor = "pointer";
-                btn.addEventListener("click", (e) => {
-                    e.stopPropagation();
-                    activeUserRow = tr;
+        function renderUsersTable(filter = "all") {
+            if (!usersTableBody) return;
+            usersTableBody.innerHTML = "";
 
-                    const rect = btn.getBoundingClientRect();
-                    userActionsDropdown.style.top = `${rect.bottom + 4}px`;
-                    userActionsDropdown.style.left = `${Math.max(10, rect.right - 175)}px`;
-                    userActionsDropdown.style.display = "flex";
+            let filtered = usersData;
+            if (filter === "architects") {
+                filtered = usersData.filter(u => u.roleType === "Architect" || u.role.toLowerCase().includes("arch"));
+            } else if (filter === "engineers") {
+                filtered = usersData.filter(u => u.roleType === "Engineer" || u.role.toLowerCase().includes("eng"));
+            } else if (filter === "developers") {
+                filtered = usersData.filter(u => u.roleType === "Developer" || u.role.toLowerCase().includes("dev"));
+            }
+
+            if (filtered.length === 0) {
+                usersTableBody.innerHTML = `
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 2.5rem; color: var(--text-secondary);">
+                            No users found in this category. Click 'New User' to add one!
+                        </td>
+                    </tr>
+                `;
+            } else {
+                filtered.forEach(user => {
+                    const roleClassMap = {
+                        "Developer": "role-dev",
+                        "Architect": "role-arch",
+                        "Engineer": "role-eng",
+                        "BIM Coordinator": "role-bim"
+                    };
+                    const roleClass = roleClassMap[user.roleType] || "role-dev";
+                    const isOnline = user.status === "Active";
+
+                    const tr = document.createElement("tr");
+                    tr.dataset.userId = user.id;
+                    tr.innerHTML = `
+                        <td>
+                            <div class="user-cell">
+                                <div class="user-avatar-circle ${user.avatarColor}">${user.initials}</div>
+                                <div>
+                                    <div class="user-name">${user.name}</div>
+                                    <div class="user-email">${user.email}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="role-badge ${roleClass}">${user.role}</span></td>
+                        <td>${user.projects || "General"}</td>
+                        <td><span class="status-indicator ${isOnline ? 'status-online' : 'status-offline'}">${user.status}</span></td>
+                        <td style="text-align: right;">
+                            <button type="button" class="btn-icon user-options-btn" title="Options">
+                                <span class="material-icons-round">more_vert</span>
+                            </button>
+                        </td>
+                    `;
+
+                    const btn = tr.querySelector(".user-options-btn");
+                    btn.addEventListener("click", (e) => {
+                        e.stopPropagation();
+                        activeUserId = user.id;
+
+                        const rect = btn.getBoundingClientRect();
+                        userActionsDropdown.style.top = `${rect.bottom + 4}px`;
+                        userActionsDropdown.style.left = `${Math.max(10, rect.right - 175)}px`;
+                        userActionsDropdown.style.display = "flex";
+                    });
+
+                    usersTableBody.appendChild(tr);
                 });
+            }
+
+            const allPill = document.querySelector(".users-filter-group .filter-pill:first-child");
+            if (allPill) {
+                allPill.textContent = `All (${usersData.length})`;
             }
         }
 
-        // Bind all initial user rows
-        document.querySelectorAll(".users-table tbody tr").forEach(bindUserRow);
-
         // Action 1: Edit User
         if (userMenuEdit) {
-            userMenuEdit.addEventListener("click", () => {
+            userMenuEdit.addEventListener("click", (e) => {
+                e.stopPropagation();
                 hideUserMenu();
-                if (!activeUserRow) return;
+                if (!activeUserId) return;
+
+                const user = usersData.find(u => u.id === activeUserId);
+                if (!user) return;
 
                 isEditingUser = true;
                 userModalTitle.textContent = "Edit User";
                 userSubmitBtn.textContent = "Save Changes";
 
-                const name = activeUserRow.querySelector(".user-name")?.textContent || "";
-                const email = activeUserRow.querySelector(".user-email")?.textContent || "";
-                const role = activeUserRow.querySelector(".role-badge")?.textContent || "Developer";
-                const isOnline = activeUserRow.querySelector(".status-indicator")?.classList.contains("status-online");
-
-                document.getElementById("user-name-input").value = name;
-                document.getElementById("user-email-input").value = email;
-                document.getElementById("user-role-input").value = role.includes("Dev") ? "Developer" : (role.includes("Arch") ? "Architect" : (role.includes("Eng") ? "Engineer" : "BIM Coordinator"));
-                document.getElementById("user-status-input").value = isOnline ? "Active" : "Away";
+                document.getElementById("user-name-input").value = user.name;
+                document.getElementById("user-email-input").value = user.email;
+                document.getElementById("user-role-input").value = user.roleType;
+                document.getElementById("user-status-input").value = user.status;
 
                 userModal.showModal();
             });
@@ -1113,40 +1262,35 @@
 
         // Action 2: Toggle Status
         if (userMenuStatus) {
-            userMenuStatus.addEventListener("click", () => {
+            userMenuStatus.addEventListener("click", (e) => {
+                e.stopPropagation();
                 hideUserMenu();
-                if (!activeUserRow) return;
+                if (!activeUserId) return;
 
-                const indicator = activeUserRow.querySelector(".status-indicator");
-                if (indicator) {
-                    if (indicator.classList.contains("status-online")) {
-                        indicator.className = "status-indicator status-offline";
-                        indicator.textContent = "Away";
-                    } else {
-                        indicator.className = "status-indicator status-online";
-                        indicator.textContent = "Active";
-                    }
+                const user = usersData.find(u => u.id === activeUserId);
+                if (user) {
+                    user.status = user.status === "Active" ? "Away" : "Active";
+                    saveUsers();
+                    renderUsersTable(currentFilter);
                 }
             });
         }
 
         // Action 3: Delete User
         if (userMenuDelete) {
-            userMenuDelete.addEventListener("click", () => {
+            userMenuDelete.addEventListener("click", (e) => {
+                e.stopPropagation();
                 hideUserMenu();
-                if (!activeUserRow) return;
+                if (!activeUserId) return;
 
-                const userName = activeUserRow.querySelector(".user-name")?.textContent || "this user";
-                if (confirm(`Are you sure you want to delete ${userName}?`)) {
-                    activeUserRow.remove();
-                    activeUserRow = null;
+                const user = usersData.find(u => u.id === activeUserId);
+                const name = user ? user.name : "this user";
 
-                    // Update counter
-                    const allPill = document.querySelector(".users-filter-group .filter-pill:first-child");
-                    if (allPill && usersTableBody) {
-                        const count = usersTableBody.querySelectorAll("tr").length;
-                        allPill.textContent = `All (${count})`;
-                    }
+                if (confirm(`Are you sure you want to delete ${name}? This action cannot be undone.`)) {
+                    usersData = usersData.filter(u => u.id !== activeUserId);
+                    activeUserId = null;
+                    saveUsers();
+                    renderUsersTable(currentFilter);
                 }
             });
         }
@@ -1172,13 +1316,13 @@
         }
 
         // Add or Update User Form Submission
-        if (userForm && usersTableBody) {
+        if (userForm) {
             userForm.addEventListener("submit", (e) => {
                 e.preventDefault();
 
                 const name = document.getElementById("user-name-input").value.trim();
                 const email = document.getElementById("user-email-input").value.trim();
-                const role = document.getElementById("user-role-input").value;
+                const roleType = document.getElementById("user-role-input").value;
                 const status = document.getElementById("user-status-input").value;
 
                 const parts = name.split(" ").filter(Boolean);
@@ -1186,66 +1330,37 @@
                     ? (parts[0][0] + parts[1][0]).toUpperCase()
                     : name.slice(0, 2).toUpperCase();
 
-                const roleClassMap = {
-                    "Developer": "role-dev",
-                    "Architect": "role-arch",
-                    "Engineer": "role-eng",
-                    "BIM Coordinator": "role-bim"
-                };
-                const roleClass = roleClassMap[role] || "role-dev";
-                const isOnline = status === "Active";
+                if (isEditingUser && activeUserId) {
+                    const user = usersData.find(u => u.id === activeUserId);
+                    if (user) {
+                        user.name = name;
+                        user.email = email;
+                        user.role = roleType;
+                        user.roleType = roleType;
+                        user.status = status;
+                        user.initials = initials;
 
-                if (isEditingUser && activeUserRow) {
-                    // Update existing row
-                    const nameEl = activeUserRow.querySelector(".user-name");
-                    const emailEl = activeUserRow.querySelector(".user-email");
-                    const avatarEl = activeUserRow.querySelector(".user-avatar-circle");
-                    const badgeEl = activeUserRow.querySelector(".role-badge");
-                    const statusEl = activeUserRow.querySelector(".status-indicator");
-
-                    if (nameEl) nameEl.textContent = name;
-                    if (emailEl) emailEl.textContent = email;
-                    if (avatarEl) avatarEl.textContent = initials;
-                    if (badgeEl) {
-                        badgeEl.className = `role-badge ${roleClass}`;
-                        badgeEl.textContent = role;
-                    }
-                    if (statusEl) {
-                        statusEl.className = `status-indicator ${isOnline ? 'status-online' : 'status-offline'}`;
-                        statusEl.textContent = status;
+                        saveUsers();
+                        renderUsersTable(currentFilter);
                     }
                 } else {
-                    // Create new row
                     const colors = ["badge-blue", "badge-purple", "badge-orange", "badge-green"];
                     const avatarColor = colors[Math.floor(Math.random() * colors.length)];
 
-                    const tr = document.createElement("tr");
-                    tr.innerHTML = `
-                        <td>
-                            <div class="user-cell">
-                                <div class="user-avatar-circle ${avatarColor}">${initials}</div>
-                                <div>
-                                    <div class="user-name">${name}</div>
-                                    <div class="user-email">${email}</div>
-                                </div>
-                            </div>
-                        </td>
-                        <td><span class="role-badge ${roleClass}">${role}</span></td>
-                        <td>Hospital Center</td>
-                        <td><span class="status-indicator ${isOnline ? 'status-online' : 'status-offline'}">${status}</span></td>
-                        <td style="text-align: right;">
-                            <button type="button" class="btn-icon user-options-btn" title="Options"><span class="material-icons-round">more_vert</span></button>
-                        </td>
-                    `;
+                    usersData.unshift({
+                        id: `user-${Date.now()}`,
+                        name: name,
+                        email: email,
+                        role: roleType,
+                        roleType: roleType,
+                        projects: "Hospital Center",
+                        status: status,
+                        initials: initials,
+                        avatarColor: avatarColor
+                    });
 
-                    bindUserRow(tr);
-                    usersTableBody.prepend(tr);
-
-                    const allPill = document.querySelector(".users-filter-group .filter-pill:first-child");
-                    if (allPill) {
-                        const count = usersTableBody.querySelectorAll("tr").length;
-                        allPill.textContent = `All (${count})`;
-                    }
+                    saveUsers();
+                    renderUsersTable(currentFilter);
                 }
 
                 userModal.close();
@@ -1253,34 +1368,28 @@
             });
         }
 
-        // =========================================================================
-        // 7. Role Filter Pills
-        // =========================================================================
+        // Filter Pills
         const filterPills = document.querySelectorAll(".users-filter-group .filter-pill");
         filterPills.forEach(pill => {
             pill.addEventListener("click", () => {
                 filterPills.forEach(p => p.classList.remove("active"));
                 pill.classList.add("active");
 
-                const filterText = pill.textContent.toLowerCase();
-                const rows = usersTableBody.querySelectorAll("tr");
+                const txt = pill.textContent.toLowerCase();
+                if (txt.includes("all")) currentFilter = "all";
+                else if (txt.includes("architect")) currentFilter = "architects";
+                else if (txt.includes("engineer")) currentFilter = "engineers";
+                else if (txt.includes("developer")) currentFilter = "developers";
 
-                rows.forEach(row => {
-                    const roleText = row.querySelector(".role-badge")?.textContent.toLowerCase() || "";
-                    if (filterText.includes("all")) {
-                        row.style.display = "";
-                    } else if (filterText.includes("architect") && roleText.includes("architect")) {
-                        row.style.display = "";
-                    } else if (filterText.includes("engineer") && roleText.includes("engineer")) {
-                        row.style.display = "";
-                    } else if (filterText.includes("developer") && (roleText.includes("dev") || roleText.includes("full-stack"))) {
-                        row.style.display = "";
-                    } else {
-                        row.style.display = "none";
-                    }
-                });
+                renderUsersTable(currentFilter);
             });
         });
+
+        // =========================================================================
+        // 7. Initialize Application from LocalStorage on Load
+        // =========================================================================
+        renderProjectsGrid();
+        renderUsersTable();
     </script>
 </body>
 </html>

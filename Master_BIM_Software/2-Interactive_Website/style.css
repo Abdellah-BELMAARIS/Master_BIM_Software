@@ -558,6 +558,24 @@ dialog#new-user-modal::backdrop {
     border-color: #6b7280;
 }
 
+.btn-delete {
+    background: transparent;
+    border: 1px solid #4a2828;
+    color: #ef4444;
+    border-radius: 20px;
+    padding: 0.35rem 0.65rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.btn-delete:hover {
+    background-color: rgba(239, 68, 68, 0.15);
+    border-color: #ef4444;
+}
+
 .details-title-group {
     margin-top: 1.25rem;
 }
