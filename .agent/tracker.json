@@ -6,10 +6,10 @@
   "overallStats": {
     "totalModules": 7,
     "totalLessons": 130,
-    "completedLessons": 30,
+    "completedLessons": 32,
     "masterclassesCount": 14,
     "completedMasterclasses": 0,
-    "overallProgress": "23.1%"
+    "overallProgress": "24.6%"
   },
   "modules": [
     {
@@ -29,13 +29,13 @@
       "name": "Creating Interactive Websites",
       "duration": "02:44:00",
       "lessonsTotal": 29,
-      "lessonsCompleted": 14,
-      "progress": "48%",
+      "lessonsCompleted": 16,
+      "progress": "55.2%",
       "status": "in_progress",
       "activeLesson": {
-        "id": "3.9",
-        "title": "Exporting/importing project data as JSON",
-        "duration": "08:43"
+        "id": "4.1",
+        "title": "Switching between pages",
+        "duration": "03:48"
       }
     },
     {

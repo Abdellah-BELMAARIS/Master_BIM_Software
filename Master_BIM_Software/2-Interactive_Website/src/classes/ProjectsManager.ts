@@ -1,4 +1,4 @@
-// Lesson 3.6, 3.7 & 3.8: Projects Manager with Validation & Error Handling
+// Lesson 3.6, 3.7, 3.8 & 3.9: Projects Manager with Queries, Validation & JSON I/O
 import { IProject, Project } from "./Project";
 
 export class ProjectsManager {
@@ -18,6 +18,8 @@ export class ProjectsManager {
             userRole: "Architect",
             status: "Active",
             finishDate: new Date(),
+            cost: 0,
+            progress: 0.25,
         });
     }
 
@@ -69,5 +71,74 @@ export class ProjectsManager {
     // Find a project by its name
     getProjectByName(name: string): Project | undefined {
         return this.list.find((project) => project.name === name);
+    }
+
+    // Lesson 3.9: Export all projects to JSON and trigger automatic download
+    exportToJSON(fileName: string = "projects") {
+        // Serialize project data into clean formatted JSON
+        const plainProjects = this.list.map((project) => ({
+            id: project.id,
+            name: project.name,
+            description: project.description,
+            userRole: project.userRole,
+            status: project.status,
+            finishDate: project.finishDate,
+            cost: project.cost,
+            progress: project.progress,
+        }));
+
+        const json = JSON.stringify(plainProjects, null, 2);
+        const blob = new Blob([json], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+
+        // Programmatic click on ghost anchor element
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = fileName.endsWith(".json") ? fileName : `${fileName}.json`;
+        a.click();
+
+        // Cleanup temporary URL
+        URL.revokeObjectURL(url);
+    }
+
+    // Lesson 3.9: Import projects from a selected JSON file
+    importFromJSON() {
+        const input = document.createElement("input");
+        input.type = "file";
+        input.accept = "application/json";
+
+        const reader = new FileReader();
+
+        reader.addEventListener("load", () => {
+            if (!reader.result) { return; }
+            try {
+                const projects: IProject[] = JSON.parse(reader.result as string);
+                let importedCount = 0;
+                let skippedCount = 0;
+
+                // for...of loop generic iteration over imported projects
+                for (const projectData of projects) {
+                    try {
+                        this.newProject(projectData);
+                        importedCount++;
+                    } catch (err: any) {
+                        skippedCount++;
+                        console.warn(`Skipped duplicate project "${projectData.name}":`, err.message);
+                    }
+                }
+                console.log(`Import completed: ${importedCount} added, ${skippedCount} duplicates skipped.`);
+            } catch (err: any) {
+                console.error("JSON parse error during import:", err);
+                throw new Error("The selected file is not a valid JSON projects file");
+            }
+        });
+
+        input.addEventListener("change", () => {
+            const filesList = input.files;
+            if (!filesList || filesList.length === 0) { return; }
+            reader.readAsText(filesList[0]);
+        });
+
+        input.click();
     }
 }

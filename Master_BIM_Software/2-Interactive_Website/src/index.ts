@@ -1,4 +1,4 @@
-// Lesson 3.6, 3.7 & 3.8: Project Management & Custom Error Interception
+// Lesson 3.6, 3.7, 3.8 & 3.9: Project Management, Error Handling, and JSON I/O
 import { IProject, ProjectStatus, UserRole } from "./classes/Project";
 import { ProjectsManager } from "./classes/ProjectsManager";
 
@@ -34,7 +34,7 @@ if (cancelProjectBtn) {
     });
 }
 
-// Lesson 3.8 Challenge: Wire error modal close button
+// Wire error modal close button
 const closeErrorModalBtn = document.getElementById("close-error-modal-btn");
 if (closeErrorModalBtn) {
     closeErrorModalBtn.addEventListener("click", () => {
@@ -45,6 +45,28 @@ if (closeErrorModalBtn) {
 // Referencing the projects grid container with safe type assertion
 const projectsListUI = document.getElementById("projects-list") as HTMLDivElement;
 const projectsManager = new ProjectsManager(projectsListUI);
+
+// Lesson 3.9: Connect Import and Export buttons
+const importBtn = document.getElementById("import-projects-btn");
+if (importBtn) {
+    importBtn.addEventListener("click", () => {
+        projectsManager.importFromJSON();
+    });
+}
+
+const exportBtn = document.getElementById("export-projects-btn");
+if (exportBtn) {
+    exportBtn.addEventListener("click", () => {
+        projectsManager.exportToJSON();
+    });
+}
+
+const floatingExportBtn = document.getElementById("floating-export-btn");
+if (floatingExportBtn) {
+    floatingExportBtn.addEventListener("click", () => {
+        projectsManager.exportToJSON();
+    });
+}
 
 // Referencing the project form
 const projectForm = document.getElementById("new-project-form");
@@ -63,9 +85,8 @@ if (projectForm && projectForm instanceof HTMLFormElement) {
             finishDate: new Date(formData.get("finishDate") as string),
         };
 
-        // Lesson 3.8: Intercepting errors using try-catch statement
+        // Intercepting errors using try-catch statement
         try {
-            // Delegating creation and UI rendering to the ProjectsManager
             const project = projectsManager.newProject(projectData);
             console.log("New Project Created & Rendered:", project);
 
@@ -78,7 +99,7 @@ if (projectForm && projectForm instanceof HTMLFormElement) {
             const errorMessage = err instanceof Error ? err.message : String(err);
             console.warn("Caught Project Creation Error:", errorMessage);
 
-            // Lesson 3.8 Challenge: Render to custom <dialog id="error-modal"> or fallback to alert()
+            // Render to custom <dialog id="error-modal"> or fallback to alert()
             const errorMsgEl = document.getElementById("error-modal-message");
             const errorModal = document.getElementById("error-modal");
 
@@ -86,7 +107,6 @@ if (projectForm && projectForm instanceof HTMLFormElement) {
                 errorMsgEl.textContent = errorMessage;
                 toggleModal("error-modal", true);
             } else {
-                // Standard alert demonstration from lesson
                 alert(errorMessage);
             }
         }

@@ -34,8 +34,11 @@
             <header id="main-header">
                 <h2>Projects</h2>
                 <div class="header-actions">
-                    <button class="btn-icon" title="Import Projects">
+                    <button class="btn-icon" id="import-projects-btn" title="Import Projects (JSON)">
                         <span class="material-icons-round">upload</span>
+                    </button>
+                    <button class="btn-icon" id="export-projects-btn" title="Export Projects (JSON)">
+                        <span class="material-icons-round">download</span>
                     </button>
                     <button class="btn-primary" id="new-project-btn">
                         <span class="material-icons-round">add</span>
@@ -363,15 +366,27 @@
             </form>
         </dialog>
 
-        <!-- Error Notification Modal Dialog (Lesson 3.8 Challenge) -->
-        <dialog id="error-modal" style="background: var(--bg-card, #26282b); color: var(--text-primary, #ffffff); border: 1px solid #ef4444; border-radius: 8px; padding: 1.5rem; max-width: 420px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
-            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; color: #ef4444;">
-                <span class="material-icons-round" style="font-size: 2rem;">error_outline</span>
-                <h3 style="margin: 0; font-size: 1.2rem;">Action Failed</h3>
-            </div>
-            <p id="error-modal-message" style="margin: 0 0 1.25rem 0; color: #d1d5db; line-height: 1.5; font-size: 0.95rem;"></p>
-            <div style="display: flex; justify-content: flex-end;">
-                <button type="button" id="close-error-modal-btn" class="btn-primary" style="background: #ef4444; color: white; border: none; padding: 0.45rem 1.2rem; border-radius: 6px; cursor: pointer;">Understood</button>
+        <!-- Professional Error Notification Modal (Lesson 3.8 Challenge) -->
+        <dialog id="error-modal">
+            <div class="error-modal-card">
+                <div class="error-modal-header">
+                    <div class="error-icon-box">
+                        <span class="material-icons-round">warning_amber</span>
+                    </div>
+                    <div class="error-title-group">
+                        <span>Validation Error</span>
+                        <h3>Action Failed</h3>
+                    </div>
+                </div>
+                <div class="error-modal-body">
+                    <p id="error-modal-message">A project with that name already exists.</p>
+                </div>
+                <div class="error-modal-actions">
+                    <button type="button" id="close-error-modal-btn" class="btn-error-close">
+                        <span class="material-icons-round" style="font-size: 1.15rem;">check</span>
+                        <span>Understood</span>
+                    </button>
+                </div>
             </div>
         </dialog>
     </main>
