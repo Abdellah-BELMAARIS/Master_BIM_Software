@@ -1,8 +1,8 @@
-// Lesson 3.6: Managing the projects
+// Lesson 3.6, 3.7 & 3.8: Project Management & Custom Error Interception
 import { IProject, ProjectStatus, UserRole } from "./classes/Project";
 import { ProjectsManager } from "./classes/ProjectsManager";
 
-// Assignment 1: Reusable toggleModal function controlling open / close state
+// Reusable toggleModal function controlling open / close state
 const toggleModal = (id: string, show: boolean = true) => {
     const modal = document.getElementById(id);
     if (modal && modal instanceof HTMLDialogElement) {
@@ -26,11 +26,19 @@ if (newProjectBtn) {
     console.warn("New projects button was not found");
 }
 
-// Assignment 2: Cancel button listener closes the modal without submitting
+// Cancel button listener closes modal without submitting
 const cancelProjectBtn = document.getElementById("cancel-btn");
 if (cancelProjectBtn) {
     cancelProjectBtn.addEventListener("click", () => {
         toggleModal("new-project-modal", false);
+    });
+}
+
+// Lesson 3.8 Challenge: Wire error modal close button
+const closeErrorModalBtn = document.getElementById("close-error-modal-btn");
+if (closeErrorModalBtn) {
+    closeErrorModalBtn.addEventListener("click", () => {
+        toggleModal("error-modal", false);
     });
 }
 
@@ -55,15 +63,33 @@ if (projectForm && projectForm instanceof HTMLFormElement) {
             finishDate: new Date(formData.get("finishDate") as string),
         };
 
-        // Delegating creation and UI rendering to the ProjectsManager
-        const project = projectsManager.newProject(projectData);
-        console.log("New Project Created & Rendered:", project);
+        // Lesson 3.8: Intercepting errors using try-catch statement
+        try {
+            // Delegating creation and UI rendering to the ProjectsManager
+            const project = projectsManager.newProject(projectData);
+            console.log("New Project Created & Rendered:", project);
 
-        // Clean up form inputs
-        projectForm.reset();
+            // Clean up form inputs
+            projectForm.reset();
 
-        // Close the dialog after successful submission
-        toggleModal("new-project-modal", false);
+            // Close the dialog after successful submission
+            toggleModal("new-project-modal", false);
+        } catch (err: any) {
+            const errorMessage = err instanceof Error ? err.message : String(err);
+            console.warn("Caught Project Creation Error:", errorMessage);
+
+            // Lesson 3.8 Challenge: Render to custom <dialog id="error-modal"> or fallback to alert()
+            const errorMsgEl = document.getElementById("error-modal-message");
+            const errorModal = document.getElementById("error-modal");
+
+            if (errorModal && errorModal instanceof HTMLDialogElement && errorMsgEl) {
+                errorMsgEl.textContent = errorMessage;
+                toggleModal("error-modal", true);
+            } else {
+                // Standard alert demonstration from lesson
+                alert(errorMessage);
+            }
+        }
     });
 } else {
     console.warn("Project form was not found or is not an HTMLFormElement");

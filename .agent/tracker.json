@@ -6,10 +6,10 @@
   "overallStats": {
     "totalModules": 7,
     "totalLessons": 130,
-    "completedLessons": 28,
+    "completedLessons": 30,
     "masterclassesCount": 14,
     "completedMasterclasses": 0,
-    "overallProgress": "21.5%"
+    "overallProgress": "23.1%"
   },
   "modules": [
     {
@@ -29,13 +29,13 @@
       "name": "Creating Interactive Websites",
       "duration": "02:44:00",
       "lessonsTotal": 29,
-      "lessonsCompleted": 12,
-      "progress": "41%",
+      "lessonsCompleted": 14,
+      "progress": "48%",
       "status": "in_progress",
       "activeLesson": {
-        "id": "3.7",
-        "title": "Coding some useful methods in Projects Manager",
-        "duration": "08:12"
+        "id": "3.9",
+        "title": "Exporting/importing project data as JSON",
+        "duration": "08:43"
       }
     },
     {

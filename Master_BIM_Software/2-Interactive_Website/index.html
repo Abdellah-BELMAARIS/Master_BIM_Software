@@ -362,6 +362,18 @@
                 </div>
             </form>
         </dialog>
+
+        <!-- Error Notification Modal Dialog (Lesson 3.8 Challenge) -->
+        <dialog id="error-modal" style="background: var(--bg-card, #26282b); color: var(--text-primary, #ffffff); border: 1px solid #ef4444; border-radius: 8px; padding: 1.5rem; max-width: 420px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
+            <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; color: #ef4444;">
+                <span class="material-icons-round" style="font-size: 2rem;">error_outline</span>
+                <h3 style="margin: 0; font-size: 1.2rem;">Action Failed</h3>
+            </div>
+            <p id="error-modal-message" style="margin: 0 0 1.25rem 0; color: #d1d5db; line-height: 1.5; font-size: 0.95rem;"></p>
+            <div style="display: flex; justify-content: flex-end;">
+                <button type="button" id="close-error-modal-btn" class="btn-primary" style="background: #ef4444; color: white; border: none; padding: 0.45rem 1.2rem; border-radius: 6px; cursor: pointer;">Understood</button>
+            </div>
+        </dialog>
     </main>
 
     <!-- Floating User Actions Dropdown Menu (Direct child of body, position: fixed) -->

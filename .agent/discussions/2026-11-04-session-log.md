@@ -368,3 +368,75 @@
   - `02 - ⚡ Creating Interactive Websites.md`
   - `BIM Learning Sprint Board.md`
   - `Discussions - ThatOpenCompany BIM.md`
+
+
+---
+
+## 📌 Part 11 — Module 2 Lesson 3.7: ProjectsManager Queries, Immutability & Array Operators (2026-11-04)
+
+### 1. Concepts Mastered & Python Comparison
+- **UUID Integration (`uuidv4`):**
+  - Universal Unique Identifier standard eliminates ID collisions.
+  - Runtime dependency (`npm i uuid`), imported as `import { v4 as uuidv4 } from "uuid"`.
+  - Added `id: string` to `Project` class, initialized in constructor.
+- **Array Operators vs Python List Comprehensions:**
+  - `find(callback)` $\approx$ Python `next((p for p in self.list if p.id == id), None)`.
+    - Returns `Project | undefined` (answering Juan's question: `undefined` is returned when no item matches).
+  - `filter(callback)` $\approx$ Python `[p for p in self.list if p.id != id]`.
+    - Immutability: `filter` is non-destructive, preserving original array integrity and returning a new array.
+    - Uses `!==` (answering Juan's question) because we want to *keep* all items that do *not* match the deleted ID.
+  - `reduce(callback, initialValue)` $\approx$ Python `sum(p.cost for p in self.list)`.
+- **DOM Node Destruction:**
+  - Before filtering data, `project.ui.remove()` tears down the project card DOM node from the page.
+- **The 2 Lesson Assignments Solved:**
+  - **Assignment 1:** `totalCost(): number` using `reduce((total, p) => total + p.cost, 0)`.
+  - **Assignment 2:** `getProjectByName(name: string): Project | undefined` using `find((p) => p.name === name)`.
+
+### 2. Actions Executed
+- Installed `uuid` and devDependency `@types/uuid`.
+- Updated [`src/classes/Project.ts`](file:///D:/Coding/MyLearning/ThatOpenCompany/Master_BIM_Software/2-Interactive_Website/src/classes/Project.ts) with `id: string = uuidv4()` and `dataset.projectId`.
+- Updated [`src/classes/ProjectsManager.ts`](file:///D:/Coding/MyLearning/ThatOpenCompany/Master_BIM_Software/2-Interactive_Website/src/classes/ProjectsManager.ts) with `getProject`, `deleteProject`, `totalCost`, and `getProjectByName`.
+- Verified build with `npx vite build` (147ms).
+
+### 3. Curriculum & Obsidian Milestones
+- **Module 2 Progress:** 13 / 29 lessons (`45%`).
+- **Overall Curriculum Progress:** 29 / 130 lessons (`22.3%`).
+- **Next Target:** `3.8. Creating custom errors (04:59)`.
+- **Obsidian Synced:**
+  - `02 - ⚡ Creating Interactive Websites.md`
+  - `BIM Learning Sprint Board.md`
+  - `00 - 🏗️ Master BIM Software Development (MOC).md`
+  - `Discussions - ThatOpenCompany BIM.md`
+
+
+---
+
+## 📌 Part 12 — Module 2 Lesson 3.8: Custom Validation Errors & Exception Handling (2026-11-04)
+
+### 1. Concepts Mastered & Python Comparison
+- **Validation Constraints:** Preventing duplicate project names in the repository before writing to state or rendering to DOM.
+- **Extracting Names via `map()`:** Transforms `Project[]` to `string[]` (`[p.name for p in self.list]`).
+- **Membership Check via `includes()`:** Returns `boolean` (`name in project_names`).
+- **Throwing Exceptions (`throw new Error(...)`):**
+  - Halts execution immediately, jumping to the nearest error handler (identical to Python's `raise ValueError(...)`).
+- **Error Interception (`try...catch`):**
+  - Catches the thrown error without breaking the user session or crashing the application.
+  - Keeps form visible and filled so the user can easily rectify their input without losing their work.
+- **Lesson Challenge Solved:**
+  - Instead of standard blocking `alert(err.message)`, built a dark BIM styled `<dialog id="error-modal">` with an "Action Failed" header, detailed error message, and "Understood" dismiss button.
+
+### 2. Actions Executed
+- Updated `newProject()` in [`src/classes/ProjectsManager.ts`](file:///D:/Coding/MyLearning/ThatOpenCompany/Master_BIM_Software/2-Interactive_Website/src/classes/ProjectsManager.ts) to check `nameInUse` and `throw new Error(...)`.
+- Added `<dialog id="error-modal">` in [`index.html`](file:///D:/Coding/MyLearning/ThatOpenCompany/Master_BIM_Software/2-Interactive_Website/index.html).
+- Wrapped project creation in `try...catch` inside [`src/index.ts`](file:///D:/Coding/MyLearning/ThatOpenCompany/Master_BIM_Software/2-Interactive_Website/src/index.ts), rendering errors to `#error-modal` (with fallback to `alert()`).
+- Verified build with `npx vite build` (172ms).
+
+### 3. Curriculum & Obsidian Milestones
+- **Module 2 Progress:** 14 / 29 lessons (`48%`).
+- **Overall Curriculum Progress:** 30 / 130 lessons (`23.1%`).
+- **Next Target:** `3.9. Exporting/importing project data as JSON (08:43)`.
+- **Obsidian Synced:**
+  - `02 - ⚡ Creating Interactive Websites.md`
+  - `BIM Learning Sprint Board.md`
+  - `00 - 🏗️ Master BIM Software Development (MOC).md`
+  - `Discussions - ThatOpenCompany BIM.md`

@@ -1,4 +1,5 @@
-// Lesson 3.4 & 3.5: Custom types, interfaces, and dynamic UI generation
+// Lesson 3.4, 3.5 & 3.7: Custom types, interfaces, dynamic UI, and UUID
+import { v4 as uuidv4 } from "uuid";
 
 // 1. Custom union types for properties with fixed choices
 export type ProjectStatus = "pending" | "active" | "finished" | "Pending" | "Active" | "Finished";
@@ -22,12 +23,16 @@ export class Project implements IProject {
     status: ProjectStatus;
     finishDate: Date;
 
+    // Lesson 3.7: Unique alphanumeric UUID identifier
+    id: string;
+
     // Internal class properties with default values (Lesson 3.5)
     cost: number = 0;
     progress: number = 0;
     ui!: HTMLDivElement;
 
-    constructor(data: IProject) {
+    constructor(data: IProject, id: string = uuidv4()) {
+        this.id = id;
         this.name = data.name;
         this.description = data.description;
         this.userRole = data.userRole;
@@ -45,6 +50,7 @@ export class Project implements IProject {
 
         this.ui = document.createElement("div");
         this.ui.className = "project-card";
+        this.ui.dataset.projectId = this.id;
 
         // Template literals inserting dynamic project values
         const initials = this.name ? this.name.substring(0, 2).toUpperCase() : "PR";
