@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 65" width="240" height="65">
+  <defs>
+    <style>
+      .logo-title { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; font-size: 22px; font-weight: 800; fill: #ffffff; letter-spacing: 1.5px; }
+      .logo-sub { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; font-size: 22px; font-weight: 800; fill: #029ae0; letter-spacing: 1.5px; }
+    </style>
+  </defs>
+  <text x="0" y="26" class="logo-title">CONSTRUCTION</text>
+  <text x="0" y="52" class="logo-sub">COMPANY</text>
+</svg>

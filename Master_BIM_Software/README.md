@@ -8,7 +8,7 @@ Welcome to the master project workspace (`Master_BIM_Software/`).
 
 | # | Directory | Module Name | Sections | Lessons | Duration | Progress |
 |:---:|:---|:---|:---:|:---:|:---:|:---:|
-| **1** | [`1-Static_website`](./1-Static_website) | **Creating Static Websites** | 4 | `6 / 16` | `1 hr 19 min` | **37%** 🔄 |
+| **1** | [`1-Static_website`](./1-Static_website) | **Creating Static Websites** | 4 | `9 / 16` | `1 hr 19 min` | **56%** 🔄 |
 | **2** | [`2-Interactive_Website`](./2-Interactive_Website) | **Creating Interactive Websites** | 6 | `0 / 29` | `2 hr 44 min` | **0%** 📅 |
 | **3** | [`3-Reactive_Apps`](./3-Reactive_Apps) | **Creating Reactive Apps** | 5 | `0 / 27` | `3 hr 18 min` | **0%** 📅 |
 | **4** | [`4-BIM_Apps`](./4-BIM_Apps) | **Creating BIM Apps** | 6 | `0 / 30` | `3 hr 36 min` | **0%** 📅 |
@@ -18,15 +18,17 @@ Welcome to the master project workspace (`Master_BIM_Software/`).
 
 ---
 
-## 🧭 Module 1 Active Checkpoint (`1-Static_website` — 37%)
+## 🧭 Module 1 Active Checkpoint (`1-Static_website` — 56%)
 - [x] **1.1** Introduction (`02:10`)
 - [x] **2.1** Understanding the markup syntax and HTML (`04:28`)
 - [x] **2.2** Webpage composition (`03:00`)
 - [x] **2.3** How to use the files from the master (`03:14`)
 - [x] **2.4** Structuring the main page (`08:44`)
 - [x] **2.5** Getting started with CSS. Part I. (`05:17`)
-- [ ] **2.6** Getting started with CSS. Part II. (`05:10`) 👈 **Next Lesson**
-- [ ] **2.7** Working on the sidebar (`08:47`)
+- [x] **2.6** Getting started with CSS. Part II. (`05:10`)
+- [x] **2.7** Working on the sidebar (`08:47`)
+- [x] **2.8** Working on the header (`08:27`) ✅
+- [ ] **2.9** Structuring and styling a project card (`07:47`) 👈 **Next Lesson**
 - [ ] **2.8** Working on the header (`08:27`)
 - [ ] **2.9** Structuring and styling a project card (`07:47`)
 - [ ] **2.10** Making the projects page responsive (`03:34`)

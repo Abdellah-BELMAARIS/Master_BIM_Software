@@ -3,18 +3,255 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Projects</title>
+    <title>Projects Dashboard — Construction Company</title>
+    <!-- Google Material Icons Round -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons+Round">
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- Sidebar Navigation -->
     <aside id="sidebar">
-        <img id="company-logo" src="" alt="Company Logo">
+        <img id="company-logo" src="./assets/company-logo.svg" alt="Construction Company">
+
         <ul id="nav-buttons">
-            <li>Projects</li>
+            <li class="nav-item active">
+                <span class="material-icons-round">apartment</span>
+                <span>Projects</span>
+            </li>
+            <li class="nav-item">
+                <span class="material-icons-round">person</span>
+                <span>Users</span>
+            </li>
         </ul>
     </aside>
+
+    <!-- Main Content Area -->
     <main id="content">
-        <header>
+        <!-- Top Action Header -->
+        <header id="main-header">
+            <h2>Projects</h2>
+            <div class="header-actions">
+                <button class="btn-icon" title="Import Projects">
+                    <span class="material-icons-round">upload</span>
+                </button>
+                <button class="btn-primary" id="new-project-btn">
+                    <span class="material-icons-round">add</span>
+                    <span>New Project</span>
+                </button>
+            </div>
         </header>
+
+        <!-- Projects Grid -->
+        <section id="projects-list">
+            <!-- Project 1: Hospital Center -->
+            <article class="project-card">
+                <div class="card-header">
+                    <div class="card-avatar badge-orange">HC</div>
+                    <div class="card-title-group">
+                        <h3>Hospital Center</h3>
+                        <p>Community hospital located at downtown</p>
+                    </div>
+                </div>
+                <div class="card-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Status</span>
+                        <span class="detail-value">Active</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Role</span>
+                        <span class="detail-value">Engineer</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Cost</span>
+                        <span class="detail-value">$ 2'000.000</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Estimated Progress</span>
+                        <span class="detail-value">43%</span>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Project 2: Default Project -->
+            <article class="project-card">
+                <div class="card-header">
+                    <div class="card-avatar badge-green">DE</div>
+                    <div class="card-title-group">
+                        <h3>Default Project</h3>
+                        <p>This is just a default project. You may deleted if you want.</p>
+                    </div>
+                </div>
+                <div class="card-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Status</span>
+                        <span class="detail-value">Active</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Role</span>
+                        <span class="detail-value">Architect</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Cost</span>
+                        <span class="detail-value">$ 0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Estimated Progress</span>
+                        <span class="detail-value">0%</span>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Project 3: Urban Oasis Park -->
+            <article class="project-card">
+                <div class="card-header">
+                    <div class="card-avatar badge-purple">UR</div>
+                    <div class="card-title-group">
+                        <h3>Urban Oasis Park</h3>
+                        <p>City park with green spaces and events.</p>
+                    </div>
+                </div>
+                <div class="card-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Status</span>
+                        <span class="detail-value">Pending</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Role</span>
+                        <span class="detail-value">Architect</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Cost</span>
+                        <span class="detail-value">$ 0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Estimated Progress</span>
+                        <span class="detail-value">0%</span>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Project 4: TechHub Innovation -->
+            <article class="project-card">
+                <div class="card-header">
+                    <div class="card-avatar badge-green">TE</div>
+                    <div class="card-title-group">
+                        <h3>TechHub Innovation</h3>
+                        <p>Tech collaboration center.</p>
+                    </div>
+                </div>
+                <div class="card-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Status</span>
+                        <span class="detail-value">Pending</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Role</span>
+                        <span class="detail-value">Architect</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Cost</span>
+                        <span class="detail-value">$ 0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Estimated Progress</span>
+                        <span class="detail-value">0%</span>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Project 5: Sustainable Housing -->
+            <article class="project-card">
+                <div class="card-header">
+                    <div class="card-avatar badge-green">SU</div>
+                    <div class="card-title-group">
+                        <h3>Sustainable Housing</h3>
+                        <p>Eco-friendly homes community.</p>
+                    </div>
+                </div>
+                <div class="card-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Status</span>
+                        <span class="detail-value">Active</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Role</span>
+                        <span class="detail-value">Engineer</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Cost</span>
+                        <span class="detail-value">$ 0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Estimated Progress</span>
+                        <span class="detail-value">0%</span>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Project 6: Heritage Restoration -->
+            <article class="project-card">
+                <div class="card-header">
+                    <div class="card-avatar badge-magenta">HE</div>
+                    <div class="card-title-group">
+                        <h3>Heritage Restoration</h3>
+                        <p>Reviving historic landmark.</p>
+                    </div>
+                </div>
+                <div class="card-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Status</span>
+                        <span class="detail-value">Finished</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Role</span>
+                        <span class="detail-value">Developer</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Cost</span>
+                        <span class="detail-value">$ 0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Estimated Progress</span>
+                        <span class="detail-value">0%</span>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Project 7: Educational Outreach -->
+            <article class="project-card">
+                <div class="card-header">
+                    <div class="card-avatar badge-blue">ED</div>
+                    <div class="card-title-group">
+                        <h3>Educational Outreach</h3>
+                        <p>Empowering underserved students.</p>
+                    </div>
+                </div>
+                <div class="card-details">
+                    <div class="detail-row">
+                        <span class="detail-label">Status</span>
+                        <span class="detail-value">Active</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Role</span>
+                        <span class="detail-value">Architect</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Cost</span>
+                        <span class="detail-value">$ 0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="detail-label">Estimated Progress</span>
+                        <span class="detail-value">0%</span>
+                    </div>
+                </div>
+            </article>
+        </section>
+
+        <!-- Floating Export Button -->
+        <button id="floating-export-btn" class="fab-btn" title="Export Projects">
+            <span class="material-icons-round">download</span>
+        </button>
     </main>
 </body>
 </html>
