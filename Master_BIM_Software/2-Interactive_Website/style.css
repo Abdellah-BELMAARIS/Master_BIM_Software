@@ -5,22 +5,20 @@
    ========================================================================== */
 
 :root {
-    /* Authentic AEC / BIM 3D Engineering Dark Slate Theme */
-    --bg-main: #090d14;
-    --bg-sidebar: #0e131d;
-    --bg-card: #131a26;
-    --bg-card-hover: #182232;
-    --border-color: rgba(148, 163, 184, 0.14);
-    --border-hairline: rgba(14, 165, 233, 0.28);
+    /* CYPECAD & Structural BIM Desktop Engineering Theme (Clean, Sober, Industrial) */
+    --bg-main: #131722;
+    --bg-sidebar: #181c28;
+    --bg-card: #1e2333;
+    --bg-card-hover: #262c3e;
+    --border-color: #2b3347;
+    --border-hairline: #3b4661;
     
-    /* CAD Precision Blue & Structural Emerald Accents */
-    --primary-indigo: #0ea5e9;
-    --primary-indigo-hover: #0284c7;
-    --primary-indigo-glow: rgba(14, 165, 233, 0.25);
-    --accent-mint: #10b981;
-    --accent-cyan: #38bdf8;
-    --accent-amber: #f59e0b;
-    --accent-rose: #f43f5e;
+    /* Authentic CYPE / Structural Cobalt Blue */
+    --primary-blue: #2563eb;
+    --primary-blue-hover: #1d4ed8;
+    --accent-green: #15803d;
+    --accent-amber: #b45309;
+    --accent-red: #b91c1c;
     
     --text-primary: #f8fafc;
     --text-secondary: #94a3b8;
@@ -31,18 +29,18 @@
     --radius-straight: 4px;
     --radius-box: 6px;
 
-    /* Typography Scale Variables */
-    --font-sm: 0.825rem;
-    --font-base: 0.95rem;
-    --font-lg: 1.15rem;
-    --font-xl: 1.5rem;
+    /* Typography Scale Variables (High-Clarity Pro BIM Scale) */
+    --font-sm: 0.9rem;
+    --font-base: 1.05rem;
+    --font-lg: 1.28rem;
+    --font-xl: 1.72rem;
 
-    /* AEC Discipline Badge Colors */
+    /* Engineering Discipline Badge Colors */
     --badge-orange: #c2410c;
-    --badge-green: #047857;
-    --badge-purple: #0369a1;
+    --badge-green: #15803d;
+    --badge-purple: #1e40af;
     --badge-magenta: #b45309;
-    --badge-blue: #0284c7;
+    --badge-blue: #2563eb;
 }
 
 * {
@@ -54,35 +52,32 @@
 
 /* Custom Architectural Precision Scrollbars */
 ::-webkit-scrollbar {
-    width: 5px;
-    height: 5px;
+    width: 6px;
+    height: 6px;
 }
 ::-webkit-scrollbar-track {
     background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-    background: rgba(148, 163, 184, 0.2);
+    background: rgba(148, 163, 184, 0.25);
     border-radius: var(--radius-sharp);
 }
 ::-webkit-scrollbar-thumb:hover {
-    background: var(--primary-indigo);
+    background: var(--primary-blue);
 }
 
 body {
     display: grid;
-    grid-template-columns: 256px 1fr;
+    grid-template-columns: 280px 1fr;
     height: 100vh;
     height: 100dvh;
     background-color: var(--bg-main);
-    background-image: 
-        radial-gradient(ellipse 90% 65% at 50% -15%, rgba(14, 165, 233, 0.09), transparent 70%),
-        radial-gradient(ellipse 60% 40% at 100% 100%, rgba(16, 185, 129, 0.04), transparent 60%);
     color: var(--text-primary);
     overflow: hidden;
 }
 
 /* ==========================================================================
-   Architectural Straight Sidebar Styling
+   CYPECAD / Structural BIM Sidebar Styling
    ========================================================================== */
 #sidebar {
     background-color: var(--bg-sidebar);
@@ -92,25 +87,24 @@ body {
     justify-content: space-between;
     padding: 0;
     box-sizing: border-box;
-    backdrop-filter: blur(14px);
     z-index: 10;
 }
 
 .sidebar-header {
-    height: 72px;
-    min-height: 72px;
-    padding: 0 1.25rem;
+    height: 82px;
+    min-height: 82px;
+    padding: 0 1.4rem;
     display: flex;
     flex-direction: column;
     align-items: flex-start;
     justify-content: center;
-    gap: 0.28rem;
+    gap: 0.35rem;
     border-bottom: 1px solid var(--border-color);
     box-sizing: border-box;
 }
 
 #company-logo {
-    height: 28px;
+    height: 34px;
     width: auto;
     max-width: 100%;
     display: block;
@@ -119,28 +113,28 @@ body {
 }
 
 .sidebar-brand-badge {
-    font-size: 0.6rem;
+    font-size: 0.68rem;
     font-weight: 700;
     letter-spacing: 0.08em;
-    color: var(--accent-cyan);
-    background: rgba(14, 165, 233, 0.12);
-    border: 1px solid rgba(14, 165, 233, 0.28);
-    padding: 0.12rem 0.45rem;
+    color: #93c5fd;
+    background: rgba(37, 99, 235, 0.16);
+    border: 1px solid rgba(37, 99, 235, 0.38);
+    padding: 0.16rem 0.55rem;
     border-radius: var(--radius-sharp);
     display: inline-block;
     width: fit-content;
     text-transform: uppercase;
     font-family: monospace;
-    line-height: 1.2;
+    line-height: 1.25;
 }
 
 #nav-buttons {
     list-style-type: none;
     margin: 0;
-    padding: 1rem 0.75rem;
+    padding: 1.2rem 0.9rem;
     display: flex;
     flex-direction: column;
-    row-gap: 6px;
+    row-gap: 8px;
     width: 100%;
     flex: 1;
     box-sizing: border-box;
@@ -149,12 +143,12 @@ body {
 .nav-item {
     display: flex;
     align-items: center;
-    gap: 0.85rem;
-    padding: 0.75rem 0.95rem;
+    gap: 0.95rem;
+    padding: 0.9rem 1.1rem;
     border-radius: var(--radius-straight);
     color: var(--text-secondary);
-    font-size: var(--font-base);
-    font-weight: 500;
+    font-size: 1.05rem;
+    font-weight: 600;
     cursor: pointer;
     width: 100%;
     box-sizing: border-box;
@@ -163,26 +157,26 @@ body {
 }
 
 .nav-item .material-icons-round {
-    font-size: 1.25rem;
+    font-size: 1.45rem;
 }
 
 .nav-item:hover {
-    background-color: rgba(255, 255, 255, 0.03);
-    border-color: rgba(255, 255, 255, 0.06);
+    background-color: #202636;
+    border-color: var(--border-color);
     color: var(--text-primary);
 }
 
 .nav-item.active {
-    background: linear-gradient(90deg, rgba(14, 165, 233, 0.16) 0%, rgba(14, 165, 233, 0.03) 100%);
-    color: #7dd3fc;
-    border-left: 3px solid var(--primary-indigo);
-    border-top: 1px solid rgba(14, 165, 233, 0.25);
-    border-bottom: 1px solid rgba(14, 165, 233, 0.25);
-    border-right: 1px solid rgba(14, 165, 233, 0.1);
+    background: rgba(37, 99, 235, 0.18);
+    color: #ffffff;
+    border-left: 3px solid var(--primary-blue);
+    border-top: 1px solid var(--border-color);
+    border-bottom: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
 }
 
 .nav-item.active .material-icons-round {
-    color: var(--accent-cyan);
+    color: #60a5fa;
 }
 
 .sidebar-footer {
@@ -192,34 +186,41 @@ body {
     padding: 1rem 1.25rem;
     border-top: 1px solid var(--border-color);
     box-sizing: border-box;
+    gap: 0.5rem;
 }
 
 .system-status {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+    min-width: 0;
 }
 
 .status-dot {
-    width: 7px;
-    height: 7px;
-    border-radius: 50%;
-    background-color: var(--accent-mint);
-    box-shadow: 0 0 8px var(--accent-mint);
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-sharp);
+    background-color: #22c55e;
+    box-shadow: 0 0 6px rgba(34, 197, 94, 0.5);
+    flex-shrink: 0;
 }
 
 .status-text {
-    font-size: 0.68rem;
-    font-weight: 600;
+    font-size: 0.72rem;
+    font-weight: 700;
     color: var(--text-secondary);
-    letter-spacing: 0.05em;
+    letter-spacing: 0.04em;
     font-family: monospace;
+    white-space: nowrap;
 }
 
 .status-version {
-    font-size: 0.65rem;
+    font-size: 0.7rem;
+    font-weight: 600;
     color: var(--text-muted);
     font-family: monospace;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 /* ==========================================================================
@@ -233,15 +234,15 @@ body {
     overflow: hidden;
 }
 
-/* Architectural Straight Header */
+/* Structural BIM Top Header */
 #main-header {
-    height: 72px;
+    height: 82px;
+    min-height: 82px;
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding: 0 2.5rem;
-    background: rgba(13, 15, 23, 0.85);
-    backdrop-filter: blur(14px);
+    background: var(--bg-sidebar);
     border-bottom: 1px solid var(--border-color);
     box-sizing: border-box;
     z-index: 5;
@@ -251,20 +252,20 @@ body {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    gap: 0.2rem;
+    gap: 0.25rem;
 }
 
 .header-eyebrow {
-    font-size: 0.68rem;
+    font-size: 0.76rem;
     font-weight: 700;
-    color: var(--primary-indigo);
+    color: #60a5fa;
     letter-spacing: 0.08em;
     font-family: monospace;
     text-transform: uppercase;
 }
 
 #main-header h2 {
-    font-size: 1.45rem;
+    font-size: 1.72rem;
     font-weight: 700;
     color: var(--text-primary);
     letter-spacing: -0.02em;
@@ -275,151 +276,176 @@ body {
 .header-actions {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.85rem;
 }
 
 .btn-action-tool {
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--bg-card);
     border: 1px solid var(--border-color);
     color: var(--text-secondary);
     cursor: pointer;
-    padding: 0.55rem 0.95rem;
+    padding: 0.65rem 1.05rem;
     border-radius: var(--radius-straight);
     display: inline-flex;
     align-items: center;
-    gap: 0.45rem;
-    font-size: 0.825rem;
-    font-weight: 500;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
     transition: all 0.15s ease;
 }
 
 .btn-action-tool:hover {
-    color: #a5b4fc;
-    background-color: rgba(99, 102, 241, 0.12);
-    border-color: rgba(99, 102, 241, 0.35);
+    color: #ffffff;
+    background-color: var(--bg-card-hover);
+    border-color: #3b4661;
     transform: translateY(-1px);
 }
 
 .btn-action-tool .material-icons-round {
-    font-size: 1.15rem;
+    font-size: 1.25rem;
 }
 
 .btn-icon {
-    background: rgba(255, 255, 255, 0.03);
+    background: var(--bg-card);
     border: 1px solid var(--border-color);
     color: var(--text-secondary);
     cursor: pointer;
-    padding: 0.55rem;
+    padding: 0.65rem;
     border-radius: var(--radius-straight);
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    transition: all 0.15s ease;
 }
 
 .btn-icon:hover {
-    color: #a5b4fc;
-    background-color: rgba(99, 102, 241, 0.15);
-    border-color: rgba(99, 102, 241, 0.35);
+    color: #ffffff;
+    background-color: var(--bg-card-hover);
+    border-color: #3b4661;
     transform: translateY(-1px);
 }
 
 .btn-primary {
     display: inline-flex;
     align-items: center;
-    gap: 0.45rem;
-    background: linear-gradient(135deg, var(--primary-indigo) 0%, var(--primary-indigo-hover) 100%);
+    gap: 0.5rem;
+    background-color: var(--primary-blue);
     color: #ffffff;
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    padding: 0.6rem 1.25rem;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 0.68rem 1.35rem;
     border-radius: var(--radius-straight);
-    font-size: 0.85rem;
+    font-size: 0.95rem;
     font-weight: 600;
     cursor: pointer;
-    box-shadow: 0 4px 14px var(--primary-indigo-glow);
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+    transition: all 0.15s ease;
 }
 
 .btn-primary:hover {
-    background: linear-gradient(135deg, #818cf8 0%, var(--primary-indigo) 100%);
-    box-shadow: 0 6px 20px rgba(99, 102, 241, 0.45);
+    background-color: var(--primary-blue-hover);
     transform: translateY(-1px);
 }
 
 .btn-primary .material-icons-round {
-    font-size: 1.15rem;
+    font-size: 1.25rem;
 }
 
 /* ==========================================================================
-   Projects Grid & Cards
+   Projects Toolbar & Grid
    ========================================================================== */
+.projects-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.35rem 2.5rem 0 2.5rem;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+}
+
+.projects-search-box {
+    width: 350px;
+    max-width: 100%;
+}
+
+.projects-search-box input {
+    width: 100%;
+}
+
+.projects-filter-group {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
 #projects-list {
     flex: 1;
     overflow-y: auto;
-    padding: 2rem 2.5rem 4rem 2.5rem;
+    padding: 1.5rem 2.5rem 4.5rem 2.5rem;
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 1.5rem;
+    grid-template-columns: repeat(auto-fill, minmax(370px, 1fr));
+    gap: 1.65rem;
     align-content: start;
 }
 
-/* Architectural Straight Project Card */
+.projects-empty-state {
+    grid-column: 1 / -1;
+    background-color: var(--bg-card);
+    border: 1px dashed var(--border-color);
+    border-radius: var(--radius-straight);
+    padding: 2.75rem 1.5rem;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 1rem;
+}
+
+/* CYPECAD / Structural BIM Project Card */
 .project-card {
-    background: linear-gradient(180deg, rgba(18, 20, 32, 0.95) 0%, rgba(13, 15, 23, 0.98) 100%);
+    background-color: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-straight);
-    padding: 1.35rem;
+    padding: 1.6rem;
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-    backdrop-filter: blur(10px);
+    gap: 1.35rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
     position: relative;
     overflow: hidden;
     cursor: pointer;
-    transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease, border-color 0.2s ease;
-}
-
-.project-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(99, 102, 241, 0.35), transparent);
-    pointer-events: none;
+    transition: all 0.15s ease;
 }
 
 .project-card:hover {
-    background: linear-gradient(180deg, rgba(23, 27, 43, 0.98) 0%, rgba(16, 19, 30, 1) 100%);
-    border-color: var(--primary-indigo);
-    box-shadow: 0 10px 28px -6px rgba(0, 0, 0, 0.7), 0 0 0 1px var(--primary-indigo-glow);
+    background-color: var(--bg-card-hover);
+    border-color: var(--primary-blue);
     transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
 }
 
 /* Card Header */
 .card-header {
     display: flex;
     align-items: flex-start;
-    gap: 1rem;
-    padding-bottom: 0.85rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    gap: 1.1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .card-avatar {
-    width: 40px;
-    height: 40px;
+    width: 48px;
+    height: 48px;
     border-radius: var(--radius-straight);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.95rem;
+    font-size: 1.12rem;
     font-weight: 700;
     color: #ffffff;
     flex-shrink: 0;
     user-select: none;
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    text-transform: uppercase;
+    border: 1px solid rgba(255, 255, 255, 0.14);
 }
 
 .badge-orange { background-color: var(--badge-orange); }
@@ -429,47 +455,48 @@ body {
 .badge-blue { background-color: var(--badge-blue); }
 
 .card-title-group h3 {
-    font-size: 1.05rem;
-    font-weight: 600;
+    font-size: 1.24rem;
+    font-weight: 700;
     color: var(--text-primary);
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.3rem;
     line-height: 1.25;
 }
 
 .card-title-group p {
-    font-size: 0.825rem;
+    font-size: 0.94rem;
     color: var(--text-secondary);
-    line-height: 1.35;
+    line-height: 1.4;
 }
 
 /* Card Details (2x2 key-value table) */
 .card-details {
     display: flex;
     flex-direction: column;
-    gap: 0.65rem;
+    gap: 0.75rem;
 }
 
 .detail-row {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 0.875rem;
+    font-size: 0.96rem;
 }
 
 .detail-label {
     color: var(--text-secondary);
+    font-weight: 500;
 }
 
 .detail-value {
     color: var(--text-primary);
-    font-weight: 500;
+    font-weight: 600;
 }
 
 /* Technical Straight Badges */
 .status-tag {
-    padding: 0.2rem 0.55rem;
+    padding: 0.25rem 0.65rem;
     border-radius: var(--radius-sharp);
-    font-size: 0.7rem;
+    font-size: 0.78rem;
     font-weight: 700;
     letter-spacing: 0.05em;
     display: inline-block;
@@ -478,27 +505,28 @@ body {
 }
 
 .status-tag.active {
-    background: rgba(16, 185, 129, 0.12);
-    color: #34d399;
-    border: 1px solid rgba(16, 185, 129, 0.35);
+    background: rgba(21, 128, 61, 0.16);
+    color: #4ade80;
+    border: 1px solid rgba(34, 197, 94, 0.4);
 }
 
 .status-tag.pending {
-    background: rgba(245, 158, 11, 0.12);
+    background: rgba(180, 83, 9, 0.16);
     color: #fbbf24;
-    border: 1px solid rgba(245, 158, 11, 0.35);
+    border: 1px solid rgba(245, 158, 11, 0.4);
 }
 
 .status-tag.finished {
-    background: rgba(99, 102, 241, 0.12);
-    color: #a5b4fc;
-    border: 1px solid rgba(99, 102, 241, 0.35);
+    background: rgba(37, 99, 235, 0.16);
+    color: #93c5fd;
+    border: 1px solid rgba(59, 130, 246, 0.4);
 }
 
 .card-progress-bar {
     width: 100%;
-    height: 4px;
-    background-color: rgba(255, 255, 255, 0.06);
+    height: 6px;
+    background-color: #131722;
+    border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: var(--radius-sharp);
     overflow: hidden;
     margin-top: 0.35rem;
@@ -506,7 +534,7 @@ body {
 
 .card-progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--primary-indigo), var(--accent-mint));
+    background: linear-gradient(90deg, var(--primary-blue), #10b981);
     border-radius: var(--radius-sharp);
     transition: width 0.3s ease;
 }
@@ -521,22 +549,21 @@ body {
     width: 44px;
     height: 44px;
     border-radius: var(--radius-straight);
-    background: linear-gradient(135deg, #1e2235 0%, #131624 100%);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
     color: var(--text-secondary);
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    transition: all 0.15s ease;
 }
 
 .fab-btn:hover {
-    background: linear-gradient(135deg, var(--primary-indigo) 0%, var(--primary-indigo-hover) 100%);
+    background-color: var(--primary-blue);
     color: #ffffff;
-    border-color: rgba(255, 255, 255, 0.25);
-    box-shadow: 0 10px 25px var(--primary-indigo-glow);
+    border-color: var(--primary-blue);
     transform: translateY(-2px);
 }
 
@@ -549,6 +576,7 @@ body {
    ========================================================================== */
 dialog#new-project-modal,
 dialog#new-user-modal,
+dialog#todo-modal,
 dialog#error-modal {
     border: none;
     border-radius: var(--radius-straight);
@@ -560,15 +588,37 @@ dialog#error-modal {
 
 dialog#new-project-modal::backdrop,
 dialog#new-user-modal::backdrop,
+dialog#todo-modal::backdrop,
 dialog#error-modal::backdrop {
     background-color: rgba(0, 0, 0, 0.8);
     backdrop-filter: blur(10px);
 }
 
 #new-project-form,
-#new-user-form {
+#new-user-form,
+#todo-form {
     background-color: #121420;
     border: 1px solid var(--border-color);
+    border-radius: var(--radius-straight);
+    padding: 1.75rem 2rem;
+    width: 460px;
+    max-width: 92vw;
+    color: var(--text-primary);
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8);
+}
+
+.form-row-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.85rem;
+}
+
+.error-modal-card {
+    background: #181c28;
+    border: 1px solid var(--accent-red);
     border-radius: var(--radius-straight);
     padding: 1.75rem 2rem;
     width: 440px;
@@ -578,20 +628,6 @@ dialog#error-modal::backdrop {
     flex-direction: column;
     gap: 1.25rem;
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8);
-}
-
-.error-modal-card {
-    background: linear-gradient(145deg, #181926, #0e1017);
-    border: 1px solid rgba(244, 63, 94, 0.4);
-    border-radius: var(--radius-straight);
-    padding: 1.75rem 2rem;
-    width: 440px;
-    max-width: 90vw;
-    color: var(--text-primary);
-    display: flex;
-    flex-direction: column;
-    gap: 1.25rem;
-    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.8), 0 0 35px rgba(244, 63, 94, 0.15);
     animation: errorPopIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -616,12 +652,12 @@ dialog#error-modal::backdrop {
     width: 42px;
     height: 42px;
     border-radius: var(--radius-straight);
-    background-color: rgba(244, 63, 94, 0.12);
-    border: 1px solid rgba(244, 63, 94, 0.25);
+    background-color: rgba(185, 28, 28, 0.15);
+    border: 1px solid rgba(185, 28, 28, 0.35);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--accent-rose);
+    color: #ef4444;
     flex-shrink: 0;
 }
 
@@ -645,7 +681,7 @@ dialog#error-modal::backdrop {
 
 .error-title-group span {
     font-size: 0.72rem;
-    color: var(--accent-rose);
+    color: #ef4444;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     font-weight: 700;
@@ -654,7 +690,7 @@ dialog#error-modal::backdrop {
 
 .error-modal-body {
     background-color: rgba(0, 0, 0, 0.35);
-    border-left: 3px solid var(--accent-rose);
+    border-left: 3px solid var(--accent-red);
     border-radius: var(--radius-sharp);
     padding: 0.85rem 1rem;
 }
@@ -675,7 +711,7 @@ dialog#error-modal::backdrop {
 }
 
 .btn-error-close {
-    background-color: var(--accent-rose);
+    background-color: var(--accent-red);
     border: none;
     color: #ffffff;
     padding: 0.55rem 1.4rem;
@@ -695,7 +731,8 @@ dialog#error-modal::backdrop {
 }
 
 #new-project-form h2,
-#new-user-form h2 {
+#new-user-form h2,
+#todo-form h2 {
     font-size: 1.25rem;
     font-weight: 700;
     color: var(--text-primary);
@@ -751,8 +788,8 @@ dialog#error-modal::backdrop {
 .form-field input:focus,
 .form-field textarea:focus,
 .form-field select:focus {
-    border-color: var(--primary-indigo);
-    box-shadow: 0 0 0 2px var(--primary-indigo-glow);
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
 }
 
 .form-field textarea {
@@ -766,7 +803,7 @@ dialog#error-modal::backdrop {
 }
 
 .form-field select option {
-    background-color: #121420;
+    background-color: var(--bg-card);
     color: #ffffff;
 }
 
@@ -803,7 +840,7 @@ dialog#error-modal::backdrop {
 }
 
 .btn-accept {
-    background-color: var(--accent-mint);
+    background-color: var(--accent-green);
     border: none;
     color: #ffffff;
     padding: 0.55rem 1.4rem;
@@ -811,12 +848,12 @@ dialog#error-modal::backdrop {
     font-size: 0.85rem;
     font-weight: 600;
     cursor: pointer;
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
     transition: all 0.15s ease;
 }
 
 .btn-accept:hover {
-    background-color: #059669;
+    background-color: #16a34a;
     transform: translateY(-1px);
 }
 
@@ -833,8 +870,8 @@ dialog#error-modal::backdrop {
 }
 
 #details-header {
-    height: 72px;
-    min-height: 72px;
+    height: 82px;
+    min-height: 82px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -850,13 +887,13 @@ dialog#error-modal::backdrop {
 .details-header-left {
     display: flex;
     align-items: center;
-    gap: 0.9rem;
+    gap: 1rem;
     min-width: 0;
 }
 
 .btn-back-projects {
-    width: 36px;
-    height: 36px;
+    width: 40px;
+    height: 40px;
     border-radius: var(--radius-straight);
     border: 1px solid var(--border-color);
     background: rgba(255, 255, 255, 0.03);
@@ -870,13 +907,13 @@ dialog#error-modal::backdrop {
 }
 
 .btn-back-projects:hover {
-    color: var(--accent-cyan);
-    border-color: rgba(14, 165, 233, 0.4);
-    background: rgba(14, 165, 233, 0.12);
+    color: #ffffff;
+    border-color: var(--primary-blue);
+    background: rgba(37, 99, 235, 0.12);
 }
 
 #details-header h2 {
-    font-size: 1.25rem;
+    font-size: 1.55rem;
     font-weight: 700;
     color: var(--text-primary);
     line-height: 1.15;
@@ -887,45 +924,45 @@ dialog#error-modal::backdrop {
 
 #details-page-desc {
     color: var(--text-secondary);
-    font-size: 0.76rem;
-    line-height: 1.2;
+    font-size: 0.88rem;
+    line-height: 1.25;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 460px;
+    max-width: 520px;
 }
 
 .details-header-right {
     display: flex;
     align-items: center;
-    gap: 0.65rem;
+    gap: 0.75rem;
     flex-shrink: 0;
 }
 
 .bim-coord-badge {
     display: inline-flex;
     align-items: center;
-    gap: 0.4rem;
-    padding: 0.35rem 0.7rem;
+    gap: 0.45rem;
+    padding: 0.42rem 0.8rem;
     border-radius: var(--radius-straight);
-    background: rgba(14, 165, 233, 0.1);
-    border: 1px solid rgba(14, 165, 233, 0.28);
-    color: var(--accent-cyan);
-    font-size: 0.72rem;
+    background: rgba(37, 99, 235, 0.12);
+    border: 1px solid rgba(37, 99, 235, 0.32);
+    color: #60a5fa;
+    font-size: 0.78rem;
     font-weight: 700;
     font-family: monospace;
     letter-spacing: 0.05em;
 }
 
 .bim-coord-badge .material-icons-round {
-    font-size: 1rem;
+    font-size: 1.1rem;
 }
 
 #project-details > .main-page-content {
     display: grid;
-    grid-template-columns: 380px 1fr;
-    gap: 1.5rem;
-    padding: 1.5rem 2.5rem 2rem 2.5rem;
+    grid-template-columns: 420px 1fr;
+    gap: 1.65rem;
+    padding: 1.6rem 2.5rem 2rem 2.5rem;
     flex: 1;
     overflow: hidden;
 }
@@ -933,7 +970,7 @@ dialog#error-modal::backdrop {
 .details-left-column {
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
+    gap: 1.35rem;
     overflow-y: auto;
     min-width: 0;
 }
@@ -943,7 +980,7 @@ dialog#error-modal::backdrop {
     background-color: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-straight);
-    padding: 1.35rem;
+    padding: 1.55rem;
     display: flex;
     flex-direction: column;
     gap: 0;
@@ -961,46 +998,47 @@ dialog#error-modal::backdrop {
 }
 
 .card-avatar-circle {
-    width: 44px;
-    height: 44px;
+    width: 50px;
+    height: 50px;
     border-radius: var(--radius-straight);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.05rem;
+    font-size: 1.2rem;
     font-weight: 700;
     color: #ffffff;
     user-select: none;
+    text-transform: uppercase;
     border: 1px solid rgba(255, 255, 255, 0.14);
 }
 
 .btn-edit {
-    background: rgba(255, 255, 255, 0.03);
+    background: rgba(255, 255, 255, 0.04);
     border: 1px solid var(--border-color);
     color: var(--text-primary);
     border-radius: var(--radius-straight);
-    padding: 0.42rem 0.9rem;
-    font-size: 0.82rem;
-    font-weight: 500;
+    padding: 0.5rem 1.05rem;
+    font-size: 0.9rem;
+    font-weight: 600;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
-    gap: 0.35rem;
+    gap: 0.4rem;
     transition: all 0.15s ease;
 }
 
 .btn-edit:hover {
-    background-color: rgba(14, 165, 233, 0.14);
-    border-color: var(--primary-indigo);
-    color: var(--accent-cyan);
+    background-color: rgba(37, 99, 235, 0.15);
+    border-color: var(--primary-blue);
+    color: #ffffff;
 }
 
 .btn-delete {
     background: transparent;
-    border: 1px solid rgba(244, 63, 94, 0.3);
-    color: var(--accent-rose);
+    border: 1px solid rgba(220, 38, 38, 0.38);
+    color: var(--accent-red);
     border-radius: var(--radius-straight);
-    padding: 0.4rem 0.65rem;
+    padding: 0.48rem 0.75rem;
     cursor: pointer;
     display: inline-flex;
     align-items: center;
@@ -1009,70 +1047,85 @@ dialog#error-modal::backdrop {
 }
 
 .btn-delete:hover {
-    background-color: rgba(244, 63, 94, 0.15);
-    border-color: var(--accent-rose);
+    background-color: rgba(220, 38, 38, 0.15);
+    border-color: var(--accent-red);
 }
 
 .details-title-group {
-    margin-top: 1.25rem;
+    margin-top: 1.35rem;
 }
 
 .details-title-group h3 {
-    font-size: 1.05rem;
-    font-weight: 600;
+    font-size: 1.32rem;
+    font-weight: 700;
     color: var(--text-primary);
-    margin-bottom: 0.25rem;
+    margin-bottom: 0.3rem;
 }
 
 .details-title-group p {
-    font-size: 0.825rem;
+    font-size: 0.95rem;
     color: var(--text-secondary);
+    line-height: 1.4;
 }
 
 .details-properties-row {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 0.5rem;
-    margin-top: 1.25rem;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.85rem 1rem;
+    margin-top: 1.35rem;
+    padding-top: 1.15rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .prop-col {
     display: flex;
     flex-direction: column;
-    gap: 0.35rem;
+    gap: 0.3rem;
+    background: rgba(19, 23, 34, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: var(--radius-sharp);
+    padding: 0.65rem 0.85rem;
 }
 
 .prop-label {
-    font-size: 0.775rem;
+    font-size: 0.76rem;
+    font-weight: 600;
     color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-family: monospace;
 }
 
 .prop-val {
-    font-size: 0.825rem;
+    font-size: 0.98rem;
     color: var(--text-primary);
-    font-weight: 500;
+    font-weight: 700;
+    white-space: nowrap;
 }
 
 .progress-bar-container {
-    background-color: rgba(255, 255, 255, 0.06);
+    background-color: #131722;
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: var(--radius-sharp);
-    height: 14px;
+    height: 20px;
     width: 100%;
     margin-top: 1.25rem;
     overflow: hidden;
 }
 
 .progress-bar-fill {
-    background: linear-gradient(90deg, var(--primary-indigo), var(--accent-mint));
+    background: linear-gradient(90deg, var(--primary-blue), #10b981);
     height: 100%;
     border-radius: var(--radius-sharp);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.7rem;
+    font-size: 0.76rem;
     font-weight: 700;
     color: #ffffff;
     letter-spacing: 0.5px;
+    transition: width 0.3s ease;
+    min-width: 40px;
 }
 
 /* To-Do Container */
@@ -1080,10 +1133,10 @@ dialog#error-modal::backdrop {
     background-color: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-straight);
-    padding: 1.25rem 1.25rem 1.5rem 1.25rem;
+    padding: 1.4rem 1.4rem 1.6rem 1.4rem;
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
+    gap: 1.2rem;
     flex-grow: 1;
 }
 
@@ -1091,33 +1144,63 @@ dialog#error-modal::backdrop {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 0.75rem;
+}
+
+.todos-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    flex-shrink: 0;
 }
 
 .todos-header-row h4 {
-    font-size: 1.05rem;
-    font-weight: 600;
+    font-size: 1.18rem;
+    font-weight: 700;
     color: var(--text-primary);
+    white-space: nowrap;
+    margin: 0;
+}
+
+.todo-count-badge {
+    font-size: 0.78rem;
+    font-weight: 700;
+    font-family: monospace;
+    color: #60a5fa;
+    background: rgba(37, 99, 235, 0.16);
+    border: 1px solid rgba(37, 99, 235, 0.38);
+    border-radius: var(--radius-sharp);
+    padding: 0.14rem 0.5rem;
 }
 
 .todos-actions-group {
     display: flex;
-    gap: 0.65rem;
+    gap: 0.55rem;
     align-items: center;
+    flex: 1;
+    justify-content: flex-end;
+    min-width: 0;
 }
 
 .search-input-pill {
     display: flex;
     align-items: center;
-    gap: 0.45rem;
+    gap: 0.5rem;
     background-color: #171a29;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-straight);
-    padding: 0.4rem 0.85rem;
+    padding: 0.5rem 0.85rem;
+    min-width: 0;
+}
+
+.search-input-pill:focus-within {
+    border-color: var(--primary-blue);
 }
 
 .search-input-pill .material-icons-round {
-    font-size: 1.05rem;
+    font-size: 1.15rem;
     color: var(--text-secondary);
+    flex-shrink: 0;
 }
 
 .search-input-pill input {
@@ -1125,8 +1208,9 @@ dialog#error-modal::backdrop {
     border: none;
     outline: none;
     color: var(--text-primary);
-    font-size: 0.8rem;
-    width: 140px;
+    font-size: 0.88rem;
+    width: 155px;
+    min-width: 0;
     font-family: inherit;
 }
 
@@ -1135,55 +1219,81 @@ dialog#error-modal::backdrop {
 }
 
 .btn-icon-box {
-    background: transparent;
-    border: 1px solid var(--border-color);
-    color: var(--text-secondary);
+    background: rgba(37, 99, 235, 0.16);
+    border: 1px solid rgba(37, 99, 235, 0.38);
+    color: #60a5fa;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 0.35rem;
+    padding: 0.45rem;
     border-radius: var(--radius-straight);
     transition: all 0.15s ease;
+    flex-shrink: 0;
 }
 
 .btn-icon-box:hover {
-    color: #a5b4fc;
-    background-color: rgba(99, 102, 241, 0.15);
-    border-color: var(--primary-indigo);
+    color: #ffffff;
+    background-color: var(--primary-blue);
+    border-color: var(--primary-blue);
 }
 
 .btn-icon-box .material-icons-round {
-    font-size: 1.15rem;
+    font-size: 1.25rem;
 }
 
 .todos-list {
     display: flex;
     flex-direction: column;
-    gap: 0.85rem;
+    gap: 0.75rem;
+}
+
+.todo-empty-state {
+    background: rgba(19, 23, 34, 0.55);
+    border: 1px dashed var(--border-color);
+    border-radius: var(--radius-straight);
+    padding: 1.5rem 1rem;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
 }
 
 .todo-card-item {
-    background-color: #151827;
+    background-color: #171b26;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-straight);
-    padding: 0.85rem 1rem;
+    padding: 0.9rem 1rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    gap: 1rem;
+    gap: 0.85rem;
     cursor: pointer;
     transition: all 0.15s ease;
     user-select: none;
 }
 
-.todo-card-item:hover {
-    background-color: #1b2033;
-    border-color: rgba(99, 102, 241, 0.3);
+/* Challenge #9: Change background color of To-Do card based on its current status */
+.todo-card-item.status-pending {
+    background-color: rgba(180, 83, 9, 0.14);
+    border-color: rgba(245, 158, 11, 0.35);
+    border-left: 3px solid #f59e0b;
 }
 
-.todo-card-item.completed {
-    opacity: 0.5;
+.todo-card-item.status-in-progress {
+    background-color: rgba(37, 99, 235, 0.15);
+    border-color: rgba(59, 130, 246, 0.38);
+    border-left: 3px solid #3b82f6;
+}
+
+.todo-card-item.status-completed {
+    background-color: rgba(21, 128, 61, 0.16);
+    border-color: rgba(34, 197, 94, 0.38);
+    border-left: 3px solid #22c55e;
+}
+
+.todo-card-item:hover {
+    filter: brightness(1.12);
+    border-color: var(--primary-blue);
 }
 
 .todo-card-item.completed .todo-desc {
@@ -1191,9 +1301,58 @@ dialog#error-modal::backdrop {
     color: var(--text-secondary);
 }
 
-.todo-card-item.completed .todo-icon-box {
-    background-color: rgba(16, 185, 129, 0.2);
-    color: var(--accent-mint);
+.todo-card-item.status-pending .todo-icon-box {
+    background-color: rgba(180, 83, 9, 0.25);
+    border-color: rgba(245, 158, 11, 0.45);
+    color: #fbbf24;
+}
+
+.todo-card-item.status-in-progress .todo-icon-box {
+    background-color: rgba(37, 99, 235, 0.25);
+    border-color: rgba(59, 130, 246, 0.45);
+    color: #60a5fa;
+}
+
+.todo-card-item.status-completed .todo-icon-box {
+    background-color: rgba(21, 128, 61, 0.25);
+    border-color: rgba(34, 197, 94, 0.45);
+    color: #4ade80;
+}
+
+.todo-text-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
+.todo-status-pill {
+    font-size: 0.7rem;
+    font-weight: 700;
+    font-family: monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    width: fit-content;
+    padding: 0.14rem 0.48rem;
+    border-radius: var(--radius-sharp);
+}
+
+.todo-status-pill.status-pending {
+    background: rgba(180, 83, 9, 0.22);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.todo-status-pill.status-in-progress {
+    background: rgba(37, 99, 235, 0.22);
+    color: #93c5fd;
+    border: 1px solid rgba(59, 130, 246, 0.35);
+}
+
+.todo-status-pill.status-completed {
+    background: rgba(21, 128, 61, 0.22);
+    color: #4ade80;
+    border: 1px solid rgba(34, 197, 94, 0.35);
 }
 
 .todo-card-left {
@@ -1201,14 +1360,15 @@ dialog#error-modal::backdrop {
     align-items: center;
     gap: 0.85rem;
     flex: 1;
+    min-width: 0;
 }
 
 .todo-icon-box {
     width: 34px;
     height: 34px;
-    background-color: #1a1e30;
+    background-color: #1e2433;
     border: 1px solid var(--border-color);
-    border-radius: var(--radius-straight);
+    border-radius: var(--radius-sharp);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1221,20 +1381,71 @@ dialog#error-modal::backdrop {
 }
 
 .todo-desc {
-    font-size: 0.825rem;
+    font-size: 0.92rem;
+    font-weight: 500;
     color: var(--text-primary);
-    line-height: 1.35;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.todo-card-right {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    flex-shrink: 0;
 }
 
 .todo-date-tag {
-    font-size: 0.775rem;
+    font-size: 0.8rem;
+    font-weight: 500;
     color: var(--text-secondary);
+    font-family: monospace;
     white-space: nowrap;
 }
 
-/* 3D BIM / IFC Viewer Space (Clean Empty Container for Three.js Canvas) */
+.todo-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.todo-action-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-secondary);
+    width: 30px;
+    height: 30px;
+    border-radius: var(--radius-sharp);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.todo-action-btn .material-icons-round {
+    font-size: 1.05rem;
+}
+
+.todo-action-btn:hover {
+    background: rgba(37, 99, 235, 0.15);
+    border-color: rgba(37, 99, 235, 0.35);
+    color: #ffffff;
+}
+
+.todo-delete-btn:hover {
+    background: rgba(220, 38, 38, 0.15);
+    border-color: rgba(220, 38, 38, 0.4);
+    color: #ef4444;
+}
+
+/* CAD Engineering Viewport Canvas (CYPECAD / Tekla / AutoCAD grid) */
 #viewer-container {
-    background-color: #07090e;
+    background-color: #10131a;
+    background-image: 
+        linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    background-size: 24px 24px;
     border-radius: var(--radius-straight);
     height: 100%;
     width: 100%;
@@ -1253,8 +1464,8 @@ dialog#error-modal::backdrop {
 }
 
 #users-header {
-    height: 72px;
-    min-height: 72px;
+    height: 82px;
+    min-height: 82px;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -1268,7 +1479,7 @@ dialog#error-modal::backdrop {
 }
 
 #users-header h2 {
-    font-size: 1.45rem;
+    font-size: 1.72rem;
     font-weight: 700;
     color: var(--text-primary);
     letter-spacing: -0.02em;
@@ -1294,15 +1505,16 @@ dialog#error-modal::backdrop {
 
 .users-filter-group {
     display: flex;
-    gap: 0.5rem;
+    gap: 0.6rem;
 }
 
 .filter-pill {
     background-color: var(--bg-card);
     border: 1px solid var(--border-color);
-    padding: 0.4rem 0.9rem;
+    padding: 0.5rem 1.05rem;
     border-radius: var(--radius-straight);
-    font-size: 0.8rem;
+    font-size: 0.88rem;
+    font-weight: 600;
     color: var(--text-secondary);
     cursor: pointer;
     transition: all 0.15s ease;
@@ -1311,9 +1523,9 @@ dialog#error-modal::backdrop {
 
 .filter-pill:hover,
 .filter-pill.active {
-    background-color: rgba(99, 102, 241, 0.18);
-    color: #a5b4fc;
-    border-color: var(--primary-indigo);
+    background-color: rgba(37, 99, 235, 0.18);
+    color: #ffffff;
+    border-color: var(--primary-blue);
 }
 
 .users-table-container {
@@ -1328,23 +1540,23 @@ dialog#error-modal::backdrop {
     width: 100%;
     border-collapse: collapse;
     text-align: left;
-    font-size: 0.85rem;
+    font-size: 0.95rem;
 }
 
 .users-table th {
     background-color: #27292d;
     color: var(--text-secondary);
-    font-weight: 500;
-    padding: 0.9rem 1.25rem;
+    font-weight: 600;
+    padding: 1rem 1.35rem;
     text-transform: uppercase;
-    font-size: 0.72rem;
-    letter-spacing: 0.5px;
+    font-size: 0.78rem;
+    letter-spacing: 0.05em;
     border-bottom: 1px solid var(--border-color);
 }
 
 .users-table td {
-    padding: 0.9rem 1.25rem;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    padding: 1.05rem 1.35rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     color: var(--text-primary);
     vertical-align: middle;
 }
@@ -1364,64 +1576,70 @@ dialog#error-modal::backdrop {
 .user-cell {
     display: flex;
     align-items: center;
-    gap: 0.85rem;
+    gap: 1rem;
 }
 
 .user-avatar-circle {
-    width: 38px;
-    height: 38px;
-    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-straight);
+    border: 1px solid rgba(255, 255, 255, 0.14);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-weight: 600;
-    font-size: 0.85rem;
+    font-weight: 700;
+    font-size: 0.96rem;
     color: #ffffff;
     flex-shrink: 0;
     user-select: none;
 }
 
 .user-name {
+    font-size: 1rem;
     font-weight: 600;
     color: var(--text-primary);
 }
 
 .user-email {
-    font-size: 0.75rem;
+    font-size: 0.84rem;
     color: var(--text-secondary);
     margin-top: 2px;
 }
 
 .role-badge {
-    padding: 0.25rem 0.65rem;
-    border-radius: 12px;
-    font-size: 0.75rem;
-    font-weight: 500;
+    padding: 0.32rem 0.75rem;
+    border-radius: var(--radius-sharp);
+    font-size: 0.78rem;
+    font-weight: 700;
+    font-family: monospace;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    white-space: nowrap;
     display: inline-block;
 }
 
 .role-dev {
     background-color: rgba(59, 130, 246, 0.15);
     color: #60a5fa;
-    border: 1px solid rgba(59, 130, 246, 0.3);
+    border: 1px solid rgba(59, 130, 246, 0.35);
 }
 
 .role-arch {
     background-color: rgba(249, 115, 22, 0.15);
     color: #fb923c;
-    border: 1px solid rgba(249, 115, 22, 0.3);
+    border: 1px solid rgba(249, 115, 22, 0.35);
 }
 
 .role-eng {
     background-color: rgba(34, 197, 94, 0.15);
     color: #4ade80;
-    border: 1px solid rgba(34, 197, 94, 0.3);
+    border: 1px solid rgba(34, 197, 94, 0.35);
 }
 
 .role-bim {
     background-color: rgba(168, 85, 247, 0.15);
     color: #c084fc;
-    border: 1px solid rgba(168, 85, 247, 0.3);
+    border: 1px solid rgba(168, 85, 247, 0.35);
 }
 
 .status-indicator {
@@ -1429,13 +1647,14 @@ dialog#error-modal::backdrop {
     align-items: center;
     gap: 0.45rem;
     font-size: 0.8rem;
+    white-space: nowrap;
 }
 
 .status-indicator::before {
     content: "";
     width: 7px;
     height: 7px;
-    border-radius: 50%;
+    border-radius: var(--radius-sharp);
     display: inline-block;
 }
 
@@ -1454,27 +1673,28 @@ dialog#error-modal::backdrop {
 .user-options-btn {
     cursor: pointer;
     background: transparent;
-    border: none;
+    border: 1px solid transparent;
     color: var(--text-secondary);
-    border-radius: 6px;
-    padding: 6px;
+    border-radius: var(--radius-straight);
+    padding: 5px;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: background-color 0.15s ease, color 0.15s ease;
+    transition: all 0.15s ease;
 }
 
 .user-options-btn:hover {
-    background-color: rgba(255, 255, 255, 0.12);
+    background-color: rgba(37, 99, 235, 0.15);
+    border-color: rgba(37, 99, 235, 0.35);
     color: #ffffff;
 }
 
 .dropdown-menu {
     position: fixed;
-    background-color: #27292d;
-    border: 1px solid #3d4047;
-    border-radius: 8px;
-    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.7);
+    background-color: #181c28;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-straight);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.75);
     padding: 0.35rem 0;
     z-index: 999999;
     min-width: 175px;
@@ -1521,7 +1741,15 @@ dialog#error-modal::backdrop {
 /* Standard & Compact Laptops (max-width: 1280px) */
 @media (max-width: 1280px) {
     body {
-        grid-template-columns: 230px 1fr;
+        grid-template-columns: 250px 1fr;
+    }
+
+    .sidebar-header,
+    #main-header,
+    #details-header,
+    #users-header {
+        height: 78px;
+        min-height: 78px;
     }
 
     #main-header,
@@ -1530,31 +1758,36 @@ dialog#error-modal::backdrop {
         padding: 0 1.75rem;
     }
 
+    #main-header h2,
+    #users-header h2 {
+        font-size: 1.55rem;
+    }
+
+    .projects-toolbar {
+        padding: 1.15rem 1.75rem 0 1.75rem;
+    }
+
     #projects-list {
-        padding: 1.5rem 1.75rem 3.5rem 1.75rem;
-        grid-template-columns: repeat(auto-fill, minmax(310px, 1fr));
-        gap: 1.25rem;
+        padding: 1.25rem 1.75rem 3.5rem 1.75rem;
+        grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+        gap: 1.35rem;
     }
 
     #project-details > .main-page-content {
-        grid-template-columns: 350px 1fr;
+        grid-template-columns: 380px 1fr;
         padding: 1.25rem 1.75rem 1.75rem 1.75rem;
-        gap: 1.25rem;
+        gap: 1.35rem;
     }
 
     .users-content-area {
         padding: 1.5rem 1.75rem 2.5rem 1.75rem;
-    }
-
-    .bim-viewport-statusbar {
-        display: none;
     }
 }
 
 /* Tablets Landscape & Compact Laptops (max-width: 1024px) */
 @media (max-width: 1024px) {
     body {
-        grid-template-columns: 205px 1fr;
+        grid-template-columns: 225px 1fr;
     }
 
     #sidebar {
@@ -1562,21 +1795,32 @@ dialog#error-modal::backdrop {
     }
 
     .sidebar-header {
-        height: 72px;
-        min-height: 72px;
-        padding: 0 1rem;
+        height: 74px;
+        min-height: 74px;
+        padding: 0 1.1rem;
     }
 
     #company-logo {
-        height: 24px;
+        height: 28px;
+    }
+
+    .nav-item {
+        font-size: 0.98rem;
+        padding: 0.8rem 0.95rem;
     }
 
     #main-header,
     #details-header,
     #users-header {
-        height: 72px;
-        min-height: 72px;
+        height: 74px;
+        min-height: 74px;
         padding: 0 1.5rem;
+    }
+
+    #main-header h2,
+    #users-header h2,
+    #details-header h2 {
+        font-size: 1.42rem;
     }
 
     .btn-action-tool .btn-tool-label {
@@ -1584,17 +1828,21 @@ dialog#error-modal::backdrop {
     }
 
     .btn-action-tool {
-        padding: 0.55rem;
+        padding: 0.58rem;
+    }
+
+    .projects-toolbar {
+        padding: 1rem 1.5rem 0 1.5rem;
     }
 
     #projects-list {
-        padding: 1.5rem 1.5rem 3rem 1.5rem;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        padding: 1.25rem 1.5rem 3rem 1.5rem;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
         gap: 1.25rem;
     }
 
     #project-details > .main-page-content {
-        grid-template-columns: 320px 1fr;
+        grid-template-columns: 355px 1fr;
         padding: 1.25rem 1.5rem 1.75rem 1.5rem;
         gap: 1.25rem;
     }
@@ -1639,7 +1887,7 @@ dialog#error-modal::backdrop {
         left: 0;
         right: 0;
         width: 100%;
-        height: 60px;
+        height: 64px;
         padding: 0 0.75rem;
         flex-direction: row;
         align-items: center;
@@ -1669,9 +1917,10 @@ dialog#error-modal::backdrop {
     .nav-item {
         flex-direction: column;
         justify-content: center;
-        gap: 0.18rem;
-        padding: 0.35rem 0.75rem;
-        font-size: 0.68rem;
+        gap: 0.2rem;
+        padding: 0.4rem 0.85rem;
+        font-size: 0.78rem;
+        font-weight: 600;
         border-radius: var(--radius-straight);
         border: none;
     }
@@ -1680,19 +1929,19 @@ dialog#error-modal::backdrop {
         border-left: none;
         border-top: none;
         border-right: none;
-        border-bottom: 2px solid var(--primary-indigo);
+        border-bottom: 2px solid var(--primary-blue);
     }
 
     .nav-item .material-icons-round {
-        font-size: 1.2rem;
+        font-size: 1.35rem;
     }
 
     /* Main Content Area adjustments on Phones */
     #content {
         order: 1;
         flex: 1;
-        height: calc(100vh - 60px);
-        height: calc(100dvh - 60px);
+        height: calc(100vh - 64px);
+        height: calc(100dvh - 64px);
         width: 100%;
     }
 
@@ -1700,8 +1949,8 @@ dialog#error-modal::backdrop {
     #main-header,
     #details-header,
     #users-header {
-        height: 64px;
-        min-height: 64px;
+        height: 68px;
+        min-height: 68px;
         padding: 0 1rem;
         flex-wrap: nowrap;
         gap: 0.5rem;
@@ -1710,14 +1959,14 @@ dialog#error-modal::backdrop {
     #main-header h2,
     #details-header h2,
     #users-header h2 {
-        font-size: 1.12rem;
+        font-size: 1.28rem;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
     }
 
     .header-eyebrow {
-        font-size: 0.58rem;
+        font-size: 0.64rem;
     }
 
     #details-page-desc {
@@ -1748,10 +1997,32 @@ dialog#error-modal::backdrop {
         white-space: nowrap;
     }
 
-    /* Projects Grid on Phones */
+    /* Projects Toolbar & Grid on Phones */
+    .projects-toolbar {
+        padding: 0.85rem 1rem 0 1rem;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.65rem;
+    }
+
+    .projects-search-box {
+        width: 100%;
+    }
+
+    .projects-filter-group {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding-bottom: 4px;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .filter-pill {
+        white-space: nowrap;
+    }
+
     #projects-list {
         grid-template-columns: 1fr;
-        padding: 1rem 1rem 5.5rem 1rem;
+        padding: 0.85rem 1rem 5.5rem 1rem;
         gap: 1rem;
     }
 
@@ -1868,10 +2139,16 @@ dialog#error-modal::backdrop {
 
     /* Dialog Modals on Phones */
     #new-project-form,
-    #new-user-form {
+    #new-user-form,
+    #todo-form {
         width: 94vw;
         max-width: 94vw;
         padding: 1.25rem 1rem;
+    }
+
+    .form-row-2col {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
     }
 
     .form-actions {
