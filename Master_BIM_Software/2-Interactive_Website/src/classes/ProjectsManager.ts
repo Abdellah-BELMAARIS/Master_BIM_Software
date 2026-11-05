@@ -1,5 +1,5 @@
 // Lesson 3.6, 3.7, 3.8 & 3.9: Projects Manager with Queries, Validation & JSON I/O
-import { IProject, Project } from "./Project";
+import { IProject, Project, TodoStatus } from "./Project";
 
 export class ProjectsManager {
     // 1. Array storing all active Project instances
@@ -7,6 +7,12 @@ export class ProjectsManager {
 
     // 2. HTML container in the DOM where project cards will be rendered
     ui: HTMLDivElement;
+
+    // 3. Currently selected/active project for details view & actions
+    activeProject: Project | null = null;
+
+    // 4. Optional callback triggered when user clicks Edit on a To-Do item
+    onEditTodo?: (todoId: number) => void;
 
     constructor(container: HTMLDivElement) {
         this.ui = container;
@@ -25,6 +31,11 @@ export class ProjectsManager {
 
     // Creates a new project, renders its UI card, and pushes to list
     newProject(data: IProject): Project {
+        // Validate minimum 5 characters for project name
+        if (!data.name || data.name.trim().length < 5) {
+            throw new Error("Project name must be at least 5 characters long.");
+        }
+
         // Lesson 3.8: Checking for existing project name using map() and includes()
         const projectNames = this.list.map((project) => project.name);
         const nameInUse = projectNames.includes(data.name);
@@ -42,7 +53,8 @@ export class ProjectsManager {
             const detailsPage = document.getElementById("project-details");
             if (!projectsPage || !detailsPage) { return; }
 
-            // Call the private method before displaying
+            // Track active project and populate details
+            this.activeProject = project;
             this.setDetailsPage(project);
 
             projectsPage.style.display = "none";
@@ -51,7 +63,78 @@ export class ProjectsManager {
 
         this.ui.append(project.ui);
         this.list.push(project);
+        this.updateFilterCounts();
         return project;
+    }
+
+    // Update an existing project from the Edit Project modal
+    updateProject(id: string, data: IProject): Project {
+        const project = this.getProject(id);
+        if (!project) {
+            throw new Error("Project not found.");
+        }
+
+        if (!data.name || data.name.trim().length < 5) {
+            throw new Error("Project name must be at least 5 characters long.");
+        }
+
+        const duplicate = this.list.find((p) => p.id !== id && p.name === data.name);
+        if (duplicate) {
+            throw new Error(`A project with the name "${data.name}" already exists`);
+        }
+
+        project.name = data.name;
+        project.description = data.description;
+        project.userRole = data.userRole;
+        project.status = data.status;
+        const parsedDate = data.finishDate ? new Date(data.finishDate) : new Date();
+        project.finishDate = isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
+        project.cost = data.cost ?? project.cost;
+        project.progress = data.progress ?? project.progress;
+        if (data.iconColor) {
+            project.iconColor = data.iconColor;
+        }
+        if (data.todos) {
+            project.todos = data.todos.map((t) => ({
+                ...t,
+                status: t.status || (t.completed ? "completed" : "pending"),
+                completed: t.status === "completed" || Boolean(t.completed),
+            }));
+        }
+
+        // Refresh card in Projects grid and refresh Details view if this project is currently active
+        project.setUI();
+        if (this.activeProject && this.activeProject.id === project.id) {
+            this.setDetailsPage(project);
+        }
+        this.updateFilterCounts();
+        return project;
+    }
+
+    // Filter projects in #projects-list by search query and status pill
+    filterProjects(searchQuery: string = "", statusFilter: string = "all"): void {
+        const q = searchQuery.toLowerCase().trim();
+        const status = statusFilter.toLowerCase().trim();
+
+        this.list.forEach((project) => {
+            const matchesSearch = !q ||
+                project.name.toLowerCase().includes(q) ||
+                project.description.toLowerCase().includes(q) ||
+                project.userRole.toLowerCase().includes(q);
+
+            const matchesStatus = status === "all" ||
+                project.status.toLowerCase() === status;
+
+            project.ui.style.display = (matchesSearch && matchesStatus) ? "" : "none";
+        });
+    }
+
+    // Update count on the "All (N)" filter pill
+    updateFilterCounts(): void {
+        const allBtn = document.querySelector("[data-status-filter='all']");
+        if (allBtn) {
+            allBtn.textContent = `All (${this.list.length})`;
+        }
     }
 
     // Lesson 4.3: Internal private method to update all project details UI elements via data-project-info
@@ -106,16 +189,115 @@ export class ProjectsManager {
             progress.textContent = `${percentage}%`;
         }
 
-        // 8. Update Avatar Initials & Role Badge Color
+        // 8. Challenge #1 & #2: Update Avatar Initials (CSS uppercased) & Random Icon Color
         const avatar = detailsPage.querySelector("[data-project-info='avatar']") as HTMLDivElement | null;
         if (avatar) {
-            avatar.textContent = project.name.slice(0, 2).toUpperCase();
+            avatar.textContent = project.name.trim().slice(0, 2);
             avatar.className = "card-avatar-circle";
-            if (project.userRole === "Architect") avatar.classList.add("badge-purple");
-            else if (project.userRole === "Engineer") avatar.classList.add("badge-orange");
-            else if (project.userRole === "Developer") avatar.classList.add("badge-green");
-            else avatar.classList.add("badge-blue");
+            avatar.style.backgroundColor = project.iconColor;
         }
+
+        // 9. Render the project's tasks/todos in #todos-list
+        this.renderTodos(project);
+    }
+
+    // Challenge #6 & #9: Render BCF tasks / todos with status-based card background color, toggle, edit, and delete
+    renderTodos(project: Project, filterQuery: string = ""): void {
+        const todosList = document.getElementById("todos-list");
+        const countBadge = document.getElementById("todo-count-badge");
+        if (countBadge) {
+            countBadge.textContent = String(project.todos.length);
+        }
+        if (!todosList) { return; }
+        todosList.innerHTML = "";
+
+        const query = filterQuery.toLowerCase().trim();
+        const filtered = query
+            ? project.todos.filter((t) => t.text.toLowerCase().includes(query) || (t.status && t.status.toLowerCase().includes(query)))
+            : project.todos;
+
+        if (filtered.length === 0) {
+            todosList.innerHTML = `<div class="todo-empty-state">No tasks match your filter. Click + to add a task.</div>`;
+            return;
+        }
+
+        const statusCycle: Record<TodoStatus, TodoStatus> = {
+            "pending": "in-progress",
+            "in-progress": "completed",
+            "completed": "pending",
+        };
+
+        const statusLabels: Record<TodoStatus, string> = {
+            "pending": "Pending",
+            "in-progress": "In Progress",
+            "completed": "Completed",
+        };
+
+        const statusIcons: Record<TodoStatus, string> = {
+            "pending": "schedule",
+            "in-progress": "autorenew",
+            "completed": "check_circle",
+        };
+
+        filtered.forEach((todo) => {
+            const currentStatus: TodoStatus = todo.status || (todo.completed ? "completed" : "pending");
+            todo.status = currentStatus;
+            todo.completed = currentStatus === "completed";
+
+            const item = document.createElement("div");
+            // Challenge #9: Change background color of To-Do card based on its current status
+            item.className = `todo-card-item status-${currentStatus} ${todo.completed ? "completed" : ""}`;
+            item.innerHTML = `
+                <div class="todo-card-left" title="Click to cycle status (${statusLabels[currentStatus]})">
+                    <button type="button" class="todo-icon-box">
+                        <span class="material-icons-round">${statusIcons[currentStatus]}</span>
+                    </button>
+                    <div class="todo-text-group">
+                        <p class="todo-desc">${todo.text}</p>
+                        <span class="todo-status-pill status-${currentStatus}">${statusLabels[currentStatus]}</span>
+                    </div>
+                </div>
+                <div class="todo-card-right">
+                    <span class="todo-date-tag">${todo.date}</span>
+                    <div class="todo-item-actions">
+                        <button type="button" class="todo-action-btn edit" title="Edit Task & Status">
+                            <span class="material-icons-round">edit</span>
+                        </button>
+                        <button type="button" class="todo-action-btn todo-delete-btn delete" title="Delete Task">
+                            <span class="material-icons-round">delete</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+
+            // Cycle status when clicking the left area (Pending -> In Progress -> Completed)
+            const leftArea = item.querySelector(".todo-card-left");
+            leftArea?.addEventListener("click", () => {
+                const next = statusCycle[currentStatus];
+                todo.status = next;
+                todo.completed = next === "completed";
+                this.renderTodos(project, filterQuery);
+            });
+
+            // Edit button opens modal to specify/update task & status
+            const editBtn = item.querySelector(".todo-action-btn.edit");
+            editBtn?.addEventListener("click", (e) => {
+                e.stopPropagation();
+                if (this.onEditTodo) {
+                    this.onEditTodo(todo.id);
+                }
+            });
+
+            // Delete button
+            const deleteBtn = item.querySelector(".todo-action-btn.delete");
+            deleteBtn?.addEventListener("click", (e) => {
+                e.stopPropagation();
+                project.todos = project.todos.filter((t) => t.id !== todo.id);
+                this.renderTodos(project, filterQuery);
+            });
+
+            todosList.appendChild(item);
+        });
     }
 
     // Query a project by unique UUID
@@ -139,6 +321,7 @@ export class ProjectsManager {
             return project.id !== id;
         });
         this.list = remaining;
+        this.updateFilterCounts();
     }
 
     // Calculate total cost using Array.prototype.reduce()
@@ -151,7 +334,7 @@ export class ProjectsManager {
         return this.list.find((project) => project.name === name);
     }
 
-    // Lesson 3.9: Export all projects to JSON and trigger automatic download
+    // Lesson 3.9 & Challenge #7: Export all projects (including ToDos & iconColor) to JSON
     exportToJSON(fileName: string = "projects") {
         // Serialize project data into clean formatted JSON
         const plainProjects = this.list.map((project) => ({
@@ -163,6 +346,8 @@ export class ProjectsManager {
             finishDate: project.finishDate,
             cost: project.cost,
             progress: project.progress,
+            iconColor: project.iconColor,
+            todos: project.todos,
         }));
 
         const json = JSON.stringify(plainProjects, null, 2);
@@ -179,7 +364,7 @@ export class ProjectsManager {
         URL.revokeObjectURL(url);
     }
 
-    // Lesson 3.9: Import projects from a selected JSON file
+    // Lesson 3.9 & Challenge #8: Import projects from JSON and UPDATE existing projects if they already exist
     importFromJSON() {
         const input = document.createElement("input");
         input.type = "file";
@@ -190,21 +375,29 @@ export class ProjectsManager {
         reader.addEventListener("load", () => {
             if (!reader.result) { return; }
             try {
-                const projects: IProject[] = JSON.parse(reader.result as string);
+                const projects: (IProject & { id?: string })[] = JSON.parse(reader.result as string);
                 let importedCount = 0;
-                let skippedCount = 0;
+                let updatedCount = 0;
 
-                // for...of loop generic iteration over imported projects
+                // Challenge #8: If a project imported from JSON already exists (by ID or Name), update its information!
                 for (const projectData of projects) {
-                    try {
-                        this.newProject(projectData);
-                        importedCount++;
-                    } catch (err: any) {
-                        skippedCount++;
-                        console.warn(`Skipped duplicate project "${projectData.name}":`, err.message);
+                    const existingProject =
+                        (projectData.id ? this.getProject(projectData.id) : undefined) ||
+                        this.getProjectByName(projectData.name);
+
+                    if (existingProject) {
+                        this.updateProject(existingProject.id, projectData);
+                        updatedCount++;
+                    } else {
+                        try {
+                            this.newProject(projectData);
+                            importedCount++;
+                        } catch (err: any) {
+                            console.warn(`Could not import project "${projectData.name}":`, err.message);
+                        }
                     }
                 }
-                console.log(`Import completed: ${importedCount} added, ${skippedCount} duplicates skipped.`);
+                console.log(`JSON Import complete: ${importedCount} created, ${updatedCount} existing projects updated.`);
             } catch (err: any) {
                 console.error("JSON parse error during import:", err);
                 throw new Error("The selected file is not a valid JSON projects file");

@@ -65,6 +65,20 @@
                 </div>
             </header>
 
+            <!-- Projects Search & Status Filter Toolbar -->
+            <div class="projects-toolbar">
+                <div class="search-input-pill projects-search-box">
+                    <span class="material-icons-round">search</span>
+                    <input type="text" id="project-search-input" placeholder="Search projects by name, description, or role...">
+                </div>
+                <div class="projects-filter-group" id="project-filter-group">
+                    <button type="button" class="filter-pill active" data-status-filter="all">All</button>
+                    <button type="button" class="filter-pill" data-status-filter="active">Active</button>
+                    <button type="button" class="filter-pill" data-status-filter="pending">Pending</button>
+                    <button type="button" class="filter-pill" data-status-filter="finished">Finished</button>
+                </div>
+            </div>
+
             <!-- Projects Grid (Dynamically populated by ProjectsManager) -->
             <section id="projects-list">
             </section>
@@ -87,8 +101,7 @@
                     <div class="header-title-box">
                         <span class="header-eyebrow">PROJECT CDE / 3D COORDINATION</span>
                         <h2 id="details-page-title" data-project-info="name">Hospital Center</h2>
-                        <p id="details-page-desc" data-project-info="description">Community hospital located at downtown
-                        </p>
+                        <p id="details-page-desc" data-project-info="description">Community hospital located at downtown</p>
                     </div>
                 </div>
                 <div class="details-header-right">
@@ -106,14 +119,13 @@
                     <!-- Project Details Card (Lesson 4.3 data-project-info targets) -->
                     <article class="project-card details-card">
                         <div class="details-card-top">
-                            <div class="card-avatar-circle badge-orange" id="details-avatar" data-project-info="avatar">
-                                HC</div>
+                            <div class="card-avatar-circle badge-orange" id="details-avatar" data-project-info="avatar">HC</div>
                             <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                <button class="btn-edit" id="edit-project-btn">
+                                <button type="button" class="btn-edit" id="edit-project-btn">
                                     <span class="material-icons-round" style="font-size: 1rem;">edit</span>
                                     <span>Edit</span>
                                 </button>
-                                <button class="btn-delete" id="delete-project-btn" title="Delete Project">
+                                <button type="button" class="btn-delete" id="delete-project-btn" title="Delete Project">
                                     <span class="material-icons-round" style="font-size: 1.1rem;">delete</span>
                                 </button>
                             </div>
@@ -121,8 +133,7 @@
 
                         <div class="details-title-group">
                             <h3 id="details-card-title" data-project-info="name">Hospital Center</h3>
-                            <p id="details-card-desc" data-project-info="description">Community hospital located at
-                                downtown</p>
+                            <p id="details-card-desc" data-project-info="description">Community hospital located at downtown</p>
                         </div>
 
                         <div class="details-properties-row">
@@ -140,8 +151,7 @@
                             </div>
                             <div class="prop-col">
                                 <span class="prop-label">Finish Date</span>
-                                <span class="prop-val" id="details-date"
-                                    data-project-info="finishDate">2023-05-01</span>
+                                <span class="prop-val" id="details-date" data-project-info="finishDate">2023-05-01</span>
                             </div>
                         </div>
 
@@ -155,13 +165,16 @@
                     <!-- To-Do / BCF Issues Container -->
                     <div class="todos-container">
                         <div class="todos-header-row">
-                            <h4>Tasks & BCF Issues</h4>
+                            <div class="todos-title-wrap">
+                                <h4>To-Do</h4>
+                                <span class="todo-count-badge" id="todo-count-badge">0</span>
+                            </div>
                             <div class="todos-actions-group">
                                 <div class="search-input-pill">
                                     <span class="material-icons-round">search</span>
-                                    <input type="text" id="todo-search-input" placeholder="Search tasks or clashes...">
+                                    <input type="text" id="todo-search-input" placeholder="Search tasks...">
                                 </div>
-                                <button class="btn-icon-box" id="add-todo-btn" title="Add Task">
+                                <button type="button" class="btn-icon-box" id="add-todo-btn" title="Add Task">
                                     <span class="material-icons-round">add</span>
                                 </button>
                             </div>
@@ -169,25 +182,6 @@
 
                         <!-- To-Do Items List -->
                         <div class="todos-list" id="todos-list">
-                            <div class="todo-card-item">
-                                <div class="todo-card-left">
-                                    <div class="todo-icon-box">
-                                        <span class="material-icons-round">architecture</span>
-                                    </div>
-                                    <p class="todo-desc">Verify structural column grid alignment on Level 02.</p>
-                                </div>
-                                <span class="todo-date-tag">Fri, 20 Sep</span>
-                            </div>
-
-                            <div class="todo-card-item">
-                                <div class="todo-card-left">
-                                    <div class="todo-icon-box">
-                                        <span class="material-icons-round">plumbing</span>
-                                    </div>
-                                    <p class="todo-desc">Resolve MEP HVAC duct clearance clash at Corridor B.</p>
-                                </div>
-                                <span class="todo-date-tag">Mon, 23 Sep</span>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -218,17 +212,17 @@
                 <div class="users-toolbar">
                     <div class="search-input-pill" style="width: 280px;">
                         <span class="material-icons-round">search</span>
-                        <input type="text" placeholder="Search team by name or discipline..." style="width: 100%;">
+                        <input type="text" id="user-search-input" placeholder="Search team by name, email, or role..." style="width: 100%;">
                     </div>
-                    <div class="users-filter-group">
-                        <span class="filter-pill active">All (4)</span>
-                        <span class="filter-pill">Architects</span>
-                        <span class="filter-pill">Engineers</span>
-                        <span class="filter-pill">BIM Leads</span>
+                    <div class="users-filter-group" id="users-filter-group">
+                        <button type="button" class="filter-pill active" data-role-filter="all">All (4)</button>
+                        <button type="button" class="filter-pill" data-role-filter="arch">Architects</button>
+                        <button type="button" class="filter-pill" data-role-filter="eng">Engineers</button>
+                        <button type="button" class="filter-pill" data-role-filter="lead">BIM Leads</button>
                     </div>
                 </div>
 
-                <!-- Modern BIM Users Table Layout (Distinct from cards) -->
+                <!-- Modern BIM Users Table Layout -->
                 <div class="users-table-container">
                     <table class="users-table">
                         <thead>
@@ -240,7 +234,7 @@
                                 <th style="text-align: right;">Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody id="users-table-body">
                             <tr>
                                 <td>
                                     <div class="user-cell">
@@ -252,7 +246,7 @@
                                     </div>
                                 </td>
                                 <td><span class="role-badge role-dev">BIM Software Lead</span></td>
-                                <td>Hospital Center, Urban Oasis</td>
+                                <td class="user-models-cell">Hospital Center, Urban Oasis</td>
                                 <td><span class="status-indicator status-online">Active</span></td>
                                 <td style="text-align: right;">
                                     <button type="button" class="btn-icon user-options-btn" title="Options"><span
@@ -270,7 +264,7 @@
                                     </div>
                                 </td>
                                 <td><span class="role-badge role-arch">Lead Architect</span></td>
-                                <td>Hospital Center, TechHub</td>
+                                <td class="user-models-cell">Hospital Center, TechHub</td>
                                 <td><span class="status-indicator status-online">Active</span></td>
                                 <td style="text-align: right;">
                                     <button type="button" class="btn-icon user-options-btn" title="Options"><span
@@ -288,7 +282,7 @@
                                     </div>
                                 </td>
                                 <td><span class="role-badge role-eng">Structural Engineer</span></td>
-                                <td>Sustainable Housing</td>
+                                <td class="user-models-cell">Sustainable Housing</td>
                                 <td><span class="status-indicator status-online">Active</span></td>
                                 <td style="text-align: right;">
                                     <button type="button" class="btn-icon user-options-btn" title="Options"><span
@@ -306,7 +300,7 @@
                                     </div>
                                 </td>
                                 <td><span class="role-badge role-bim">BIM Coordinator</span></td>
-                                <td>Heritage Restoration</td>
+                                <td class="user-models-cell">Heritage Restoration</td>
                                 <td><span class="status-indicator status-offline">Away</span></td>
                                 <td style="text-align: right;">
                                     <button type="button" class="btn-icon user-options-btn" title="Options"><span
@@ -319,10 +313,10 @@
             </div>
         </div>
 
-        <!-- New User Modal Dialog (Module 1 Challenge) -->
+        <!-- New / Edit User Modal Dialog -->
         <dialog id="new-user-modal">
             <form id="new-user-form">
-                <h2 id="user-modal-title">New User</h2>
+                <h2 id="user-modal-title">New Team Member</h2>
                 <div class="input-list">
                     <div class="form-field">
                         <label><span class="material-icons-round">person</span> Full Name</label>
@@ -331,17 +325,22 @@
 
                     <div class="form-field">
                         <label><span class="material-icons-round">email</span> Email</label>
-                        <input type="email" id="user-email-input" placeholder="alex@company.com" required>
+                        <input type="email" id="user-email-input" placeholder="alex@bimpulse.com" required>
                     </div>
 
                     <div class="form-field">
-                        <label><span class="material-icons-round">badge</span> Role</label>
+                        <label><span class="material-icons-round">badge</span> Discipline / Role</label>
                         <select id="user-role-input">
-                            <option value="Architect">Architect</option>
-                            <option value="Engineer">Engineer</option>
-                            <option value="Developer">Developer</option>
+                            <option value="Lead Architect">Lead Architect</option>
+                            <option value="Structural Engineer">Structural Engineer</option>
+                            <option value="BIM Software Lead">BIM Software Lead</option>
                             <option value="BIM Coordinator">BIM Coordinator</option>
                         </select>
+                    </div>
+
+                    <div class="form-field">
+                        <label><span class="material-icons-round">domain</span> Assigned Models</label>
+                        <input type="text" id="user-models-input" placeholder="e.g. Hospital Center, Urban Oasis">
                     </div>
 
                     <div class="form-field">
@@ -349,22 +348,21 @@
                         <select id="user-status-input">
                             <option value="Active">Active</option>
                             <option value="Away">Away</option>
-                            <option value="Offline">Offline</option>
                         </select>
                     </div>
                 </div>
 
                 <div class="form-actions">
                     <button type="button" id="cancel-user-btn" class="btn-cancel">Cancel</button>
-                    <button type="submit" id="user-submit-btn" class="btn-accept">Create User</button>
+                    <button type="submit" id="user-submit-btn" class="btn-accept">Save Member</button>
                 </div>
             </form>
         </dialog>
 
-        <!-- New Project Modal Dialog (Matches 2.png) -->
+        <!-- New / Edit Project Modal Dialog -->
         <dialog id="new-project-modal">
             <form id="new-project-form">
-                <h2 id="project-modal-title">New project</h2>
+                <h2 id="project-modal-title">New Project</h2>
                 <div class="input-list">
                     <div class="form-field">
                         <label><span class="material-icons-round">corporate_fare</span> Name</label>
@@ -376,26 +374,40 @@
                     <div class="form-field">
                         <label><span class="material-icons-round">subject</span> Description</label>
                         <textarea name="description" id="project-desc-input"
-                            placeholder="Give your project a nice description! So people is jealous about it."
+                            placeholder="Enter architectural & structural scope description..."
                             rows="3"></textarea>
                     </div>
 
-                    <div class="form-field">
-                        <label><span class="material-icons-round">person</span> Role</label>
-                        <select name="userRole" id="project-role-input">
-                            <option value="Architect">Architect</option>
-                            <option value="Engineer">Engineer</option>
-                            <option value="Developer">Developer</option>
-                        </select>
+                    <div class="form-row-2col">
+                        <div class="form-field">
+                            <label><span class="material-icons-round">person</span> Role</label>
+                            <select name="userRole" id="project-role-input">
+                                <option value="Architect">Architect</option>
+                                <option value="Engineer">Engineer</option>
+                                <option value="Developer">Developer</option>
+                            </select>
+                        </div>
+
+                        <div class="form-field">
+                            <label><span class="material-icons-round">help_outline</span> Status</label>
+                            <select name="status" id="project-status-input">
+                                <option value="Active">Active</option>
+                                <option value="Pending">Pending</option>
+                                <option value="Finished">Finished</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <div class="form-field">
-                        <label><span class="material-icons-round">help_outline</span> Status</label>
-                        <select name="status" id="project-status-input">
-                            <option value="Pending">Pending</option>
-                            <option value="Active">Active</option>
-                            <option value="Finished">Finished</option>
-                        </select>
+                    <div class="form-row-2col">
+                        <div class="form-field">
+                            <label><span class="material-icons-round">payments</span> Cost ($)</label>
+                            <input name="cost" type="number" id="project-cost-input" min="0" step="1000" value="0">
+                        </div>
+
+                        <div class="form-field">
+                            <label><span class="material-icons-round">trending_up</span> Progress (%)</label>
+                            <input name="progress" type="number" id="project-progress-input" min="0" max="100" value="25">
+                        </div>
                     </div>
 
                     <div class="form-field">
@@ -407,6 +419,37 @@
                 <div class="form-actions">
                     <button type="button" id="cancel-btn" class="btn-cancel">Cancel</button>
                     <button type="submit" id="project-submit-btn" class="btn-accept">Accept</button>
+                </div>
+            </form>
+        </dialog>
+
+        <!-- Add / Edit To-Do Task Modal Dialog -->
+        <dialog id="todo-modal">
+            <form id="todo-form">
+                <h2 id="todo-modal-title">New Task / BCF Issue</h2>
+                <div class="input-list">
+                    <div class="form-field">
+                        <label><span class="material-icons-round">assignment</span> Task Description</label>
+                        <input type="text" id="todo-text-input" placeholder="e.g. Verify structural column grid on Level 02" required>
+                    </div>
+                    <div class="form-row-2col">
+                        <div class="form-field">
+                            <label><span class="material-icons-round">event</span> Target Date</label>
+                            <input type="date" id="todo-date-input">
+                        </div>
+                        <div class="form-field">
+                            <label><span class="material-icons-round">flag</span> Status</label>
+                            <select id="todo-status-input">
+                                <option value="pending">Pending</option>
+                                <option value="in-progress">In Progress</option>
+                                <option value="completed">Completed</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" id="cancel-todo-btn" class="btn-cancel">Cancel</button>
+                    <button type="submit" id="todo-submit-btn" class="btn-accept">Save Task</button>
                 </div>
             </form>
         </dialog>

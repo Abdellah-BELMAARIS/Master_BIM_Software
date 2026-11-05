@@ -675,3 +675,101 @@
 
 
 - **Clean Empty `#viewer-container` Restoration:** Removed static placeholder SVG/toolbar overlays inside `<div id="viewer-container"></div>` so it remains a clean, empty dark container (`background-color: #07090e`) ready for the real Three.js / WebGL canvas in upcoming lessons. Verified `npm run build` (`142ms`, 0 errors).
+
+
+---
+
+## 🏛️ Part 19 — CYPECAD / Structural BIM Desktop Engineering Theme & Full Module 1/2 Parity Restoration (2026-11-04)
+
+### 1. Aesthetic Overhaul: Pure CYPECAD / Structural BIM Desktop Engineering (No "AI Dev" Glow)
+- **Elimination of "AI Dev" Aesthetics:**
+  - Completely stripped out all neon glows, gradient overlays, cyan/purple/indigo colors, and cyberpunk card styles (`--accent-cyan`, `--accent-rose`, `--accent-mint`, `--primary-indigo`, multi-stop radial/linear gradients).
+- **Authentic Structural CAD / BIM Palette Implemented:**
+  - **Primary Steel Cobalt Blue:** `--primary-blue: #2563eb;` / `--primary-blue-hover: #3b82f6;` (inspired by CYPECAD, Revit, and Tekla structural engineering toolbars).
+  - **Neutral Dark Slate Canvas:** `--bg-app: #131722;`, `--bg-surface: #181c28;`, `--bg-card: #1e2333;`, `--border-color: #2b3347;`.
+  - **Flat Engineering Solid Colors:** Replaced gradient progress bars with flat solid cobalt blue fills; replaced glowing modal cards with sharp solid borders and muted engineering alert reds (`#dc2626`).
+  - **Straight CAD Geometry:** 100% crisp rectangular edges (`--radius-straight: 4px;`, `--radius-sharp: 2px;`) across cards, badges, buttons, and tables.
+
+### 2. Feature Parity Restoration (Reconnecting Features Missing Between Module 1 and 2)
+- **Active Project State Management:**
+  - Added `activeProject: Project | null = null;` to [`ProjectsManager.ts`](file:///D:/Coding/MyLearning/ThatOpenCompany/Master_BIM_Software/2-Interactive_Website/src/classes/ProjectsManager.ts).
+  - Card click triggers `this.activeProject = project;` and updates the details view.
+- **Project Details Data Binding & Navigation:**
+  - Linked project card clicks directly to `#project-details` view with dynamic population of name, description, role, cost, progress, status, and avatar initials.
+  - Wired `#back-to-projects-btn` in header and `#nav-projects-btn` in sidebar to return to `#projects-page`.
+- **Project Deletion from Details Page:**
+  - Wired `#delete-project-btn` in [`src/index.ts`](file:///D:/Coding/MyLearning/ThatOpenCompany/Master_BIM_Software/2-Interactive_Website/src/index.ts) with user confirmation to invoke `projectsManager.deleteProject(projectsManager.activeProject.id)`.
+- **Project Tasks (To-Dos):**
+  - Defined `IProjectTask` interface with `id`, `text`, `date`, and `status`.
+  - Added `todos: IProjectTask[]` to [`Project.ts`](file:///D:/Coding/MyLearning/ThatOpenCompany/Master_BIM_Software/2-Interactive_Website/src/classes/Project.ts) initialized with real structural BIM tasks (e.g., *Check Eurocode 2 shear reinforcement*, *Export IFC 4x3 coordination model*).
+  - Implemented `renderTodos(project, filterQuery)` in `ProjectsManager` to render interactive task cards.
+  - Wired `#todo-search-input` for instant live filtering and `#add-todo-btn` for task addition.
+  - Updated `exportToJSON()` to persist `todos` array in JSON data.
+- **Users Page Role Filter Pills:**
+  - Wired `.users-filter-group .filter-pill` buttons to dynamically filter user directory rows by discipline (All, Architect, Structural, MEP).
+
+### 3. Verification & Compilation
+- Cleaned all residual neon tokens from `style.css`.
+- Executed `npm run build` in `Master_BIM_Software/2-Interactive_Website/`:
+  - 27 modules transformed.
+  - Built cleanly in **184ms** with **0 errors**.
+
+
+---
+
+## 🚀 Part 20 — Full Interactive CRUD, Straight Geometry & Multi-Device Polish Across All 3 Pages (2026-11-04)
+
+### 1. Visual Fixes Addressed from User Screenshots
+- **Progress Bars Restored & High-Contrast:** Fixed `.card-progress-fill` and `.progress-bar-fill` so progress bars render clearly with a crisp blue-to-emerald engineering bar (`linear-gradient(90deg, var(--primary-blue), #10b981)`) on both project cards and the project details card.
+- **Sidebar Footer Alignment:** Added `white-space: nowrap` to `.status-text` (`IFC VIEWER READY`) and `.status-version` (`IFC4 · 3D`) so they never wrap onto multiple lines.
+- **Details Card Property Grid (`2×2` Straight Cells):** Replaced the cramped 4-column `.details-properties-row` with a structured `2×2` grid (`grid-template-columns: repeat(2, 1fr)`) with bordered `.prop-col` cells so `Finish Date` and `Nov 4, 2026` stay on single straight lines.
+- **To-Do Header Single-Line Alignment:** Replaced the wrapping `Tasks & BCF Issues` heading with a single-line `.todos-title-wrap` (`To-Do` + `#todo-count-badge` counter pill) paired with live search and `+` modal trigger button.
+- **Straight Geometry on AEC Team Table:** Converted `.user-avatar-circle` from `border-radius: 50%` to `border-radius: var(--radius-straight)` (`4px`) and `.role-badge` from `border-radius: 12px` to `border-radius: var(--radius-sharp); white-space: nowrap;` (`2px`) so no circular avatars or multi-line rounded pills remain anywhere in the app.
+
+### 2. Full Interactive Actions Activated (`index.html`, `Project.ts`, `ProjectsManager.ts`, `index.ts`)
+- **Projects Page (`#projects-page`):**
+  - **Add & Edit Project (`#new-project-modal`):** Added `cost` (`$`) and `progress` (`0–100%`) inputs to the modal form. Reused the modal for both creating new projects and editing the active project (`projectsManager.updateProject(id, data)`).
+  - **Live Search & Status Filter Pills (`.projects-toolbar`):** Wired `#project-search-input` and `#project-filter-group` (`All`, `Active`, `Pending`, `Finished`) with live badge counters (`updateFilterCounts()`).
+  - **JSON Import / Export:** Both header buttons and the bottom-right FAB button trigger JSON export/import and automatically refresh filter counts.
+- **Project Details Page (`#project-details`):**
+  - **Dynamic `data-project-info` Binding (`private setDetailsPage`):** Updates all `[data-project-info]` targets (`name`, `description`, `avatar`, `status`, `cost`, `role`, `finishDate`, `progress`) and keeps `<div id="viewer-container"></div>` completely empty for Three.js.
+  - **Edit & Delete Project Buttons:** `#edit-project-btn` pre-fills `#new-project-modal` with the active project's data and updates both the card and details view in-place; `#delete-project-btn` deletes the project and navigates back to `#projects-page`.
+  - **To-Do / BCF Tasks CRUD (`#todo-modal`):** Full modal-driven Add Task, Edit Task (`.todo-edit-btn`), Delete Task (`.todo-delete-btn`), Click-to-Toggle Completion, and live Search (`#todo-search-input`).
+- **AEC Team / Users Page (`#users-page`):**
+  - **Live Search & Discipline Filter Pills:** Wired `#user-search-input` and `#users-filter-group` (`All`, `Architects`, `Engineers`, `BIM Leads`) with live count updates.
+  - **Add / Edit Member Modal & 3-Dots Context Menu:** Full support for adding a new team member, editing an existing row via the 3-dots menu (`Edit User`), toggling `Active` / `Away` status (`Toggle Status`), and deleting a member (`Delete User`).
+- **Build Verification:** `npm run build` in `Master_BIM_Software/2-Interactive_Website` compiled cleanly in **130ms** with **0 errors**.
+
+
+---
+
+## 🏆 Part 21 — Module 1 & Module 2 Official Capstone Challenges 100% Completed (2026-11-04)
+
+### 1. Module 1 ("Creating Static Websites Challenge") — Verified & Completed
+- **People / Users Page (`#users-page`):** Dedicated table-based directory (distinct from the project cards grid) listing AEC team members with discipline badges, assigned IFC models, status indicators, search bar, role filter pills, and `<dialog id="new-user-modal">` form to add/edit users.
+
+### 2. Module 2 ("Creating Interactive Websites Challenge") — All 9 Requirements Implemented
+1. **First Two Letters of Project Name Uppercased via CSS:**
+   - Extracted `this.name.trim().substring(0, 2)` in [`Project.ts`](file:///d:/Coding/MyLearning/ThatOpenCompany/Master_BIM_Software/2-Interactive_Website/src/classes/Project.ts) and [`ProjectsManager.ts`](file:///d:/Coding/MyLearning/ThatOpenCompany/Master_BIM_Software/2-Interactive_Website/src/classes/ProjectsManager.ts) and enforced `text-transform: uppercase;` in [`style.css`](file:///d:/Coding/MyLearning/ThatOpenCompany/Master_BIM_Software/2-Interactive_Website/style.css) on `.card-avatar` and `.card-avatar-circle`.
+2. **Random Icon Background Color from 6-Color Palette:**
+   - Defined `PROJECT_ICON_COLORS = ["#2563eb", "#c2410c", "#15803d", "#7c3aed", "#b45309", "#0f766e"]` in `Project.ts` and assigned `this.iconColor = data.iconColor || PROJECT_ICON_COLORS[Math.floor(Math.random() * PROJECT_ICON_COLORS.length)]`.
+3. **Minimum 5-Character Name Validation:**
+   - Validated `if (!data.name || data.name.trim().length < 5)` in both `newProject()` and `updateProject()`, throwing a descriptive error displayed inside `<dialog id="error-modal">`.
+4. **Default Date Fallback When Unspecified:**
+   - Handled empty or invalid date strings in both `index.ts` form submission and `Project` constructor (`const parsedDate = data.finishDate ? new Date(data.finishDate) : new Date()`).
+5. **Update Project Information from Details Page:**
+   - Wired `#edit-project-btn` on the details card to open `#new-project-modal` pre-filled with the active project's properties and call `projectsManager.updateProject(editingProjectId, projectData)`.
+6. **Create ToDos & Store Inside Project Data:**
+   - Added `todos: IProjectTask[] = []` on each `Project` instance and wired `#add-todo-btn` + `<dialog id="todo-modal">` to push new tasks directly into `activeProject.todos`.
+7. **Export ToDos When Exporting JSON:**
+   - Included `todos: project.todos` (and `iconColor: project.iconColor`) in `exportToJSON()`.
+8. **Upsert (Update Existing Project) on JSON Import:**
+   - Updated `importFromJSON()` in `ProjectsManager.ts` to check if an imported project already exists by `id` or `name` (`this.getProject(projectData.id) || this.getProjectByName(projectData.name)`), calling `this.updateProject(existingProject.id, projectData)` instead of skipping or throwing an error.
+9. **Specify Status for Each ToDo (Create & Update) + Dynamic Background Color by State:**
+   - Added `TodoStatus = "pending" | "in-progress" | "completed"` selector (`#todo-status-input`) in `#todo-modal` for both creating and editing To-Dos (plus click-to-cycle on the card).
+   - Styled `.todo-card-item.status-pending` (amber tint), `.todo-card-item.status-in-progress` (cobalt blue tint), and `.todo-card-item.status-completed` (emerald green tint) in `style.css`.
+- **Build Verification:** `npm run build` compiled cleanly in **184ms** with **0 errors**.
+- **Pro Typography & Visual Scale Upgrade across Devices (`style.css`):**
+  - Scaled up sidebar width (`280px` desktop, `250px` laptop, `225px` tablet), brand logo (`34px`), brand badge (`0.68rem`), nav items (`1.05rem`, `600` weight, `1.45rem` icons), and footer telemetry (`0.72rem`).
+  - Enlarged page headers (`82px` height, `1.72rem` `h2` titles, `0.76rem` eyebrow labels, `0.95rem` buttons), project cards (`48px` avatar, `1.24rem` card titles, `0.94rem` descriptions, `0.96rem` property rows), details card (`420px` left column, `50px` avatar, `1.32rem` title, `0.98rem` property values, `20px` progress bar), To-Do items (`1.18rem` header, `0.92rem` task text), and AEC Team table (`1rem` member names, `44px` avatars, `0.95rem` table cells).
+  - Scaled responsive breakpoints proportionally across laptops (`<= 1280px`), tablets (`<= 1024px`), and mobile phones (`<= 767px`). Verified `npm run build` (`136ms`, 0 errors).
