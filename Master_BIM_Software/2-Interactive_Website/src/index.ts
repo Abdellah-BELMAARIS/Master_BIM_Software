@@ -142,17 +142,71 @@ let currentProjectSearch = "";
 let currentProjectStatus = "all";
 
 const projectSearchInput = document.getElementById("project-search-input") as HTMLInputElement | null;
+const clearSearchBtn = document.getElementById("clear-search-btn") as HTMLButtonElement | null;
 const projectFilterPills = document.querySelectorAll("#project-filter-group .filter-pill");
+const projectSortSelect = document.getElementById("project-sort-select") as HTMLSelectElement | null;
 
-const applyProjectFilters = () => {
-    projectsManager.filterProjects(currentProjectSearch, currentProjectStatus);
+const resetProjectFilters = () => {
+    currentProjectSearch = "";
+    currentProjectStatus = "all";
+    if (projectSearchInput) {
+        projectSearchInput.value = "";
+    }
+    if (clearSearchBtn) {
+        clearSearchBtn.style.display = "none";
+    }
+    projectFilterPills.forEach((p) => {
+        if ((p as HTMLElement).dataset.statusFilter === "all") {
+            p.classList.add("active");
+        } else {
+            p.classList.remove("active");
+        }
+    });
+    applyProjectFilters();
 };
 
+const openNewProjectFromEmpty = () => {
+    editingProjectId = null;
+    projectForm?.reset();
+    if (projectModalTitle) projectModalTitle.textContent = "New Project";
+    if (projectSubmitBtn) projectSubmitBtn.textContent = "Create Project";
+    if (projectCostInput) projectCostInput.value = "0";
+    if (projectProgressInput) projectProgressInput.value = "25";
+    if (projectStatusInput && currentProjectStatus !== "all") {
+        projectStatusInput.value = currentProjectStatus.charAt(0).toUpperCase() + currentProjectStatus.slice(1);
+    }
+    toggleModal("new-project-modal", true);
+};
+
+const applyProjectFilters = () => {
+    projectsManager.filterProjects(
+        currentProjectSearch,
+        currentProjectStatus,
+        resetProjectFilters,
+        openNewProjectFromEmpty
+    );
+};
+
+// Input event listener for real-time search
 projectSearchInput?.addEventListener("input", (e) => {
     currentProjectSearch = (e.target as HTMLInputElement).value;
+    if (clearSearchBtn) {
+        clearSearchBtn.style.display = currentProjectSearch.trim().length > 0 ? "inline-flex" : "none";
+    }
     applyProjectFilters();
 });
 
+// Clear search button click
+clearSearchBtn?.addEventListener("click", () => {
+    if (projectSearchInput) {
+        projectSearchInput.value = "";
+    }
+    currentProjectSearch = "";
+    clearSearchBtn.style.display = "none";
+    applyProjectFilters();
+});
+
+// Filter pill click handlers
 projectFilterPills.forEach((pill) => {
     pill.addEventListener("click", () => {
         projectFilterPills.forEach((p) => p.classList.remove("active"));
@@ -162,15 +216,34 @@ projectFilterPills.forEach((pill) => {
     });
 });
 
+// Sort select change listener
+projectSortSelect?.addEventListener("change", (e) => {
+    const sortBy = (e.target as HTMLSelectElement).value;
+    projectsManager.sortProjects(sortBy);
+    applyProjectFilters();
+});
+
 // Lesson 3.9: Connect Import and Export buttons
 const importBtn = document.getElementById("import-projects-btn");
 importBtn?.addEventListener("click", () => projectsManager.importFromJSON());
 
 const exportBtn = document.getElementById("export-projects-btn");
-exportBtn?.addEventListener("click", () => projectsManager.exportToJSON());
+exportBtn?.addEventListener("click", () => {
+    try {
+        projectsManager.exportToJSON();
+    } catch (err: any) {
+        showErrorModal(err.message);
+    }
+});
 
 const floatingExportBtn = document.getElementById("floating-export-btn");
-floatingExportBtn?.addEventListener("click", () => projectsManager.exportToJSON());
+floatingExportBtn?.addEventListener("click", () => {
+    try {
+        projectsManager.exportToJSON();
+    } catch (err: any) {
+        showErrorModal(err.message);
+    }
+});
 
 // Lesson 4.1 Assignment & SPA Navigation: Switch between Projects, Details, and Users pages
 const navProjectsBtn = document.getElementById("nav-projects-btn");

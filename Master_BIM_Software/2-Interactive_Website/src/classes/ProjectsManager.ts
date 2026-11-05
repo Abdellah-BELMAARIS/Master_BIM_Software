@@ -111,11 +111,17 @@ export class ProjectsManager {
         return project;
     }
 
-    // Filter projects in #projects-list by search query and status pill
-    filterProjects(searchQuery: string = "", statusFilter: string = "all"): void {
+    // Filter projects in #projects-list by search query and status pill with empty state feedback
+    filterProjects(
+        searchQuery: string = "",
+        statusFilter: string = "all",
+        onClearFilters?: () => void,
+        onNewProject?: () => void
+    ): void {
         const q = searchQuery.toLowerCase().trim();
         const status = statusFilter.toLowerCase().trim();
 
+        let visibleCount = 0;
         this.list.forEach((project) => {
             const matchesSearch = !q ||
                 project.name.toLowerCase().includes(q) ||
@@ -125,16 +131,136 @@ export class ProjectsManager {
             const matchesStatus = status === "all" ||
                 project.status.toLowerCase() === status;
 
-            project.ui.style.display = (matchesSearch && matchesStatus) ? "" : "none";
+            const visible = matchesSearch && matchesStatus;
+            project.ui.style.display = visible ? "" : "none";
+            if (visible) { visibleCount++; }
+        });
+
+        // Manage Empty State message in center of #projects-list
+        const existingEmptyState = document.getElementById("projects-empty-state");
+        if (visibleCount === 0) {
+            let title = "No Projects Found";
+            let desc = "There are no projects matching your current filter in the CDE workspace.";
+            let icon = "search_off";
+
+            if (this.list.length === 0) {
+                title = "Your Workspace is Empty";
+                desc = "No BIM projects exist yet. Click below to create your first project or import a JSON file.";
+                icon = "folder_off";
+            } else if (status === "pending") {
+                title = "No Pending Projects Found";
+                desc = "There are currently no projects marked with 'Pending' status.";
+                icon = "pending_actions";
+            } else if (status === "active") {
+                title = "No Active Projects Found";
+                desc = "There are currently no active projects running.";
+                icon = "domain_disabled";
+            } else if (status === "finished") {
+                title = "No Finished Projects Found";
+                desc = "There are currently no completed projects in this archive.";
+                icon = "task_alt";
+            } else if (q) {
+                title = `No Results for "${searchQuery}"`;
+                desc = "Try checking for spelling errors or search with a different keyword or role.";
+                icon = "search_off";
+            }
+
+            if (!existingEmptyState) {
+                const emptyEl = document.createElement("div");
+                emptyEl.id = "projects-empty-state";
+                emptyEl.className = "projects-empty-state";
+
+                emptyEl.innerHTML = `
+                    <div class="empty-state-icon-box">
+                        <span class="material-icons-round">${icon}</span>
+                    </div>
+                    <div class="empty-state-text">
+                        <h3>${title}</h3>
+                        <p>${desc}</p>
+                    </div>
+                    <div class="empty-state-actions">
+                        ${(q || status !== "all") ? `
+                            <button type="button" class="btn-clear-filters" id="empty-clear-filters-btn">
+                                <span class="material-icons-round">filter_alt_off</span>
+                                <span>Clear Filters & Show All</span>
+                            </button>
+                        ` : ""}
+                        <button type="button" class="btn-primary" id="empty-new-project-btn">
+                            <span class="material-icons-round">add</span>
+                            <span>New Project</span>
+                        </button>
+                    </div>
+                `;
+
+                this.ui.appendChild(emptyEl);
+
+                emptyEl.querySelector("#empty-clear-filters-btn")?.addEventListener("click", () => {
+                    if (onClearFilters) onClearFilters();
+                });
+                emptyEl.querySelector("#empty-new-project-btn")?.addEventListener("click", () => {
+                    if (onNewProject) onNewProject();
+                });
+            } else {
+                const iconEl = existingEmptyState.querySelector(".empty-state-icon-box .material-icons-round");
+                const titleEl = existingEmptyState.querySelector(".empty-state-text h3");
+                const descEl = existingEmptyState.querySelector(".empty-state-text p");
+                if (iconEl) iconEl.textContent = icon;
+                if (titleEl) titleEl.textContent = title;
+                if (descEl) descEl.textContent = desc;
+
+                const clearBtn = existingEmptyState.querySelector("#empty-clear-filters-btn") as HTMLButtonElement | null;
+                if (clearBtn) {
+                    clearBtn.style.display = (q || status !== "all") ? "inline-flex" : "none";
+                }
+            }
+        } else {
+            if (existingEmptyState) {
+                existingEmptyState.remove();
+            }
+        }
+    }
+
+    // Sort projects in this.list and reorder their DOM elements in this.ui
+    sortProjects(sortBy: string = "name-asc"): void {
+        this.list.sort((a, b) => {
+            switch (sortBy) {
+                case "name-asc":
+                    return a.name.localeCompare(b.name);
+                case "name-desc":
+                    return b.name.localeCompare(a.name);
+                case "cost-desc":
+                    return (b.cost || 0) - (a.cost || 0);
+                case "progress-desc":
+                    return (b.progress || 0) - (a.progress || 0);
+                case "date-asc":
+                    return new Date(a.finishDate).getTime() - new Date(b.finishDate).getTime();
+                default:
+                    return 0;
+            }
+        });
+
+        // Re-append in sorted order (preserves existing elements & event listeners)
+        this.list.forEach((project) => {
+            this.ui.appendChild(project.ui);
         });
     }
 
-    // Update count on the "All (N)" filter pill
+    // Update count badges on All, Active, Pending, Finished filter pills
     updateFilterCounts(): void {
-        const allBtn = document.querySelector("[data-status-filter='all']");
-        if (allBtn) {
-            allBtn.textContent = `All (${this.list.length})`;
-        }
+        const total = this.list.length;
+        const active = this.list.filter((p) => p.status.toLowerCase() === "active").length;
+        const pending = this.list.filter((p) => p.status.toLowerCase() === "pending").length;
+        const finished = this.list.filter((p) => p.status.toLowerCase() === "finished").length;
+
+        const allBtn = document.querySelector("[data-status-filter='all'] .filter-count");
+        const activeBtn = document.querySelector("[data-status-filter='active'] .filter-count");
+        const pendingBtn = document.querySelector("[data-status-filter='pending'] .filter-count");
+        const finishedBtn = document.querySelector("[data-status-filter='finished'] .filter-count");
+
+        if (allBtn) allBtn.textContent = String(total);
+        if (activeBtn) activeBtn.textContent = String(active);
+        if (pendingBtn) pendingBtn.textContent = String(pending);
+        if (finishedBtn) finishedBtn.textContent = String(finished);
     }
 
     // Lesson 4.3: Internal private method to update all project details UI elements via data-project-info
@@ -336,6 +462,10 @@ export class ProjectsManager {
 
     // Lesson 3.9 & Challenge #7: Export all projects (including ToDos & iconColor) to JSON
     exportToJSON(fileName: string = "projects") {
+        if (!this.list || this.list.length === 0) {
+            throw new Error("Cannot export: There are no projects in your workspace. Please create or import a project first.");
+        }
+
         // Serialize project data into clean formatted JSON
         const plainProjects = this.list.map((project) => ({
             id: project.id,
