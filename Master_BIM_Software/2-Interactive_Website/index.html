@@ -16,7 +16,6 @@
     <aside id="sidebar">
         <div class="sidebar-header">
             <img id="company-logo" src="./assets/company-logo.svg" alt="Construction Company — BIM Platform">
-            <div class="sidebar-brand-badge">AEC · BIM PLATFORM</div>
         </div>
 
         <ul id="nav-buttons">
@@ -70,12 +69,28 @@
                 <div class="search-input-pill projects-search-box">
                     <span class="material-icons-round">search</span>
                     <input type="text" id="project-search-input" placeholder="Search projects by name, description, or role...">
+                    <button type="button" class="btn-clear-search" id="clear-search-btn" title="Clear search text" style="display: none;">
+                        <span class="material-icons-round">close</span>
+                    </button>
                 </div>
                 <div class="projects-filter-group" id="project-filter-group">
-                    <button type="button" class="filter-pill active" data-status-filter="all">All</button>
-                    <button type="button" class="filter-pill" data-status-filter="active">Active</button>
-                    <button type="button" class="filter-pill" data-status-filter="pending">Pending</button>
-                    <button type="button" class="filter-pill" data-status-filter="finished">Finished</button>
+                    <button type="button" class="filter-pill active" data-status-filter="all">All <span class="filter-count">0</span></button>
+                    <button type="button" class="filter-pill" data-status-filter="active">Active <span class="filter-count">0</span></button>
+                    <button type="button" class="filter-pill" data-status-filter="pending">Pending <span class="filter-count">0</span></button>
+                    <button type="button" class="filter-pill" data-status-filter="finished">Finished <span class="filter-count">0</span></button>
+                </div>
+                <div class="projects-sort-group">
+                    <label for="project-sort-select" class="sort-label">
+                        <span class="material-icons-round">sort</span>
+                        <span>Sort:</span>
+                    </label>
+                    <select id="project-sort-select" class="sort-select">
+                        <option value="name-asc">Name (A → Z)</option>
+                        <option value="name-desc">Name (Z → A)</option>
+                        <option value="cost-desc">Cost (High → Low)</option>
+                        <option value="progress-desc">Progress (High → Low)</option>
+                        <option value="date-asc">Finish Date (Earliest)</option>
+                    </select>
                 </div>
             </div>
 
@@ -186,8 +201,13 @@
                     </div>
                 </div>
 
-                <!-- Right Column: IFC 3D Viewer Viewport (Empty container for Three.js canvas) -->
-                <div id="viewer-container"></div>
+                <!-- Right Column: IFC 3D Viewer Viewport -->
+                <div id="viewer-container">
+                    <div class="viewer-placeholder">
+                        <span class="material-icons-round viewer-placeholder-icon">view_in_ar</span>
+                        <span class="viewer-placeholder-text">3D BIM Viewer</span>
+                    </div>
+                </div>
             </div>
         </div>
 
