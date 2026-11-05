@@ -56,7 +56,10 @@
   - Full mobile/tablet fallback with single-column vertical flow at `<= 900px`.
   - Production build verified in `160ms` with 0 errors.
 
-### 5. Pro Search & Dynamic Filtering Architecture
+- **Simplified Minimalist 3D Viewer Placeholder:**
+  - Removed all complex floating overlays (floating HUD pills, floating 3D ViewCube, floating bottom toolbar, and rotating wireframe).
+  - Cleaned `#viewer-container` into a minimal, clean CAD grid layout with a centered `view_in_ar` (3D cube) icon and subtle "3D BIM Viewer" label.
+  - Verified clean production build in `139ms` (0 errors).
 - **Centered Empty State for No Matches:**
   - Implemented `.projects-empty-state` in `ProjectsManager.ts` that dynamically responds to active filters.
   - If user selects "Pending" and none exist: displays a glowing `pending_actions` icon, title **"No Pending Projects Found"**, description, **"Clear Filters & Show All"** button, and a **"+ New Project"** action button.
@@ -80,4 +83,16 @@
   - *Vercel:* Instant Git integration with automatic Vite detection and free SSL.
   - *Netlify Drop:* 10-second manual drag-and-drop of the pre-built `dist/` directory.
   - *GitHub Pages:* Native GitHub hosting via Actions or `gh-pages`.
+
+### 6. To-Do View Responsive Architecture (Split Screen, Tablets & Mobile)
+- **Top Bar Wrapping & Elastic Search:**
+  - On compact viewports, `.todos-header-row` wraps gracefully (`flex-wrap: wrap`), with the search input pill expanding elastically (`flex: 1`).
+- **Adaptive Card Item Layout:**
+  - Desktop: Clean single-row layout with status badge and actions.
+  - Tablets & Split-Screen (`<= 1150px` & `<= 900px`): Adjusted paddings, flex-wrapped controls, and guaranteed task text readability without squeezing.
+  - Mobile Phones (`<= 767px`): `.todo-card-item` switches to a clean two-tier layout:
+    - Top tier: Status icon, task description, and status pill take 100% full width.
+    - Bottom tier: Date tag aligned left and touch-friendly Edit / Delete buttons aligned right with a subtle separator border.
+- **Build Verification:** Production build verified in `146ms` with 0 errors.
 - **Form Submission Details:** Prepared comprehensive answers for Community Profile URL, Selected Modules, GitHub URL, Deployed URL, and Senior-level Technical submission comments.
+- **User Selection (Netlify):** User chose Netlify for deployment. Provided direct steps for Netlify Drop (drag-and-drop `dist/`) and clean standalone GitHub repository setup without `.agent` or empty folders.
