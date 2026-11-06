@@ -23,11 +23,13 @@ export function ProjectForm(props: ProjectFormProps) {
     const { project, projectsManager, isOpen, onClose, onSuccess } = props;
     const isEditing = Boolean(project);
     const dialogRef = React.useRef<HTMLDialogElement | null>(null);
+    const [formError, setFormError] = React.useState<string | null>(null);
 
     React.useEffect(() => {
         const dialog = dialogRef.current;
         if (!dialog) return;
         if (isOpen) {
+            setFormError(null);
             if (!dialog.open) {
                 dialog.showModal();
             }
@@ -42,6 +44,7 @@ export function ProjectForm(props: ProjectFormProps) {
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
+        setFormError(null);
         const form = e.currentTarget;
         const formData = new FormData(form);
 
@@ -49,6 +52,37 @@ export function ProjectForm(props: ProjectFormProps) {
         const description = ((formData.get("description") as string) || "").trim();
         const userRole = (formData.get("userRole") as UserRole) || "Architect";
         const status = (formData.get("status") as ProjectStatus) || "Active";
+
+        // Explicit English Validation
+        if (!name || name.length === 0) {
+            setFormError("Project Name is required. Please enter a valid name.");
+            const nameInput = form.querySelector("input[name='name']") as HTMLInputElement | null;
+            nameInput?.focus();
+            return;
+        }
+
+        if (name.length < 5) {
+            setFormError("Project Name must be at least 5 characters long.");
+            const nameInput = form.querySelector("input[name='name']") as HTMLInputElement | null;
+            nameInput?.focus();
+            return;
+        }
+
+        if (!description || description.length === 0) {
+            setFormError("Project Description is required. Please specify the project scope.");
+            const descInput = form.querySelector("textarea[name='description']") as HTMLTextAreaElement | null;
+            descInput?.focus();
+            return;
+        }
+
+        // Duplicate name validation
+        const duplicate = projectsManager.list.find(
+            (p) => (!isEditing || p.id !== project?.id) && p.name.toLowerCase() === name.toLowerCase()
+        );
+        if (duplicate) {
+            setFormError(`A project with the name "${name}" already exists. Please choose a unique name.`);
+            return;
+        }
 
         const rawDate = formData.get("finishDate") as string;
         const parsedDate = rawDate ? new Date(rawDate) : new Date();
@@ -103,7 +137,8 @@ export function ProjectForm(props: ProjectFormProps) {
             onClose();
         } catch (err: any) {
             console.error("Failed to save project:", err);
-            alert(`Error saving project: ${err instanceof Error ? err.message : String(err)}`);
+            const msg = err instanceof Error ? err.message : String(err);
+            setFormError(`Error saving project: ${msg}`);
         }
     };
 
@@ -128,24 +163,56 @@ export function ProjectForm(props: ProjectFormProps) {
             <form
                 onSubmit={handleSubmit}
                 id="new-project-form"
-                onInvalid={(e) => {
-                    const target = e.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
-                    if (target && "validity" in target) {
-                        if (target.validity.valueMissing) {
-                            target.setCustomValidity("Please fill out this field.");
-                        } else if (target.validity.tooShort) {
-                            target.setCustomValidity("Project name must be at least 5 characters.");
-                        }
-                    }
-                }}
-                onInput={(e) => {
-                    const target = e.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
-                    if (target && "setCustomValidity" in target) {
-                        target.setCustomValidity("");
-                    }
-                }}
+                noValidate
             >
-                <h2>{isEditing ? "Edit BIM Project" : "New BIM Project"}</h2>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <h2 style={{ margin: 0, fontSize: "1.35rem", fontWeight: 700 }}>
+                        {isEditing ? "Edit BIM Project" : "New BIM Project"}
+                    </h2>
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        title="Close Modal"
+                        style={{
+                            background: "transparent",
+                            border: "none",
+                            color: "#94a3b8",
+                            cursor: "pointer",
+                            padding: "4px",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            borderRadius: "4px",
+                        }}
+                    >
+                        <span className="material-icons-round" style={{ fontSize: "1.4rem" }}>close</span>
+                    </button>
+                </div>
+
+                {/* Visible English Validation Error Banner */}
+                {formError && (
+                    <div
+                        role="alert"
+                        style={{
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "0.6rem",
+                            backgroundColor: "rgba(239, 68, 68, 0.15)",
+                            border: "1px solid #ef4444",
+                            color: "#fca5a5",
+                            padding: "0.65rem 0.95rem",
+                            borderRadius: "6px",
+                            fontSize: "0.88rem",
+                            fontWeight: 500,
+                        }}
+                    >
+                        <span className="material-icons-round" style={{ color: "#ef4444", fontSize: "1.25rem", flexShrink: 0 }}>
+                            error_outline
+                        </span>
+                        <span>{formError}</span>
+                    </div>
+                )}
+
                 <div className="input-list">
                     <div className="form-field">
                         <label>
@@ -154,12 +221,13 @@ export function ProjectForm(props: ProjectFormProps) {
                         <input
                             name="name"
                             type="text"
-                            placeholder="e.g. Riverfront Promenade"
+                            placeholder="e.g. Skyline Luxury Villa & Residence"
                             defaultValue={project?.name || ""}
-                            required
-                            minLength={5}
+                            style={{
+                                borderColor: formError && formError.includes("Name") ? "#ef4444" : undefined,
+                            }}
                         />
-                        <p className="input-tip">TIP: Give it a short name (min. 5 chars).</p>
+                        <p className="input-tip">TIP: Give it a clear name (min. 5 chars).</p>
                     </div>
 
                     <div className="form-field">
@@ -171,6 +239,9 @@ export function ProjectForm(props: ProjectFormProps) {
                             placeholder="Enter architectural & structural scope description..."
                             defaultValue={project?.description || ""}
                             rows={3}
+                            style={{
+                                borderColor: formError && formError.includes("Description") ? "#ef4444" : undefined,
+                            }}
                         />
                     </div>
 
@@ -245,9 +316,9 @@ export function ProjectForm(props: ProjectFormProps) {
                             </label>
                             <select name="modelType" defaultValue={project?.modelType || "cube"}>
                                 <option value="cube">Architectural Slab (Cube)</option>
-                                <option value="gear">Mechanical Core (Gear)</option>
-                                <option value="car">Civil Sedan (Car)</option>
-                                <option value="villa">Residential Villa (Architecture)</option>
+                                <option value="gear">Mechanical Core (HVAC Gear)</option>
+                                <option value="car">Urban Logistics (Civil EV Car)</option>
+                                <option value="villa">Skyline Luxury Villa & Residence</option>
                             </select>
                         </div>
                     </div>

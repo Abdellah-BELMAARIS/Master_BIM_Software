@@ -785,12 +785,15 @@ dialog#error-modal {
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+    max-height: 90vh;
+    max-height: 90dvh;
+    overflow-y: auto;
+    overflow-x: hidden;
     border: none;
     border-radius: var(--radius-straight);
     background: transparent;
     padding: 0;
     margin: 0;
-    overflow: visible;
     z-index: 99999;
 }
 
@@ -814,14 +817,18 @@ dialog#error-modal::backdrop {
     background-color: #121420;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-straight);
-    padding: 1.75rem 2rem;
-    width: 460px;
+    padding: 1.5rem 1.85rem;
+    width: 480px;
     max-width: 92vw;
+    max-height: 90vh;
+    max-height: 90dvh;
+    overflow-y: auto;
+    box-sizing: border-box;
     color: var(--text-primary);
     display: flex;
     flex-direction: column;
-    gap: 1.25rem;
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8);
+    gap: 1.15rem;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85);
 }
 
 .form-row-2col {

@@ -103,6 +103,13 @@ export function ProjectCard(props: Props) {
                     <span className="detail-value">{dateStr}</span>
                 </div>
                 <div className="detail-row">
+                    <span className="detail-label">3D Model</span>
+                    <span className="detail-value" style={{ display: "inline-flex", alignItems: "center", gap: "4px", color: "#38bdf8", fontWeight: 600 }}>
+                        <span className="material-icons-round" style={{ fontSize: "14px" }}>view_in_ar</span>
+                        {project.modelType === "gear" ? "Mechanical Gear" : project.modelType === "car" ? "Civil EV Car" : project.modelType === "villa" ? "Residential Villa" : "Architectural Slab"}
+                    </span>
+                </div>
+                <div className="detail-row">
                     <span className="detail-label">Progress</span>
                     <span className="detail-value">{progressPercent}%</span>
                 </div>

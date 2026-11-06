@@ -4,7 +4,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
 import { MTLLoader } from "three/examples/jsm/loaders/MTLLoader.js";
-import { Project } from "../classes/Project";
+import { Project, ModelType } from "../classes/Project";
 import { ProjectsManager } from "../classes/ProjectsManager";
 
 export interface ThreeViewerProps {
@@ -85,23 +85,34 @@ export function ThreeViewer(props: ThreeViewerProps) {
         gridMaterial.color = new THREE.Color(0x808080);
         grid.position.y = 0;
 
-        // Studio 3-Point Architectural Lighting
-        const keyLight = new THREE.DirectionalLight(0xffffff, 2.0);
-        keyLight.position.set(15, 25, 20);
+        // Studio Architectural & Environmental Lighting (Hemisphere + Key + Fill + Ambient)
+        const hemiLight = new THREE.HemisphereLight(0xffffff, 0x1e293b, 0.75);
+        const keyLight = new THREE.DirectionalLight(0xffffff, 2.2);
+        keyLight.position.set(18, 28, 22);
 
-        const fillLight = new THREE.DirectionalLight(0x93c5fd, 0.9);
-        fillLight.position.set(-15, 10, -10);
+        const fillLight = new THREE.DirectionalLight(0x93c5fd, 1.1);
+        fillLight.position.set(-18, 12, -12);
 
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.55);
 
         const directionalLightHelper = new THREE.DirectionalLightHelper(keyLight, 2);
         directionalLightHelper.visible = false;
 
-        scene.add(grid, axes, keyLight, fillLight, ambientLight, directionalLightHelper);
+        scene.add(grid, axes, hemiLight, keyLight, fillLight, ambientLight, directionalLightHelper);
 
         let gui: GUI | null = null;
         let gearMesh: THREE.Group | null = null;
         const gearDefaultPos = new THREE.Vector3(0, 6.07, 0);
+
+        let carMesh: THREE.Group | null = null;
+        const carDefaultPos = new THREE.Vector3(0, 0, 0);
+
+        let villaMesh: THREE.Group | null = null;
+        const villaDefaultPos = new THREE.Vector3(0, 0, 0);
+
+        let activeModelType: ModelType = "cube";
+        let activeModelFolder: any = null;
+
         const viewerState = {
             autoRotate: false,
             showBoundingBox: false,
@@ -117,7 +128,41 @@ export function ThreeViewer(props: ThreeViewerProps) {
             roughness: 0.25,
         });
 
-        // Update Viewer based on Project Model (Cube vs External Gear)
+        const switchActiveModel = (newModel: ModelType, resetCam: boolean = false) => {
+            activeModelType = newModel;
+
+            cube.visible = (newModel === "cube");
+            if (gearMesh) gearMesh.visible = (newModel === "gear");
+            if (carMesh) carMesh.visible = (newModel === "car");
+            if (villaMesh) villaMesh.visible = (newModel === "villa");
+
+            let activeObj: THREE.Object3D = cube;
+            if (newModel === "gear" && gearMesh) activeObj = gearMesh;
+            else if (newModel === "car" && carMesh) activeObj = carMesh;
+            else if (newModel === "villa" && villaMesh) activeObj = villaMesh;
+            boundingBoxHelper.setFromObject(activeObj);
+
+            if (resetCam && cameraControls && camera) {
+                if (newModel === "gear") {
+                    cameraControls.target.set(0, 6, 0);
+                    camera.position.set(14, 10, 18);
+                } else if (newModel === "villa") {
+                    cameraControls.target.set(0, 1.5, 0);
+                    camera.position.set(12, 9, 14);
+                } else if (newModel === "car") {
+                    cameraControls.target.set(0, 0.75, 0);
+                    camera.position.set(6, 4, 7);
+                } else {
+                    cameraControls.target.set(0, 1, 0);
+                    camera.position.set(4, 3.5, 5);
+                }
+                cameraControls.update();
+            }
+        };
+
+        let buildActiveFolder = () => {};
+
+        // Update Viewer based on Project Model (Cube, Gear, Car, Villa)
         const updateViewerForProject = (proj: any, resetCameraView: boolean = true) => {
             if (!proj || !camera || !cameraControls) { return; }
 
@@ -135,135 +180,184 @@ export function ThreeViewer(props: ThreeViewerProps) {
             gui.domElement.style.right = "1rem";
             gui.domElement.style.zIndex = "25";
 
-            const isGear = proj.modelType === "gear" || proj.name.toLowerCase().includes("gear");
+            const nameLower = (proj.name || "").toLowerCase();
+            let initialModel: ModelType = proj.modelType || "cube";
+            if (!proj.modelType) {
+                if (nameLower.includes("gear")) initialModel = "gear";
+                else if (nameLower.includes("car") || nameLower.includes("auto") || nameLower.includes("vehic")) initialModel = "car";
+                else if (nameLower.includes("villa") || nameLower.includes("house") || nameLower.includes("building") || nameLower.includes("home") || nameLower.includes("residence")) initialModel = "villa";
+            }
+            activeModelType = initialModel;
+            switchActiveModel(activeModelType, resetCameraView);
 
-            if (isGear) {
-                cube.visible = false;
-                if (gearMesh) {
-                    gearMesh.visible = true;
-                    boundingBoxHelper.setFromObject(gearMesh);
+            // Top-level Model Selector dropdown
+            const modelSelectorObj = { model: activeModelType };
+            gui.add(modelSelectorObj, "model", {
+                "Architectural Slab (Cube)": "cube",
+                "Mechanical Core (Gear)": "gear",
+                "Civil Sedan (Car)": "car",
+                "Residential Villa (Architecture)": "villa",
+            }).name("Select 3D Model").onChange((val: ModelType) => {
+                switchActiveModel(val, true);
+                buildActiveFolder();
+            });
+
+            buildActiveFolder = () => {
+                if (activeModelFolder) {
+                    activeModelFolder.destroy();
+                    activeModelFolder = null;
                 }
 
-                if (resetCameraView) {
-                    cameraControls.target.set(0, 6, 0);
-                    camera.position.set(14, 10, 18);
-                    cameraControls.update();
-                }
-
-                const gearFolder = gui.addFolder("Mechanical Gear Controls");
-                gearFolder.open();
-
-                if (gearMesh) {
-                    const posXCtrl = gearFolder.add(gearMesh.position, "x", -20, 20, 0.5).name("Position X").onChange(() => boundingBoxHelper.update());
-                    const posYCtrl = gearFolder.add(gearMesh.position, "y", 0, 25, 0.5).name("Position Y").onChange(() => boundingBoxHelper.update());
-                    const posZCtrl = gearFolder.add(gearMesh.position, "z", -20, 20, 0.5).name("Position Z").onChange(() => boundingBoxHelper.update());
-                    const rotYCtrl = gearFolder.add(gearMesh.rotation, "y", -Math.PI, Math.PI, 0.05).name("Rotate Y").listen();
-                    const scaleCtrl = gearFolder.add(gearMesh.scale, "x", 0.2, 3, 0.1).name("Scale").onChange((s: number) => {
-                        gearMesh!.scale.set(s, s, s);
-                        boundingBoxHelper.update();
-                    });
-                    const visCtrl = gearFolder.add(gearMesh, "visible").name("Visible");
-                    const colorCtrl = gearFolder.addColor(gearPbrMaterial, "color").name("Gear Color").onChange((c: THREE.Color) => {
-                        gearMesh?.traverse((child) => {
-                            if ((child as THREE.Mesh).isMesh) {
-                                const mat = (child as THREE.Mesh).material as THREE.MeshStandardMaterial;
-                                if (mat && mat.color) { mat.color.copy(c); }
-                            }
+                if (activeModelType === "gear") {
+                    activeModelFolder = gui!.addFolder("Mechanical Gear Controls");
+                    activeModelFolder.open();
+                    if (gearMesh) {
+                        const posXCtrl = activeModelFolder.add(gearMesh.position, "x", -20, 20, 0.5).name("Position X").onChange(() => boundingBoxHelper.update());
+                        const posYCtrl = activeModelFolder.add(gearMesh.position, "y", 0, 25, 0.5).name("Position Y").onChange(() => boundingBoxHelper.update());
+                        const posZCtrl = activeModelFolder.add(gearMesh.position, "z", -20, 20, 0.5).name("Position Z").onChange(() => boundingBoxHelper.update());
+                        const rotYCtrl = activeModelFolder.add(gearMesh.rotation, "y", -Math.PI, Math.PI, 0.05).name("Rotate Y").listen();
+                        const scaleCtrl = activeModelFolder.add(gearMesh.scale, "x", 0.2, 3, 0.1).name("Scale").onChange((s: number) => {
+                            gearMesh!.scale.set(s, s, s);
+                            boundingBoxHelper.update();
                         });
-                    });
-                    const wireCtrl = gearFolder.add(gearPbrMaterial, "wireframe").name("Wireframe").onChange((w: boolean) => {
-                        gearMesh?.traverse((child) => {
-                            if ((child as THREE.Mesh).isMesh) {
-                                const mat = (child as THREE.Mesh).material as THREE.MeshStandardMaterial;
-                                if (mat) { mat.wireframe = w; }
-                            }
-                        });
-                    });
-                    const rotToggleCtrl = gearFolder.add(viewerState, "autoRotate").name("Auto-Rotate");
-                    gearFolder.add({
-                        resetGear: () => {
-                            gearMesh!.position.copy(gearDefaultPos);
-                            gearMesh!.rotation.set(0, 0, 0);
-                            gearMesh!.scale.set(1, 1, 1);
-                            gearMesh!.visible = true;
-                            gearPbrMaterial.color.setHex(0x94a3b8);
-                            gearPbrMaterial.wireframe = false;
+                        activeModelFolder.add(gearMesh, "visible").name("Visible");
+                        activeModelFolder.addColor(gearPbrMaterial, "color").name("Gear Color").onChange((c: THREE.Color) => {
                             gearMesh?.traverse((child) => {
                                 if ((child as THREE.Mesh).isMesh) {
                                     const mat = (child as THREE.Mesh).material as THREE.MeshStandardMaterial;
-                                    if (mat) {
-                                        mat.color.setHex(0x94a3b8);
-                                        mat.wireframe = false;
-                                    }
+                                    if (mat && mat.color) { mat.color.copy(c); }
                                 }
                             });
+                        });
+                        activeModelFolder.add(gearPbrMaterial, "wireframe").name("Wireframe").onChange((w: boolean) => {
+                            gearMesh?.traverse((child) => {
+                                if ((child as THREE.Mesh).isMesh) {
+                                    const mat = (child as THREE.Mesh).material as THREE.MeshStandardMaterial;
+                                    if (mat) { mat.wireframe = w; }
+                                }
+                            });
+                        });
+                        activeModelFolder.add(viewerState, "autoRotate").name("Auto-Rotate");
+                        activeModelFolder.add({
+                            resetGear: () => {
+                                gearMesh!.position.copy(gearDefaultPos);
+                                gearMesh!.rotation.set(0, 0, 0);
+                                gearMesh!.scale.set(1, 1, 1);
+                                gearMesh!.visible = true;
+                                gearPbrMaterial.color.setHex(0x94a3b8);
+                                gearPbrMaterial.wireframe = false;
+                                viewerState.autoRotate = false;
+                                posXCtrl.updateDisplay();
+                                posYCtrl.updateDisplay();
+                                posZCtrl.updateDisplay();
+                                rotYCtrl.updateDisplay();
+                                scaleCtrl.updateDisplay();
+                                boundingBoxHelper.update();
+                            },
+                        }, "resetGear").name("Reset Model");
+                    } else {
+                        activeModelFolder.add({ status: "Loading Gear..." }, "status").name("Status");
+                    }
+                } else if (activeModelType === "car") {
+                    activeModelFolder = gui!.addFolder("Civil Sedan Controls");
+                    activeModelFolder.open();
+                    if (carMesh) {
+                        const posXCtrl = activeModelFolder.add(carMesh.position, "x", -15, 15, 0.2).name("Position X").onChange(() => boundingBoxHelper.update());
+                        const posYCtrl = activeModelFolder.add(carMesh.position, "y", 0, 10, 0.1).name("Position Y").onChange(() => boundingBoxHelper.update());
+                        const posZCtrl = activeModelFolder.add(carMesh.position, "z", -15, 15, 0.2).name("Position Z").onChange(() => boundingBoxHelper.update());
+                        const rotYCtrl = activeModelFolder.add(carMesh.rotation, "y", -Math.PI, Math.PI, 0.05).name("Rotate Y").listen();
+                        const scaleCtrl = activeModelFolder.add(carMesh.scale, "x", 0.5, 3, 0.1).name("Scale").onChange((s: number) => {
+                            carMesh!.scale.set(s, s, s);
+                            boundingBoxHelper.update();
+                        });
+                        activeModelFolder.add(carMesh, "visible").name("Visible");
+                        activeModelFolder.add(viewerState, "autoRotate").name("Auto-Rotate");
+                        activeModelFolder.add({
+                            resetCar: () => {
+                                carMesh!.position.copy(carDefaultPos);
+                                carMesh!.rotation.set(-Math.PI / 2, 0, 0);
+                                carMesh!.scale.set(1, 1, 1);
+                                carMesh!.visible = true;
+                                viewerState.autoRotate = false;
+                                posXCtrl.updateDisplay();
+                                posYCtrl.updateDisplay();
+                                posZCtrl.updateDisplay();
+                                rotYCtrl.updateDisplay();
+                                scaleCtrl.updateDisplay();
+                                boundingBoxHelper.update();
+                            },
+                        }, "resetCar").name("Reset Model");
+                    } else {
+                        activeModelFolder.add({ status: "Loading Car..." }, "status").name("Status");
+                    }
+                } else if (activeModelType === "villa") {
+                    activeModelFolder = gui!.addFolder("Residential Villa Controls");
+                    activeModelFolder.open();
+                    if (villaMesh) {
+                        const posXCtrl = activeModelFolder.add(villaMesh.position, "x", -20, 20, 0.5).name("Position X").onChange(() => boundingBoxHelper.update());
+                        const posYCtrl = activeModelFolder.add(villaMesh.position, "y", 0, 10, 0.1).name("Position Y").onChange(() => boundingBoxHelper.update());
+                        const posZCtrl = activeModelFolder.add(villaMesh.position, "z", -20, 20, 0.5).name("Position Z").onChange(() => boundingBoxHelper.update());
+                        const rotYCtrl = activeModelFolder.add(villaMesh.rotation, "y", -Math.PI, Math.PI, 0.05).name("Rotate Y").listen();
+                        const scaleCtrl = activeModelFolder.add(villaMesh.scale, "x", 0.5, 3, 0.1).name("Scale").onChange((s: number) => {
+                            villaMesh!.scale.set(s, s, s);
+                            boundingBoxHelper.update();
+                        });
+                        activeModelFolder.add(villaMesh, "visible").name("Visible");
+                        activeModelFolder.add(viewerState, "autoRotate").name("Auto-Rotate");
+                        activeModelFolder.add({
+                            resetVilla: () => {
+                                villaMesh!.position.copy(villaDefaultPos);
+                                villaMesh!.rotation.set(-Math.PI / 2, 0, 0);
+                                villaMesh!.scale.set(1, 1, 1);
+                                villaMesh!.visible = true;
+                                viewerState.autoRotate = false;
+                                posXCtrl.updateDisplay();
+                                posYCtrl.updateDisplay();
+                                posZCtrl.updateDisplay();
+                                rotYCtrl.updateDisplay();
+                                scaleCtrl.updateDisplay();
+                                boundingBoxHelper.update();
+                            },
+                        }, "resetVilla").name("Reset Model");
+                    } else {
+                        activeModelFolder.add({ status: "Loading Villa..." }, "status").name("Status");
+                    }
+                } else {
+                    activeModelFolder = gui!.addFolder("Cube Model Controls");
+                    activeModelFolder.open();
+                    const posXCtrl = activeModelFolder.add(cube.position, "x", -10, 10, 0.1).name("Position X").onChange(() => boundingBoxHelper.update());
+                    const posYCtrl = activeModelFolder.add(cube.position, "y", 0, 10, 0.1).name("Position Y").onChange(() => boundingBoxHelper.update());
+                    const posZCtrl = activeModelFolder.add(cube.position, "z", -10, 10, 0.1).name("Position Z").onChange(() => boundingBoxHelper.update());
+                    const rotYCtrl = activeModelFolder.add(cube.rotation, "y", -Math.PI, Math.PI, 0.05).name("Rotate Y").listen();
+                    const scaleCtrl = activeModelFolder.add(cube.scale, "x", 0.5, 3, 0.1).name("Scale").onChange((s: number) => {
+                        cube.scale.set(s, s, s);
+                        boundingBoxHelper.update();
+                    });
+                    activeModelFolder.add(cube, "visible").name("Visible");
+                    activeModelFolder.addColor(cubeMaterial, "color").name("Cube Color");
+                    activeModelFolder.add(cubeMaterial, "wireframe").name("Wireframe");
+                    activeModelFolder.add(viewerState, "autoRotate").name("Auto-Rotate");
+                    activeModelFolder.add({
+                        resetCube: () => {
+                            cube.position.set(0, 1, 0);
+                            cube.rotation.set(0, 0, 0);
+                            cube.scale.set(1, 1, 1);
+                            cube.visible = true;
+                            cubeMaterial.color.setHex(0x38bdf8);
+                            cubeMaterial.wireframe = false;
                             viewerState.autoRotate = false;
                             posXCtrl.updateDisplay();
                             posYCtrl.updateDisplay();
                             posZCtrl.updateDisplay();
                             rotYCtrl.updateDisplay();
                             scaleCtrl.updateDisplay();
-                            visCtrl.updateDisplay();
-                            colorCtrl.updateDisplay();
-                            wireCtrl.updateDisplay();
-                            rotToggleCtrl.updateDisplay();
                             boundingBoxHelper.update();
                         },
-                    }, "resetGear").name("Reset Model");
-                } else {
-                    const loadingObj = { status: "Loading 3D Model..." };
-                    gearFolder.add(loadingObj, "status").name("Status");
+                    }, "resetCube").name("Reset Model");
                 }
-            } else {
-                cube.visible = true;
-                if (gearMesh) {
-                    gearMesh.visible = false;
-                }
-                boundingBoxHelper.setFromObject(cube);
+            };
 
-                if (resetCameraView) {
-                    cameraControls.target.set(0, 1, 0);
-                    camera.position.set(4, 3.5, 5);
-                    cameraControls.update();
-                }
-
-                const cubeFolder = gui.addFolder("Cube Model Controls");
-                cubeFolder.open();
-
-                const posXCtrl = cubeFolder.add(cube.position, "x", -10, 10, 0.1).name("Position X").onChange(() => boundingBoxHelper.update());
-                const posYCtrl = cubeFolder.add(cube.position, "y", 0, 10, 0.1).name("Position Y").onChange(() => boundingBoxHelper.update());
-                const posZCtrl = cubeFolder.add(cube.position, "z", -10, 10, 0.1).name("Position Z").onChange(() => boundingBoxHelper.update());
-                const rotYCtrl = cubeFolder.add(cube.rotation, "y", -Math.PI, Math.PI, 0.05).name("Rotate Y").listen();
-                const scaleCtrl = cubeFolder.add(cube.scale, "x", 0.5, 3, 0.1).name("Scale").onChange((s: number) => {
-                    cube.scale.set(s, s, s);
-                    boundingBoxHelper.update();
-                });
-                const visCtrl = cubeFolder.add(cube, "visible").name("Visible");
-                const colorCtrl = cubeFolder.addColor(cubeMaterial, "color").name("Cube Color");
-                const wireCtrl = cubeFolder.add(cubeMaterial, "wireframe").name("Wireframe");
-                const rotToggleCtrl = cubeFolder.add(viewerState, "autoRotate").name("Auto-Rotate");
-                cubeFolder.add({
-                    resetCube: () => {
-                        cube.position.set(0, 1, 0);
-                        cube.rotation.set(0, 0, 0);
-                        cube.scale.set(1, 1, 1);
-                        cube.visible = true;
-                        cubeMaterial.color.setHex(0x38bdf8);
-                        cubeMaterial.wireframe = false;
-                        viewerState.autoRotate = false;
-                        posXCtrl.updateDisplay();
-                        posYCtrl.updateDisplay();
-                        posZCtrl.updateDisplay();
-                        rotYCtrl.updateDisplay();
-                        scaleCtrl.updateDisplay();
-                        visCtrl.updateDisplay();
-                        colorCtrl.updateDisplay();
-                        wireCtrl.updateDisplay();
-                        rotToggleCtrl.updateDisplay();
-                        boundingBoxHelper.update();
-                    },
-                }, "resetCube").name("Reset Model");
-            }
+            buildActiveFolder();
 
             const helpersFolder = gui.addFolder("CAD Grid & Helpers");
             helpersFolder.open();
@@ -288,9 +382,15 @@ export function ThreeViewer(props: ThreeViewerProps) {
             cameraFolder.close();
             cameraFolder.add({
                 isoView: () => {
-                    if (isGear) {
+                    if (activeModelType === "gear") {
                         cameraControls?.target.set(0, 6, 0);
                         camera?.position.set(14, 10, 18);
+                    } else if (activeModelType === "villa") {
+                        cameraControls?.target.set(0, 1.5, 0);
+                        camera?.position.set(12, 9, 14);
+                    } else if (activeModelType === "car") {
+                        cameraControls?.target.set(0, 0.75, 0);
+                        camera?.position.set(6, 4, 7);
                     } else {
                         cameraControls?.target.set(0, 1, 0);
                         camera?.position.set(4, 3.5, 5);
@@ -300,9 +400,15 @@ export function ThreeViewer(props: ThreeViewerProps) {
             }, "isoView").name("Isometric View");
             cameraFolder.add({
                 topView: () => {
-                    if (isGear) {
+                    if (activeModelType === "gear") {
                         cameraControls?.target.set(0, 6, 0);
                         camera?.position.set(0, 26, 0.01);
+                    } else if (activeModelType === "villa") {
+                        cameraControls?.target.set(0, 1.5, 0);
+                        camera?.position.set(0, 20, 0.01);
+                    } else if (activeModelType === "car") {
+                        cameraControls?.target.set(0, 0.75, 0);
+                        camera?.position.set(0, 12, 0.01);
                     } else {
                         cameraControls?.target.set(0, 1, 0);
                         camera?.position.set(0, 10, 0.01);
@@ -312,9 +418,15 @@ export function ThreeViewer(props: ThreeViewerProps) {
             }, "topView").name("Top Plan View");
             cameraFolder.add({
                 frontView: () => {
-                    if (isGear) {
+                    if (activeModelType === "gear") {
                         cameraControls?.target.set(0, 6, 0);
                         camera?.position.set(0, 6, 22);
+                    } else if (activeModelType === "villa") {
+                        cameraControls?.target.set(0, 1.5, 0);
+                        camera?.position.set(0, 3, 16);
+                    } else if (activeModelType === "car") {
+                        cameraControls?.target.set(0, 0.75, 0);
+                        camera?.position.set(0, 1.5, 9);
                     } else {
                         cameraControls?.target.set(0, 1, 0);
                         camera?.position.set(0, 1, 7);
@@ -324,9 +436,15 @@ export function ThreeViewer(props: ThreeViewerProps) {
             }, "frontView").name("Front Elevation");
             cameraFolder.add({
                 resetCamera: () => {
-                    if (isGear) {
+                    if (activeModelType === "gear") {
                         cameraControls?.target.set(0, 6, 0);
                         camera?.position.set(14, 10, 18);
+                    } else if (activeModelType === "villa") {
+                        cameraControls?.target.set(0, 1.5, 0);
+                        camera?.position.set(12, 9, 14);
+                    } else if (activeModelType === "car") {
+                        cameraControls?.target.set(0, 0.75, 0);
+                        camera?.position.set(6, 4, 7);
                     } else {
                         cameraControls?.target.set(0, 1, 0);
                         camera?.position.set(4, 3.5, 5);
@@ -353,11 +471,12 @@ export function ThreeViewer(props: ThreeViewerProps) {
         updateViewerForProject(project);
 
         let isDisposed = false;
+
+        // 1. Mechanical Gear Loader
         const objLoader = new OBJLoader();
         const mtlLoader = new MTLLoader();
         objLoader.setPath("/Gear/");
         mtlLoader.setPath("/Gear/");
-
         objLoader.load(
             "Gear1.obj",
             (mesh) => {
@@ -381,13 +500,12 @@ export function ThreeViewer(props: ThreeViewerProps) {
                     Math.round(mesh.position.z * 100) / 100
                 );
                 gearDefaultPos.copy(mesh.position);
-
                 scene.add(mesh);
+                gearMesh.visible = (activeModelType === "gear");
 
-                if (project) {
-                    updateViewerForProject(project, false);
-                } else {
-                    mesh.visible = false;
+                if (activeModelType === "gear") {
+                    boundingBoxHelper.setFromObject(gearMesh);
+                    buildActiveFolder();
                 }
 
                 mtlLoader.load(
@@ -404,17 +522,118 @@ export function ThreeViewer(props: ThreeViewerProps) {
             (err) => console.error("OBJ load error:", err)
         );
 
+        // 2. Civil Sedan Car Loader (MTL first for true colors, Z-up rotated to Three.js Y-up)
+        const carMtlLoader = new MTLLoader();
+        carMtlLoader.setPath("/models/car/");
+        carMtlLoader.load(
+            "car.mtl",
+            (materials) => {
+                materials.preload();
+                const carObjLoader = new OBJLoader();
+                carObjLoader.setMaterials(materials);
+                carObjLoader.setPath("/models/car/");
+                carObjLoader.load(
+                    "car.obj",
+                    (mesh) => {
+                        if (isDisposed || !scene) return;
+                        mesh.rotation.x = -Math.PI / 2;
+                        mesh.updateMatrixWorld(true);
+
+                        const box = new THREE.Box3().setFromObject(mesh);
+                        const center = box.getCenter(new THREE.Vector3());
+                        mesh.position.x = -center.x;
+                        mesh.position.z = -center.z;
+                        mesh.position.y = -box.min.y;
+                        carDefaultPos.copy(mesh.position);
+
+                        mesh.traverse((child) => {
+                            if ((child as THREE.Mesh).isMesh) {
+                                (child as THREE.Mesh).castShadow = true;
+                                (child as THREE.Mesh).receiveShadow = true;
+                            }
+                        });
+
+                        carMesh = mesh;
+                        scene.add(carMesh);
+                        carMesh.visible = (activeModelType === "car");
+
+                        if (activeModelType === "car") {
+                            boundingBoxHelper.setFromObject(carMesh);
+                            buildActiveFolder();
+                        }
+                    },
+                    undefined,
+                    (err) => console.error("Car OBJ load error:", err)
+                );
+            },
+            undefined,
+            (err) => console.warn("Car MTL notice:", err)
+        );
+
+        // 3. Residential Villa Architecture Loader (MTL first for true colors, Z-up rotated to Three.js Y-up)
+        const villaMtlLoader = new MTLLoader();
+        villaMtlLoader.setPath("/models/villa/");
+        villaMtlLoader.load(
+            "villa.mtl",
+            (materials) => {
+                materials.preload();
+                const villaObjLoader = new OBJLoader();
+                villaObjLoader.setMaterials(materials);
+                villaObjLoader.setPath("/models/villa/");
+                villaObjLoader.load(
+                    "villa.obj",
+                    (mesh) => {
+                        if (isDisposed || !scene) return;
+                        mesh.rotation.x = -Math.PI / 2;
+                        mesh.updateMatrixWorld(true);
+
+                        const box = new THREE.Box3().setFromObject(mesh);
+                        const center = box.getCenter(new THREE.Vector3());
+                        mesh.position.x = -center.x;
+                        mesh.position.z = -center.z;
+                        mesh.position.y = -box.min.y;
+                        villaDefaultPos.copy(mesh.position);
+
+                        mesh.traverse((child) => {
+                            if ((child as THREE.Mesh).isMesh) {
+                                (child as THREE.Mesh).castShadow = true;
+                                (child as THREE.Mesh).receiveShadow = true;
+                            }
+                        });
+
+                        villaMesh = mesh;
+                        scene.add(villaMesh);
+                        villaMesh.visible = (activeModelType === "villa");
+
+                        if (activeModelType === "villa") {
+                            boundingBoxHelper.setFromObject(villaMesh);
+                            buildActiveFolder();
+                        }
+                    },
+                    undefined,
+                    (err) => console.error("Villa OBJ load error:", err)
+                );
+            },
+            undefined,
+            (err) => console.warn("Villa MTL notice:", err)
+        );
+
         let animFrameId: number;
         const renderScene = () => {
             if (isDisposed || !renderer || !scene || !camera || !cameraControls) { return; }
             if (viewerState.autoRotate) {
-                if (cube.visible) {
+                if (activeModelType === "cube" && cube.visible) {
                     cube.rotation.y += 0.01;
                     if (cube.rotation.y > Math.PI) { cube.rotation.y = -Math.PI; }
-                }
-                if (gearMesh && gearMesh.visible) {
+                } else if (activeModelType === "gear" && gearMesh && gearMesh.visible) {
                     gearMesh.rotation.y += 0.01;
                     if (gearMesh.rotation.y > Math.PI) { gearMesh.rotation.y = -Math.PI; }
+                } else if (activeModelType === "car" && carMesh && carMesh.visible) {
+                    carMesh.rotation.y += 0.01;
+                    if (carMesh.rotation.y > Math.PI) { carMesh.rotation.y = -Math.PI; }
+                } else if (activeModelType === "villa" && villaMesh && villaMesh.visible) {
+                    villaMesh.rotation.y += 0.01;
+                    if (villaMesh.rotation.y > Math.PI) { villaMesh.rotation.y = -Math.PI; }
                 }
             }
             if (boundingBoxHelper.visible) {
@@ -476,6 +695,8 @@ export function ThreeViewer(props: ThreeViewerProps) {
             cameraControls = null;
             gui = null;
             gearMesh = null;
+            carMesh = null;
+            villaMesh = null;
         };
     }, [project.id]);
 

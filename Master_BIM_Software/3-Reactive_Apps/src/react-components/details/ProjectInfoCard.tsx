@@ -69,8 +69,20 @@ export function ProjectInfoCard(props: ProjectInfoCardProps) {
                             id="edit-project-btn"
                             title="Edit Project Details"
                             onClick={onOpenEditModal}
+                            style={{
+                                background: "rgba(255, 255, 255, 0.06)",
+                                border: "1px solid rgba(255, 255, 255, 0.18)",
+                                color: "#f8fafc",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "0.45rem",
+                                padding: "0.5rem 0.95rem",
+                                borderRadius: "6px",
+                                cursor: "pointer",
+                                fontWeight: 600,
+                            }}
                         >
-                            <span className="material-icons-round">edit</span>
+                            <span className="material-icons-round" style={{ fontSize: "1.1rem" }}>edit</span>
                             <span>Edit</span>
                         </button>
                         <button
@@ -79,8 +91,19 @@ export function ProjectInfoCard(props: ProjectInfoCardProps) {
                             id="delete-project-btn"
                             title="Delete Project"
                             onClick={onDeleteProject}
+                            style={{
+                                background: "rgba(239, 68, 68, 0.12)",
+                                border: "1px solid rgba(239, 68, 68, 0.3)",
+                                color: "#ef4444",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                padding: "0.5rem 0.75rem",
+                                borderRadius: "6px",
+                                cursor: "pointer",
+                            }}
                         >
-                            <span className="material-icons-round">delete</span>
+                            <span className="material-icons-round" style={{ fontSize: "1.1rem" }}>delete</span>
                         </button>
                     </div>
                 </div>
