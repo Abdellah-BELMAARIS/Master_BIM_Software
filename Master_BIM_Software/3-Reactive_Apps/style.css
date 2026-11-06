@@ -257,6 +257,7 @@ a {
     height: 100dvh;
     position: relative;
     overflow: hidden;
+    pointer-events: none;
 }
 
 #content > .page,

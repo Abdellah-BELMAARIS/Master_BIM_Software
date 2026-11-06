@@ -11,6 +11,10 @@ import { ProjectsManager } from "./classes/ProjectsManager";
 const projectsManager = new ProjectsManager();
 
 const showMainReactView = () => {
+    const content = document.getElementById("content");
+    if (content) {
+        content.style.display = "none";
+    }
     const usersPage = document.getElementById("users-page");
     if (usersPage) {
         usersPage.style.display = "none";
@@ -28,12 +32,16 @@ const showMainReactView = () => {
 const showUsersPage = () => {
     const projectsPage = document.getElementById("projects-page");
     const detailsPage = document.getElementById("project-details");
+    const content = document.getElementById("content");
     const usersPage = document.getElementById("users-page");
     if (projectsPage) {
         projectsPage.style.display = "none";
     }
     if (detailsPage) {
         detailsPage.style.display = "none";
+    }
+    if (content) {
+        content.style.display = "flex";
     }
     if (usersPage) {
         usersPage.style.display = "flex";
