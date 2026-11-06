@@ -96,6 +96,38 @@ const showErrorModal = (message: string) => {
 const closeErrorModalBtn = document.getElementById("close-error-modal-btn");
 closeErrorModalBtn?.addEventListener("click", () => toggleModal("error-modal", false));
 
+// Global HTML5 Constraint Validation English Override (prevents browser OS locale messages like French "Veuillez renseigner ce champ.")
+document.addEventListener(
+    "invalid",
+    (e) => {
+        const target = e.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+        if (!target || !("validity" in target)) { return; }
+        if (target.validity.valueMissing) {
+            target.setCustomValidity("Please fill out this field.");
+        } else if (target.validity.typeMismatch && target.type === "email") {
+            target.setCustomValidity("Please enter a valid email address.");
+        } else if (target.validity.rangeUnderflow) {
+            target.setCustomValidity(`Value must be greater than or equal to ${target.getAttribute("min")}.`);
+        } else if (target.validity.rangeOverflow) {
+            target.setCustomValidity(`Value must be less than or equal to ${target.getAttribute("max")}.`);
+        } else if (target.validity.tooShort) {
+            target.setCustomValidity(`Please lengthen this text to at least ${target.getAttribute("minlength")} characters.`);
+        }
+    },
+    true
+);
+
+document.addEventListener(
+    "input",
+    (e) => {
+        const target = e.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+        if (target && "setCustomValidity" in target) {
+            target.setCustomValidity("");
+        }
+    },
+    true
+);
+
 // Form input elements for Edit Project trigger from Details Page
 const projectForm = document.getElementById("new-project-form") as HTMLFormElement | null;
 const projectModalTitle = document.getElementById("project-modal-title");
@@ -593,6 +625,8 @@ if (viewerContainer) {
             title: "Viewer Options",
             width: 280,
         });
+        // Force English decimal dot (e.g. 1.5 instead of 1,5) across all numeric inputs in lil-gui
+        gui.domElement.setAttribute("lang", "en-US");
         gui.domElement.style.position = "absolute";
         gui.domElement.style.top = "1rem";
         gui.domElement.style.right = "1rem";
@@ -806,6 +840,12 @@ if (viewerContainer) {
         }, "resetCamera").name("Reset View");
 
         gui.open();
+        // Force English decimal dot (e.g. 1.5 instead of French 1,5) across all numeric inputs in lil-gui
+        gui.domElement.querySelectorAll("input[type='number']").forEach((inp) => {
+            inp.setAttribute("type", "text");
+            inp.setAttribute("inputmode", "decimal");
+            inp.setAttribute("lang", "en-US");
+        });
     };
 
     // Register callback so clicking a project card in the dashboard switches the 3D model and controls

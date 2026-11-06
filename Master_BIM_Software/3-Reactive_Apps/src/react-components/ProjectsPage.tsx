@@ -183,7 +183,30 @@ export function ProjectsPage(props: ProjectsPageProps) {
         <div className="page" id="projects-page">
             {/* New / Edit Project Modal Dialog */}
             <dialog id="new-project-modal">
-                <form onSubmit={(e) => onFormSubmit(e)} id="new-project-form">
+                <form
+                    onSubmit={(e) => onFormSubmit(e)}
+                    id="new-project-form"
+                    onInvalid={(e) => {
+                        const target = e.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+                        if (target && "validity" in target) {
+                            if (target.validity.valueMissing) {
+                                target.setCustomValidity("Please fill out this field.");
+                            } else if (target.validity.typeMismatch && target.type === "email") {
+                                target.setCustomValidity("Please enter a valid email address.");
+                            } else if (target.validity.rangeUnderflow) {
+                                target.setCustomValidity(`Value must be greater than or equal to ${target.getAttribute("min")}.`);
+                            } else if (target.validity.rangeOverflow) {
+                                target.setCustomValidity(`Value must be less than or equal to ${target.getAttribute("max")}.`);
+                            }
+                        }
+                    }}
+                    onInput={(e) => {
+                        const target = e.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+                        if (target && "setCustomValidity" in target) {
+                            target.setCustomValidity("");
+                        }
+                    }}
+                >
                     <h2 id="project-modal-title">New Project</h2>
                     <div className="input-list">
                         <div className="form-field">
@@ -273,7 +296,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
                                 <label>
                                     <span className="material-icons-round">calendar_today</span> Finish Date
                                 </label>
-                                <input name="finishDate" type="date" id="project-date-input" />
+                                <input name="finishDate" type="date" id="project-date-input" lang="en" />
                             </div>
 
                             <div className="form-field">
