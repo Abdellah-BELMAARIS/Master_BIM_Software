@@ -1,13 +1,19 @@
 import * as React from "react";
 import * as Router from "react-router-dom";
+import { getDocs } from "firebase/firestore";
+import { getCollection } from "../core/database";
 import { IProject, Project, ProjectStatus, UserRole } from "../classes/Project";
 import { ProjectsManager } from "../classes/ProjectsManager";
 import { ProjectCard } from "./ProjectCard";
 import { SearchBox } from "./SearchBox";
+import { ProjectForm } from "./ProjectForm";
 
 export interface ProjectsPageProps {
     projectsManager?: ProjectsManager;
 }
+
+// Lesson 4.4: Master collection reference declared outside component (Module Scope optimization)
+const projectsCollection = getCollection<IProject>("projects");
 
 // Lesson 3.3, 3.4, 3.5 & 3.6: ProjectsPage Component with Events, Nested <ProjectCard />, React.useState & React.useEffect
 export function ProjectsPage(props: ProjectsPageProps) {
@@ -21,6 +27,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
     const [searchQuery, setSearchQuery] = React.useState<string>("");
     const [statusFilter, setStatusFilter] = React.useState<string>("all");
     const [sortBy, setSortBy] = React.useState<string>("name-asc");
+    const [isNewProjectModalOpen, setIsNewProjectModalOpen] = React.useState<boolean>(false);
 
     // Lesson 3.6: Wire ProjectsManager custom events (onProjectCreated & onProjectDeleted) to update React state
     projectsManager.onProjectCreated = () => {
@@ -40,6 +47,59 @@ export function ProjectsPage(props: ProjectsPageProps) {
         console.log("Updated projects state", projects);
     }, [projects]);
 
+    // Lesson 4.3 & 4.4: Retrieving collection documents using master generic collection reference
+    React.useEffect(() => {
+        const getFirestoreProjects = async () => {
+            try {
+                const querySnapshot = await getDocs(projectsCollection);
+
+                for (const doc of querySnapshot.docs) {
+                    const data = doc.data() as any;
+                    const rawDate = data.finishDate;
+                    let finishDate: Date;
+                    if (rawDate && typeof rawDate.toDate === "function") {
+                        finishDate = rawDate.toDate();
+                    } else if (rawDate) {
+                        finishDate = new Date(rawDate);
+                    } else {
+                        finishDate = new Date();
+                    }
+
+                    const projectData: IProject = {
+                        name: data.name || "Untitled Project",
+                        description: data.description || "",
+                        status: data.status || "Active",
+                        userRole: data.userRole || "Architect",
+                        finishDate,
+                        cost: Number(data.cost || 0),
+                        progress: Number(data.progress || 0),
+                        modelType: data.modelType || "cube",
+                        iconColor: data.iconColor,
+                        todos: data.todos,
+                    };
+
+                    try {
+                        projectsManager.newProject(projectData, doc.id);
+                    } catch {
+                        // Lesson 4.3 Assignment: If project already exists (e.g. on navigation re-mount), update it!
+                        const existing =
+                            projectsManager.getProject(doc.id) ||
+                            projectsManager.getProjectByName(projectData.name);
+                        if (existing) {
+                            projectsManager.updateProject(existing.id, projectData);
+                        }
+                    }
+                }
+
+                setProjects([...projectsManager.list]);
+            } catch (error) {
+                console.error("Error fetching Firestore projects:", error);
+            }
+        };
+
+        getFirestoreProjects();
+    }, []);
+
     // Helper to display styled error dialog (or fallback alert)
     const showError = (message: string) => {
         const errorMsgEl = document.getElementById("error-modal-message");
@@ -52,75 +112,9 @@ export function ProjectsPage(props: ProjectsPageProps) {
         }
     };
 
-    // Lesson 3.4: Callback to open the New Project modal via React onClick
+    // Lesson 3.4 & Challenge: Callback to open the New Project modal (managed via state & ProjectForm)
     const onNewProjectClick = () => {
-        const projectForm = document.getElementById("new-project-form") as HTMLFormElement | null;
-        projectForm?.reset();
-        delete projectForm?.dataset.editingProjectId;
-
-        const modalTitle = document.getElementById("project-modal-title");
-        const submitBtn = document.getElementById("project-submit-btn");
-        if (modalTitle) modalTitle.textContent = "New Project";
-        if (submitBtn) submitBtn.textContent = "Accept";
-
-        const modal = document.getElementById("new-project-modal");
-        if (!(modal && modal instanceof HTMLDialogElement)) { return; }
-        modal.showModal();
-    };
-
-    // Lesson 3.4: Callback to close the New Project modal
-    const onCancelClick = () => {
-        const projectForm = document.getElementById("new-project-form") as HTMLFormElement | null;
-        delete projectForm?.dataset.editingProjectId;
-
-        const modal = document.getElementById("new-project-modal");
-        if (!(modal && modal instanceof HTMLDialogElement)) { return; }
-        modal.close();
-    };
-
-    // Lesson 3.4 & 3.5: Callback for form onSubmit using React.FormEvent + setProjects state update
-    const onFormSubmit = (e: React.FormEvent) => {
-        const projectForm = document.getElementById("new-project-form");
-        if (!(projectForm && projectForm instanceof HTMLFormElement)) { return; }
-        e.preventDefault();
-
-        const formData = new FormData(projectForm);
-        const rawDate = formData.get("finishDate") as string;
-        const parsedDate = rawDate ? new Date(rawDate) : new Date();
-        const rawCost = Number(formData.get("cost") ?? 0);
-        const rawProgress = Number(formData.get("progress") ?? 25);
-        const clampedProgress = Math.min(100, Math.max(0, isNaN(rawProgress) ? 25 : rawProgress)) / 100;
-        const selectedModelType = (formData.get("modelType") as "cube" | "gear") || "cube";
-
-        const projectData: IProject = {
-            name: (formData.get("name") as string).trim(),
-            description: (formData.get("description") as string).trim(),
-            status: formData.get("status") as ProjectStatus,
-            userRole: formData.get("userRole") as UserRole,
-            finishDate: isNaN(parsedDate.getTime()) ? new Date() : parsedDate,
-            cost: isNaN(rawCost) ? 0 : rawCost,
-            progress: clampedProgress,
-            modelType: selectedModelType,
-        };
-
-        try {
-            const editingId = projectForm.dataset.editingProjectId;
-            if (editingId) {
-                projectsManager.updateProject(editingId, projectData);
-            } else {
-                projectsManager.newProject(projectData);
-            }
-
-            delete projectForm.dataset.editingProjectId;
-            projectForm.reset();
-
-            const modal = document.getElementById("new-project-modal");
-            if (!(modal && modal instanceof HTMLDialogElement)) { return; }
-            modal.close();
-        } catch (err: any) {
-            const errorMessage = err instanceof Error ? err.message : String(err);
-            showError(errorMessage);
-        }
+        setIsNewProjectModalOpen(true);
     };
 
     // Lesson 3.4 Assignment: Export & Import projects JSON inside ProjectsPage component
@@ -199,151 +193,13 @@ export function ProjectsPage(props: ProjectsPageProps) {
 
     return (
         <div className="page" id="projects-page">
-            {/* New / Edit Project Modal Dialog */}
-            <dialog id="new-project-modal">
-                <form
-                    onSubmit={(e) => onFormSubmit(e)}
-                    id="new-project-form"
-                    onInvalid={(e) => {
-                        const target = e.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
-                        if (target && "validity" in target) {
-                            if (target.validity.valueMissing) {
-                                target.setCustomValidity("Please fill out this field.");
-                            } else if (target.validity.typeMismatch && target.type === "email") {
-                                target.setCustomValidity("Please enter a valid email address.");
-                            } else if (target.validity.rangeUnderflow) {
-                                target.setCustomValidity(`Value must be greater than or equal to ${target.getAttribute("min")}.`);
-                            } else if (target.validity.rangeOverflow) {
-                                target.setCustomValidity(`Value must be less than or equal to ${target.getAttribute("max")}.`);
-                            }
-                        }
-                    }}
-                    onInput={(e) => {
-                        const target = e.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
-                        if (target && "setCustomValidity" in target) {
-                            target.setCustomValidity("");
-                        }
-                    }}
-                >
-                    <h2 id="project-modal-title">New Project</h2>
-                    <div className="input-list">
-                        <div className="form-field">
-                            <label>
-                                <span className="material-icons-round">corporate_fare</span> Name
-                            </label>
-                            <input
-                                name="name"
-                                type="text"
-                                id="project-name-input"
-                                placeholder="Riverfront Promenade"
-                                required
-                            />
-                            <p className="input-tip">TIP: Give it a short name (min. 5 chars).</p>
-                        </div>
-
-                        <div className="form-field">
-                            <label>
-                                <span className="material-icons-round">subject</span> Description
-                            </label>
-                            <textarea
-                                name="description"
-                                id="project-desc-input"
-                                placeholder="Enter architectural & structural scope description..."
-                                cols={30}
-                                rows={3}
-                                defaultValue={""}
-                            />
-                        </div>
-
-                        <div className="form-row-2col">
-                            <div className="form-field">
-                                <label>
-                                    <span className="material-icons-round">person</span> Role
-                                </label>
-                                <select name="userRole" id="project-role-input">
-                                    <option value="Architect">Architect</option>
-                                    <option value="Engineer">Engineer</option>
-                                    <option value="Developer">Developer</option>
-                                </select>
-                            </div>
-
-                            <div className="form-field">
-                                <label>
-                                    <span className="material-icons-round">help_outline</span> Status
-                                </label>
-                                <select name="status" id="project-status-input">
-                                    <option value="Active">Active</option>
-                                    <option value="Pending">Pending</option>
-                                    <option value="Finished">Finished</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div className="form-row-2col">
-                            <div className="form-field">
-                                <label>
-                                    <span className="material-icons-round">payments</span> Cost ($)
-                                </label>
-                                <input
-                                    name="cost"
-                                    type="number"
-                                    id="project-cost-input"
-                                    min={0}
-                                    step={1000}
-                                    defaultValue={0}
-                                />
-                            </div>
-
-                            <div className="form-field">
-                                <label>
-                                    <span className="material-icons-round">trending_up</span> Progress (%)
-                                </label>
-                                <input
-                                    name="progress"
-                                    type="number"
-                                    id="project-progress-input"
-                                    min={0}
-                                    max={100}
-                                    defaultValue={25}
-                                />
-                            </div>
-                        </div>
-
-                        <div className="form-row-2col">
-                            <div className="form-field">
-                                <label>
-                                    <span className="material-icons-round">calendar_today</span> Finish Date
-                                </label>
-                                <input name="finishDate" type="date" id="project-date-input" lang="en" />
-                            </div>
-
-                            <div className="form-field">
-                                <label>
-                                    <span className="material-icons-round">view_in_ar</span> 3D Model Type
-                                </label>
-                                <select name="modelType" id="project-model-input">
-                                    <option value="cube">Cube Massing Model</option>
-                                    <option value="gear">Mechanical Gear HVAC</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="form-actions">
-                        <button
-                            onClick={onCancelClick}
-                            type="button"
-                            id="cancel-btn"
-                            className="btn-cancel"
-                        >
-                            Cancel
-                        </button>
-                        <button type="submit" id="project-submit-btn" className="btn-accept">
-                            Accept
-                        </button>
-                    </div>
-                </form>
-            </dialog>
+            {/* Module 3 Challenge: Reusable ProjectForm Component (SRP) */}
+            <ProjectForm
+                isOpen={isNewProjectModalOpen}
+                projectsManager={projectsManager}
+                onClose={() => setIsNewProjectModalOpen(false)}
+                onSuccess={() => setProjects([...projectsManager.list])}
+            />
 
             {/* Top Action Header (Lesson 3.11: SearchBox placed between title and action buttons) */}
             <header id="main-header">

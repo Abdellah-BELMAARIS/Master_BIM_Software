@@ -5,12 +5,14 @@ import { v4 as uuidv4 } from "uuid";
 export type ProjectStatus = "pending" | "active" | "finished" | "Pending" | "Active" | "Finished";
 export type UserRole = "architect" | "engineer" | "developer" | "Architect" | "Engineer" | "Developer";
 export type TodoStatus = "pending" | "in-progress" | "completed";
+export type TodoPriority = "low" | "medium" | "high" | "critical";
 
 export interface IProjectTask {
     id: number;
     text: string;
     date: string;
     status: TodoStatus;
+    priority?: TodoPriority;
     completed: boolean;
 }
 
