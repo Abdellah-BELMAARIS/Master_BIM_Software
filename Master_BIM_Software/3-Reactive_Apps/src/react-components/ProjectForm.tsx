@@ -1,7 +1,7 @@
 import * as React from "react";
 import { addDoc } from "firebase/firestore";
 import { getCollection, updateDocument, sanitizeForFirestore } from "../core/database";
-import { IProject, Project, ProjectStatus, UserRole, PROJECT_ICON_COLORS } from "../classes/Project";
+import { IProject, Project, ProjectStatus, UserRole, ModelType, PROJECT_ICON_COLORS } from "../classes/Project";
 import { ProjectsManager } from "../classes/ProjectsManager";
 
 export interface ProjectFormProps {
@@ -60,7 +60,7 @@ export function ProjectForm(props: ProjectFormProps) {
         const rawProgress = Number(formData.get("progress") ?? 25);
         const clampedProgress = Math.min(100, Math.max(0, isNaN(rawProgress) ? 25 : rawProgress)) / 100;
 
-        const modelType = (formData.get("modelType") as "cube" | "gear") || "cube";
+        const modelType = (formData.get("modelType") as ModelType) || "cube";
 
         const randomIndex = Math.floor(Math.random() * PROJECT_ICON_COLORS.length);
         const iconColor = (project?.iconColor && project.iconColor.trim())
@@ -246,6 +246,8 @@ export function ProjectForm(props: ProjectFormProps) {
                             <select name="modelType" defaultValue={project?.modelType || "cube"}>
                                 <option value="cube">Architectural Slab (Cube)</option>
                                 <option value="gear">Mechanical Core (Gear)</option>
+                                <option value="car">Civil Sedan (Car)</option>
+                                <option value="villa">Residential Villa (Architecture)</option>
                             </select>
                         </div>
                     </div>

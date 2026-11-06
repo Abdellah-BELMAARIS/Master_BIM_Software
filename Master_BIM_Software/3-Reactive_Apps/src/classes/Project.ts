@@ -6,6 +6,7 @@ export type ProjectStatus = "pending" | "active" | "finished" | "Pending" | "Act
 export type UserRole = "architect" | "engineer" | "developer" | "Architect" | "Engineer" | "Developer";
 export type TodoStatus = "pending" | "in-progress" | "completed";
 export type TodoPriority = "low" | "medium" | "high" | "critical";
+export type ModelType = "cube" | "gear" | "car" | "villa";
 
 export interface IProjectTask {
     id: number;
@@ -37,7 +38,7 @@ export interface IProject {
     progress?: number;
     iconColor?: string;
     todos?: IProjectTask[];
-    modelType?: "cube" | "gear";
+    modelType?: ModelType;
 }
 
 // 3. Project class implementing IProject (UI is now managed by React <ProjectCard /> component)
@@ -49,7 +50,7 @@ export class Project implements IProject {
     status: ProjectStatus;
     finishDate: Date;
     todos: IProjectTask[] = [];
-    modelType: "cube" | "gear";
+    modelType: ModelType;
 
     // Unique alphanumeric UUID identifier
     id: string;
@@ -61,7 +62,18 @@ export class Project implements IProject {
 
     constructor(data: IProject, id: string = uuidv4()) {
         this.id = id;
-        this.modelType = data.modelType || (data.name.toLowerCase().includes("gear") ? "gear" : "cube");
+        const nameLower = (data.name || "").toLowerCase();
+        let detectedModel: ModelType = "cube";
+        if (data.modelType) {
+            detectedModel = data.modelType;
+        } else if (nameLower.includes("gear")) {
+            detectedModel = "gear";
+        } else if (nameLower.includes("car") || nameLower.includes("auto") || nameLower.includes("vehic")) {
+            detectedModel = "car";
+        } else if (nameLower.includes("villa") || nameLower.includes("house") || nameLower.includes("building") || nameLower.includes("residence")) {
+            detectedModel = "villa";
+        }
+        this.modelType = detectedModel;
 
         // Dynamic object iteration (ignoring undefined values to avoid overwriting defaults)
         for (const key in data) {
