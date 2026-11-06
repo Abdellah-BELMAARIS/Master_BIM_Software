@@ -26,7 +26,6 @@ export function Sidebar(props: ISidebarProps) {
         <aside id="sidebar">
             <div className="sidebar-header">
                 <img id="company-logo" src="./assets/company-logo.svg" alt="Construction Company — BIM Platform" />
-                <span className="sidebar-brand-badge">AEC · BIM PLATFORM</span>
             </div>
 
             <ul id="nav-buttons">

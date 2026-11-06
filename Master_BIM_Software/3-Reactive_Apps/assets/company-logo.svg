@@ -1,10 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 195 56" width="195" height="56" preserveAspectRatio="xMinYMid meet">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 218 54" width="218" height="54" preserveAspectRatio="xMinYMid meet">
   <defs>
     <style>
-      .logo-title { font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 21px; font-weight: 800; fill: #ffffff; letter-spacing: 1.2px; }
-      .logo-sub { font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 21px; font-weight: 800; fill: #029ae0; letter-spacing: 1.2px; }
+      .logo-title { font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 20px; font-weight: 800; fill: #ffffff; letter-spacing: 1px; }
+      .logo-sub { font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 20px; font-weight: 800; fill: #38bdf8; letter-spacing: 1px; }
     </style>
   </defs>
-  <text x="0" y="21" class="logo-title">CONSTRUCTION</text>
-  <text x="0" y="47" class="logo-sub">COMPANY</text>
+  <!-- Structural BIM Isometric Cube Icon -->
+  <rect x="0" y="3" width="44" height="44" rx="4" fill="#1e293b" stroke="#2563eb" stroke-width="1.5"/>
+  <path d="M22 10 L35 17.5 L35 32.5 L22 40 L9 32.5 L9 17.5 Z" fill="rgba(37, 99, 235, 0.25)" stroke="#38bdf8" stroke-width="1.8" stroke-linejoin="round"/>
+  <path d="M9 17.5 L22 25 L35 17.5 M22 25 L22 40" fill="none" stroke="#60a5fa" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Brand Typography -->
+  <text x="54" y="23" class="logo-title">CONSTRUCTION</text>
+  <text x="54" y="45" class="logo-sub">COMPANY</text>
 </svg>
