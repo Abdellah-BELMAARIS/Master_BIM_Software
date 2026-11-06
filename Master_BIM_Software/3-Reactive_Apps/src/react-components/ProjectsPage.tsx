@@ -1,12 +1,138 @@
 import * as React from "react";
+import { IProject, ProjectStatus, UserRole } from "../classes/Project";
+import { ProjectsManager } from "../classes/ProjectsManager";
 
-// Lesson 3.3: Creating a ProjectsPage React component
-export function ProjectsPage() {
+export interface ProjectsPageProps {
+    projectsManager?: ProjectsManager;
+}
+
+// Lesson 3.3 & 3.4: Creating a ProjectsPage React component & Working with HTML events inside components
+export function ProjectsPage(props: ProjectsPageProps) {
+    // Instantiate ProjectsManager inside the component (or use provided instance so 3D viewer / details stay synced)
+    const projectsManagerRef = React.useRef<ProjectsManager | null>(null);
+    if (!projectsManagerRef.current) {
+        projectsManagerRef.current = props.projectsManager ?? new ProjectsManager();
+    }
+    const projectsManager = props.projectsManager ?? projectsManagerRef.current;
+
+    // Ensure project cards are mounted into #projects-list on initial render
+    React.useEffect(() => {
+        const container = document.getElementById("projects-list") as HTMLDivElement | null;
+        if (container && projectsManager) {
+            projectsManager.ui = container;
+            projectsManager.list.forEach((project) => {
+                if (!container.contains(project.ui)) {
+                    container.appendChild(project.ui);
+                }
+            });
+            projectsManager.updateFilterCounts();
+        }
+    }, [projectsManager]);
+
+    // Helper to display styled error dialog (or fallback alert)
+    const showError = (message: string) => {
+        const errorMsgEl = document.getElementById("error-modal-message");
+        const errorModal = document.getElementById("error-modal");
+        if (errorModal && errorModal instanceof HTMLDialogElement && errorMsgEl) {
+            errorMsgEl.textContent = message;
+            errorModal.showModal();
+        } else {
+            alert(message);
+        }
+    };
+
+    // Lesson 3.4: Callback to open the New Project modal via React onClick
+    const onNewProjectClick = () => {
+        const projectForm = document.getElementById("new-project-form") as HTMLFormElement | null;
+        projectForm?.reset();
+        delete projectForm?.dataset.editingProjectId;
+
+        const modalTitle = document.getElementById("project-modal-title");
+        const submitBtn = document.getElementById("project-submit-btn");
+        if (modalTitle) modalTitle.textContent = "New Project";
+        if (submitBtn) submitBtn.textContent = "Accept";
+
+        const modal = document.getElementById("new-project-modal");
+        if (!(modal && modal instanceof HTMLDialogElement)) { return; }
+        modal.showModal();
+    };
+
+    // Lesson 3.4: Callback to close the New Project modal
+    const onCancelClick = () => {
+        const projectForm = document.getElementById("new-project-form") as HTMLFormElement | null;
+        delete projectForm?.dataset.editingProjectId;
+
+        const modal = document.getElementById("new-project-modal");
+        if (!(modal && modal instanceof HTMLDialogElement)) { return; }
+        modal.close();
+    };
+
+    // Lesson 3.4: Callback for form onSubmit using React.FormEvent
+    const onFormSubmit = (e: React.FormEvent) => {
+        const projectForm = document.getElementById("new-project-form");
+        if (!(projectForm && projectForm instanceof HTMLFormElement)) { return; }
+        e.preventDefault();
+
+        const formData = new FormData(projectForm);
+        const rawDate = formData.get("finishDate") as string;
+        const parsedDate = rawDate ? new Date(rawDate) : new Date();
+        const rawCost = Number(formData.get("cost") ?? 0);
+        const rawProgress = Number(formData.get("progress") ?? 25);
+        const clampedProgress = Math.min(100, Math.max(0, isNaN(rawProgress) ? 25 : rawProgress)) / 100;
+        const selectedModelType = (formData.get("modelType") as "cube" | "gear") || "cube";
+
+        const projectData: IProject = {
+            name: (formData.get("name") as string).trim(),
+            description: (formData.get("description") as string).trim(),
+            status: formData.get("status") as ProjectStatus,
+            userRole: formData.get("userRole") as UserRole,
+            finishDate: isNaN(parsedDate.getTime()) ? new Date() : parsedDate,
+            cost: isNaN(rawCost) ? 0 : rawCost,
+            progress: clampedProgress,
+            modelType: selectedModelType,
+        };
+
+        try {
+            const editingId = projectForm.dataset.editingProjectId;
+            if (editingId) {
+                const updated = projectsManager.updateProject(editingId, projectData);
+                console.log(updated);
+            } else {
+                const project = projectsManager.newProject(projectData);
+                console.log(project);
+            }
+
+            delete projectForm.dataset.editingProjectId;
+            projectForm.reset();
+
+            const modal = document.getElementById("new-project-modal");
+            if (!(modal && modal instanceof HTMLDialogElement)) { return; }
+            modal.close();
+        } catch (err: any) {
+            const errorMessage = err instanceof Error ? err.message : String(err);
+            showError(errorMessage);
+        }
+    };
+
+    // Lesson 3.4 Assignment: Export & Import projects JSON inside ProjectsPage component
+    const onExportProject = () => {
+        try {
+            projectsManager.exportToJSON();
+        } catch (err: any) {
+            const errorMessage = err instanceof Error ? err.message : String(err);
+            showError(errorMessage);
+        }
+    };
+
+    const onImportProject = () => {
+        projectsManager.importFromJSON();
+    };
+
     return (
         <div className="page" id="projects-page">
             {/* New / Edit Project Modal Dialog */}
             <dialog id="new-project-modal">
-                <form id="new-project-form">
+                <form onSubmit={(e) => onFormSubmit(e)} id="new-project-form">
                     <h2 id="project-modal-title">New Project</h2>
                     <div className="input-list">
                         <div className="form-field">
@@ -112,7 +238,12 @@ export function ProjectsPage() {
                     </div>
 
                     <div className="form-actions">
-                        <button type="button" id="cancel-btn" className="btn-cancel">
+                        <button
+                            onClick={onCancelClick}
+                            type="button"
+                            id="cancel-btn"
+                            className="btn-cancel"
+                        >
                             Cancel
                         </button>
                         <button type="submit" id="project-submit-btn" className="btn-accept">
@@ -130,6 +261,7 @@ export function ProjectsPage() {
                 </div>
                 <div className="header-actions">
                     <button
+                        onClick={onImportProject}
                         className="btn-icon btn-action-tool"
                         id="import-projects-btn"
                         title="Import Projects (JSON)"
@@ -138,6 +270,7 @@ export function ProjectsPage() {
                         <span className="btn-tool-label">Import JSON</span>
                     </button>
                     <button
+                        onClick={onExportProject}
                         className="btn-icon btn-action-tool"
                         id="export-projects-btn"
                         title="Export Projects (JSON)"
@@ -145,7 +278,7 @@ export function ProjectsPage() {
                         <span className="material-icons-round">file_download</span>
                         <span className="btn-tool-label">Export JSON</span>
                     </button>
-                    <button className="btn-primary" id="new-project-btn">
+                    <button onClick={onNewProjectClick} className="btn-primary" id="new-project-btn">
                         <span className="material-icons-round">add</span>
                         <span>New Project</span>
                     </button>
@@ -204,10 +337,14 @@ export function ProjectsPage() {
             <section id="projects-list"></section>
 
             {/* Floating Export Button */}
-            <button id="floating-export-btn" className="fab-btn" title="Export Projects">
+            <button
+                onClick={onExportProject}
+                id="floating-export-btn"
+                className="fab-btn"
+                title="Export Projects"
+            >
                 <span className="material-icons-round">download</span>
             </button>
         </div>
     );
 }
-

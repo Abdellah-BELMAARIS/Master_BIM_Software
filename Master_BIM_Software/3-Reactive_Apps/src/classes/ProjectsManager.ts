@@ -5,8 +5,8 @@ export class ProjectsManager {
     // 1. Array storing all active Project instances
     list: Project[] = [];
 
-    // 2. HTML container in the DOM where project cards will be rendered
-    ui: HTMLDivElement;
+    // 2. HTML container in the DOM where project cards will be rendered (optional when managed by React)
+    ui: HTMLDivElement | null = null;
 
     // 3. Currently selected/active project for details view & actions
     activeProject: Project | null = null;
@@ -17,8 +17,8 @@ export class ProjectsManager {
     // 5. Callback triggered when a project is selected (updates 3D viewer model & controls)
     onProjectSelected?: (project: Project) => void;
 
-    constructor(container: HTMLDivElement) {
-        this.ui = container;
+    constructor(container?: HTMLDivElement | null) {
+        this.ui = container ?? (document.getElementById("projects-list") as HTMLDivElement | null);
 
         // Project 1: Cube Model Showcase
         const cubeProject = this.newProject({
@@ -97,7 +97,10 @@ export class ProjectsManager {
             }
         });
 
-        this.ui.append(project.ui);
+        if (!this.ui) {
+            this.ui = document.getElementById("projects-list") as HTMLDivElement | null;
+        }
+        this.ui?.append(project.ui);
         this.list.push(project);
         this.updateFilterCounts();
         return project;
@@ -234,7 +237,10 @@ export class ProjectsManager {
                     </div>
                 `;
 
-                this.ui.appendChild(emptyEl);
+                if (!this.ui) {
+                    this.ui = document.getElementById("projects-list") as HTMLDivElement | null;
+                }
+                this.ui?.appendChild(emptyEl);
 
                 emptyEl.querySelector("#empty-clear-filters-btn")?.addEventListener("click", () => {
                     if (onClearFilters) onClearFilters();
@@ -282,8 +288,11 @@ export class ProjectsManager {
         });
 
         // Re-append in sorted order (preserves existing elements & event listeners)
+        if (!this.ui) {
+            this.ui = document.getElementById("projects-list") as HTMLDivElement | null;
+        }
         this.list.forEach((project) => {
-            this.ui.appendChild(project.ui);
+            this.ui?.appendChild(project.ui);
         });
     }
 

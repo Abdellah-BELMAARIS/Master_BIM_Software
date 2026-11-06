@@ -10,10 +10,12 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
 import { MTLLoader } from "three/examples/jsm/loaders/MTLLoader.js";
-import { IProject, ProjectStatus, TodoStatus, UserRole } from "./classes/Project";
+import { TodoStatus } from "./classes/Project";
 import { ProjectsManager } from "./classes/ProjectsManager";
 
-// --- LESSON 3.2: MOUNT REACT ROOT & RENDER SIDEBAR COMPONENT ---
+// --- LESSON 3.2, 3.3 & 3.4: MOUNT REACT ROOT & RENDER SIDEBAR + PROJECTSPAGE ---
+const projectsManager = new ProjectsManager();
+
 const showProjectsPage = () => {
     const projectsPage = document.getElementById("projects-page");
     const detailsPage = document.getElementById("project-details");
@@ -58,7 +60,7 @@ if (appRoot) {
                         }
                     }}
                 />
-                <ProjectsPage />
+                <ProjectsPage projectsManager={projectsManager} />
             </>
         );
     });
@@ -94,14 +96,7 @@ const showErrorModal = (message: string) => {
 const closeErrorModalBtn = document.getElementById("close-error-modal-btn");
 closeErrorModalBtn?.addEventListener("click", () => toggleModal("error-modal", false));
 
-// Instantiate ProjectsManager
-const projectsListUI = document.getElementById("projects-list") as HTMLDivElement;
-const projectsManager = new ProjectsManager(projectsListUI);
-
-// Track whether we are creating a new project or editing an existing one
-let editingProjectId: string | null = null;
-
-// Form input elements for Project Modal
+// Form input elements for Edit Project trigger from Details Page
 const projectForm = document.getElementById("new-project-form") as HTMLFormElement | null;
 const projectModalTitle = document.getElementById("project-modal-title");
 const projectSubmitBtn = document.getElementById("project-submit-btn");
@@ -114,26 +109,13 @@ const projectProgressInput = document.getElementById("project-progress-input") a
 const projectDateInput = document.getElementById("project-date-input") as HTMLInputElement | null;
 const projectModelInput = document.getElementById("project-model-input") as HTMLSelectElement | null;
 
-// Open 'New Project' modal in Create mode
-const newProjectBtn = document.getElementById("new-project-btn");
-newProjectBtn?.addEventListener("click", () => {
-    editingProjectId = null;
-    projectForm?.reset();
-    if (projectModalTitle) projectModalTitle.textContent = "New Project";
-    if (projectSubmitBtn) projectSubmitBtn.textContent = "Create Project";
-    if (projectCostInput) projectCostInput.value = "0";
-    if (projectProgressInput) projectProgressInput.value = "25";
-    if (projectModelInput) projectModelInput.value = "cube";
-    toggleModal("new-project-modal", true);
-});
-
-// Open 'New Project' modal in Edit mode from Details Page
+// Open 'New Project' modal in Edit mode from Details Page (submission is handled inside ProjectsPage.tsx)
 const editProjectBtn = document.getElementById("edit-project-btn");
 editProjectBtn?.addEventListener("click", () => {
     const active = projectsManager.activeProject;
-    if (!active) { return; }
+    if (!active || !projectForm) { return; }
 
-    editingProjectId = active.id;
+    projectForm.dataset.editingProjectId = active.id;
     if (projectModalTitle) projectModalTitle.textContent = "Edit Project";
     if (projectSubmitBtn) projectSubmitBtn.textContent = "Save Changes";
 
@@ -154,55 +136,6 @@ editProjectBtn?.addEventListener("click", () => {
 
     toggleModal("new-project-modal", true);
 });
-
-// Cancel button listener closes project modal
-const cancelProjectBtn = document.getElementById("cancel-btn");
-cancelProjectBtn?.addEventListener("click", () => {
-    editingProjectId = null;
-    toggleModal("new-project-modal", false);
-});
-
-// Handle New / Edit Project Form Submission
-if (projectForm) {
-    projectForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-        const formData = new FormData(projectForm);
-
-        const rawDate = formData.get("finishDate") as string;
-        const parsedDate = rawDate ? new Date(rawDate) : new Date();
-        const rawCost = Number(formData.get("cost") ?? 0);
-        const rawProgress = Number(formData.get("progress") ?? 25);
-        const clampedProgress = Math.min(100, Math.max(0, isNaN(rawProgress) ? 25 : rawProgress)) / 100;
-        const selectedModelType = (formData.get("modelType") as "cube" | "gear") || "cube";
-
-        const projectData: IProject = {
-            name: (formData.get("name") as string).trim(),
-            description: (formData.get("description") as string).trim(),
-            userRole: formData.get("userRole") as UserRole,
-            status: formData.get("status") as ProjectStatus,
-            finishDate: parsedDate,
-            cost: isNaN(rawCost) ? 0 : rawCost,
-            progress: clampedProgress,
-            modelType: selectedModelType,
-        };
-
-        try {
-            if (editingProjectId) {
-                projectsManager.updateProject(editingProjectId, projectData);
-            } else {
-                projectsManager.newProject(projectData);
-            }
-
-            editingProjectId = null;
-            projectForm.reset();
-            toggleModal("new-project-modal", false);
-            applyProjectFilters();
-        } catch (err: any) {
-            const errorMessage = err instanceof Error ? err.message : String(err);
-            showErrorModal(errorMessage);
-        }
-    });
-}
 
 // Projects Search & Status Filter Bar
 let currentProjectSearch = "";
@@ -233,10 +166,10 @@ const resetProjectFilters = () => {
 };
 
 const openNewProjectFromEmpty = () => {
-    editingProjectId = null;
+    delete projectForm?.dataset.editingProjectId;
     projectForm?.reset();
     if (projectModalTitle) projectModalTitle.textContent = "New Project";
-    if (projectSubmitBtn) projectSubmitBtn.textContent = "Create Project";
+    if (projectSubmitBtn) projectSubmitBtn.textContent = "Accept";
     if (projectCostInput) projectCostInput.value = "0";
     if (projectProgressInput) projectProgressInput.value = "25";
     if (projectStatusInput && currentProjectStatus !== "all") {
@@ -288,28 +221,6 @@ projectSortSelect?.addEventListener("change", (e) => {
     const sortBy = (e.target as HTMLSelectElement).value;
     projectsManager.sortProjects(sortBy);
     applyProjectFilters();
-});
-
-// Lesson 3.9: Connect Import and Export buttons
-const importBtn = document.getElementById("import-projects-btn");
-importBtn?.addEventListener("click", () => projectsManager.importFromJSON());
-
-const exportBtn = document.getElementById("export-projects-btn");
-exportBtn?.addEventListener("click", () => {
-    try {
-        projectsManager.exportToJSON();
-    } catch (err: any) {
-        showErrorModal(err.message);
-    }
-});
-
-const floatingExportBtn = document.getElementById("floating-export-btn");
-floatingExportBtn?.addEventListener("click", () => {
-    try {
-        projectsManager.exportToJSON();
-    } catch (err: any) {
-        showErrorModal(err.message);
-    }
 });
 
 // Lesson 4.1 Assignment & SPA Navigation: Switch between Projects, Details, and Users pages

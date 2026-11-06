@@ -25,27 +25,34 @@ export function Sidebar(props: ISidebarProps) {
     return (
         <aside id="sidebar">
             <div className="sidebar-header">
-                <img id="company-logo" src="./assets/company-logo.svg" alt="Construction Company — BIM Platform" />
+                <img
+                    id="company-logo"
+                    src="./assets/company-logo.svg"
+                    alt="Construction Company — BIM Platform"
+                />
             </div>
 
-            <ul id="nav-buttons">
-                <li
-                    className={`nav-item ${activeTab === "projects" ? "active" : ""}`}
-                    id="nav-projects-btn"
-                    onClick={() => handleNavClick("projects")}
-                >
-                    <span className="material-icons-round">domain</span>
-                    <span className="nav-label">BIM Projects</span>
-                </li>
-                <li
-                    className={`nav-item ${activeTab === "users" ? "active" : ""}`}
-                    id="nav-users-btn"
-                    onClick={() => handleNavClick("users")}
-                >
-                    <span className="material-icons-round">engineering</span>
-                    <span className="nav-label">AEC Team</span>
-                </li>
-            </ul>
+            <div className="sidebar-nav-section">
+                <span className="sidebar-section-label">WORKSPACE</span>
+                <ul id="nav-buttons">
+                    <li
+                        className={`nav-item ${activeTab === "projects" ? "active" : ""}`}
+                        id="nav-projects-btn"
+                        onClick={() => handleNavClick("projects")}
+                    >
+                        <span className="material-icons-round">domain</span>
+                        <span className="nav-label">BIM Projects</span>
+                    </li>
+                    <li
+                        className={`nav-item ${activeTab === "users" ? "active" : ""}`}
+                        id="nav-users-btn"
+                        onClick={() => handleNavClick("users")}
+                    >
+                        <span className="material-icons-round">engineering</span>
+                        <span className="nav-label">AEC Team</span>
+                    </li>
+                </ul>
+            </div>
 
             <div className="sidebar-footer">
                 <div className="system-status">
