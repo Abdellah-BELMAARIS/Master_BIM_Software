@@ -6,6 +6,8 @@ import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
 import { MTLLoader } from "three/examples/jsm/loaders/MTLLoader.js";
 import { Project, ModelType } from "../classes/Project";
 import { ProjectsManager } from "../classes/ProjectsManager";
+import { buildLuxuryVillaEnvironment, IVillaEnvironment } from "./three/VillaEnvironment";
+import { buildCarShowroomEnvironment, ICarEnvironment } from "./three/CarEnvironment";
 
 export interface ThreeViewerProps {
     project: Project;
@@ -110,12 +112,24 @@ export function ThreeViewer(props: ThreeViewerProps) {
         let villaMesh: THREE.Group | null = null;
         const villaDefaultPos = new THREE.Vector3(0, 0, 0);
 
+        // Architectural Luxury Villa & EV Showroom Environment Builders
+        const villaEnv: IVillaEnvironment = buildLuxuryVillaEnvironment();
+        scene.add(villaEnv.group);
+
+        const carEnv: ICarEnvironment = buildCarShowroomEnvironment();
+        scene.add(carEnv.group);
+
+        const clock = new THREE.Clock();
+
         let activeModelType: ModelType = "cube";
         let activeModelFolder: any = null;
 
         const viewerState = {
             autoRotate: false,
             showBoundingBox: false,
+            showPool: true,
+            showFurniture: true,
+            showChargingHub: true,
         };
 
         const boundingBoxHelper = new THREE.BoxHelper(cube, 0x38bdf8);
@@ -136,6 +150,10 @@ export function ThreeViewer(props: ThreeViewerProps) {
             if (carMesh) carMesh.visible = (newModel === "car");
             if (villaMesh) villaMesh.visible = (newModel === "villa");
 
+            // Toggle Rich Architectural Environments
+            villaEnv.group.visible = (newModel === "villa");
+            carEnv.group.visible = (newModel === "car");
+
             let activeObj: THREE.Object3D = cube;
             if (newModel === "gear" && gearMesh) activeObj = gearMesh;
             else if (newModel === "car" && carMesh) activeObj = carMesh;
@@ -147,11 +165,11 @@ export function ThreeViewer(props: ThreeViewerProps) {
                     cameraControls.target.set(0, 6, 0);
                     camera.position.set(14, 10, 18);
                 } else if (newModel === "villa") {
-                    cameraControls.target.set(0, 1.5, 0);
-                    camera.position.set(12, 9, 14);
+                    cameraControls.target.set(0, 2.2, 3.5);
+                    camera.position.set(16, 13, 20);
                 } else if (newModel === "car") {
-                    cameraControls.target.set(0, 0.75, 0);
-                    camera.position.set(6, 4, 7);
+                    cameraControls.target.set(0, 0.9, 0);
+                    camera.position.set(7.5, 4.5, 8.5);
                 } else {
                     cameraControls.target.set(0, 1, 0);
                     camera.position.set(4, 3.5, 5);
@@ -261,6 +279,7 @@ export function ThreeViewer(props: ThreeViewerProps) {
                 } else if (activeModelType === "car") {
                     activeModelFolder = gui!.addFolder("Civil Sedan Controls");
                     activeModelFolder.open();
+                    activeModelFolder.add(viewerState, "showChargingHub").name("EV Charging Hub").onChange((v: boolean) => carEnv.toggleChargingHub(v));
                     if (carMesh) {
                         const posXCtrl = activeModelFolder.add(carMesh.position, "x", -15, 15, 0.2).name("Position X").onChange(() => boundingBoxHelper.update());
                         const posYCtrl = activeModelFolder.add(carMesh.position, "y", 0, 10, 0.1).name("Position Y").onChange(() => boundingBoxHelper.update());
@@ -279,6 +298,8 @@ export function ThreeViewer(props: ThreeViewerProps) {
                                 carMesh!.scale.set(1, 1, 1);
                                 carMesh!.visible = true;
                                 viewerState.autoRotate = false;
+                                viewerState.showChargingHub = true;
+                                carEnv.toggleChargingHub(true);
                                 posXCtrl.updateDisplay();
                                 posYCtrl.updateDisplay();
                                 posZCtrl.updateDisplay();
@@ -293,6 +314,8 @@ export function ThreeViewer(props: ThreeViewerProps) {
                 } else if (activeModelType === "villa") {
                     activeModelFolder = gui!.addFolder("Residential Villa Controls");
                     activeModelFolder.open();
+                    activeModelFolder.add(viewerState, "showPool").name("Pool & Sun Deck").onChange((v: boolean) => villaEnv.togglePool(v));
+                    activeModelFolder.add(viewerState, "showFurniture").name("Interior Furniture").onChange((v: boolean) => villaEnv.toggleFurniture(v));
                     if (villaMesh) {
                         const posXCtrl = activeModelFolder.add(villaMesh.position, "x", -20, 20, 0.5).name("Position X").onChange(() => boundingBoxHelper.update());
                         const posYCtrl = activeModelFolder.add(villaMesh.position, "y", 0, 10, 0.1).name("Position Y").onChange(() => boundingBoxHelper.update());
@@ -311,6 +334,10 @@ export function ThreeViewer(props: ThreeViewerProps) {
                                 villaMesh!.scale.set(1, 1, 1);
                                 villaMesh!.visible = true;
                                 viewerState.autoRotate = false;
+                                viewerState.showPool = true;
+                                viewerState.showFurniture = true;
+                                villaEnv.togglePool(true);
+                                villaEnv.toggleFurniture(true);
                                 posXCtrl.updateDisplay();
                                 posYCtrl.updateDisplay();
                                 posZCtrl.updateDisplay();
@@ -621,6 +648,14 @@ export function ThreeViewer(props: ThreeViewerProps) {
         let animFrameId: number;
         const renderScene = () => {
             if (isDisposed || !renderer || !scene || !camera || !cameraControls) { return; }
+
+            const elapsedTime = clock.getElapsedTime();
+            if (activeModelType === "villa") {
+                villaEnv.updateWater(elapsedTime);
+            } else if (activeModelType === "car") {
+                carEnv.updateLights(elapsedTime);
+            }
+
             if (viewerState.autoRotate) {
                 if (activeModelType === "cube" && cube.visible) {
                     cube.rotation.y += 0.01;
@@ -668,10 +703,12 @@ export function ThreeViewer(props: ThreeViewerProps) {
                 scene.clear();
             }
 
-            // Step 2: Dispose GPU buffers, materials, renderer & GUI
+            // Step 2: Dispose GPU buffers, materials, environments, renderer & GUI
             if (gui) {
                 gui.destroy();
             }
+            villaEnv.dispose();
+            carEnv.dispose();
             cameraControls?.dispose();
             boxGeometry.dispose();
             cubeMaterial.dispose();
