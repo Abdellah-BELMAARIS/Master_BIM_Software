@@ -96,6 +96,38 @@ const showErrorModal = (message: string) => {
 const closeErrorModalBtn = document.getElementById("close-error-modal-btn");
 closeErrorModalBtn?.addEventListener("click", () => toggleModal("error-modal", false));
 
+// Global HTML5 Constraint Validation English Override (prevents browser OS locale messages like French "Veuillez renseigner ce champ.")
+document.addEventListener(
+    "invalid",
+    (e) => {
+        const target = e.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+        if (!target || !("validity" in target)) { return; }
+        if (target.validity.valueMissing) {
+            target.setCustomValidity("Please fill out this field.");
+        } else if (target.validity.typeMismatch && target.type === "email") {
+            target.setCustomValidity("Please enter a valid email address.");
+        } else if (target.validity.rangeUnderflow) {
+            target.setCustomValidity(`Value must be greater than or equal to ${target.getAttribute("min")}.`);
+        } else if (target.validity.rangeOverflow) {
+            target.setCustomValidity(`Value must be less than or equal to ${target.getAttribute("max")}.`);
+        } else if (target.validity.tooShort) {
+            target.setCustomValidity(`Please lengthen this text to at least ${target.getAttribute("minlength")} characters.`);
+        }
+    },
+    true
+);
+
+document.addEventListener(
+    "input",
+    (e) => {
+        const target = e.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+        if (target && "setCustomValidity" in target) {
+            target.setCustomValidity("");
+        }
+    },
+    true
+);
+
 // Form input elements for Edit Project trigger from Details Page
 const projectForm = document.getElementById("new-project-form") as HTMLFormElement | null;
 const projectModalTitle = document.getElementById("project-modal-title");
@@ -135,92 +167,6 @@ editProjectBtn?.addEventListener("click", () => {
     }
 
     toggleModal("new-project-modal", true);
-});
-
-// Projects Search & Status Filter Bar
-let currentProjectSearch = "";
-let currentProjectStatus = "all";
-
-const projectSearchInput = document.getElementById("project-search-input") as HTMLInputElement | null;
-const clearSearchBtn = document.getElementById("clear-search-btn") as HTMLButtonElement | null;
-const projectFilterPills = document.querySelectorAll("#project-filter-group .filter-pill");
-const projectSortSelect = document.getElementById("project-sort-select") as HTMLSelectElement | null;
-
-const resetProjectFilters = () => {
-    currentProjectSearch = "";
-    currentProjectStatus = "all";
-    if (projectSearchInput) {
-        projectSearchInput.value = "";
-    }
-    if (clearSearchBtn) {
-        clearSearchBtn.style.display = "none";
-    }
-    projectFilterPills.forEach((p) => {
-        if ((p as HTMLElement).dataset.statusFilter === "all") {
-            p.classList.add("active");
-        } else {
-            p.classList.remove("active");
-        }
-    });
-    applyProjectFilters();
-};
-
-const openNewProjectFromEmpty = () => {
-    delete projectForm?.dataset.editingProjectId;
-    projectForm?.reset();
-    if (projectModalTitle) projectModalTitle.textContent = "New Project";
-    if (projectSubmitBtn) projectSubmitBtn.textContent = "Accept";
-    if (projectCostInput) projectCostInput.value = "0";
-    if (projectProgressInput) projectProgressInput.value = "25";
-    if (projectStatusInput && currentProjectStatus !== "all") {
-        projectStatusInput.value = currentProjectStatus.charAt(0).toUpperCase() + currentProjectStatus.slice(1);
-    }
-    toggleModal("new-project-modal", true);
-};
-
-const applyProjectFilters = () => {
-    projectsManager.filterProjects(
-        currentProjectSearch,
-        currentProjectStatus,
-        resetProjectFilters,
-        openNewProjectFromEmpty
-    );
-};
-
-// Input event listener for real-time search
-projectSearchInput?.addEventListener("input", (e) => {
-    currentProjectSearch = (e.target as HTMLInputElement).value;
-    if (clearSearchBtn) {
-        clearSearchBtn.style.display = currentProjectSearch.trim().length > 0 ? "inline-flex" : "none";
-    }
-    applyProjectFilters();
-});
-
-// Clear search button click
-clearSearchBtn?.addEventListener("click", () => {
-    if (projectSearchInput) {
-        projectSearchInput.value = "";
-    }
-    currentProjectSearch = "";
-    clearSearchBtn.style.display = "none";
-    applyProjectFilters();
-});
-
-// Filter pill click handlers
-projectFilterPills.forEach((pill) => {
-    pill.addEventListener("click", () => {
-        projectFilterPills.forEach((p) => p.classList.remove("active"));
-        pill.classList.add("active");
-        currentProjectStatus = (pill as HTMLElement).dataset.statusFilter || "all";
-        applyProjectFilters();
-    });
-});
-
-// Sort select change listener
-projectSortSelect?.addEventListener("change", (e) => {
-    const sortBy = (e.target as HTMLSelectElement).value;
-    projectsManager.sortProjects(sortBy);
-    applyProjectFilters();
 });
 
 // Lesson 4.1 Assignment & SPA Navigation: Switch between Projects, Details, and Users pages
@@ -679,6 +625,8 @@ if (viewerContainer) {
             title: "Viewer Options",
             width: 280,
         });
+        // Force English decimal dot (e.g. 1.5 instead of 1,5) across all numeric inputs in lil-gui
+        gui.domElement.setAttribute("lang", "en-US");
         gui.domElement.style.position = "absolute";
         gui.domElement.style.top = "1rem";
         gui.domElement.style.right = "1rem";
@@ -892,6 +840,12 @@ if (viewerContainer) {
         }, "resetCamera").name("Reset View");
 
         gui.open();
+        // Force English decimal dot (e.g. 1.5 instead of French 1,5) across all numeric inputs in lil-gui
+        gui.domElement.querySelectorAll("input[type='number']").forEach((inp) => {
+            inp.setAttribute("type", "text");
+            inp.setAttribute("inputmode", "decimal");
+            inp.setAttribute("lang", "en-US");
+        });
     };
 
     // Register callback so clicking a project card in the dashboard switches the 3D model and controls

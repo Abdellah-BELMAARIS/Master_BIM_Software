@@ -1,33 +1,42 @@
 import * as React from "react";
-import { IProject, ProjectStatus, UserRole } from "../classes/Project";
+import { IProject, Project, ProjectStatus, UserRole } from "../classes/Project";
 import { ProjectsManager } from "../classes/ProjectsManager";
+import { ProjectCard } from "./ProjectCard";
 
 export interface ProjectsPageProps {
     projectsManager?: ProjectsManager;
 }
 
-// Lesson 3.3 & 3.4: Creating a ProjectsPage React component & Working with HTML events inside components
+// Lesson 3.3, 3.4, 3.5 & 3.6: ProjectsPage Component with Events, Nested <ProjectCard />, React.useState & React.useEffect
 export function ProjectsPage(props: ProjectsPageProps) {
-    // Instantiate ProjectsManager inside the component (or use provided instance so 3D viewer / details stay synced)
-    const projectsManagerRef = React.useRef<ProjectsManager | null>(null);
-    if (!projectsManagerRef.current) {
-        projectsManagerRef.current = props.projectsManager ?? new ProjectsManager();
-    }
-    const projectsManager = props.projectsManager ?? projectsManagerRef.current;
+    // Lesson 3.6: Store projectsManager in component state so the same instance persists across re-renders
+    const [projectsManager] = React.useState<ProjectsManager>(
+        () => props.projectsManager ?? new ProjectsManager()
+    );
 
-    // Ensure project cards are mounted into #projects-list on initial render
+    // Lesson 3.5: Introducing React State with TypeScript Generics (React.useState<Project[]>)
+    const [projects, setProjects] = React.useState<Project[]>(projectsManager.list);
+    const [searchQuery, setSearchQuery] = React.useState<string>("");
+    const [statusFilter, setStatusFilter] = React.useState<string>("all");
+    const [sortBy, setSortBy] = React.useState<string>("name-asc");
+
+    // Lesson 3.6: Wire ProjectsManager custom events (onProjectCreated & onProjectDeleted) to update React state
+    projectsManager.onProjectCreated = () => {
+        setProjects([...projectsManager.list]);
+    };
+
+    projectsManager.onProjectDeleted = () => {
+        setProjects([...projectsManager.list]);
+    };
+
+    projectsManager.onProjectsChanged = (updatedList) => {
+        setProjects([...updatedList]);
+    };
+
+    // Lesson 3.6: Observe projects state changes after mount & on every update via React.useEffect
     React.useEffect(() => {
-        const container = document.getElementById("projects-list") as HTMLDivElement | null;
-        if (container && projectsManager) {
-            projectsManager.ui = container;
-            projectsManager.list.forEach((project) => {
-                if (!container.contains(project.ui)) {
-                    container.appendChild(project.ui);
-                }
-            });
-            projectsManager.updateFilterCounts();
-        }
-    }, [projectsManager]);
+        console.log("Updated projects state", projects);
+    }, [projects]);
 
     // Helper to display styled error dialog (or fallback alert)
     const showError = (message: string) => {
@@ -67,7 +76,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
         modal.close();
     };
 
-    // Lesson 3.4: Callback for form onSubmit using React.FormEvent
+    // Lesson 3.4 & 3.5: Callback for form onSubmit using React.FormEvent + setProjects state update
     const onFormSubmit = (e: React.FormEvent) => {
         const projectForm = document.getElementById("new-project-form");
         if (!(projectForm && projectForm instanceof HTMLFormElement)) { return; }
@@ -95,11 +104,9 @@ export function ProjectsPage(props: ProjectsPageProps) {
         try {
             const editingId = projectForm.dataset.editingProjectId;
             if (editingId) {
-                const updated = projectsManager.updateProject(editingId, projectData);
-                console.log(updated);
+                projectsManager.updateProject(editingId, projectData);
             } else {
-                const project = projectsManager.newProject(projectData);
-                console.log(project);
+                projectsManager.newProject(projectData);
             }
 
             delete projectForm.dataset.editingProjectId;
@@ -128,11 +135,78 @@ export function ProjectsPage(props: ProjectsPageProps) {
         projectsManager.importFromJSON();
     };
 
+    // Filter & sort projects declaratively via React state
+    const q = searchQuery.toLowerCase().trim();
+    const visibleProjects = projects
+        .filter((project) => {
+            const matchesSearch =
+                !q ||
+                project.name.toLowerCase().includes(q) ||
+                project.description.toLowerCase().includes(q) ||
+                project.userRole.toLowerCase().includes(q);
+            const matchesStatus =
+                statusFilter === "all" || project.status.toLowerCase() === statusFilter;
+            return matchesSearch && matchesStatus;
+        })
+        .sort((a, b) => {
+            switch (sortBy) {
+                case "name-asc":
+                    return a.name.localeCompare(b.name);
+                case "name-desc":
+                    return b.name.localeCompare(a.name);
+                case "cost-desc":
+                    return (b.cost || 0) - (a.cost || 0);
+                case "progress-desc":
+                    return (b.progress || 0) - (a.progress || 0);
+                case "date-asc":
+                    return new Date(a.finishDate).getTime() - new Date(b.finishDate).getTime();
+                default:
+                    return 0;
+            }
+        });
+
+    const totalCount = projects.length;
+    const activeCount = projects.filter((p) => p.status.toLowerCase() === "active").length;
+    const pendingCount = projects.filter((p) => p.status.toLowerCase() === "pending").length;
+    const finishedCount = projects.filter((p) => p.status.toLowerCase() === "finished").length;
+
+    // Lesson 3.5: Map projects state to <ProjectCard /> components
+    const projectCards = visibleProjects.map((project) => (
+        <ProjectCard
+            key={project.id}
+            project={project}
+            onClick={(selectedProject) => projectsManager.selectProject(selectedProject)}
+        />
+    ));
+
     return (
         <div className="page" id="projects-page">
             {/* New / Edit Project Modal Dialog */}
             <dialog id="new-project-modal">
-                <form onSubmit={(e) => onFormSubmit(e)} id="new-project-form">
+                <form
+                    onSubmit={(e) => onFormSubmit(e)}
+                    id="new-project-form"
+                    onInvalid={(e) => {
+                        const target = e.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+                        if (target && "validity" in target) {
+                            if (target.validity.valueMissing) {
+                                target.setCustomValidity("Please fill out this field.");
+                            } else if (target.validity.typeMismatch && target.type === "email") {
+                                target.setCustomValidity("Please enter a valid email address.");
+                            } else if (target.validity.rangeUnderflow) {
+                                target.setCustomValidity(`Value must be greater than or equal to ${target.getAttribute("min")}.`);
+                            } else if (target.validity.rangeOverflow) {
+                                target.setCustomValidity(`Value must be less than or equal to ${target.getAttribute("max")}.`);
+                            }
+                        }
+                    }}
+                    onInput={(e) => {
+                        const target = e.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+                        if (target && "setCustomValidity" in target) {
+                            target.setCustomValidity("");
+                        }
+                    }}
+                >
                     <h2 id="project-modal-title">New Project</h2>
                     <div className="input-list">
                         <div className="form-field">
@@ -222,7 +296,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
                                 <label>
                                     <span className="material-icons-round">calendar_today</span> Finish Date
                                 </label>
-                                <input name="finishDate" type="date" id="project-date-input" />
+                                <input name="finishDate" type="date" id="project-date-input" lang="en" />
                             </div>
 
                             <div className="form-field">
@@ -293,29 +367,53 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         type="text"
                         id="project-search-input"
                         placeholder="Search projects by name, description, or role..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
                     />
-                    <button
-                        type="button"
-                        className="btn-clear-search"
-                        id="clear-search-btn"
-                        title="Clear search text"
-                        style={{ display: "none" }}
-                    >
-                        <span className="material-icons-round">close</span>
-                    </button>
+                    {searchQuery.trim().length > 0 && (
+                        <button
+                            type="button"
+                            className="btn-clear-search"
+                            id="clear-search-btn"
+                            title="Clear search text"
+                            onClick={() => setSearchQuery("")}
+                        >
+                            <span className="material-icons-round">close</span>
+                        </button>
+                    )}
                 </div>
                 <div className="projects-filter-group" id="project-filter-group">
-                    <button type="button" className="filter-pill active" data-status-filter="all">
-                        All <span className="filter-count">0</span>
+                    <button
+                        type="button"
+                        className={`filter-pill ${statusFilter === "all" ? "active" : ""}`}
+                        data-status-filter="all"
+                        onClick={() => setStatusFilter("all")}
+                    >
+                        All <span className="filter-count">{totalCount}</span>
                     </button>
-                    <button type="button" className="filter-pill" data-status-filter="active">
-                        Active <span className="filter-count">0</span>
+                    <button
+                        type="button"
+                        className={`filter-pill ${statusFilter === "active" ? "active" : ""}`}
+                        data-status-filter="active"
+                        onClick={() => setStatusFilter("active")}
+                    >
+                        Active <span className="filter-count">{activeCount}</span>
                     </button>
-                    <button type="button" className="filter-pill" data-status-filter="pending">
-                        Pending <span className="filter-count">0</span>
+                    <button
+                        type="button"
+                        className={`filter-pill ${statusFilter === "pending" ? "active" : ""}`}
+                        data-status-filter="pending"
+                        onClick={() => setStatusFilter("pending")}
+                    >
+                        Pending <span className="filter-count">{pendingCount}</span>
                     </button>
-                    <button type="button" className="filter-pill" data-status-filter="finished">
-                        Finished <span className="filter-count">0</span>
+                    <button
+                        type="button"
+                        className={`filter-pill ${statusFilter === "finished" ? "active" : ""}`}
+                        data-status-filter="finished"
+                        onClick={() => setStatusFilter("finished")}
+                    >
+                        Finished <span className="filter-count">{finishedCount}</span>
                     </button>
                 </div>
                 <div className="projects-sort-group">
@@ -323,7 +421,12 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         <span className="material-icons-round">sort</span>
                         <span>Sort:</span>
                     </label>
-                    <select id="project-sort-select" className="sort-select">
+                    <select
+                        id="project-sort-select"
+                        className="sort-select"
+                        value={sortBy}
+                        onChange={(e) => setSortBy(e.target.value)}
+                    >
                         <option value="name-asc">Name (A → Z)</option>
                         <option value="name-desc">Name (Z → A)</option>
                         <option value="cost-desc">Cost (High → Low)</option>
@@ -333,8 +436,41 @@ export function ProjectsPage(props: ProjectsPageProps) {
                 </div>
             </div>
 
-            {/* Projects Grid (Dynamically populated by ProjectsManager) */}
-            <section id="projects-list"></section>
+            {/* Projects Grid (Declaratively rendered by React <ProjectCard /> components) */}
+            <section id="projects-list">
+                {projectCards.length > 0 ? (
+                    projectCards
+                ) : (
+                    <div id="projects-empty-state" className="projects-empty-state">
+                        <div className="empty-state-icon-box">
+                            <span className="material-icons-round">search_off</span>
+                        </div>
+                        <div className="empty-state-text">
+                            <h3>No Projects Found</h3>
+                            <p>There are no projects matching your current filter in the CDE workspace.</p>
+                        </div>
+                        <div className="empty-state-actions">
+                            {(q || statusFilter !== "all") && (
+                                <button
+                                    type="button"
+                                    className="btn-clear-filters"
+                                    onClick={() => {
+                                        setSearchQuery("");
+                                        setStatusFilter("all");
+                                    }}
+                                >
+                                    <span className="material-icons-round">filter_alt_off</span>
+                                    <span>Clear Filters & Show All</span>
+                                </button>
+                            )}
+                            <button type="button" className="btn-primary" onClick={onNewProjectClick}>
+                                <span className="material-icons-round">add</span>
+                                <span>New Project</span>
+                            </button>
+                        </div>
+                    </div>
+                )}
+            </section>
 
             {/* Floating Export Button */}
             <button

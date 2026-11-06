@@ -1,4 +1,4 @@
-// Lesson 3.4, 3.5 & 3.7: Custom types, interfaces, dynamic UI, and UUID
+// Lesson 3.4, 3.5 & 3.7: Custom types, interfaces, and UUID (UI moved to ProjectCard React component in Module 3 Lesson 3.5)
 import { v4 as uuidv4 } from "uuid";
 
 // 1. Custom union types for properties with fixed choices
@@ -38,7 +38,7 @@ export interface IProject {
     modelType?: "cube" | "gear";
 }
 
-// 3. Project class implementing IProject with dynamic DOM card generation
+// 3. Project class implementing IProject (UI is now managed by React <ProjectCard /> component)
 export class Project implements IProject {
     // Properties from IProject
     name: string;
@@ -56,7 +56,6 @@ export class Project implements IProject {
     cost: number = 0;
     progress: number = 0;
     iconColor: string;
-    ui!: HTMLDivElement;
 
     constructor(data: IProject, id: string = uuidv4()) {
         this.id = id;
@@ -72,16 +71,15 @@ export class Project implements IProject {
             (this as any)[k] = data[k];
         }
 
-        // ⚠️ Resolving "The Trap" from Lesson 3.10 & Challenge #4 (Default Date fallback):
-        // Form inputs and JSON imports provide finishDate as a string or empty value.
+        // Resolving "The Trap" from Lesson 3.10 & Challenge #4 (Default Date fallback):
         const parsedDate = data.finishDate ? new Date(data.finishDate) : new Date();
         this.finishDate = isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
 
-        // 2. Form submission payload fallbacks:
+        // Form submission payload fallbacks:
         this.cost = data.cost ?? 0;
         this.progress = data.progress ?? 0.25;
 
-        // 3. Structural BCF / To-Do Tasks (Challenge #6, #7, #9: Stored inside project data with status)
+        // Structural BCF / To-Do Tasks (Challenge #6, #7, #9: Stored inside project data with status)
         this.todos = data.todos
             ? data.todos.map((t) => ({
                   ...t,
@@ -93,62 +91,5 @@ export class Project implements IProject {
                   { id: 2, text: "Perform CYPECAD concrete reinforcement calculation & detailing", date: "Mon, 23 Sep", status: "pending", completed: false },
                   { id: 3, text: "Resolve MEP HVAC collision with concrete beam in IFC viewer", date: "Thu, 26 Sep", status: "completed", completed: true },
               ];
-
-        // Automatically create and bind the UI element upon instantiation
-        this.setUI();
-    }
-
-    // Method dedicated to creating or refreshing the project card UI
-    setUI() {
-        if (!this.ui) {
-            this.ui = document.createElement("div");
-            this.ui.className = "project-card";
-            this.ui.dataset.projectId = this.id;
-        }
-
-        // Challenge #1: First 2 letters of project name (uppercased via CSS text-transform: uppercase)
-        const initials = this.name ? this.name.trim().substring(0, 2) : "PR";
-
-        // Format date cleanly
-        const dateStr = this.finishDate instanceof Date && !isNaN(this.finishDate.getTime())
-            ? this.finishDate.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })
-            : "Ongoing";
-
-        const progressPercent = Math.round(this.progress * 100);
-
-        this.ui.innerHTML = `
-            <div class="card-header">
-                <div class="card-avatar" style="background-color: ${this.iconColor};">${initials}</div>
-                <div class="card-title-group">
-                    <h3>${this.name}</h3>
-                    <p>${this.description}</p>
-                </div>
-            </div>
-            <div class="card-details">
-                <div class="detail-row">
-                    <span class="detail-label">Status</span>
-                    <span class="detail-value status-tag ${this.status.toLowerCase()}">${this.status}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Role</span>
-                    <span class="detail-value">${this.userRole}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Cost</span>
-                    <span class="detail-value">$ ${Number(this.cost).toLocaleString("en-US")}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Finish Date</span>
-                    <span class="detail-value">${dateStr}</span>
-                </div>
-                <div class="detail-row">
-                    <span class="detail-label">Progress</span>
-                    <span class="detail-value">${progressPercent}%</span>
-                </div>
-            </div>
-            <div class="card-progress-bar">
-                <div class="card-progress-fill" style="width: ${Math.max(4, progressPercent)}%;"></div>
-            </div>
-        `;
     }
 }

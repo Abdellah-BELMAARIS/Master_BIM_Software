@@ -1,25 +1,25 @@
-// Lesson 3.6, 3.7, 3.8 & 3.9: Projects Manager with Queries, Validation & JSON I/O
+// Lesson 3.6, 3.7, 3.8, 3.9 & Module 3 Lesson 3.5: Projects Manager (UI delegated to React)
 import { IProject, Project, TodoStatus } from "./Project";
 
 export class ProjectsManager {
     // 1. Array storing all active Project instances
     list: Project[] = [];
 
-    // 2. HTML container in the DOM where project cards will be rendered (optional when managed by React)
-    ui: HTMLDivElement | null = null;
-
-    // 3. Currently selected/active project for details view & actions
+    // 2. Currently selected/active project for details view & actions
     activeProject: Project | null = null;
 
-    // 4. Optional callback triggered when user clicks Edit on a To-Do item
+    // 3. Optional callback triggered when user clicks Edit on a To-Do item
     onEditTodo?: (todoId: number) => void;
 
-    // 5. Callback triggered when a project is selected (updates 3D viewer model & controls)
+    // 4. Callback triggered when a project is selected (updates 3D viewer model & controls)
     onProjectSelected?: (project: Project) => void;
 
-    constructor(container?: HTMLDivElement | null) {
-        this.ui = container ?? (document.getElementById("projects-list") as HTMLDivElement | null);
+    // 5. Callbacks for reactive state synchronization in React components
+    onProjectCreated: (project: Project) => void = () => {};
+    onProjectDeleted: (id: string) => void = () => {};
+    onProjectsChanged: (projects: Project[]) => void = () => {};
 
+    constructor() {
         // Project 1: Cube Model Showcase
         const cubeProject = this.newProject({
             name: "Cube Massing Model",
@@ -56,12 +56,12 @@ export class ProjectsManager {
             modelType: "cube",
         });
 
-        // Set first project as active data reference for the Details page, while keeping Projects Dashboard visible initially
+        // Set first project as active data reference for the Details page
         this.activeProject = cubeProject;
         this.setDetailsPage(cubeProject);
     }
 
-    // Creates a new project, renders its UI card, and pushes to list
+    // Creates a new project and pushes to list (UI card is rendered by React <ProjectCard />)
     newProject(data: IProject): Project {
         // Validate minimum 5 characters for project name
         if (!data.name || data.name.trim().length < 5) {
@@ -78,32 +78,27 @@ export class ProjectsManager {
         }
 
         const project = new Project(data);
-
-        // Lesson 4.1 & 4.3: Navigate to Project Details page and populate dynamic data on card click
-        project.ui.addEventListener("click", () => {
-            const projectsPage = document.getElementById("projects-page");
-            const detailsPage = document.getElementById("project-details");
-            if (!projectsPage || !detailsPage) { return; }
-
-            // Track active project and populate details
-            this.activeProject = project;
-            this.setDetailsPage(project);
-
-            projectsPage.style.display = "none";
-            detailsPage.style.display = "flex";
-            window.dispatchEvent(new Event("resize")); // Notify 3D viewer to update dimensions immediately
-            if (this.onProjectSelected) {
-                this.onProjectSelected(project);
-            }
-        });
-
-        if (!this.ui) {
-            this.ui = document.getElementById("projects-list") as HTMLDivElement | null;
-        }
-        this.ui?.append(project.ui);
         this.list.push(project);
-        this.updateFilterCounts();
+        this.onProjectCreated(project);
+        this.onProjectsChanged([...this.list]);
         return project;
+    }
+
+    // Select a project and navigate to the Project Details & 3D Viewer page
+    selectProject(project: Project): void {
+        const projectsPage = document.getElementById("projects-page");
+        const detailsPage = document.getElementById("project-details");
+        if (!projectsPage || !detailsPage) { return; }
+
+        this.activeProject = project;
+        this.setDetailsPage(project);
+
+        projectsPage.style.display = "none";
+        detailsPage.style.display = "flex";
+        window.dispatchEvent(new Event("resize"));
+        if (this.onProjectSelected) {
+            this.onProjectSelected(project);
+        }
     }
 
     // Update an existing project from the Edit Project modal
@@ -144,131 +139,18 @@ export class ProjectsManager {
             }));
         }
 
-        // Refresh card in Projects grid and refresh Details view if this project is currently active
-        project.setUI();
+        // Refresh Details view if this project is currently active
         if (this.activeProject && this.activeProject.id === project.id) {
             this.setDetailsPage(project);
             if (this.onProjectSelected) {
                 this.onProjectSelected(project);
             }
         }
-        this.updateFilterCounts();
+        this.onProjectsChanged([...this.list]);
         return project;
     }
 
-    // Filter projects in #projects-list by search query and status pill with empty state feedback
-    filterProjects(
-        searchQuery: string = "",
-        statusFilter: string = "all",
-        onClearFilters?: () => void,
-        onNewProject?: () => void
-    ): void {
-        const q = searchQuery.toLowerCase().trim();
-        const status = statusFilter.toLowerCase().trim();
-
-        let visibleCount = 0;
-        this.list.forEach((project) => {
-            const matchesSearch = !q ||
-                project.name.toLowerCase().includes(q) ||
-                project.description.toLowerCase().includes(q) ||
-                project.userRole.toLowerCase().includes(q);
-
-            const matchesStatus = status === "all" ||
-                project.status.toLowerCase() === status;
-
-            const visible = matchesSearch && matchesStatus;
-            project.ui.style.display = visible ? "" : "none";
-            if (visible) { visibleCount++; }
-        });
-
-        // Manage Empty State message in center of #projects-list
-        const existingEmptyState = document.getElementById("projects-empty-state");
-        if (visibleCount === 0) {
-            let title = "No Projects Found";
-            let desc = "There are no projects matching your current filter in the CDE workspace.";
-            let icon = "search_off";
-
-            if (this.list.length === 0) {
-                title = "Your Workspace is Empty";
-                desc = "No BIM projects exist yet. Click below to create your first project or import a JSON file.";
-                icon = "folder_off";
-            } else if (status === "pending") {
-                title = "No Pending Projects Found";
-                desc = "There are currently no projects marked with 'Pending' status.";
-                icon = "pending_actions";
-            } else if (status === "active") {
-                title = "No Active Projects Found";
-                desc = "There are currently no active projects running.";
-                icon = "domain_disabled";
-            } else if (status === "finished") {
-                title = "No Finished Projects Found";
-                desc = "There are currently no completed projects in this archive.";
-                icon = "task_alt";
-            } else if (q) {
-                title = `No Results for "${searchQuery}"`;
-                desc = "Try checking for spelling errors or search with a different keyword or role.";
-                icon = "search_off";
-            }
-
-            if (!existingEmptyState) {
-                const emptyEl = document.createElement("div");
-                emptyEl.id = "projects-empty-state";
-                emptyEl.className = "projects-empty-state";
-
-                emptyEl.innerHTML = `
-                    <div class="empty-state-icon-box">
-                        <span class="material-icons-round">${icon}</span>
-                    </div>
-                    <div class="empty-state-text">
-                        <h3>${title}</h3>
-                        <p>${desc}</p>
-                    </div>
-                    <div class="empty-state-actions">
-                        ${(q || status !== "all") ? `
-                            <button type="button" class="btn-clear-filters" id="empty-clear-filters-btn">
-                                <span class="material-icons-round">filter_alt_off</span>
-                                <span>Clear Filters & Show All</span>
-                            </button>
-                        ` : ""}
-                        <button type="button" class="btn-primary" id="empty-new-project-btn">
-                            <span class="material-icons-round">add</span>
-                            <span>New Project</span>
-                        </button>
-                    </div>
-                `;
-
-                if (!this.ui) {
-                    this.ui = document.getElementById("projects-list") as HTMLDivElement | null;
-                }
-                this.ui?.appendChild(emptyEl);
-
-                emptyEl.querySelector("#empty-clear-filters-btn")?.addEventListener("click", () => {
-                    if (onClearFilters) onClearFilters();
-                });
-                emptyEl.querySelector("#empty-new-project-btn")?.addEventListener("click", () => {
-                    if (onNewProject) onNewProject();
-                });
-            } else {
-                const iconEl = existingEmptyState.querySelector(".empty-state-icon-box .material-icons-round");
-                const titleEl = existingEmptyState.querySelector(".empty-state-text h3");
-                const descEl = existingEmptyState.querySelector(".empty-state-text p");
-                if (iconEl) iconEl.textContent = icon;
-                if (titleEl) titleEl.textContent = title;
-                if (descEl) descEl.textContent = desc;
-
-                const clearBtn = existingEmptyState.querySelector("#empty-clear-filters-btn") as HTMLButtonElement | null;
-                if (clearBtn) {
-                    clearBtn.style.display = (q || status !== "all") ? "inline-flex" : "none";
-                }
-            }
-        } else {
-            if (existingEmptyState) {
-                existingEmptyState.remove();
-            }
-        }
-    }
-
-    // Sort projects in this.list and reorder their DOM elements in this.ui
+    // Sort projects in this.list
     sortProjects(sortBy: string = "name-asc"): void {
         this.list.sort((a, b) => {
             switch (sortBy) {
@@ -286,36 +168,11 @@ export class ProjectsManager {
                     return 0;
             }
         });
-
-        // Re-append in sorted order (preserves existing elements & event listeners)
-        if (!this.ui) {
-            this.ui = document.getElementById("projects-list") as HTMLDivElement | null;
-        }
-        this.list.forEach((project) => {
-            this.ui?.appendChild(project.ui);
-        });
+        this.onProjectsChanged([...this.list]);
     }
 
-    // Update count badges on All, Active, Pending, Finished filter pills
-    updateFilterCounts(): void {
-        const total = this.list.length;
-        const active = this.list.filter((p) => p.status.toLowerCase() === "active").length;
-        const pending = this.list.filter((p) => p.status.toLowerCase() === "pending").length;
-        const finished = this.list.filter((p) => p.status.toLowerCase() === "finished").length;
-
-        const allBtn = document.querySelector("[data-status-filter='all'] .filter-count");
-        const activeBtn = document.querySelector("[data-status-filter='active'] .filter-count");
-        const pendingBtn = document.querySelector("[data-status-filter='pending'] .filter-count");
-        const finishedBtn = document.querySelector("[data-status-filter='finished'] .filter-count");
-
-        if (allBtn) allBtn.textContent = String(total);
-        if (activeBtn) activeBtn.textContent = String(active);
-        if (pendingBtn) pendingBtn.textContent = String(pending);
-        if (finishedBtn) finishedBtn.textContent = String(finished);
-    }
-
-    // Lesson 4.3: Internal private method to update all project details UI elements via data-project-info
-    private setDetailsPage(project: Project): void {
+    // Lesson 4.3: Internal method to update all project details UI elements via data-project-info
+    setDetailsPage(project: Project): void {
         const detailsPage = document.getElementById("project-details");
         if (!detailsPage) { return; }
 
@@ -485,20 +342,17 @@ export class ProjectsManager {
         return project;
     }
 
-    // Delete a project by ID, removing UI card and keeping array immutable
+    // Delete a project by ID, keeping array immutable
     deleteProject(id: string): void {
         const project = this.getProject(id);
         if (!project) { return; }
 
-        // Remove DOM element from page
-        project.ui.remove();
-
-        // Non-destructive filter: keeps only projects that do not match the target ID
         const remaining = this.list.filter((project) => {
             return project.id !== id;
         });
         this.list = remaining;
-        this.updateFilterCounts();
+        this.onProjectDeleted(id);
+        this.onProjectsChanged([...this.list]);
     }
 
     // Calculate total cost using Array.prototype.reduce()
@@ -578,6 +432,7 @@ export class ProjectsManager {
                         }
                     }
                 }
+                this.onProjectsChanged([...this.list]);
                 console.log(`JSON Import complete: ${importedCount} created, ${updatedCount} existing projects updated.`);
             } catch (err: any) {
                 console.error("JSON parse error during import:", err);
