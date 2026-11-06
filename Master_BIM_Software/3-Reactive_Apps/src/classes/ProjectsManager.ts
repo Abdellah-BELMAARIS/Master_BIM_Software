@@ -14,23 +14,51 @@ export class ProjectsManager {
     // 4. Optional callback triggered when user clicks Edit on a To-Do item
     onEditTodo?: (todoId: number) => void;
 
+    // 5. Callback triggered when a project is selected (updates 3D viewer model & controls)
+    onProjectSelected?: (project: Project) => void;
+
     constructor(container: HTMLDivElement) {
         this.ui = container;
 
-        // Create a default project upon manager instantiation
-        const defaultProject = this.newProject({
-            name: "Default Project",
-            description: "This is just a default project. You may delete it if you want.",
+        // Project 1: Cube Model Showcase
+        const cubeProject = this.newProject({
+            name: "Cube Massing Model",
+            description: "Parametric 3D architectural massing cube with PBR material, CAD wireframe edges, and real-time transform controls.",
             userRole: "Architect",
             status: "Active",
             finishDate: new Date(),
-            cost: 0,
-            progress: 0.25,
+            cost: 45000,
+            progress: 0.40,
+            modelType: "cube",
         });
 
-        // Lesson 2.2 Dev Helper: Programmatically enter default project details for instant 3D viewer testing
-        // (Remember to remove this in the future as noted in the lesson transcript)
-        defaultProject.ui.click();
+        // Project 2: External Gear Model Showcase
+        this.newProject({
+            name: "Mechanical Gear HVAC",
+            description: "Mechanical equipment component loaded from external Wavefront OBJ and MTL texture maps.",
+            userRole: "Engineer",
+            status: "Active",
+            finishDate: new Date(Date.now() + 14 * 86400000),
+            cost: 120000,
+            progress: 0.75,
+            modelType: "gear",
+        });
+
+        // Project 3: Default Project
+        this.newProject({
+            name: "Default Project",
+            description: "Standard BIM coordination project. You may delete or edit it.",
+            userRole: "Developer",
+            status: "Active",
+            finishDate: new Date(Date.now() + 30 * 86400000),
+            cost: 85000,
+            progress: 0.25,
+            modelType: "cube",
+        });
+
+        // Set first project as active data reference for the Details page, while keeping Projects Dashboard visible initially
+        this.activeProject = cubeProject;
+        this.setDetailsPage(cubeProject);
     }
 
     // Creates a new project, renders its UI card, and pushes to list
@@ -64,6 +92,9 @@ export class ProjectsManager {
             projectsPage.style.display = "none";
             detailsPage.style.display = "flex";
             window.dispatchEvent(new Event("resize")); // Notify 3D viewer to update dimensions immediately
+            if (this.onProjectSelected) {
+                this.onProjectSelected(project);
+            }
         });
 
         this.ui.append(project.ui);
@@ -96,6 +127,9 @@ export class ProjectsManager {
         project.finishDate = isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
         project.cost = data.cost ?? project.cost;
         project.progress = data.progress ?? project.progress;
+        if (data.modelType) {
+            project.modelType = data.modelType;
+        }
         if (data.iconColor) {
             project.iconColor = data.iconColor;
         }
@@ -111,6 +145,9 @@ export class ProjectsManager {
         project.setUI();
         if (this.activeProject && this.activeProject.id === project.id) {
             this.setDetailsPage(project);
+            if (this.onProjectSelected) {
+                this.onProjectSelected(project);
+            }
         }
         this.updateFilterCounts();
         return project;

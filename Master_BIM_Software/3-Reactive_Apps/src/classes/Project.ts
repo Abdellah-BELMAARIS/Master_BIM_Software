@@ -35,6 +35,7 @@ export interface IProject {
     progress?: number;
     iconColor?: string;
     todos?: IProjectTask[];
+    modelType?: "cube" | "gear";
 }
 
 // 3. Project class implementing IProject with dynamic DOM card generation
@@ -46,6 +47,7 @@ export class Project implements IProject {
     status: ProjectStatus;
     finishDate: Date;
     todos: IProjectTask[] = [];
+    modelType: "cube" | "gear";
 
     // Unique alphanumeric UUID identifier
     id: string;
@@ -58,6 +60,7 @@ export class Project implements IProject {
 
     constructor(data: IProject, id: string = uuidv4()) {
         this.id = id;
+        this.modelType = data.modelType || (data.name.toLowerCase().includes("gear") ? "gear" : "cube");
 
         // Challenge #2: Pick a random background color from the 6-color palette (or preserve imported color)
         const randomIndex = Math.floor(Math.random() * PROJECT_ICON_COLORS.length);

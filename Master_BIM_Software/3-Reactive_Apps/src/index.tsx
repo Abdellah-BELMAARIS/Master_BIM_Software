@@ -1,4 +1,8 @@
-// Module 03 — Section 2: Implementing 3D with ThreeJS
+// Module 03 — Section 3: Migrating to a React App
+import * as React from "react";
+import * as ReactDOM from "react-dom/client";
+import { Sidebar } from "./react-components/Sidebar";
+
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js";
@@ -6,6 +10,52 @@ import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
 import { MTLLoader } from "three/examples/jsm/loaders/MTLLoader.js";
 import { IProject, ProjectStatus, TodoStatus, UserRole } from "./classes/Project";
 import { ProjectsManager } from "./classes/ProjectsManager";
+
+// --- LESSON 3.2: MOUNT REACT ROOT & RENDER SIDEBAR COMPONENT ---
+const showProjectsPage = () => {
+    const projectsPage = document.getElementById("projects-page");
+    const detailsPage = document.getElementById("project-details");
+    const usersPage = document.getElementById("users-page");
+    if (!projectsPage || !detailsPage) { return; }
+
+    projectsPage.style.display = "flex";
+    detailsPage.style.display = "none";
+    if (usersPage) { usersPage.style.display = "none"; }
+
+    document.getElementById("nav-projects-btn")?.classList.add("active");
+    document.getElementById("nav-users-btn")?.classList.remove("active");
+};
+
+const showUsersPage = () => {
+    const projectsPage = document.getElementById("projects-page");
+    const detailsPage = document.getElementById("project-details");
+    const usersPage = document.getElementById("users-page");
+    if (!projectsPage || !detailsPage || !usersPage) { return; }
+
+    projectsPage.style.display = "none";
+    detailsPage.style.display = "none";
+    usersPage.style.display = "flex";
+
+    document.getElementById("nav-users-btn")?.classList.add("active");
+    document.getElementById("nav-projects-btn")?.classList.remove("active");
+};
+
+const appRoot = document.getElementById("app");
+if (appRoot) {
+    const root = ReactDOM.createRoot(appRoot);
+    root.render(
+        <Sidebar
+            activeTab="projects"
+            onNavigate={(tab) => {
+                if (tab === "projects") {
+                    showProjectsPage();
+                } else {
+                    showUsersPage();
+                }
+            }}
+        />
+    );
+}
 
 // Reusable toggleModal function controlling open / close state
 const toggleModal = (id: string, show: boolean = true) => {
@@ -251,40 +301,8 @@ floatingExportBtn?.addEventListener("click", () => {
 });
 
 // Lesson 4.1 Assignment & SPA Navigation: Switch between Projects, Details, and Users pages
-const navProjectsBtn = document.getElementById("nav-projects-btn");
-const navUsersBtn = document.getElementById("nav-users-btn");
 const backToProjectsBtn = document.getElementById("back-to-projects-btn");
-
-const showProjectsPage = () => {
-    const projectsPage = document.getElementById("projects-page");
-    const detailsPage = document.getElementById("project-details");
-    const usersPage = document.getElementById("users-page");
-    if (!projectsPage || !detailsPage) { return; }
-
-    projectsPage.style.display = "flex";
-    detailsPage.style.display = "none";
-    if (usersPage) { usersPage.style.display = "none"; }
-
-    navProjectsBtn?.classList.add("active");
-    navUsersBtn?.classList.remove("active");
-};
-
-navProjectsBtn?.addEventListener("click", showProjectsPage);
 backToProjectsBtn?.addEventListener("click", showProjectsPage);
-
-navUsersBtn?.addEventListener("click", () => {
-    const projectsPage = document.getElementById("projects-page");
-    const detailsPage = document.getElementById("project-details");
-    const usersPage = document.getElementById("users-page");
-    if (!projectsPage || !detailsPage || !usersPage) { return; }
-
-    projectsPage.style.display = "none";
-    detailsPage.style.display = "none";
-    usersPage.style.display = "flex";
-
-    navUsersBtn.classList.add("active");
-    navProjectsBtn?.classList.remove("active");
-});
 
 // Delete Project Button from Details Page
 const deleteProjectBtn = document.getElementById("delete-project-btn");
@@ -644,15 +662,36 @@ if (viewerContainer) {
     // --- LESSON 2.5: MAKING THE VIEWER RESPONSIVE (DRY REFACTORING) ---
     const resizeViewer = () => {
         const containerDimensions = viewerContainer.getBoundingClientRect();
+        if (containerDimensions.width === 0 || containerDimensions.height === 0) {
+            return;
+        }
         renderer.setSize(containerDimensions.width, containerDimensions.height);
         camera.aspect = containerDimensions.width / containerDimensions.height;
         camera.updateProjectionMatrix(); // Tell Three.js to recompute projection matrix
     };
 
     window.addEventListener("resize", resizeViewer);
+    // ResizeObserver automatically detects when #project-details becomes visible or changes width
+    const viewerResizeObserver = new ResizeObserver(() => resizeViewer());
+    viewerResizeObserver.observe(viewerContainer);
     resizeViewer(); // Initialize initial size and aspect ratio without code duplication
 
-    // 5. Ground Coordinate Grid & 3D Axes Helper (Lesson 2.6)
+    // 5. Create 3D Architectural Cube (Project 1 & 3 Model)
+    const boxGeometry = new THREE.BoxGeometry(2, 2, 2);
+    const cubeMaterial = new THREE.MeshStandardMaterial({
+        color: 0x38bdf8,
+        roughness: 0.35,
+        metalness: 0.2,
+    });
+    const cube = new THREE.Mesh(boxGeometry, cubeMaterial);
+    cube.position.y = 1;
+
+    const edges = new THREE.EdgesGeometry(boxGeometry);
+    const lineMaterial = new THREE.LineBasicMaterial({ color: 0x0284c7, linewidth: 2 });
+    cube.add(new THREE.LineSegments(edges, lineMaterial));
+    scene.add(cube);
+
+    // 6. Ground Coordinate Grid & 3D Axes Helper (Lesson 2.6)
     const axes = new THREE.AxesHelper(6); // Visual representation of world origin (0,0,0)
 
     const grid = new THREE.GridHelper(30, 30);
@@ -662,7 +701,7 @@ if (viewerContainer) {
     gridMaterial.color = new THREE.Color(0x808080);
     grid.position.y = 0; // World ground floor
 
-    // 6. Studio 3-Point Architectural Lighting (Lesson 2.3 & 2.4)
+    // 7. Studio 3-Point Architectural Lighting (Lesson 2.3 & 2.4)
     const keyLight = new THREE.DirectionalLight(0xffffff, 2.0);
     keyLight.position.set(15, 25, 20);
 
@@ -676,58 +715,198 @@ if (viewerContainer) {
     const directionalLightHelper = new THREE.DirectionalLightHelper(keyLight, 2);
     directionalLightHelper.visible = false; // Hidden by default for clean view
 
-    // 7. Add Base Helpers and Lights to the Scene
+    // 8. Add Base Helpers and Lights to the Scene
     scene.add(grid, axes, keyLight, fillLight, ambientLight, directionalLightHelper);
 
-    // --- LESSON 2.6: DYNAMIC UI CONTROLS WITH GUI ---
-    const gui = new GUI({
-        container: viewerContainer,
-        title: "Controls",
-    });
-    gui.domElement.style.position = "absolute";
-    gui.domElement.style.top = "1rem";
-    gui.domElement.style.right = "1rem";
-    gui.domElement.style.zIndex = "20";
-    gui.domElement.style.width = "260px";
+    // 9. OrbitControls (Lesson 2.4)
+    const cameraControls = new OrbitControls(camera, viewerContainer);
+    cameraControls.enableDamping = true; // Pro CAD smooth inertia damping
+    cameraControls.dampingFactor = 0.05;
 
-    // Directional Light Folder
-    const lightFolder = gui.addFolder("Directional Light");
-    lightFolder.add(keyLight.position, "x", -30, 30, 1).name("Light X").onChange(() => directionalLightHelper.update());
-    lightFolder.add(keyLight.position, "y", 0, 40, 1).name("Light Y").onChange(() => directionalLightHelper.update());
-    lightFolder.add(keyLight.position, "z", -30, 30, 1).name("Light Z").onChange(() => directionalLightHelper.update());
-    lightFolder.add(keyLight, "intensity", 0, 5, 0.1).name("Intensity");
-    lightFolder.addColor(keyLight, "color").name("Light Color");
-    lightFolder.add(directionalLightHelper, "visible").name("Show Light Ray");
-    lightFolder.close();
+    // --- LESSON 2.6 & 2.7: MULTI-PROJECT DYNAMIC 3D VIEWER & CONTROLS HUD ---
+    let gui: GUI | null = null;
+    let gearMesh: THREE.Group | null = null;
+
+    // Update 3D model, camera viewpoint, and Controls card based on selected project
+    const updateViewerForProject = (project: any) => {
+        if (!project) { return; }
+
+        if (gui) {
+            gui.destroy();
+        }
+        gui = new GUI({
+            container: viewerContainer,
+            title: "Viewer Options",
+            width: 280,
+        });
+        gui.domElement.style.position = "absolute";
+        gui.domElement.style.top = "1rem";
+        gui.domElement.style.right = "1rem";
+        gui.domElement.style.zIndex = "25";
+
+        const isGear = project.modelType === "gear" || project.name.toLowerCase().includes("gear");
+
+        if (isGear) {
+            // Show Gear Model, Hide Cube
+            cube.visible = false;
+            if (gearMesh) {
+                gearMesh.visible = true;
+            }
+
+            cameraControls.target.set(0, 6, 0);
+            camera.position.set(14, 10, 18);
+            cameraControls.update();
+
+            // 1. Gear Controls Folder (Open)
+            const gearFolder = gui.addFolder("Mechanical Gear Controls");
+            gearFolder.open();
+
+            if (gearMesh) {
+                gearFolder.add(gearMesh.position, "x", -20, 20, 0.5).name("Position X");
+                gearFolder.add(gearMesh.position, "y", 0, 25, 0.5).name("Position Y");
+                gearFolder.add(gearMesh.position, "z", -20, 20, 0.5).name("Position Z");
+                gearFolder.add(gearMesh.rotation, "y", -Math.PI, Math.PI, 0.05).name("Rotate Y");
+                gearFolder.add(gearMesh.scale, "x", 0.2, 3, 0.1).name("Scale").onChange((s: number) => {
+                    gearMesh!.scale.set(s, s, s);
+                });
+                gearFolder.add(gearMesh, "visible").name("Visible");
+            } else {
+                const loadingObj = { status: "Loading 3D Model..." };
+                gearFolder.add(loadingObj, "status").name("Status");
+            }
+        } else {
+            // Show Cube Model, Hide Gear
+            cube.visible = true;
+            if (gearMesh) {
+                gearMesh.visible = false;
+            }
+
+            cameraControls.target.set(0, 1, 0);
+            camera.position.set(4, 3.5, 5);
+            cameraControls.update();
+
+            // 1. Cube Controls Folder (Open)
+            const cubeFolder = gui.addFolder("Cube Model Controls");
+            cubeFolder.open();
+
+            cubeFolder.add(cube.position, "x", -10, 10, 0.1).name("Position X");
+            cubeFolder.add(cube.position, "y", 0, 10, 0.1).name("Position Y");
+            cubeFolder.add(cube.position, "z", -10, 10, 0.1).name("Position Z");
+            cubeFolder.add(cube.rotation, "y", -Math.PI, Math.PI, 0.05).name("Rotate Y");
+            cubeFolder.add(cube.scale, "x", 0.5, 3, 0.1).name("Scale").onChange((s: number) => {
+                cube.scale.set(s, s, s);
+            });
+            cubeFolder.add(cube, "visible").name("Visible");
+            cubeFolder.addColor(cubeMaterial, "color").name("Cube Color");
+            cubeFolder.add(cubeMaterial, "wireframe").name("Wireframe");
+        }
+
+        // 2. CAD Grid & Helpers Folder (Open)
+        const helpersFolder = gui.addFolder("CAD Grid & Helpers");
+        helpersFolder.open();
+        helpersFolder.add(grid, "visible").name("Ground Grid");
+        helpersFolder.add(axes, "visible").name("Origin Axes");
+        helpersFolder.add(directionalLightHelper, "visible").name("Light Ray Helper");
+
+        // 3. Studio Lighting Folder (Closed by default)
+        const lightFolder = gui.addFolder("Studio Lighting");
+        lightFolder.close();
+        lightFolder.add(keyLight, "intensity", 0, 5, 0.1).name("Key Light");
+        lightFolder.addColor(keyLight, "color").name("Key Color");
+        lightFolder.add(keyLight.position, "x", -30, 30, 1).name("Light X").onChange(() => directionalLightHelper.update());
+        lightFolder.add(keyLight.position, "y", 0, 40, 1).name("Light Y").onChange(() => directionalLightHelper.update());
+        lightFolder.add(keyLight.position, "z", -30, 30, 1).name("Light Z").onChange(() => directionalLightHelper.update());
+        lightFolder.add(ambientLight, "intensity", 0, 2, 0.05).name("Ambient Light");
+
+        // 4. Camera View Controls
+        const cameraFolder = gui.addFolder("Camera View");
+        cameraFolder.close();
+        cameraFolder.add({
+            resetCamera: () => {
+                if (isGear) {
+                    cameraControls.target.set(0, 6, 0);
+                    camera.position.set(14, 10, 18);
+                } else {
+                    cameraControls.target.set(0, 1, 0);
+                    camera.position.set(4, 3.5, 5);
+                }
+                cameraControls.update();
+            }
+        }, "resetCamera").name("Reset View");
+
+        gui.open();
+    };
+
+    // Register callback so clicking a project card in the dashboard switches the 3D model and controls
+    projectsManager.onProjectSelected = (project) => {
+        resizeViewer();
+        updateViewerForProject(project);
+    };
+
+    // Initialize 3D view and controls for the initially active project
+    if (projectsManager.activeProject) {
+        updateViewerForProject(projectsManager.activeProject);
+    }
 
     // --- LESSON 2.7: LOADING EXTERNAL GEOMETRY (OBJLoader & MTLLoader) ---
     const objLoader = new OBJLoader();
     const mtlLoader = new MTLLoader();
+    objLoader.setPath("/Gear/");
+    mtlLoader.setPath("/Gear/");
 
-    objLoader.setPath("assets/Gear/");
-    mtlLoader.setPath("assets/Gear/");
-
-    mtlLoader.load("Gear1.mtl", (materials) => {
-        materials.preload();
-        objLoader.setMaterials(materials);
-        objLoader.load("Gear1.obj", (mesh) => {
-            scene.add(mesh);
-
-            // Add dynamic controls for the loaded 3D external geometry
-            const modelFolder = gui.addFolder("Gear Model");
-            modelFolder.add(mesh.position, "x", -20, 20, 0.5).name("Position X");
-            modelFolder.add(mesh.position, "y", -10, 20, 0.5).name("Position Y");
-            modelFolder.add(mesh.position, "z", -20, 20, 0.5).name("Position Z");
-            modelFolder.add(mesh.rotation, "y", -Math.PI, Math.PI, 0.05).name("Rotate Y");
-            modelFolder.add(mesh, "visible").name("Visible");
-        });
+    // Fast PBR fallback material so Gear displays immediately without waiting for textures
+    const gearPbrMaterial = new THREE.MeshStandardMaterial({
+        color: 0x94a3b8,
+        metalness: 0.85,
+        roughness: 0.25,
     });
 
-    // --- LESSON 2.4: DYNAMIC CAMERA CONTROLS (OrbitControls) ---
-    const cameraControls = new OrbitControls(camera, viewerContainer);
-    cameraControls.target.set(0, 6, 0); // Focus camera orbit on the center of the Gear model
-    cameraControls.enableDamping = true; // Pro CAD smooth inertia damping
-    cameraControls.dampingFactor = 0.05;
+    objLoader.load(
+        "Gear1.obj",
+        (mesh) => {
+            gearMesh = mesh;
+            mesh.traverse((child) => {
+                if ((child as THREE.Mesh).isMesh) {
+                    (child as THREE.Mesh).material = gearPbrMaterial;
+                    (child as THREE.Mesh).castShadow = true;
+                    (child as THREE.Mesh).receiveShadow = true;
+                }
+            });
+
+            // Center gear with Bounding Box at world origin (Lesson 2.7) and round to avoid 0.0003999 float precision noise
+            const box = new THREE.Box3().setFromObject(mesh);
+            const center = box.getCenter(new THREE.Vector3());
+            mesh.position.sub(center); // Align center with (0,0,0)
+            const halfHeight = (box.max.y - box.min.y) / 2;
+            mesh.position.set(
+                Math.round(mesh.position.x * 100) / 100,
+                Math.round((mesh.position.y + halfHeight) * 100) / 100,
+                Math.round(mesh.position.z * 100) / 100
+            );
+
+            scene.add(mesh);
+
+            // Update view if current project is Gear
+            if (projectsManager.activeProject) {
+                updateViewerForProject(projectsManager.activeProject);
+            } else {
+                mesh.visible = false;
+            }
+
+            // Progressive MTL texture upgrade
+            mtlLoader.load(
+                "Gear1.mtl",
+                (materials) => {
+                    materials.preload();
+                    objLoader.setMaterials(materials);
+                },
+                undefined,
+                (err) => console.warn("MTL load notice:", err)
+            );
+        },
+        undefined,
+        (err) => console.error("OBJ load error:", err)
+    );
     cameraControls.update();
 
     // 10. Continuous 60 FPS Render Loop (Lesson 2.4)

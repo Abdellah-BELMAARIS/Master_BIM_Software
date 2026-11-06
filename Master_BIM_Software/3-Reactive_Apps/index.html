@@ -12,31 +12,8 @@
 </head>
 
 <body>
-    <!-- Sidebar Navigation -->
-    <aside id="sidebar">
-        <div class="sidebar-header">
-            <img id="company-logo" src="./assets/company-logo.svg" alt="Construction Company — BIM Platform">
-        </div>
-
-        <ul id="nav-buttons">
-            <li class="nav-item active" id="nav-projects-btn">
-                <span class="material-icons-round">domain</span>
-                <span class="nav-label">BIM Projects</span>
-            </li>
-            <li class="nav-item" id="nav-users-btn">
-                <span class="material-icons-round">engineering</span>
-                <span class="nav-label">AEC Team</span>
-            </li>
-        </ul>
-
-        <div class="sidebar-footer">
-            <div class="system-status">
-                <span class="status-dot"></span>
-                <span class="status-text">IFC VIEWER READY</span>
-            </div>
-            <span class="status-version">IFC4 · 3D</span>
-        </div>
-    </aside>
+    <!-- React Root Container (Lesson 3.2) -->
+    <div id="app"></div>
 
     <!-- Main Content Area -->
     <main id="content">
@@ -430,9 +407,19 @@
                         </div>
                     </div>
 
-                    <div class="form-field">
-                        <label><span class="material-icons-round">calendar_today</span> Finish Date</label>
-                        <input name="finishDate" type="date" id="project-date-input">
+                    <div class="form-row-2col">
+                        <div class="form-field">
+                            <label><span class="material-icons-round">calendar_today</span> Finish Date</label>
+                            <input name="finishDate" type="date" id="project-date-input">
+                        </div>
+
+                        <div class="form-field">
+                            <label><span class="material-icons-round">view_in_ar</span> 3D Model Type</label>
+                            <select name="modelType" id="project-model-input">
+                                <option value="cube">Cube Massing Model</option>
+                                <option value="gear">Mechanical Gear HVAC</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
 
@@ -515,8 +502,8 @@
         </button>
     </div>
 
-    <!-- Main Application Logic (Vite TypeScript Module from src/) -->
-    <script type="module" src="./src/index.ts"></script>
+    <!-- Main Application Logic (Vite TypeScript & React Module from src/) -->
+    <script type="module" src="./src/index.tsx"></script>
 </body>
 
 </html>
