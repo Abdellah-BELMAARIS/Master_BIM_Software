@@ -80,6 +80,12 @@ body {
     display: contents;
 }
 
+/* Lesson 3.8: Prevent React Router <Link> (<a>) from applying default browser blue hyperlink underline */
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
 /* ==========================================================================
    CYPECAD / Structural BIM Sidebar Styling
    ========================================================================== */
@@ -755,8 +761,10 @@ body {
    Modal Dialog & New Project Form (Pixel-Perfect from 2.png)
    ========================================================================== */
 dialog#new-project-modal,
+dialog#edit-project-details-modal,
 dialog#new-user-modal,
 dialog#todo-modal,
+dialog#details-todo-modal,
 dialog#error-modal {
     border: none;
     border-radius: var(--radius-straight);
@@ -767,8 +775,10 @@ dialog#error-modal {
 }
 
 dialog#new-project-modal::backdrop,
+dialog#edit-project-details-modal::backdrop,
 dialog#new-user-modal::backdrop,
 dialog#todo-modal::backdrop,
+dialog#details-todo-modal::backdrop,
 dialog#error-modal::backdrop {
     background-color: rgba(0, 0, 0, 0.8);
     backdrop-filter: blur(10px);
@@ -776,7 +786,8 @@ dialog#error-modal::backdrop {
 
 #new-project-form,
 #new-user-form,
-#todo-form {
+#todo-form,
+#details-todo-form {
     background-color: #121420;
     border: 1px solid var(--border-color);
     border-radius: var(--radius-straight);
@@ -912,7 +923,8 @@ dialog#error-modal::backdrop {
 
 #new-project-form h2,
 #new-user-form h2,
-#todo-form h2 {
+#todo-form h2,
+#details-todo-form h2 {
     font-size: 1.25rem;
     font-weight: 700;
     color: var(--text-primary);

@@ -12,118 +12,11 @@
 </head>
 
 <body>
-    <!-- React Root Container (Lessons 3.2 & 3.3) -->
+    <!-- React Root Container (Lessons 3.2, 3.3 & 3.8 React Router) -->
     <div id="app"></div>
 
-    <!-- Main Content Area (Project Details & Users Pages) -->
+    <!-- Auxiliary Pages & Global Modals (AEC Team & Error Modal) -->
     <main id="content">
-        <!-- Page 2: Project Details Page (Lesson 4.3 Dynamic Data Attributes + BIM 3D Viewport) -->
-        <div class="page" id="project-details" style="display: none;">
-            <!-- Details Header -->
-            <header id="details-header">
-                <div class="details-header-left">
-                    <button type="button" class="btn-back-projects" id="back-to-projects-btn"
-                        title="Back to Projects List">
-                        <span class="material-icons-round">arrow_back</span>
-                    </button>
-                    <div class="header-title-box">
-                        <span class="header-eyebrow">PROJECT CDE / 3D COORDINATION</span>
-                        <h2 id="details-page-title" data-project-info="name">Hospital Center</h2>
-                        <p id="details-page-desc" data-project-info="description">Community hospital located at downtown</p>
-                    </div>
-                </div>
-                <div class="details-header-right">
-                    <span class="bim-coord-badge">
-                        <span class="material-icons-round">view_in_ar</span>
-                        <span>IFC4 · LOD 350</span>
-                    </span>
-                </div>
-            </header>
-
-            <!-- Details Content Grid: Left Column (Cards/ToDos) + Right Column (IFC 3D Viewer) -->
-            <div class="main-page-content">
-                <!-- Left Column: Details Card & To-Do List -->
-                <div class="details-left-column">
-                    <!-- Project Details Card (Lesson 4.3 data-project-info targets) -->
-                    <article class="project-card details-card">
-                        <div class="details-card-top">
-                            <div class="card-avatar-circle badge-orange" id="details-avatar" data-project-info="avatar">HC</div>
-                            <div style="display: flex; gap: 0.5rem; align-items: center;">
-                                <button type="button" class="btn-edit" id="edit-project-btn">
-                                    <span class="material-icons-round" style="font-size: 1rem;">edit</span>
-                                    <span>Edit</span>
-                                </button>
-                                <button type="button" class="btn-delete" id="delete-project-btn" title="Delete Project">
-                                    <span class="material-icons-round" style="font-size: 1.1rem;">delete</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="details-title-group">
-                            <h3 id="details-card-title" data-project-info="name">Hospital Center</h3>
-                            <p id="details-card-desc" data-project-info="description">Community hospital located at downtown</p>
-                        </div>
-
-                        <div class="details-properties-row">
-                            <div class="prop-col">
-                                <span class="prop-label">Status</span>
-                                <span class="prop-val" id="details-status" data-project-info="status">Active</span>
-                            </div>
-                            <div class="prop-col">
-                                <span class="prop-label">Cost</span>
-                                <span class="prop-val" id="details-cost" data-project-info="cost">$ 2,000,000</span>
-                            </div>
-                            <div class="prop-col">
-                                <span class="prop-label">Role</span>
-                                <span class="prop-val" id="details-role" data-project-info="role">Engineer</span>
-                            </div>
-                            <div class="prop-col">
-                                <span class="prop-label">Finish Date</span>
-                                <span class="prop-val" id="details-date" data-project-info="finishDate">2023-05-01</span>
-                            </div>
-                        </div>
-
-                        <!-- Progress Bar -->
-                        <div class="progress-bar-container">
-                            <div class="progress-bar-fill" id="details-progress-fill" data-project-info="progress"
-                                style="width: 80%;">80%</div>
-                        </div>
-                    </article>
-
-                    <!-- To-Do / BCF Issues Container -->
-                    <div class="todos-container">
-                        <div class="todos-header-row">
-                            <div class="todos-title-wrap">
-                                <h4>To-Do</h4>
-                                <span class="todo-count-badge" id="todo-count-badge">0</span>
-                            </div>
-                            <div class="todos-actions-group">
-                                <div class="search-input-pill">
-                                    <span class="material-icons-round">search</span>
-                                    <input type="text" id="todo-search-input" placeholder="Search tasks...">
-                                </div>
-                                <button type="button" class="btn-icon-box" id="add-todo-btn" title="Add Task">
-                                    <span class="material-icons-round">add</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- To-Do Items List -->
-                        <div class="todos-list" id="todos-list">
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Right Column: IFC 3D Viewer Viewport -->
-                <div id="viewer-container" style="min-width: 0;">
-                    <div class="viewer-placeholder">
-                        <span class="material-icons-round viewer-placeholder-icon">view_in_ar</span>
-                        <span class="viewer-placeholder-text">3D BIM Viewer</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
         <!-- Page 3: Users / Team Page (Module 1 Challenge) -->
         <div class="page" id="users-page" style="display: none;">
             <!-- Users Header -->
@@ -288,37 +181,6 @@
                 <div class="form-actions">
                     <button type="button" id="cancel-user-btn" class="btn-cancel">Cancel</button>
                     <button type="submit" id="user-submit-btn" class="btn-accept">Save Member</button>
-                </div>
-            </form>
-        </dialog>
-
-        <!-- Add / Edit To-Do Task Modal Dialog -->
-        <dialog id="todo-modal">
-            <form id="todo-form">
-                <h2 id="todo-modal-title">New Task / BCF Issue</h2>
-                <div class="input-list">
-                    <div class="form-field">
-                        <label><span class="material-icons-round">assignment</span> Task Description</label>
-                        <input type="text" id="todo-text-input" placeholder="e.g. Verify structural column grid on Level 02" required>
-                    </div>
-                    <div class="form-row-2col">
-                        <div class="form-field">
-                            <label><span class="material-icons-round">event</span> Target Date</label>
-                            <input type="date" id="todo-date-input" lang="en">
-                        </div>
-                        <div class="form-field">
-                            <label><span class="material-icons-round">flag</span> Status</label>
-                            <select id="todo-status-input">
-                                <option value="pending">Pending</option>
-                                <option value="in-progress">In Progress</option>
-                                <option value="completed">Completed</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-                <div class="form-actions">
-                    <button type="button" id="cancel-todo-btn" class="btn-cancel">Cancel</button>
-                    <button type="submit" id="todo-submit-btn" class="btn-accept">Save Task</button>
                 </div>
             </form>
         </dialog>

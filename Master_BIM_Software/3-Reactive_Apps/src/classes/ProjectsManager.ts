@@ -150,6 +150,24 @@ export class ProjectsManager {
         return project;
     }
 
+    // Lesson 3.11: Global filtering method based on project name (and description/role)
+    filterProject(value: string): Project[] {
+        const q = value.toLowerCase().trim();
+        if (!q) {
+            return [...this.list];
+        }
+        return this.list.filter((project) =>
+            project.name.toLowerCase().includes(q) ||
+            project.description.toLowerCase().includes(q) ||
+            project.userRole.toLowerCase().includes(q)
+        );
+    }
+
+    // Alias for plural naming
+    filterProjects(value: string): Project[] {
+        return this.filterProject(value);
+    }
+
     // Sort projects in this.list
     sortProjects(sortBy: string = "name-asc"): void {
         this.list.sort((a, b) => {

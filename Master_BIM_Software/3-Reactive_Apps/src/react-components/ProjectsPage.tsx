@@ -1,7 +1,9 @@
 import * as React from "react";
+import * as Router from "react-router-dom";
 import { IProject, Project, ProjectStatus, UserRole } from "../classes/Project";
 import { ProjectsManager } from "../classes/ProjectsManager";
 import { ProjectCard } from "./ProjectCard";
+import { SearchBox } from "./SearchBox";
 
 export interface ProjectsPageProps {
     projectsManager?: ProjectsManager;
@@ -135,6 +137,16 @@ export function ProjectsPage(props: ProjectsPageProps) {
         projectsManager.importFromJSON();
     };
 
+    // Lesson 3.11: Project search function passed as onChange prop to SearchBox
+    const onSearchProjects = (value: string) => {
+        setSearchQuery(value);
+        const filtered = projectsManager.filterProjects(value);
+        setProjects(filtered);
+    };
+    const projectSearch = onSearchProjects;
+
+
+
     // Filter & sort projects declaratively via React state
     const q = searchQuery.toLowerCase().trim();
     const visibleProjects = projects
@@ -170,14 +182,20 @@ export function ProjectsPage(props: ProjectsPageProps) {
     const pendingCount = projects.filter((p) => p.status.toLowerCase() === "pending").length;
     const finishedCount = projects.filter((p) => p.status.toLowerCase() === "finished").length;
 
-    // Lesson 3.5: Map projects state to <ProjectCard /> components
+    // Lesson 3.5, 3.7, 3.8 & 3.9: Map projects state to <ProjectCard /> wrapped in dynamic <Router.Link to={`/project/${project.id}`}>
     const projectCards = visibleProjects.map((project) => (
-        <ProjectCard
+        <Router.Link
+            to={`/project/${project.id}`}
             key={project.id}
-            project={project}
-            onClick={(selectedProject) => projectsManager.selectProject(selectedProject)}
-        />
+            onClick={() => {
+                projectsManager.activeProject = project;
+            }}
+        >
+            <ProjectCard project={project} />
+        </Router.Link>
     ));
+
+
 
     return (
         <div className="page" id="projects-page">
@@ -327,12 +345,13 @@ export function ProjectsPage(props: ProjectsPageProps) {
                 </form>
             </dialog>
 
-            {/* Top Action Header */}
+            {/* Top Action Header (Lesson 3.11: SearchBox placed between title and action buttons) */}
             <header id="main-header">
                 <div className="header-title-box">
                     <span className="header-eyebrow">CDE WORKSPACE / MODELS</span>
                     <h2>BIM Projects</h2>
                 </div>
+                <SearchBox onChange={onSearchProjects} />
                 <div className="header-actions">
                     <button
                         onClick={onImportProject}
@@ -359,29 +378,8 @@ export function ProjectsPage(props: ProjectsPageProps) {
                 </div>
             </header>
 
-            {/* Projects Search & Status Filter Toolbar */}
+            {/* Status Filter & Sort Toolbar */}
             <div className="projects-toolbar">
-                <div className="search-input-pill projects-search-box">
-                    <span className="material-icons-round">search</span>
-                    <input
-                        type="text"
-                        id="project-search-input"
-                        placeholder="Search projects by name, description, or role..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                    {searchQuery.trim().length > 0 && (
-                        <button
-                            type="button"
-                            className="btn-clear-search"
-                            id="clear-search-btn"
-                            title="Clear search text"
-                            onClick={() => setSearchQuery("")}
-                        >
-                            <span className="material-icons-round">close</span>
-                        </button>
-                    )}
-                </div>
                 <div className="projects-filter-group" id="project-filter-group">
                     <button
                         type="button"
@@ -457,6 +455,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
                                     onClick={() => {
                                         setSearchQuery("");
                                         setStatusFilter("all");
+                                        setProjects([...projectsManager.list]);
                                     }}
                                 >
                                     <span className="material-icons-round">filter_alt_off</span>
