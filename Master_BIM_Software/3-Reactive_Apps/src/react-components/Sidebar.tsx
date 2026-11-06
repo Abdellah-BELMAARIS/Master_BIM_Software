@@ -31,7 +31,7 @@ export function Sidebar(props: ISidebarProps) {
             <div className="sidebar-header">
                 <img
                     id="company-logo"
-                    src="./assets/company-logo.svg"
+                    src="/assets/company-logo.svg"
                     alt="Construction Company — BIM Platform"
                 />
             </div>
