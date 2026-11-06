@@ -1627,12 +1627,55 @@ dialog#error-modal::backdrop {
     border-radius: var(--radius-straight);
     height: 100%;
     width: 100%;
+    min-width: 0; /* Lesson 2.5: Allows flex/grid container to shrink responsive without clipping */
+    min-height: 0;
     border: 1px solid var(--border-color);
     position: relative;
     overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
+}
+
+#viewer-container canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100% !important;
+    display: block;
+    outline: none;
+    border-radius: inherit;
+}
+
+/* Pro BIM Viewport Floating Controls HUD */
+#viewer-container .lil-gui {
+    position: absolute !important;
+    top: 1rem !important;
+    right: 1rem !important;
+    z-index: 20 !important;
+    width: 260px !important;
+    max-width: calc(100% - 2rem) !important;
+    max-height: calc(100% - 2rem);
+    overflow-y: auto;
+    --background-color: rgba(16, 20, 28, 0.88);
+    --text-color: #e2e8f0;
+    --title-background-color: #1e293b;
+    --widget-color: #1e293b;
+    --hover-color: #334155;
+    --focus-color: #2563eb;
+    --number-color: #60a5fa;
+    --string-color: #38bdf8;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 6px !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5) !important;
+    backdrop-filter: blur(10px);
+}
+
+#viewer-container .lil-gui .title {
+    font-weight: 600;
+    font-size: 0.82rem;
+    letter-spacing: 0.04em;
 }
 
 .viewer-placeholder {

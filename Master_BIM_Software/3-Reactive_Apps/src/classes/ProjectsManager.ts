@@ -63,6 +63,7 @@ export class ProjectsManager {
 
             projectsPage.style.display = "none";
             detailsPage.style.display = "flex";
+            window.dispatchEvent(new Event("resize")); // Notify 3D viewer to update dimensions immediately
         });
 
         this.ui.append(project.ui);

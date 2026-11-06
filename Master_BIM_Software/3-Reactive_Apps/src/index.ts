@@ -1,5 +1,9 @@
 // Module 03 — Section 2: Implementing 3D with ThreeJS
 import * as THREE from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
+import { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js";
+import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
+import { MTLLoader } from "three/examples/jsm/loaders/MTLLoader.js";
 import { IProject, ProjectStatus, TodoStatus, UserRole } from "./classes/Project";
 import { ProjectsManager } from "./classes/ProjectsManager";
 
@@ -606,45 +610,132 @@ userForm?.addEventListener("submit", (e) => {
 });
 
 // ==============================================================
-// 🎬 LESSON 2.2 & 2.3: 3D VIEWER WITH MESHES, LIGHTS & CAMERA
+// 🏛️ PRO BIM 3D VIEWER (Lessons 2.2 & 2.3 Upgraded with CAD Pro Polish)
 // ==============================================================
 
-// 1. Get reference to the viewer container in Project Details
+// 1. Get reference to viewer container and clear placeholder elements
 const viewerContainer = document.getElementById("viewer-container") as HTMLElement;
+const placeholder = viewerContainer?.querySelector(".viewer-placeholder");
+if (placeholder) {
+    placeholder.remove();
+}
 
-// 2. Create the Scene (The Location / Set to shoot the video)
-const scene = new THREE.Scene();
+if (viewerContainer) {
+    // 2. Create the 3D Scene (World Container)
+    const scene = new THREE.Scene();
 
-// 3. Configure the Perspective Camera (The Recording Device)
-const viewerContainerDimensions = viewerContainer.getBoundingClientRect();
-const aspectRatio = viewerContainerDimensions.width / viewerContainerDimensions.height;
-const camera = new THREE.PerspectiveCamera(75, aspectRatio);
+    // 3. Configure Perspective Camera for the Mechanical Model
+    const camera = new THREE.PerspectiveCamera(60);
+    camera.position.set(14, 10, 18); // Elevated angle viewing the mechanical gear
+    camera.lookAt(0, 6, 0);
 
-// 4. Create the Cameraman (WebGLRenderer)
-const renderer = new THREE.WebGLRenderer();
+    // 4. Create WebGLRenderer with Antialiasing & Transparent Background (Lesson 2.5)
+    const renderer = new THREE.WebGLRenderer({
+        alpha: true,     // Transparent background allows CAD engineering grid to show through
+        antialias: true, // Smooths out jagged, pixelated edges
+    });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.domElement.style.display = "block";
+    renderer.domElement.style.width = "100%";
+    renderer.domElement.style.height = "100%";
+    renderer.domElement.style.outline = "none";
+    viewerContainer.appendChild(renderer.domElement);
 
-// 5. Append the cameraman's monitor screen (domElement <canvas>) to the container
-viewerContainer.appendChild(renderer.domElement);
+    // --- LESSON 2.5: MAKING THE VIEWER RESPONSIVE (DRY REFACTORING) ---
+    const resizeViewer = () => {
+        const containerDimensions = viewerContainer.getBoundingClientRect();
+        renderer.setSize(containerDimensions.width, containerDimensions.height);
+        camera.aspect = containerDimensions.width / containerDimensions.height;
+        camera.updateProjectionMatrix(); // Tell Three.js to recompute projection matrix
+    };
 
-// 6. Match renderer dimensions with viewer container
-renderer.setSize(viewerContainerDimensions.width, viewerContainerDimensions.height);
+    window.addEventListener("resize", resizeViewer);
+    resizeViewer(); // Initialize initial size and aspect ratio without code duplication
 
-// --- LESSON 2.3: ADDING ELEMENTS TO THE SCENE ---
+    // 5. Ground Coordinate Grid & 3D Axes Helper (Lesson 2.6)
+    const axes = new THREE.AxesHelper(6); // Visual representation of world origin (0,0,0)
 
-// 7. Create a 3D Mesh: Geometry (Shape / Triangles) + Material (Appearance / Shaders)
-const boxGeometry = new THREE.BoxGeometry();
-const material = new THREE.MeshStandardMaterial();
-const cube = new THREE.Mesh(boxGeometry, material);
+    const grid = new THREE.GridHelper(30, 30);
+    const gridMaterial = grid.material as THREE.LineBasicMaterial;
+    gridMaterial.transparent = true;
+    gridMaterial.opacity = 0.4;
+    gridMaterial.color = new THREE.Color(0x808080);
+    grid.position.y = 0; // World ground floor
 
-// 8. Add Lighting (World starts in complete darkness)
-const directionalLight = new THREE.DirectionalLight();
-const ambientLight = new THREE.AmbientLight();
+    // 6. Studio 3-Point Architectural Lighting (Lesson 2.3 & 2.4)
+    const keyLight = new THREE.DirectionalLight(0xffffff, 2.0);
+    keyLight.position.set(15, 25, 20);
 
-// 9. Add Mesh and Lights to the Scene
-scene.add(cube, directionalLight, ambientLight);
+    const fillLight = new THREE.DirectionalLight(0x93c5fd, 0.9);
+    fillLight.position.set(-15, 10, -10);
 
-// 10. Position the Camera (Move back on Z-axis so camera isn't inside the cube at 0,0,0)
-camera.position.z = 5;
+    const ambientLight = new THREE.AmbientLight(0xffffff);
+    ambientLight.intensity = 0.5;
 
-// 11. Render the Scene (Shot taken AFTER elements and lights are placed in the scene)
-renderer.render(scene, camera);
+    // Lesson 2.6 Assignment: DirectionalLightHelper
+    const directionalLightHelper = new THREE.DirectionalLightHelper(keyLight, 2);
+    directionalLightHelper.visible = false; // Hidden by default for clean view
+
+    // 7. Add Base Helpers and Lights to the Scene
+    scene.add(grid, axes, keyLight, fillLight, ambientLight, directionalLightHelper);
+
+    // --- LESSON 2.6: DYNAMIC UI CONTROLS WITH GUI ---
+    const gui = new GUI({
+        container: viewerContainer,
+        title: "Controls",
+    });
+    gui.domElement.style.position = "absolute";
+    gui.domElement.style.top = "1rem";
+    gui.domElement.style.right = "1rem";
+    gui.domElement.style.zIndex = "20";
+    gui.domElement.style.width = "260px";
+
+    // Directional Light Folder
+    const lightFolder = gui.addFolder("Directional Light");
+    lightFolder.add(keyLight.position, "x", -30, 30, 1).name("Light X").onChange(() => directionalLightHelper.update());
+    lightFolder.add(keyLight.position, "y", 0, 40, 1).name("Light Y").onChange(() => directionalLightHelper.update());
+    lightFolder.add(keyLight.position, "z", -30, 30, 1).name("Light Z").onChange(() => directionalLightHelper.update());
+    lightFolder.add(keyLight, "intensity", 0, 5, 0.1).name("Intensity");
+    lightFolder.addColor(keyLight, "color").name("Light Color");
+    lightFolder.add(directionalLightHelper, "visible").name("Show Light Ray");
+    lightFolder.close();
+
+    // --- LESSON 2.7: LOADING EXTERNAL GEOMETRY (OBJLoader & MTLLoader) ---
+    const objLoader = new OBJLoader();
+    const mtlLoader = new MTLLoader();
+
+    objLoader.setPath("assets/Gear/");
+    mtlLoader.setPath("assets/Gear/");
+
+    mtlLoader.load("Gear1.mtl", (materials) => {
+        materials.preload();
+        objLoader.setMaterials(materials);
+        objLoader.load("Gear1.obj", (mesh) => {
+            scene.add(mesh);
+
+            // Add dynamic controls for the loaded 3D external geometry
+            const modelFolder = gui.addFolder("Gear Model");
+            modelFolder.add(mesh.position, "x", -20, 20, 0.5).name("Position X");
+            modelFolder.add(mesh.position, "y", -10, 20, 0.5).name("Position Y");
+            modelFolder.add(mesh.position, "z", -20, 20, 0.5).name("Position Z");
+            modelFolder.add(mesh.rotation, "y", -Math.PI, Math.PI, 0.05).name("Rotate Y");
+            modelFolder.add(mesh, "visible").name("Visible");
+        });
+    });
+
+    // --- LESSON 2.4: DYNAMIC CAMERA CONTROLS (OrbitControls) ---
+    const cameraControls = new OrbitControls(camera, viewerContainer);
+    cameraControls.target.set(0, 6, 0); // Focus camera orbit on the center of the Gear model
+    cameraControls.enableDamping = true; // Pro CAD smooth inertia damping
+    cameraControls.dampingFactor = 0.05;
+    cameraControls.update();
+
+    // 10. Continuous 60 FPS Render Loop (Lesson 2.4)
+    // requestAnimationFrame executes before the browser's next screen repaint
+    const renderScene = () => {
+        cameraControls.update(); // Update camera position according to user mouse gestures
+        renderer.render(scene, camera);
+        requestAnimationFrame(renderScene);
+    };
+    renderScene(); // Start continuous recording loop
+}
