@@ -1738,12 +1738,35 @@ dialog#error-modal::backdrop {
     background-color: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-straight);
-    overflow: hidden;
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.users-table-container::-webkit-scrollbar {
+    height: 8px;
+}
+
+.users-table-container::-webkit-scrollbar-track {
+    background: #171b26;
+    border-radius: var(--radius-sharp);
+}
+
+.users-table-container::-webkit-scrollbar-thumb {
+    background: #2b3347;
+    border-radius: var(--radius-sharp);
+}
+
+.users-table-container::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-accent);
 }
 
 .users-table {
     width: 100%;
+    min-width: 680px;
     border-collapse: collapse;
     text-align: left;
     font-size: 0.95rem;
