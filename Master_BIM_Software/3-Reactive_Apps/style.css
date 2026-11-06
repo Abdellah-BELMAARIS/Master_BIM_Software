@@ -762,6 +762,8 @@ a {
    ========================================================================== */
 dialog#new-project-modal,
 dialog#edit-project-details-modal,
+dialog#project-form-modal,
+dialog#todo-form-modal,
 dialog#new-user-modal,
 dialog#todo-modal,
 dialog#details-todo-modal,
@@ -776,6 +778,8 @@ dialog#error-modal {
 
 dialog#new-project-modal::backdrop,
 dialog#edit-project-details-modal::backdrop,
+dialog#project-form-modal::backdrop,
+dialog#todo-form-modal::backdrop,
 dialog#new-user-modal::backdrop,
 dialog#todo-modal::backdrop,
 dialog#details-todo-modal::backdrop,
@@ -785,6 +789,7 @@ dialog#error-modal::backdrop {
 }
 
 #new-project-form,
+#reusable-project-form,
 #new-user-form,
 #todo-form,
 #details-todo-form {

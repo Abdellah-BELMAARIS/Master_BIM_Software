@@ -52,52 +52,55 @@ export function ProjectInfoCard(props: ProjectInfoCardProps) {
     return (
         <>
             <article className="project-card details-card">
+                {/* Top Row: Avatar on Left, Edit & Delete Actions on Right */}
                 <div className="details-card-top">
                     <div
                         className="card-avatar-circle"
                         id="details-avatar"
                         data-project-info="avatar"
-                        style={{ backgroundColor: project.iconColor }}
+                        style={{ backgroundColor: project.iconColor || "#2563eb" }}
                     >
                         {initials}
                     </div>
-                    <div className="details-title-group">
-                        <div className="card-header-row">
-                            <h3 id="details-card-title" data-project-info="name">
-                                {project.name}
-                            </h3>
-                            <div className="card-top-actions">
-                                <button
-                                    type="button"
-                                    className="btn-icon-action"
-                                    id="edit-project-btn"
-                                    title="Edit Project"
-                                    onClick={onOpenEditModal}
-                                >
-                                    <span className="material-icons-round">edit</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    className="btn-icon-action delete"
-                                    id="delete-project-btn"
-                                    title="Delete Project"
-                                    onClick={onDeleteProject}
-                                >
-                                    <span className="material-icons-round">delete</span>
-                                </button>
-                            </div>
-                        </div>
-                        <p
-                            className="card-description"
-                            id="details-card-desc"
-                            data-project-info="description"
+                    <div className="details-actions-group" style={{ display: "flex", gap: "0.55rem", alignItems: "center" }}>
+                        <button
+                            type="button"
+                            className="btn-edit"
+                            id="edit-project-btn"
+                            title="Edit Project Details"
+                            onClick={onOpenEditModal}
                         >
-                            {project.description}
-                        </p>
+                            <span className="material-icons-round">edit</span>
+                            <span>Edit</span>
+                        </button>
+                        <button
+                            type="button"
+                            className="btn-delete"
+                            id="delete-project-btn"
+                            title="Delete Project"
+                            onClick={onDeleteProject}
+                        >
+                            <span className="material-icons-round">delete</span>
+                        </button>
                     </div>
                 </div>
 
-                <div className="card-property-grid">
+                {/* Project Title & Scope Description */}
+                <div className="details-title-group">
+                    <h3 id="details-card-title" data-project-info="name">
+                        {project.name}
+                    </h3>
+                    <p
+                        className="card-description"
+                        id="details-card-desc"
+                        data-project-info="description"
+                    >
+                        {project.description || "14-storey structural steel frame BIM coordination model."}
+                    </p>
+                </div>
+
+                {/* 2x2 Key-Value Properties Grid */}
+                <div className="details-properties-row">
                     <div className="prop-col">
                         <span className="prop-label">Status</span>
                         <span className="prop-val" id="details-status" data-project-info="status">

@@ -63,23 +63,27 @@ export class Project implements IProject {
         this.id = id;
         this.modelType = data.modelType || (data.name.toLowerCase().includes("gear") ? "gear" : "cube");
 
-        // Challenge #2: Pick a random background color from the 6-color palette (or preserve imported color)
-        const randomIndex = Math.floor(Math.random() * PROJECT_ICON_COLORS.length);
-        this.iconColor = data.iconColor || PROJECT_ICON_COLORS[randomIndex];
-
-        // Lesson 3.10: Dynamic object iteration using for...in and bracket notation
+        // Dynamic object iteration (ignoring undefined values to avoid overwriting defaults)
         for (const key in data) {
             const k = key as keyof IProject;
-            (this as any)[k] = data[k];
+            if (data[k] !== undefined && data[k] !== null) {
+                (this as any)[k] = data[k];
+            }
         }
 
-        // Resolving "The Trap" from Lesson 3.10 & Challenge #4 (Default Date fallback):
+        // Challenge #2: Guarantee persistent vibrant icon color from 6-color palette
+        const randomIndex = Math.floor(Math.random() * PROJECT_ICON_COLORS.length);
+        this.iconColor = (data.iconColor && data.iconColor.trim())
+            ? data.iconColor
+            : (this.iconColor || PROJECT_ICON_COLORS[randomIndex]);
+
+        // Resolving Date fallback:
         const parsedDate = data.finishDate ? new Date(data.finishDate) : new Date();
         this.finishDate = isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
 
-        // Form submission payload fallbacks:
-        this.cost = data.cost ?? 0;
-        this.progress = data.progress ?? 0.25;
+        // Form submission payload fallbacks (support number or numeric string from Firestore):
+        this.cost = Number(data.cost) || 0;
+        this.progress = data.progress !== undefined ? Number(data.progress) : 0.25;
 
         // Structural BCF / To-Do Tasks (Challenge #6, #7, #9: Stored inside project data with status)
         this.todos = data.todos
