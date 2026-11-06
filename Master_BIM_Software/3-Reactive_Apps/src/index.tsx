@@ -1,17 +1,21 @@
 // Module 03 — Section 3: Migrating to a React App
 import * as React from "react";
 import * as ReactDOM from "react-dom/client";
+import { flushSync } from "react-dom";
 import { Sidebar } from "./react-components/Sidebar";
+import { ProjectsPage } from "./react-components/ProjectsPage";
 
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { GUI } from "three/examples/jsm/libs/lil-gui.module.min.js";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
 import { MTLLoader } from "three/examples/jsm/loaders/MTLLoader.js";
-import { IProject, ProjectStatus, TodoStatus, UserRole } from "./classes/Project";
+import { TodoStatus } from "./classes/Project";
 import { ProjectsManager } from "./classes/ProjectsManager";
 
-// --- LESSON 3.2: MOUNT REACT ROOT & RENDER SIDEBAR COMPONENT ---
+// --- LESSON 3.2, 3.3 & 3.4: MOUNT REACT ROOT & RENDER SIDEBAR + PROJECTSPAGE ---
+const projectsManager = new ProjectsManager();
+
 const showProjectsPage = () => {
     const projectsPage = document.getElementById("projects-page");
     const detailsPage = document.getElementById("project-details");
@@ -43,18 +47,23 @@ const showUsersPage = () => {
 const appRoot = document.getElementById("app");
 if (appRoot) {
     const root = ReactDOM.createRoot(appRoot);
-    root.render(
-        <Sidebar
-            activeTab="projects"
-            onNavigate={(tab) => {
-                if (tab === "projects") {
-                    showProjectsPage();
-                } else {
-                    showUsersPage();
-                }
-            }}
-        />
-    );
+    flushSync(() => {
+        root.render(
+            <>
+                <Sidebar
+                    activeTab="projects"
+                    onNavigate={(tab) => {
+                        if (tab === "projects") {
+                            showProjectsPage();
+                        } else {
+                            showUsersPage();
+                        }
+                    }}
+                />
+                <ProjectsPage projectsManager={projectsManager} />
+            </>
+        );
+    });
 }
 
 // Reusable toggleModal function controlling open / close state
@@ -87,14 +96,7 @@ const showErrorModal = (message: string) => {
 const closeErrorModalBtn = document.getElementById("close-error-modal-btn");
 closeErrorModalBtn?.addEventListener("click", () => toggleModal("error-modal", false));
 
-// Instantiate ProjectsManager
-const projectsListUI = document.getElementById("projects-list") as HTMLDivElement;
-const projectsManager = new ProjectsManager(projectsListUI);
-
-// Track whether we are creating a new project or editing an existing one
-let editingProjectId: string | null = null;
-
-// Form input elements for Project Modal
+// Form input elements for Edit Project trigger from Details Page
 const projectForm = document.getElementById("new-project-form") as HTMLFormElement | null;
 const projectModalTitle = document.getElementById("project-modal-title");
 const projectSubmitBtn = document.getElementById("project-submit-btn");
@@ -105,26 +107,15 @@ const projectStatusInput = document.getElementById("project-status-input") as HT
 const projectCostInput = document.getElementById("project-cost-input") as HTMLInputElement | null;
 const projectProgressInput = document.getElementById("project-progress-input") as HTMLInputElement | null;
 const projectDateInput = document.getElementById("project-date-input") as HTMLInputElement | null;
+const projectModelInput = document.getElementById("project-model-input") as HTMLSelectElement | null;
 
-// Open 'New Project' modal in Create mode
-const newProjectBtn = document.getElementById("new-project-btn");
-newProjectBtn?.addEventListener("click", () => {
-    editingProjectId = null;
-    projectForm?.reset();
-    if (projectModalTitle) projectModalTitle.textContent = "New Project";
-    if (projectSubmitBtn) projectSubmitBtn.textContent = "Create Project";
-    if (projectCostInput) projectCostInput.value = "0";
-    if (projectProgressInput) projectProgressInput.value = "25";
-    toggleModal("new-project-modal", true);
-});
-
-// Open 'New Project' modal in Edit mode from Details Page
+// Open 'New Project' modal in Edit mode from Details Page (submission is handled inside ProjectsPage.tsx)
 const editProjectBtn = document.getElementById("edit-project-btn");
 editProjectBtn?.addEventListener("click", () => {
     const active = projectsManager.activeProject;
-    if (!active) { return; }
+    if (!active || !projectForm) { return; }
 
-    editingProjectId = active.id;
+    projectForm.dataset.editingProjectId = active.id;
     if (projectModalTitle) projectModalTitle.textContent = "Edit Project";
     if (projectSubmitBtn) projectSubmitBtn.textContent = "Save Changes";
 
@@ -134,6 +125,7 @@ editProjectBtn?.addEventListener("click", () => {
     if (projectStatusInput) projectStatusInput.value = active.status;
     if (projectCostInput) projectCostInput.value = String(active.cost ?? 0);
     if (projectProgressInput) projectProgressInput.value = String(Math.round((active.progress ?? 0) * 100));
+    if (projectModelInput) projectModelInput.value = active.modelType || "cube";
 
     if (projectDateInput) {
         const d = new Date(active.finishDate);
@@ -144,53 +136,6 @@ editProjectBtn?.addEventListener("click", () => {
 
     toggleModal("new-project-modal", true);
 });
-
-// Cancel button listener closes project modal
-const cancelProjectBtn = document.getElementById("cancel-btn");
-cancelProjectBtn?.addEventListener("click", () => {
-    editingProjectId = null;
-    toggleModal("new-project-modal", false);
-});
-
-// Handle New / Edit Project Form Submission
-if (projectForm) {
-    projectForm.addEventListener("submit", (e) => {
-        e.preventDefault();
-        const formData = new FormData(projectForm);
-
-        const rawDate = formData.get("finishDate") as string;
-        const parsedDate = rawDate ? new Date(rawDate) : new Date();
-        const rawCost = Number(formData.get("cost") ?? 0);
-        const rawProgress = Number(formData.get("progress") ?? 25);
-        const clampedProgress = Math.min(100, Math.max(0, isNaN(rawProgress) ? 25 : rawProgress)) / 100;
-
-        const projectData: IProject = {
-            name: (formData.get("name") as string).trim(),
-            description: (formData.get("description") as string).trim(),
-            userRole: formData.get("userRole") as UserRole,
-            status: formData.get("status") as ProjectStatus,
-            finishDate: parsedDate,
-            cost: isNaN(rawCost) ? 0 : rawCost,
-            progress: clampedProgress,
-        };
-
-        try {
-            if (editingProjectId) {
-                projectsManager.updateProject(editingProjectId, projectData);
-            } else {
-                projectsManager.newProject(projectData);
-            }
-
-            editingProjectId = null;
-            projectForm.reset();
-            toggleModal("new-project-modal", false);
-            applyProjectFilters();
-        } catch (err: any) {
-            const errorMessage = err instanceof Error ? err.message : String(err);
-            showErrorModal(errorMessage);
-        }
-    });
-}
 
 // Projects Search & Status Filter Bar
 let currentProjectSearch = "";
@@ -221,10 +166,10 @@ const resetProjectFilters = () => {
 };
 
 const openNewProjectFromEmpty = () => {
-    editingProjectId = null;
+    delete projectForm?.dataset.editingProjectId;
     projectForm?.reset();
     if (projectModalTitle) projectModalTitle.textContent = "New Project";
-    if (projectSubmitBtn) projectSubmitBtn.textContent = "Create Project";
+    if (projectSubmitBtn) projectSubmitBtn.textContent = "Accept";
     if (projectCostInput) projectCostInput.value = "0";
     if (projectProgressInput) projectProgressInput.value = "25";
     if (projectStatusInput && currentProjectStatus !== "all") {
@@ -276,28 +221,6 @@ projectSortSelect?.addEventListener("change", (e) => {
     const sortBy = (e.target as HTMLSelectElement).value;
     projectsManager.sortProjects(sortBy);
     applyProjectFilters();
-});
-
-// Lesson 3.9: Connect Import and Export buttons
-const importBtn = document.getElementById("import-projects-btn");
-importBtn?.addEventListener("click", () => projectsManager.importFromJSON());
-
-const exportBtn = document.getElementById("export-projects-btn");
-exportBtn?.addEventListener("click", () => {
-    try {
-        projectsManager.exportToJSON();
-    } catch (err: any) {
-        showErrorModal(err.message);
-    }
-});
-
-const floatingExportBtn = document.getElementById("floating-export-btn");
-floatingExportBtn?.addEventListener("click", () => {
-    try {
-        projectsManager.exportToJSON();
-    } catch (err: any) {
-        showErrorModal(err.message);
-    }
 });
 
 // Lesson 4.1 Assignment & SPA Navigation: Switch between Projects, Details, and Users pages
@@ -719,16 +642,33 @@ if (viewerContainer) {
     scene.add(grid, axes, keyLight, fillLight, ambientLight, directionalLightHelper);
 
     // 9. OrbitControls (Lesson 2.4)
-    const cameraControls = new OrbitControls(camera, viewerContainer);
+    // Attach OrbitControls to renderer.domElement (NOT viewerContainer) so it never intercepts clicks/wheel events on lil-gui or HUD buttons!
+    const cameraControls = new OrbitControls(camera, renderer.domElement);
     cameraControls.enableDamping = true; // Pro CAD smooth inertia damping
     cameraControls.dampingFactor = 0.05;
 
     // --- LESSON 2.6 & 2.7: MULTI-PROJECT DYNAMIC 3D VIEWER & CONTROLS HUD ---
     let gui: GUI | null = null;
     let gearMesh: THREE.Group | null = null;
+    let gearDefaultPos = new THREE.Vector3(0, 6.07, 0);
+    const viewerState = {
+        autoRotate: false,
+        showBoundingBox: false,
+    };
+
+    const boundingBoxHelper = new THREE.BoxHelper(cube, 0x38bdf8);
+    boundingBoxHelper.visible = false;
+    scene.add(boundingBoxHelper);
+
+    // Fast PBR material for the Mechanical Gear so Color, Wireframe, Metalness & Roughness work live
+    const gearPbrMaterial = new THREE.MeshStandardMaterial({
+        color: 0x94a3b8,
+        metalness: 0.85,
+        roughness: 0.25,
+    });
 
     // Update 3D model, camera viewpoint, and Controls card based on selected project
-    const updateViewerForProject = (project: any) => {
+    const updateViewerForProject = (project: any, resetCameraView: boolean = true) => {
         if (!project) { return; }
 
         if (gui) {
@@ -751,25 +691,76 @@ if (viewerContainer) {
             cube.visible = false;
             if (gearMesh) {
                 gearMesh.visible = true;
+                boundingBoxHelper.setFromObject(gearMesh);
             }
 
-            cameraControls.target.set(0, 6, 0);
-            camera.position.set(14, 10, 18);
-            cameraControls.update();
+            if (resetCameraView) {
+                cameraControls.target.set(0, 6, 0);
+                camera.position.set(14, 10, 18);
+                cameraControls.update();
+            }
 
             // 1. Gear Controls Folder (Open)
             const gearFolder = gui.addFolder("Mechanical Gear Controls");
             gearFolder.open();
 
             if (gearMesh) {
-                gearFolder.add(gearMesh.position, "x", -20, 20, 0.5).name("Position X");
-                gearFolder.add(gearMesh.position, "y", 0, 25, 0.5).name("Position Y");
-                gearFolder.add(gearMesh.position, "z", -20, 20, 0.5).name("Position Z");
-                gearFolder.add(gearMesh.rotation, "y", -Math.PI, Math.PI, 0.05).name("Rotate Y");
-                gearFolder.add(gearMesh.scale, "x", 0.2, 3, 0.1).name("Scale").onChange((s: number) => {
+                const posXCtrl = gearFolder.add(gearMesh.position, "x", -20, 20, 0.5).name("Position X").onChange(() => boundingBoxHelper.update());
+                const posYCtrl = gearFolder.add(gearMesh.position, "y", 0, 25, 0.5).name("Position Y").onChange(() => boundingBoxHelper.update());
+                const posZCtrl = gearFolder.add(gearMesh.position, "z", -20, 20, 0.5).name("Position Z").onChange(() => boundingBoxHelper.update());
+                const rotYCtrl = gearFolder.add(gearMesh.rotation, "y", -Math.PI, Math.PI, 0.05).name("Rotate Y").listen();
+                const scaleCtrl = gearFolder.add(gearMesh.scale, "x", 0.2, 3, 0.1).name("Scale").onChange((s: number) => {
                     gearMesh!.scale.set(s, s, s);
+                    boundingBoxHelper.update();
                 });
-                gearFolder.add(gearMesh, "visible").name("Visible");
+                const visCtrl = gearFolder.add(gearMesh, "visible").name("Visible");
+                const colorCtrl = gearFolder.addColor(gearPbrMaterial, "color").name("Gear Color").onChange((c: THREE.Color) => {
+                    gearMesh?.traverse((child) => {
+                        if ((child as THREE.Mesh).isMesh) {
+                            const mat = (child as THREE.Mesh).material as THREE.MeshStandardMaterial;
+                            if (mat && mat.color) { mat.color.copy(c); }
+                        }
+                    });
+                });
+                const wireCtrl = gearFolder.add(gearPbrMaterial, "wireframe").name("Wireframe").onChange((w: boolean) => {
+                    gearMesh?.traverse((child) => {
+                        if ((child as THREE.Mesh).isMesh) {
+                            const mat = (child as THREE.Mesh).material as THREE.MeshStandardMaterial;
+                            if (mat) { mat.wireframe = w; }
+                        }
+                    });
+                });
+                const rotToggleCtrl = gearFolder.add(viewerState, "autoRotate").name("Auto-Rotate");
+                gearFolder.add({
+                    resetGear: () => {
+                        gearMesh!.position.copy(gearDefaultPos);
+                        gearMesh!.rotation.set(0, 0, 0);
+                        gearMesh!.scale.set(1, 1, 1);
+                        gearMesh!.visible = true;
+                        gearPbrMaterial.color.setHex(0x94a3b8);
+                        gearPbrMaterial.wireframe = false;
+                        gearMesh?.traverse((child) => {
+                            if ((child as THREE.Mesh).isMesh) {
+                                const mat = (child as THREE.Mesh).material as THREE.MeshStandardMaterial;
+                                if (mat) {
+                                    mat.color.setHex(0x94a3b8);
+                                    mat.wireframe = false;
+                                }
+                            }
+                        });
+                        viewerState.autoRotate = false;
+                        posXCtrl.updateDisplay();
+                        posYCtrl.updateDisplay();
+                        posZCtrl.updateDisplay();
+                        rotYCtrl.updateDisplay();
+                        scaleCtrl.updateDisplay();
+                        visCtrl.updateDisplay();
+                        colorCtrl.updateDisplay();
+                        wireCtrl.updateDisplay();
+                        rotToggleCtrl.updateDisplay();
+                        boundingBoxHelper.update();
+                    }
+                }, "resetGear").name("Reset Model");
             } else {
                 const loadingObj = { status: "Loading 3D Model..." };
                 gearFolder.add(loadingObj, "status").name("Status");
@@ -780,25 +771,51 @@ if (viewerContainer) {
             if (gearMesh) {
                 gearMesh.visible = false;
             }
+            boundingBoxHelper.setFromObject(cube);
 
-            cameraControls.target.set(0, 1, 0);
-            camera.position.set(4, 3.5, 5);
-            cameraControls.update();
+            if (resetCameraView) {
+                cameraControls.target.set(0, 1, 0);
+                camera.position.set(4, 3.5, 5);
+                cameraControls.update();
+            }
 
             // 1. Cube Controls Folder (Open)
             const cubeFolder = gui.addFolder("Cube Model Controls");
             cubeFolder.open();
 
-            cubeFolder.add(cube.position, "x", -10, 10, 0.1).name("Position X");
-            cubeFolder.add(cube.position, "y", 0, 10, 0.1).name("Position Y");
-            cubeFolder.add(cube.position, "z", -10, 10, 0.1).name("Position Z");
-            cubeFolder.add(cube.rotation, "y", -Math.PI, Math.PI, 0.05).name("Rotate Y");
-            cubeFolder.add(cube.scale, "x", 0.5, 3, 0.1).name("Scale").onChange((s: number) => {
+            const posXCtrl = cubeFolder.add(cube.position, "x", -10, 10, 0.1).name("Position X").onChange(() => boundingBoxHelper.update());
+            const posYCtrl = cubeFolder.add(cube.position, "y", 0, 10, 0.1).name("Position Y").onChange(() => boundingBoxHelper.update());
+            const posZCtrl = cubeFolder.add(cube.position, "z", -10, 10, 0.1).name("Position Z").onChange(() => boundingBoxHelper.update());
+            const rotYCtrl = cubeFolder.add(cube.rotation, "y", -Math.PI, Math.PI, 0.05).name("Rotate Y").listen();
+            const scaleCtrl = cubeFolder.add(cube.scale, "x", 0.5, 3, 0.1).name("Scale").onChange((s: number) => {
                 cube.scale.set(s, s, s);
+                boundingBoxHelper.update();
             });
-            cubeFolder.add(cube, "visible").name("Visible");
-            cubeFolder.addColor(cubeMaterial, "color").name("Cube Color");
-            cubeFolder.add(cubeMaterial, "wireframe").name("Wireframe");
+            const visCtrl = cubeFolder.add(cube, "visible").name("Visible");
+            const colorCtrl = cubeFolder.addColor(cubeMaterial, "color").name("Cube Color");
+            const wireCtrl = cubeFolder.add(cubeMaterial, "wireframe").name("Wireframe");
+            const rotToggleCtrl = cubeFolder.add(viewerState, "autoRotate").name("Auto-Rotate");
+            cubeFolder.add({
+                resetCube: () => {
+                    cube.position.set(0, 1, 0);
+                    cube.rotation.set(0, 0, 0);
+                    cube.scale.set(1, 1, 1);
+                    cube.visible = true;
+                    cubeMaterial.color.setHex(0x38bdf8);
+                    cubeMaterial.wireframe = false;
+                    viewerState.autoRotate = false;
+                    posXCtrl.updateDisplay();
+                    posYCtrl.updateDisplay();
+                    posZCtrl.updateDisplay();
+                    rotYCtrl.updateDisplay();
+                    scaleCtrl.updateDisplay();
+                    visCtrl.updateDisplay();
+                    colorCtrl.updateDisplay();
+                    wireCtrl.updateDisplay();
+                    rotToggleCtrl.updateDisplay();
+                    boundingBoxHelper.update();
+                }
+            }, "resetCube").name("Reset Model");
         }
 
         // 2. CAD Grid & Helpers Folder (Open)
@@ -806,6 +823,10 @@ if (viewerContainer) {
         helpersFolder.open();
         helpersFolder.add(grid, "visible").name("Ground Grid");
         helpersFolder.add(axes, "visible").name("Origin Axes");
+        helpersFolder.add(viewerState, "showBoundingBox").name("Bounding Box").onChange((v: boolean) => {
+            boundingBoxHelper.visible = v;
+            boundingBoxHelper.update();
+        });
         helpersFolder.add(directionalLightHelper, "visible").name("Light Ray Helper");
 
         // 3. Studio Lighting Folder (Closed by default)
@@ -818,9 +839,45 @@ if (viewerContainer) {
         lightFolder.add(keyLight.position, "z", -30, 30, 1).name("Light Z").onChange(() => directionalLightHelper.update());
         lightFolder.add(ambientLight, "intensity", 0, 2, 0.05).name("Ambient Light");
 
-        // 4. Camera View Controls
+        // 4. Camera View Controls (Preset CAD Views)
         const cameraFolder = gui.addFolder("Camera View");
         cameraFolder.close();
+        cameraFolder.add({
+            isoView: () => {
+                if (isGear) {
+                    cameraControls.target.set(0, 6, 0);
+                    camera.position.set(14, 10, 18);
+                } else {
+                    cameraControls.target.set(0, 1, 0);
+                    camera.position.set(4, 3.5, 5);
+                }
+                cameraControls.update();
+            }
+        }, "isoView").name("Isometric View");
+        cameraFolder.add({
+            topView: () => {
+                if (isGear) {
+                    cameraControls.target.set(0, 6, 0);
+                    camera.position.set(0, 26, 0.01);
+                } else {
+                    cameraControls.target.set(0, 1, 0);
+                    camera.position.set(0, 10, 0.01);
+                }
+                cameraControls.update();
+            }
+        }, "topView").name("Top Plan View");
+        cameraFolder.add({
+            frontView: () => {
+                if (isGear) {
+                    cameraControls.target.set(0, 6, 0);
+                    camera.position.set(0, 6, 22);
+                } else {
+                    cameraControls.target.set(0, 1, 0);
+                    camera.position.set(0, 1, 7);
+                }
+                cameraControls.update();
+            }
+        }, "frontView").name("Front Elevation");
         cameraFolder.add({
             resetCamera: () => {
                 if (isGear) {
@@ -854,13 +911,6 @@ if (viewerContainer) {
     objLoader.setPath("/Gear/");
     mtlLoader.setPath("/Gear/");
 
-    // Fast PBR fallback material so Gear displays immediately without waiting for textures
-    const gearPbrMaterial = new THREE.MeshStandardMaterial({
-        color: 0x94a3b8,
-        metalness: 0.85,
-        roughness: 0.25,
-    });
-
     objLoader.load(
         "Gear1.obj",
         (mesh) => {
@@ -883,6 +933,7 @@ if (viewerContainer) {
                 Math.round((mesh.position.y + halfHeight) * 100) / 100,
                 Math.round(mesh.position.z * 100) / 100
             );
+            gearDefaultPos.copy(mesh.position);
 
             scene.add(mesh);
 
@@ -893,7 +944,7 @@ if (viewerContainer) {
                 mesh.visible = false;
             }
 
-            // Progressive MTL texture upgrade
+            // Preload MTL definition while keeping gearPbrMaterial connected to live GUI controls
             mtlLoader.load(
                 "Gear1.mtl",
                 (materials) => {
@@ -912,6 +963,19 @@ if (viewerContainer) {
     // 10. Continuous 60 FPS Render Loop (Lesson 2.4)
     // requestAnimationFrame executes before the browser's next screen repaint
     const renderScene = () => {
+        if (viewerState.autoRotate) {
+            if (cube.visible) {
+                cube.rotation.y += 0.01;
+                if (cube.rotation.y > Math.PI) { cube.rotation.y = -Math.PI; }
+            }
+            if (gearMesh && gearMesh.visible) {
+                gearMesh.rotation.y += 0.01;
+                if (gearMesh.rotation.y > Math.PI) { gearMesh.rotation.y = -Math.PI; }
+            }
+        }
+        if (boundingBoxHelper.visible) {
+            boundingBoxHelper.update();
+        }
         cameraControls.update(); // Update camera position according to user mouse gestures
         renderer.render(scene, camera);
         requestAnimationFrame(renderScene);
