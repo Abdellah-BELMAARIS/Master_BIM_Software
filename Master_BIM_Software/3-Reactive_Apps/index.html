@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Projects Dashboard — Construction Company</title>
+    <!-- Google Material Icons Round -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons+Round">
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar">
+        <div class="sidebar-header">
+            <img id="company-logo" src="./assets/company-logo.svg" alt="Construction Company — BIM Platform">
+        </div>
+
+        <ul id="nav-buttons">
+            <li class="nav-item active" id="nav-projects-btn">
+                <span class="material-icons-round">domain</span>
+                <span class="nav-label">BIM Projects</span>
+            </li>
+            <li class="nav-item" id="nav-users-btn">
+                <span class="material-icons-round">engineering</span>
+                <span class="nav-label">AEC Team</span>
+            </li>
+        </ul>
+
+        <div class="sidebar-footer">
+            <div class="system-status">
+                <span class="status-dot"></span>
+                <span class="status-text">IFC VIEWER READY</span>
+            </div>
+            <span class="status-version">IFC4 · 3D</span>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main id="content">
+        <!-- Page 1: Projects List Page (Enclosed in .page container) -->
+        <div class="page" id="projects-page">
+            <!-- Top Action Header -->
+            <header id="main-header">
+                <div class="header-title-box">
+                    <span class="header-eyebrow">CDE WORKSPACE / MODELS</span>
+                    <h2>BIM Projects</h2>
+                </div>
+                <div class="header-actions">
+                    <button class="btn-icon btn-action-tool" id="import-projects-btn" title="Import Projects (JSON)">
+                        <span class="material-icons-round">upload_file</span>
+                        <span class="btn-tool-label">Import JSON</span>
+                    </button>
+                    <button class="btn-icon btn-action-tool" id="export-projects-btn" title="Export Projects (JSON)">
+                        <span class="material-icons-round">file_download</span>
+                        <span class="btn-tool-label">Export JSON</span>
+                    </button>
+                    <button class="btn-primary" id="new-project-btn">
+                        <span class="material-icons-round">add</span>
+                        <span>New Project</span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Projects Search & Status Filter Toolbar -->
+            <div class="projects-toolbar">
+                <div class="search-input-pill projects-search-box">
+                    <span class="material-icons-round">search</span>
+                    <input type="text" id="project-search-input" placeholder="Search projects by name, description, or role...">
+                    <button type="button" class="btn-clear-search" id="clear-search-btn" title="Clear search text" style="display: none;">
+                        <span class="material-icons-round">close</span>
+                    </button>
+                </div>
+                <div class="projects-filter-group" id="project-filter-group">
+                    <button type="button" class="filter-pill active" data-status-filter="all">All <span class="filter-count">0</span></button>
+                    <button type="button" class="filter-pill" data-status-filter="active">Active <span class="filter-count">0</span></button>
+                    <button type="button" class="filter-pill" data-status-filter="pending">Pending <span class="filter-count">0</span></button>
+                    <button type="button" class="filter-pill" data-status-filter="finished">Finished <span class="filter-count">0</span></button>
+                </div>
+                <div class="projects-sort-group">
+                    <label for="project-sort-select" class="sort-label">
+                        <span class="material-icons-round">sort</span>
+                        <span>Sort:</span>
+                    </label>
+                    <select id="project-sort-select" class="sort-select">
+                        <option value="name-asc">Name (A → Z)</option>
+                        <option value="name-desc">Name (Z → A)</option>
+                        <option value="cost-desc">Cost (High → Low)</option>
+                        <option value="progress-desc">Progress (High → Low)</option>
+                        <option value="date-asc">Finish Date (Earliest)</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Projects Grid (Dynamically populated by ProjectsManager) -->
+            <section id="projects-list">
+            </section>
+
+            <!-- Floating Export Button -->
+            <button id="floating-export-btn" class="fab-btn" title="Export Projects">
+                <span class="material-icons-round">download</span>
+            </button>
+        </div>
+
+        <!-- Page 2: Project Details Page (Lesson 4.3 Dynamic Data Attributes + BIM 3D Viewport) -->
+        <div class="page" id="project-details" style="display: none;">
+            <!-- Details Header -->
+            <header id="details-header">
+                <div class="details-header-left">
+                    <button type="button" class="btn-back-projects" id="back-to-projects-btn"
+                        title="Back to Projects List">
+                        <span class="material-icons-round">arrow_back</span>
+                    </button>
+                    <div class="header-title-box">
+                        <span class="header-eyebrow">PROJECT CDE / 3D COORDINATION</span>
+                        <h2 id="details-page-title" data-project-info="name">Hospital Center</h2>
+                        <p id="details-page-desc" data-project-info="description">Community hospital located at downtown</p>
+                    </div>
+                </div>
+                <div class="details-header-right">
+                    <span class="bim-coord-badge">
+                        <span class="material-icons-round">view_in_ar</span>
+                        <span>IFC4 · LOD 350</span>
+                    </span>
+                </div>
+            </header>
+
+            <!-- Details Content Grid: Left Column (Cards/ToDos) + Right Column (IFC 3D Viewer) -->
+            <div class="main-page-content">
+                <!-- Left Column: Details Card & To-Do List -->
+                <div class="details-left-column">
+                    <!-- Project Details Card (Lesson 4.3 data-project-info targets) -->
+                    <article class="project-card details-card">
+                        <div class="details-card-top">
+                            <div class="card-avatar-circle badge-orange" id="details-avatar" data-project-info="avatar">HC</div>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <button type="button" class="btn-edit" id="edit-project-btn">
+                                    <span class="material-icons-round" style="font-size: 1rem;">edit</span>
+                                    <span>Edit</span>
+                                </button>
+                                <button type="button" class="btn-delete" id="delete-project-btn" title="Delete Project">
+                                    <span class="material-icons-round" style="font-size: 1.1rem;">delete</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="details-title-group">
+                            <h3 id="details-card-title" data-project-info="name">Hospital Center</h3>
+                            <p id="details-card-desc" data-project-info="description">Community hospital located at downtown</p>
+                        </div>
+
+                        <div class="details-properties-row">
+                            <div class="prop-col">
+                                <span class="prop-label">Status</span>
+                                <span class="prop-val" id="details-status" data-project-info="status">Active</span>
+                            </div>
+                            <div class="prop-col">
+                                <span class="prop-label">Cost</span>
+                                <span class="prop-val" id="details-cost" data-project-info="cost">$ 2,000,000</span>
+                            </div>
+                            <div class="prop-col">
+                                <span class="prop-label">Role</span>
+                                <span class="prop-val" id="details-role" data-project-info="role">Engineer</span>
+                            </div>
+                            <div class="prop-col">
+                                <span class="prop-label">Finish Date</span>
+                                <span class="prop-val" id="details-date" data-project-info="finishDate">2023-05-01</span>
+                            </div>
+                        </div>
+
+                        <!-- Progress Bar -->
+                        <div class="progress-bar-container">
+                            <div class="progress-bar-fill" id="details-progress-fill" data-project-info="progress"
+                                style="width: 80%;">80%</div>
+                        </div>
+                    </article>
+
+                    <!-- To-Do / BCF Issues Container -->
+                    <div class="todos-container">
+                        <div class="todos-header-row">
+                            <div class="todos-title-wrap">
+                                <h4>To-Do</h4>
+                                <span class="todo-count-badge" id="todo-count-badge">0</span>
+                            </div>
+                            <div class="todos-actions-group">
+                                <div class="search-input-pill">
+                                    <span class="material-icons-round">search</span>
+                                    <input type="text" id="todo-search-input" placeholder="Search tasks...">
+                                </div>
+                                <button type="button" class="btn-icon-box" id="add-todo-btn" title="Add Task">
+                                    <span class="material-icons-round">add</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- To-Do Items List -->
+                        <div class="todos-list" id="todos-list">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right Column: IFC 3D Viewer Viewport -->
+                <div id="viewer-container">
+                    <div class="viewer-placeholder">
+                        <span class="material-icons-round viewer-placeholder-icon">view_in_ar</span>
+                        <span class="viewer-placeholder-text">3D BIM Viewer</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Page 3: Users / Team Page (Module 1 Challenge) -->
+        <div class="page" id="users-page" style="display: none;">
+            <!-- Users Header -->
+            <header id="users-header">
+                <div class="header-title-box">
+                    <span class="header-eyebrow">CDE ACCESS / STAKEHOLDERS</span>
+                    <h2>AEC Team & Roles</h2>
+                </div>
+                <div class="header-actions">
+                    <button class="btn-primary" id="new-user-btn">
+                        <span class="material-icons-round">person_add</span>
+                        <span>New Member</span>
+                    </button>
+                </div>
+            </header>
+
+            <div class="users-content-area">
+                <!-- Search & Role Filter Toolbar -->
+                <div class="users-toolbar">
+                    <div class="search-input-pill" style="width: 280px;">
+                        <span class="material-icons-round">search</span>
+                        <input type="text" id="user-search-input" placeholder="Search team by name, email, or role..." style="width: 100%;">
+                    </div>
+                    <div class="users-filter-group" id="users-filter-group">
+                        <button type="button" class="filter-pill active" data-role-filter="all">All (4)</button>
+                        <button type="button" class="filter-pill" data-role-filter="arch">Architects</button>
+                        <button type="button" class="filter-pill" data-role-filter="eng">Engineers</button>
+                        <button type="button" class="filter-pill" data-role-filter="lead">BIM Leads</button>
+                    </div>
+                </div>
+
+                <!-- Modern BIM Users Table Layout -->
+                <div class="users-table-container">
+                    <table class="users-table">
+                        <thead>
+                            <tr>
+                                <th>Member</th>
+                                <th>Discipline / Role</th>
+                                <th>Assigned Models</th>
+                                <th>Status</th>
+                                <th style="text-align: right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table-body">
+                            <tr>
+                                <td>
+                                    <div class="user-cell">
+                                        <div class="user-avatar-circle badge-blue">AB</div>
+                                        <div>
+                                            <div class="user-name">Abdellah Belmaaris</div>
+                                            <div class="user-email">a.belmaaris@bimpulse.com</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="role-badge role-dev">BIM Software Lead</span></td>
+                                <td class="user-models-cell">Hospital Center, Urban Oasis</td>
+                                <td><span class="status-indicator status-online">Active</span></td>
+                                <td style="text-align: right;">
+                                    <button type="button" class="btn-icon user-options-btn" title="Options"><span
+                                            class="material-icons-round">more_vert</span></button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="user-cell">
+                                        <div class="user-avatar-circle badge-orange">JB</div>
+                                        <div>
+                                            <div class="user-name">Juan Brunetta</div>
+                                            <div class="user-email">j.brunetta@thatopen.com</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="role-badge role-arch">Lead Architect</span></td>
+                                <td class="user-models-cell">Hospital Center, TechHub</td>
+                                <td><span class="status-indicator status-online">Active</span></td>
+                                <td style="text-align: right;">
+                                    <button type="button" class="btn-icon user-options-btn" title="Options"><span
+                                            class="material-icons-round">more_vert</span></button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="user-cell">
+                                        <div class="user-avatar-circle badge-green">VA</div>
+                                        <div>
+                                            <div class="user-name">Valeria Alarcon</div>
+                                            <div class="user-email">v.alarcon@thatopen.com</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="role-badge role-eng">Structural Engineer</span></td>
+                                <td class="user-models-cell">Sustainable Housing</td>
+                                <td><span class="status-indicator status-online">Active</span></td>
+                                <td style="text-align: right;">
+                                    <button type="button" class="btn-icon user-options-btn" title="Options"><span
+                                            class="material-icons-round">more_vert</span></button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="user-cell">
+                                        <div class="user-avatar-circle badge-purple">SC</div>
+                                        <div>
+                                            <div class="user-name">Sarah Connor</div>
+                                            <div class="user-email">s.connor@bimpulse.com</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="role-badge role-bim">BIM Coordinator</span></td>
+                                <td class="user-models-cell">Heritage Restoration</td>
+                                <td><span class="status-indicator status-offline">Away</span></td>
+                                <td style="text-align: right;">
+                                    <button type="button" class="btn-icon user-options-btn" title="Options"><span
+                                            class="material-icons-round">more_vert</span></button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- New / Edit User Modal Dialog -->
+        <dialog id="new-user-modal">
+            <form id="new-user-form">
+                <h2 id="user-modal-title">New Team Member</h2>
+                <div class="input-list">
+                    <div class="form-field">
+                        <label><span class="material-icons-round">person</span> Full Name</label>
+                        <input type="text" id="user-name-input" placeholder="e.g. Alex Morgan" required>
+                    </div>
+
+                    <div class="form-field">
+                        <label><span class="material-icons-round">email</span> Email</label>
+                        <input type="email" id="user-email-input" placeholder="alex@bimpulse.com" required>
+                    </div>
+
+                    <div class="form-field">
+                        <label><span class="material-icons-round">badge</span> Discipline / Role</label>
+                        <select id="user-role-input">
+                            <option value="Lead Architect">Lead Architect</option>
+                            <option value="Structural Engineer">Structural Engineer</option>
+                            <option value="BIM Software Lead">BIM Software Lead</option>
+                            <option value="BIM Coordinator">BIM Coordinator</option>
+                        </select>
+                    </div>
+
+                    <div class="form-field">
+                        <label><span class="material-icons-round">domain</span> Assigned Models</label>
+                        <input type="text" id="user-models-input" placeholder="e.g. Hospital Center, Urban Oasis">
+                    </div>
+
+                    <div class="form-field">
+                        <label><span class="material-icons-round">check_circle</span> Status</label>
+                        <select id="user-status-input">
+                            <option value="Active">Active</option>
+                            <option value="Away">Away</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" id="cancel-user-btn" class="btn-cancel">Cancel</button>
+                    <button type="submit" id="user-submit-btn" class="btn-accept">Save Member</button>
+                </div>
+            </form>
+        </dialog>
+
+        <!-- New / Edit Project Modal Dialog -->
+        <dialog id="new-project-modal">
+            <form id="new-project-form">
+                <h2 id="project-modal-title">New Project</h2>
+                <div class="input-list">
+                    <div class="form-field">
+                        <label><span class="material-icons-round">corporate_fare</span> Name</label>
+                        <input name="name" type="text" id="project-name-input" placeholder="Riverfront Promenade"
+                            required>
+                        <p class="input-tip">TIP: Give it a short name (min. 5 chars).</p>
+                    </div>
+
+                    <div class="form-field">
+                        <label><span class="material-icons-round">subject</span> Description</label>
+                        <textarea name="description" id="project-desc-input"
+                            placeholder="Enter architectural & structural scope description..."
+                            rows="3"></textarea>
+                    </div>
+
+                    <div class="form-row-2col">
+                        <div class="form-field">
+                            <label><span class="material-icons-round">person</span> Role</label>
+                            <select name="userRole" id="project-role-input">
+                                <option value="Architect">Architect</option>
+                                <option value="Engineer">Engineer</option>
+                                <option value="Developer">Developer</option>
+                            </select>
+                        </div>
+
+                        <div class="form-field">
+                            <label><span class="material-icons-round">help_outline</span> Status</label>
+                            <select name="status" id="project-status-input">
+                                <option value="Active">Active</option>
+                                <option value="Pending">Pending</option>
+                                <option value="Finished">Finished</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row-2col">
+                        <div class="form-field">
+                            <label><span class="material-icons-round">payments</span> Cost ($)</label>
+                            <input name="cost" type="number" id="project-cost-input" min="0" step="1000" value="0">
+                        </div>
+
+                        <div class="form-field">
+                            <label><span class="material-icons-round">trending_up</span> Progress (%)</label>
+                            <input name="progress" type="number" id="project-progress-input" min="0" max="100" value="25">
+                        </div>
+                    </div>
+
+                    <div class="form-field">
+                        <label><span class="material-icons-round">calendar_today</span> Finish Date</label>
+                        <input name="finishDate" type="date" id="project-date-input">
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" id="cancel-btn" class="btn-cancel">Cancel</button>
+                    <button type="submit" id="project-submit-btn" class="btn-accept">Accept</button>
+                </div>
+            </form>
+        </dialog>
+
+        <!-- Add / Edit To-Do Task Modal Dialog -->
+        <dialog id="todo-modal">
+            <form id="todo-form">
+                <h2 id="todo-modal-title">New Task / BCF Issue</h2>
+                <div class="input-list">
+                    <div class="form-field">
+                        <label><span class="material-icons-round">assignment</span> Task Description</label>
+                        <input type="text" id="todo-text-input" placeholder="e.g. Verify structural column grid on Level 02" required>
+                    </div>
+                    <div class="form-row-2col">
+                        <div class="form-field">
+                            <label><span class="material-icons-round">event</span> Target Date</label>
+                            <input type="date" id="todo-date-input">
+                        </div>
+                        <div class="form-field">
+                            <label><span class="material-icons-round">flag</span> Status</label>
+                            <select id="todo-status-input">
+                                <option value="pending">Pending</option>
+                                <option value="in-progress">In Progress</option>
+                                <option value="completed">Completed</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" id="cancel-todo-btn" class="btn-cancel">Cancel</button>
+                    <button type="submit" id="todo-submit-btn" class="btn-accept">Save Task</button>
+                </div>
+            </form>
+        </dialog>
+
+        <!-- Professional Error Notification Modal (Lesson 3.8 Challenge) -->
+        <dialog id="error-modal">
+            <div class="error-modal-card">
+                <div class="error-modal-header">
+                    <div class="error-icon-box">
+                        <span class="material-icons-round">warning_amber</span>
+                    </div>
+                    <div class="error-title-group">
+                        <span>Validation Error</span>
+                        <h3>Action Failed</h3>
+                    </div>
+                </div>
+                <div class="error-modal-body">
+                    <p id="error-modal-message">A project with that name already exists.</p>
+                </div>
+                <div class="error-modal-actions">
+                    <button type="button" id="close-error-modal-btn" class="btn-error-close">
+                        <span class="material-icons-round" style="font-size: 1.15rem;">check</span>
+                        <span>Understood</span>
+                    </button>
+                </div>
+            </div>
+        </dialog>
+    </main>
+
+    <!-- Floating User Actions Dropdown Menu (Direct child of body, position: fixed) -->
+    <div id="user-actions-dropdown" class="dropdown-menu" style="display: none;">
+        <button type="button" class="dropdown-item" id="user-menu-edit">
+            <span class="material-icons-round">edit</span>
+            <span>Edit User</span>
+        </button>
+        <button type="button" class="dropdown-item" id="user-menu-status">
+            <span class="material-icons-round">swap_horiz</span>
+            <span>Toggle Status</span>
+        </button>
+        <button type="button" class="dropdown-item text-danger" id="user-menu-delete">
+            <span class="material-icons-round">delete</span>
+            <span>Delete User</span>
+        </button>
+    </div>
+
+    <!-- Main Application Logic (Vite TypeScript Module from src/) -->
+    <script type="module" src="./src/index.ts"></script>
+</body>
+
+</html>

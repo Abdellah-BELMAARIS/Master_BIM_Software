@@ -1,0 +1,25 @@
+{
+  "name": "3-reactive_apps",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "@types/three": "^0.187.0",
+    "@types/uuid": "^10.0.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5"
+  },
+  "dependencies": {
+    "three": "^0.187.0",
+    "uuid": "^14.0.3"
+  }
+}
