@@ -1,7 +1,7 @@
 import * as React from "react";
 import { addDoc } from "firebase/firestore";
-import { getCollection, updateDocument } from "../core/database";
-import { IProject, Project, ProjectStatus, UserRole } from "../classes/Project";
+import { getCollection, updateDocument, sanitizeForFirestore } from "../core/database";
+import { IProject, Project, ProjectStatus, UserRole, PROJECT_ICON_COLORS } from "../classes/Project";
 import { ProjectsManager } from "../classes/ProjectsManager";
 
 export interface ProjectFormProps {
@@ -22,6 +22,21 @@ const projectsCollection = getCollection<IProject>("projects");
 export function ProjectForm(props: ProjectFormProps) {
     const { project, projectsManager, isOpen, onClose, onSuccess } = props;
     const isEditing = Boolean(project);
+    const dialogRef = React.useRef<HTMLDialogElement | null>(null);
+
+    React.useEffect(() => {
+        const dialog = dialogRef.current;
+        if (!dialog) return;
+        if (isOpen) {
+            if (!dialog.open) {
+                dialog.showModal();
+            }
+        } else {
+            if (dialog.open) {
+                dialog.close();
+            }
+        }
+    }, [isOpen]);
 
     if (!isOpen) return null;
 
@@ -47,6 +62,11 @@ export function ProjectForm(props: ProjectFormProps) {
 
         const modelType = (formData.get("modelType") as "cube" | "gear") || "cube";
 
+        const randomIndex = Math.floor(Math.random() * PROJECT_ICON_COLORS.length);
+        const iconColor = (project?.iconColor && project.iconColor.trim())
+            ? project.iconColor
+            : PROJECT_ICON_COLORS[randomIndex];
+
         const projectPayload: IProject = {
             name,
             description,
@@ -56,23 +76,29 @@ export function ProjectForm(props: ProjectFormProps) {
             cost,
             progress: clampedProgress,
             modelType,
-            iconColor: project ? project.iconColor : undefined,
-            todos: project ? project.todos : [],
+            iconColor,
+            todos: project?.todos ? project.todos : [],
         };
+
+        const cleanPayload = sanitizeForFirestore(projectPayload);
 
         try {
             if (isEditing && project) {
-                // Update in Cloud Firestore
-                await updateDocument<IProject>("projects", project.id, projectPayload);
+                // Update in Cloud Firestore (with undefined values recursively stripped)
+                await updateDocument<IProject>("projects", project.id, cleanPayload);
                 // Update in local memory / ProjectsManager
-                projectsManager.updateProject(project.id, projectPayload);
+                projectsManager.updateProject(project.id, cleanPayload);
                 if (onSuccess) onSuccess(project);
             } else {
-                // Create in Cloud Firestore
-                const docRef = await addDoc(projectsCollection, projectPayload);
+                // Create in Cloud Firestore (with undefined values recursively stripped)
+                const docRef = await addDoc(projectsCollection, cleanPayload);
                 // Create in local memory / ProjectsManager
-                const created = projectsManager.newProject(projectPayload, docRef.id);
+                const created = projectsManager.newProject(cleanPayload, docRef.id);
                 if (onSuccess) onSuccess(created);
+            }
+
+            if (dialogRef.current?.open) {
+                dialogRef.current.close();
             }
             onClose();
         } catch (err: any) {
@@ -90,10 +116,18 @@ export function ProjectForm(props: ProjectFormProps) {
         : 25;
 
     return (
-        <dialog open id="project-form-modal" className="project-form-dialog">
+        <dialog
+            ref={dialogRef}
+            id="project-form-modal"
+            className="project-form-dialog"
+            onCancel={(e) => {
+                e.preventDefault();
+                onClose();
+            }}
+        >
             <form
                 onSubmit={handleSubmit}
-                id="reusable-project-form"
+                id="new-project-form"
                 onInvalid={(e) => {
                     const target = e.target as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
                     if (target && "validity" in target) {
@@ -218,7 +252,16 @@ export function ProjectForm(props: ProjectFormProps) {
                 </div>
 
                 <div className="form-actions">
-                    <button type="button" onClick={onClose} className="btn-cancel">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            if (dialogRef.current?.open) {
+                                dialogRef.current.close();
+                            }
+                            onClose();
+                        }}
+                        className="btn-cancel"
+                    >
                         Cancel
                     </button>
                     <button type="submit" className="btn-accept">
@@ -229,4 +272,3 @@ export function ProjectForm(props: ProjectFormProps) {
         </dialog>
     );
 }
-

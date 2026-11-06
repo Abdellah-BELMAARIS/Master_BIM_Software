@@ -38,6 +38,29 @@ export async function deleteDocument(path: string, id: string): Promise<void> {
     await deleteDoc(docRef);
 }
 
+// Helper to remove any undefined properties recursively (Firestore throws if undefined is passed)
+export function sanitizeForFirestore<T extends Record<string, any>>(obj: T): T {
+    if (obj === null || typeof obj !== "object") {
+        return obj;
+    }
+    if (obj instanceof Date) {
+        return obj;
+    }
+    if (Array.isArray(obj)) {
+        return obj.map((item) => sanitizeForFirestore(item)) as any;
+    }
+    const clean: any = {};
+    for (const key of Object.keys(obj)) {
+        const val = obj[key];
+        if (val !== undefined) {
+            clean[key] = (val !== null && typeof val === "object" && !(val instanceof Date))
+                ? sanitizeForFirestore(val)
+                : val;
+        }
+    }
+    return clean;
+}
+
 // Lesson 4.5: Generic Partial Document Update with Record & Partial<T>
 export async function updateDocument<T extends Record<string, any>>(
     path: string,
@@ -45,5 +68,6 @@ export async function updateDocument<T extends Record<string, any>>(
     data: Partial<T>
 ): Promise<void> {
     const docRef = doc(db, path, id);
-    await updateDoc(docRef, data as UpdateData<T>);
+    const sanitizedData = sanitizeForFirestore(data);
+    await updateDoc(docRef, sanitizedData as UpdateData<T>);
 }

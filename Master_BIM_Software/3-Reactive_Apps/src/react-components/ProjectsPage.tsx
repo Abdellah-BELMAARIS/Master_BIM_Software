@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as Router from "react-router-dom";
 import { getDocs } from "firebase/firestore";
-import { getCollection } from "../core/database";
+import { getCollection, deleteDocument } from "../core/database";
 import { IProject, Project, ProjectStatus, UserRole } from "../classes/Project";
 import { ProjectsManager } from "../classes/ProjectsManager";
 import { ProjectCard } from "./ProjectCard";
@@ -176,6 +176,18 @@ export function ProjectsPage(props: ProjectsPageProps) {
     const pendingCount = projects.filter((p) => p.status.toLowerCase() === "pending").length;
     const finishedCount = projects.filter((p) => p.status.toLowerCase() === "finished").length;
 
+    const onDeleteProjectCard = async (proj: Project) => {
+        const confirmed = window.confirm(`Are you sure you want to delete "${proj.name}" from Cloud Firestore and workspace?`);
+        if (!confirmed) return;
+        try {
+            await deleteDocument("projects", proj.id);
+        } catch (err) {
+            console.error("Failed to delete project from Firestore:", err);
+        }
+        projectsManager.deleteProject(proj.id);
+        setProjects([...projectsManager.list]);
+    };
+
     // Lesson 3.5, 3.7, 3.8 & 3.9: Map projects state to <ProjectCard /> wrapped in dynamic <Router.Link to={`/project/${project.id}`}>
     const projectCards = visibleProjects.map((project) => (
         <Router.Link
@@ -185,7 +197,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
                 projectsManager.activeProject = project;
             }}
         >
-            <ProjectCard project={project} />
+            <ProjectCard project={project} onDelete={onDeleteProjectCard} />
         </Router.Link>
     ));
 

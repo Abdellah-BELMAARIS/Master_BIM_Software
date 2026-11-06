@@ -2,10 +2,14 @@ import * as React from "react";
 import { Project } from "../classes/Project";
 
 // Lesson 3.7: Strict TypeScript Props interface for ProjectCard
-interface Props {
+export interface ProjectCardProps {
     project: Project;
     onClick?: (project: Project) => void;
+    onDelete?: (project: Project) => void;
 }
+
+// Backward-compatible alias
+type Props = ProjectCardProps;
 
 // Lesson 3.5 & 3.7: ProjectCard React Component receiving dynamic data via props.project
 export function ProjectCard(props: Props) {
@@ -32,12 +36,49 @@ export function ProjectCard(props: Props) {
             }}
         >
             <div className="card-header">
-                <div className="card-avatar" style={{ backgroundColor: project.iconColor }}>
+                <div className="card-avatar" style={{ backgroundColor: project.iconColor || "#2563eb" }}>
                     {initials}
                 </div>
-                <div className="card-title-group">
-                    <h3>{props.project.name}</h3>
-                    <p>{props.project.description}</p>
+                <div className="card-title-group" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", width: "100%" }}>
+                    <div style={{ flex: 1, minWidth: 0, paddingRight: "8px" }}>
+                        <h3>{props.project.name}</h3>
+                        <p>{props.project.description}</p>
+                    </div>
+                    {props.onDelete && (
+                        <button
+                            type="button"
+                            className="btn-icon"
+                            title="Delete Project"
+                            style={{
+                                background: "rgba(239, 68, 68, 0.1)",
+                                border: "1px solid rgba(239, 68, 68, 0.25)",
+                                color: "#ef4444",
+                                cursor: "pointer",
+                                padding: "6px",
+                                borderRadius: "4px",
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                flexShrink: 0,
+                                transition: "all 0.15s ease",
+                            }}
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                props.onDelete?.(project);
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = "rgba(239, 68, 68, 0.25)";
+                                e.currentTarget.style.borderColor = "#ef4444";
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = "rgba(239, 68, 68, 0.1)";
+                                e.currentTarget.style.borderColor = "rgba(239, 68, 68, 0.25)";
+                            }}
+                        >
+                            <span className="material-icons-round" style={{ fontSize: "1.1rem" }}>delete</span>
+                        </button>
+                    )}
                 </div>
             </div>
             <div className="card-details">
@@ -54,7 +95,7 @@ export function ProjectCard(props: Props) {
                 <div className="detail-row">
                     <span className="detail-label">Cost</span>
                     <span className="detail-value">
-                        $ {Number(props.project.cost).toLocaleString("en-US")}
+                        $ {Number(props.project.cost || 0).toLocaleString("en-US")}
                     </span>
                 </div>
                 <div className="detail-row">

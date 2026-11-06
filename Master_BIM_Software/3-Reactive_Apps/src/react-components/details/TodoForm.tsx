@@ -15,6 +15,21 @@ export interface TodoFormProps {
 export function TodoForm(props: TodoFormProps) {
     const { task, isOpen, onClose, onSubmit } = props;
     const isEditing = Boolean(task);
+    const dialogRef = React.useRef<HTMLDialogElement | null>(null);
+
+    React.useEffect(() => {
+        const dialog = dialogRef.current;
+        if (!dialog) return;
+        if (isOpen) {
+            if (!dialog.open) {
+                dialog.showModal();
+            }
+        } else {
+            if (dialog.open) {
+                dialog.close();
+            }
+        }
+    }, [isOpen]);
 
     if (!isOpen) return null;
 
@@ -45,12 +60,23 @@ export function TodoForm(props: TodoFormProps) {
         };
 
         onSubmit(savedTask);
+        if (dialogRef.current?.open) {
+            dialogRef.current.close();
+        }
         onClose();
     };
 
     return (
-        <dialog open id="todo-form-modal" className="todo-modal-dialog">
-            <form onSubmit={handleSubmit} id="todo-form">
+        <dialog
+            ref={dialogRef}
+            id="todo-form-modal"
+            className="todo-modal-dialog"
+            onCancel={(e) => {
+                e.preventDefault();
+                onClose();
+            }}
+        >
+            <form onSubmit={handleSubmit} id="details-todo-form">
                 <h2>{isEditing ? "Edit BIM Task / BCF Issue" : "New BIM Task / BCF Issue"}</h2>
                 <div className="input-list">
                     <div className="form-field">
@@ -105,7 +131,16 @@ export function TodoForm(props: TodoFormProps) {
                 </div>
 
                 <div className="form-actions">
-                    <button type="button" onClick={onClose} className="btn-cancel">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            if (dialogRef.current?.open) {
+                                dialogRef.current.close();
+                            }
+                            onClose();
+                        }}
+                        className="btn-cancel"
+                    >
                         Cancel
                     </button>
                     <button type="submit" className="btn-accept">
@@ -116,4 +151,3 @@ export function TodoForm(props: TodoFormProps) {
         </dialog>
     );
 }
-

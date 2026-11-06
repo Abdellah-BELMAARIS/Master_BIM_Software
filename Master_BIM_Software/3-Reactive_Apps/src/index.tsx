@@ -250,7 +250,8 @@ cancelUserBtn?.addEventListener("click", () => {
 });
 
 // Dropdown Action 1: Edit Member
-document.getElementById("user-menu-edit")?.addEventListener("click", () => {
+document.getElementById("user-menu-edit")?.addEventListener("click", (e) => {
+    e.stopPropagation();
     if (!activeUserRow) { return; }
     editingUserRow = activeUserRow;
 
@@ -267,11 +268,13 @@ document.getElementById("user-menu-edit")?.addEventListener("click", () => {
     if (userModelsInput) userModelsInput.value = models;
     if (userStatusInput) userStatusInput.value = status === "Active" ? "Active" : "Away";
 
+    if (userDropdown) userDropdown.style.display = "none";
     toggleModal("new-user-modal", true);
 });
 
 // Dropdown Action 2: Toggle Member Status
-document.getElementById("user-menu-status")?.addEventListener("click", () => {
+document.getElementById("user-menu-status")?.addEventListener("click", (e) => {
+    e.stopPropagation();
     if (!activeUserRow) { return; }
     const statusEl = activeUserRow.querySelector(".status-indicator");
     if (!statusEl) { return; }
@@ -284,14 +287,17 @@ document.getElementById("user-menu-status")?.addEventListener("click", () => {
         statusEl.className = "status-indicator status-online";
         statusEl.textContent = "Active";
     }
+    if (userDropdown) userDropdown.style.display = "none";
 });
 
 // Dropdown Action 3: Delete Member
-document.getElementById("user-menu-delete")?.addEventListener("click", () => {
+document.getElementById("user-menu-delete")?.addEventListener("click", (e) => {
+    e.stopPropagation();
     if (!activeUserRow) { return; }
     activeUserRow.remove();
     activeUserRow = null;
     applyUserFilters();
+    if (userDropdown) userDropdown.style.display = "none";
 });
 
 // Create or Update Member on Form Submit

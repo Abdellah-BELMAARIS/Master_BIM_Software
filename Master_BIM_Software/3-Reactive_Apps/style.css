@@ -257,10 +257,11 @@ a {
     height: 100dvh;
     position: relative;
     overflow: hidden;
-    pointer-events: none;
 }
 
-#content > .page {
+#content > .page,
+#content > dialog,
+dialog {
     pointer-events: auto;
 }
 
@@ -768,12 +769,17 @@ dialog#new-user-modal,
 dialog#todo-modal,
 dialog#details-todo-modal,
 dialog#error-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     border: none;
     border-radius: var(--radius-straight);
     background: transparent;
     padding: 0;
-    margin: auto;
+    margin: 0;
     overflow: visible;
+    z-index: 99999;
 }
 
 dialog#new-project-modal::backdrop,
