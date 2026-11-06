@@ -260,7 +260,9 @@ a {
     pointer-events: none;
 }
 
-#content > .page {
+#content > .page,
+#content > dialog,
+dialog {
     pointer-events: auto;
 }
 
@@ -500,6 +502,17 @@ a {
     grid-template-columns: repeat(auto-fill, minmax(370px, 1fr));
     gap: 1.65rem;
     align-content: start;
+}
+
+#projects-list > a,
+#projects-list a {
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    color: inherit;
+    height: 100%;
+    width: 100%;
+    cursor: pointer;
 }
 
 /* Enhanced Empty State Display for Search / Filter */
@@ -762,20 +775,29 @@ a {
    ========================================================================== */
 dialog#new-project-modal,
 dialog#edit-project-details-modal,
+dialog#project-form-modal,
+dialog#todo-form-modal,
 dialog#new-user-modal,
 dialog#todo-modal,
 dialog#details-todo-modal,
 dialog#error-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
     border: none;
     border-radius: var(--radius-straight);
     background: transparent;
     padding: 0;
-    margin: auto;
+    margin: 0;
     overflow: visible;
+    z-index: 99999;
 }
 
 dialog#new-project-modal::backdrop,
 dialog#edit-project-details-modal::backdrop,
+dialog#project-form-modal::backdrop,
+dialog#todo-form-modal::backdrop,
 dialog#new-user-modal::backdrop,
 dialog#todo-modal::backdrop,
 dialog#details-todo-modal::backdrop,
@@ -785,6 +807,7 @@ dialog#error-modal::backdrop {
 }
 
 #new-project-form,
+#reusable-project-form,
 #new-user-form,
 #todo-form,
 #details-todo-form {

@@ -1,5 +1,6 @@
 import * as React from "react";
 import * as Router from "react-router-dom";
+import companyLogo from "../../assets/company-logo.svg";
 
 export interface ISidebarProps {
     activeTab?: "projects" | "users";
@@ -16,6 +17,9 @@ export function Sidebar(props: ISidebarProps) {
     React.useEffect(() => {
         if (location.pathname === "/" || location.pathname.startsWith("/project")) {
             setActiveTab("projects");
+            if (props.onNavigate) {
+                props.onNavigate("projects");
+            }
         }
     }, [location.pathname]);
 
@@ -31,7 +35,7 @@ export function Sidebar(props: ISidebarProps) {
             <div className="sidebar-header">
                 <img
                     id="company-logo"
-                    src="./assets/company-logo.svg"
+                    src={companyLogo}
                     alt="Construction Company — BIM Platform"
                 />
             </div>
