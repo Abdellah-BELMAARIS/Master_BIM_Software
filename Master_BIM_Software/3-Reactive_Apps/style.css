@@ -503,6 +503,17 @@ dialog {
     align-content: start;
 }
 
+#projects-list > a,
+#projects-list a {
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    color: inherit;
+    height: 100%;
+    width: 100%;
+    cursor: pointer;
+}
+
 /* Enhanced Empty State Display for Search / Filter */
 .projects-empty-state {
     grid-column: 1 / -1;

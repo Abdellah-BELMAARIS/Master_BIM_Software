@@ -25,12 +25,12 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
     const routeParams = Router.useParams<{ id: string }>();
     const projectId = routeParams.id;
 
-    const [isLoadingFromCloud, setIsLoadingFromCloud] = React.useState(false);
-    const [, setTick] = React.useState(0);
-    const forceUpdate = () => setTick((t) => t + 1);
-
     // 1. Check local ProjectsManager memory first
     let project = projectId ? projectsManager.getProject(projectId) : null;
+
+    const [isLoadingFromCloud, setIsLoadingFromCloud] = React.useState<boolean>(!project);
+    const [, setTick] = React.useState(0);
+    const forceUpdate = () => setTick((t) => t + 1);
 
     // 2. Direct Firestore fallback: If page is refreshed directly on /project/:id, fetch from Cloud Firestore
     React.useEffect(() => {

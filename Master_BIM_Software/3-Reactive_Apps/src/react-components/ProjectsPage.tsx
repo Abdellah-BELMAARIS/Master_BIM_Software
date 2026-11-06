@@ -22,6 +22,8 @@ export function ProjectsPage(props: ProjectsPageProps) {
         () => props.projectsManager ?? new ProjectsManager()
     );
 
+    const navigate = Router.useNavigate();
+
     // Lesson 3.5: Introducing React State with TypeScript Generics (React.useState<Project[]>)
     const [projects, setProjects] = React.useState<Project[]>(projectsManager.list);
     const [searchQuery, setSearchQuery] = React.useState<string>("");
@@ -193,11 +195,19 @@ export function ProjectsPage(props: ProjectsPageProps) {
         <Router.Link
             to={`/project/${project.id}`}
             key={project.id}
+            style={{ display: "flex", flexDirection: "column", textDecoration: "none", color: "inherit", height: "100%", width: "100%" }}
             onClick={() => {
                 projectsManager.activeProject = project;
             }}
         >
-            <ProjectCard project={project} onDelete={onDeleteProjectCard} />
+            <ProjectCard
+                project={project}
+                onClick={() => {
+                    projectsManager.activeProject = project;
+                    navigate(`/project/${project.id}`);
+                }}
+                onDelete={onDeleteProjectCard}
+            />
         </Router.Link>
     ));
 
