@@ -20,55 +20,23 @@ export class ProjectsManager {
     onProjectsChanged: (projects: Project[]) => void = () => {};
 
     constructor() {
-        // Project 1: Cube Model Showcase
-        const cubeProject = this.newProject({
-            name: "Cube Massing Model",
-            description: "Parametric 3D architectural massing cube with PBR material, CAD wireframe edges, and real-time transform controls.",
-            userRole: "Architect",
-            status: "Active",
-            finishDate: new Date(),
-            cost: 45000,
-            progress: 0.40,
-            modelType: "cube",
-        });
-
-        // Project 2: External Gear Model Showcase
-        this.newProject({
-            name: "Mechanical Gear HVAC",
-            description: "Mechanical equipment component loaded from external Wavefront OBJ and MTL texture maps.",
-            userRole: "Engineer",
-            status: "Active",
-            finishDate: new Date(Date.now() + 14 * 86400000),
-            cost: 120000,
-            progress: 0.75,
-            modelType: "gear",
-        });
-
-        // Project 3: Default Project
-        this.newProject({
-            name: "Default Project",
-            description: "Standard BIM coordination project. You may delete or edit it.",
-            userRole: "Developer",
-            status: "Active",
-            finishDate: new Date(Date.now() + 30 * 86400000),
-            cost: 85000,
-            progress: 0.25,
-            modelType: "cube",
-        });
-
-        // Set first project as active data reference for the Details page
-        this.activeProject = cubeProject;
-        this.setDetailsPage(cubeProject);
+        // Lesson 4.3: Hardcoded projects cleared; projects are now dynamically retrieved from Cloud Firestore
     }
 
     // Creates a new project and pushes to list (UI card is rendered by React <ProjectCard />)
-    newProject(data: IProject): Project {
+    // Lesson 4.3: Accepts optional id parameter (e.g. from Cloud Firestore document ID)
+    newProject(data: IProject, id?: string): Project {
         // Validate minimum 5 characters for project name
         if (!data.name || data.name.trim().length < 5) {
             throw new Error("Project name must be at least 5 characters long.");
         }
 
-        // Lesson 3.8: Checking for existing project name using map() and includes()
+        // Lesson 4.3: Check for existing project with the same ID or name
+        if (id && this.getProject(id)) {
+            throw new Error(`A project with ID "${id}" already exists`);
+        }
+
+        // Checking for existing project name using map() and includes()
         const projectNames = this.list.map((project) => project.name);
         const nameInUse = projectNames.includes(data.name);
 
@@ -77,7 +45,7 @@ export class ProjectsManager {
             throw new Error(`A project with the name "${data.name}" already exists`);
         }
 
-        const project = new Project(data);
+        const project = new Project(data, id);
         this.list.push(project);
         this.onProjectCreated(project);
         this.onProjectsChanged([...this.list]);
