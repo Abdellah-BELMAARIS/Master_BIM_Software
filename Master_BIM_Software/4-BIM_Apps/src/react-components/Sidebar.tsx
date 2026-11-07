@@ -137,21 +137,6 @@ export function Sidebar(props: ISidebarProps) {
                         <span>QTO & Cost Takeoff</span>
                     </li>
                 </ul>
-
-                {/* Storage & CDE Cloud Sync Card */}
-                <div className="cde-storage-card">
-                    <div className="storage-card-header">
-                        <span className="material-icons-round" style={{ fontSize: "16px", color: "#38bdf8" }}>cloud_done</span>
-                        <span>Cloud CDE Sync</span>
-                    </div>
-                    <div className="storage-bar">
-                        <div className="storage-bar-fill" style={{ width: "68%" }}></div>
-                    </div>
-                    <div className="storage-info">
-                        <span>4.2 GB / 10 GB</span>
-                        <span>IFC4.3 Ready</span>
-                    </div>
-                </div>
             </div>
 
             <div className="sidebar-footer">

@@ -15,9 +15,9 @@ export function SearchBox(props: SearchBoxProps) {
     };
 
     return (
-        <div className="projects-search-box" style={{ minWidth: "280px" }}>
+        <div className="projects-search-box">
             <bim-text-input
-                placeholder={props.placeholder || "Search projects by name, description, or role..."}
+                placeholder={props.placeholder || "Search projects..."}
                 debounce={200}
                 oninput={handleInput}
             ></bim-text-input>
