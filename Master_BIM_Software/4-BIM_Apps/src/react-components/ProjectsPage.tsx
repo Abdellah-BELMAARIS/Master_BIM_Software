@@ -7,6 +7,7 @@ import { ProjectsManager } from "../classes/ProjectsManager";
 import { ProjectCard } from "./ProjectCard";
 import { SearchBox } from "./SearchBox";
 import { ProjectForm } from "./ProjectForm";
+import { appIcons } from "../globals";
 
 export interface ProjectsPageProps {
     projectsManager?: ProjectsManager;
@@ -223,36 +224,32 @@ export function ProjectsPage(props: ProjectsPageProps) {
                 onSuccess={() => setProjects([...projectsManager.list])}
             />
 
-            {/* Top Action Header (Lesson 3.11: SearchBox placed between title and action buttons) */}
+            {/* Top Action Header (Lesson 3.11 & Module 4 Lesson 2.2: bim-label & bim-button) */}
             <header id="main-header">
                 <div className="header-title-box">
                     <span className="header-eyebrow">CDE WORKSPACE / MODELS</span>
-                    <h2>BIM Projects</h2>
+                    <bim-label style={{ fontSize: "1.45rem", fontWeight: 700, color: "var(--text-primary)" }}>
+                        BIM Projects
+                    </bim-label>
                 </div>
                 <SearchBox onChange={onSearchProjects} />
-                <div className="header-actions">
-                    <button
-                        onClick={onImportProject}
-                        className="btn-icon btn-action-tool"
-                        id="import-projects-btn"
-                        title="Import Projects (JSON)"
-                    >
-                        <span className="material-icons-round">upload_file</span>
-                        <span className="btn-tool-label">Import JSON</span>
-                    </button>
-                    <button
-                        onClick={onExportProject}
-                        className="btn-icon btn-action-tool"
-                        id="export-projects-btn"
-                        title="Export Projects (JSON)"
-                    >
-                        <span className="material-icons-round">file_download</span>
-                        <span className="btn-tool-label">Export JSON</span>
-                    </button>
-                    <button onClick={onNewProjectClick} className="btn-primary" id="new-project-btn">
-                        <span className="material-icons-round">add</span>
-                        <span>New Project</span>
-                    </button>
+                <div className="header-actions" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                    <bim-button
+                        label="Import JSON"
+                        icon={appIcons.upload}
+                        onclick={onImportProject}
+                    ></bim-button>
+                    <bim-button
+                        label="Export JSON"
+                        icon={appIcons.download}
+                        onclick={onExportProject}
+                    ></bim-button>
+                    <bim-button
+                        label="New Project"
+                        icon={appIcons.add}
+                        onclick={onNewProjectClick}
+                        style={{ "--bim-ui_bg-base": "var(--primary-blue)" } as any}
+                    ></bim-button>
                 </div>
             </header>
 

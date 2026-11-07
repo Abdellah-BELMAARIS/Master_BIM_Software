@@ -1,5 +1,6 @@
 import * as React from "react";
 import * as Router from "react-router-dom";
+import { appIcons } from "../globals";
 
 export interface ISidebarProps {
     activeTab?: "projects" | "users";
@@ -102,26 +103,24 @@ export function Sidebar(props: ISidebarProps) {
 
             <div className="sidebar-nav-section">
                 <span className="sidebar-section-label">WORKSPACE</span>
-                <ul id="nav-buttons">
-                    <Router.Link to="/">
-                        <li
-                            className={`nav-item ${activeTab === "projects" ? "active" : ""}`}
-                            id="nav-projects-btn"
-                            onClick={() => handleNavClick("projects")}
-                        >
-                            <span className="material-icons-round">domain</span>
-                            <span className="nav-label">BIM Projects</span>
-                        </li>
+                <div id="nav-buttons" style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+                    <Router.Link to="/" style={{ textDecoration: "none", display: "block" }}>
+                        <bim-button
+                            label="BIM Projects"
+                            icon={appIcons.projects}
+                            active={activeTab === "projects"}
+                            onclick={() => handleNavClick("projects")}
+                            style={{ width: "100%", justifyContent: "flex-start" }}
+                        ></bim-button>
                     </Router.Link>
-                    <li
-                        className={`nav-item ${activeTab === "users" ? "active" : ""}`}
-                        id="nav-users-btn"
-                        onClick={() => handleNavClick("users")}
-                    >
-                        <span className="material-icons-round">engineering</span>
-                        <span className="nav-label">AEC Team</span>
-                    </li>
-                </ul>
+                    <bim-button
+                        label="AEC Team"
+                        icon={appIcons.users}
+                        active={activeTab === "users"}
+                        onclick={() => handleNavClick("users")}
+                        style={{ width: "100%", justifyContent: "flex-start" }}
+                    ></bim-button>
+                </div>
             </div>
 
             <div className="sidebar-footer">

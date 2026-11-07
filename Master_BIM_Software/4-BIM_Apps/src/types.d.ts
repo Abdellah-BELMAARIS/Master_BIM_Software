@@ -10,6 +10,23 @@ declare global {
         "label-hidden"?: boolean;
         "icon-hidden"?: boolean;
       };
+      "bim-button": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
+        label?: string;
+        icon?: string;
+        active?: boolean;
+        disabled?: boolean;
+        "label-hidden"?: boolean;
+        "icon-hidden"?: boolean;
+        onclick?: (e: any) => void;
+      };
+      "bim-text-input": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
+        placeholder?: string;
+        value?: string;
+        debounce?: number;
+        disabled?: boolean;
+        vertical?: boolean;
+        oninput?: (e: any) => void;
+      };
     }
   }
 }

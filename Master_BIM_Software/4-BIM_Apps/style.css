@@ -41,6 +41,11 @@
     --badge-purple: #1e40af;
     --badge-magenta: #b45309;
     --badge-blue: #2563eb;
+
+    /* That Open Engine UI Theming Variables */
+    --bim-ui_main-base: var(--primary-blue);
+    --bim-ui_accent-base: #38bdf8;
+    --bim-ui_bg-base: var(--bg-card);
 }
 
 * {
@@ -160,6 +165,13 @@ a {
     width: 100%;
     flex: 1;
     box-sizing: border-box;
+}
+
+#sidebar bim-button {
+    --bim-ui_bg-base: transparent;
+    --bim-ui_main-base: var(--primary-blue);
+    width: 100%;
+    cursor: pointer;
 }
 
 .nav-item {
