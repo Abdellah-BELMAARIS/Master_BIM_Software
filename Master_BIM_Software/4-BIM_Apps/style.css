@@ -143,6 +143,7 @@ a {
     width: 100%;
     padding: 1.15rem 0.9rem;
     box-sizing: border-box;
+    overflow-y: auto;
 }
 
 .sidebar-section-label {
@@ -153,6 +154,7 @@ a {
     text-transform: uppercase;
     padding: 0 0.75rem 0.55rem 0.75rem;
     user-select: none;
+    display: block;
 }
 
 #nav-buttons {
@@ -161,9 +163,9 @@ a {
     padding: 0;
     display: flex;
     flex-direction: column;
-    row-gap: 8px;
+    row-gap: 6px;
     width: 100%;
-    flex: 1;
+    flex: none;
     box-sizing: border-box;
 }
 
@@ -177,26 +179,60 @@ a {
 .nav-item {
     display: flex;
     align-items: center;
-    gap: 0.95rem;
-    padding: 0.9rem 1.1rem;
+    gap: 0.85rem;
+    padding: 0 1rem;
+    height: 44px;
+    min-height: 44px;
+    max-height: 44px;
     border-radius: var(--radius-straight);
     color: var(--text-secondary);
-    font-size: 1.05rem;
+    font-size: 0.95rem;
     font-weight: 600;
     cursor: pointer;
     width: 100%;
     box-sizing: border-box;
     border: 1px solid transparent;
     transition: all 0.15s ease;
+    user-select: none;
 }
 
 .nav-item .material-icons-round {
-    font-size: 1.45rem;
+    font-size: 1.35rem;
+    flex-shrink: 0;
+}
+
+.nav-item .nav-label {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.nav-badge {
+    background: rgba(37, 99, 235, 0.25);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 10px;
+    line-height: 1;
+}
+
+.nav-pill-role {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #22c55e;
+    background: rgba(34, 197, 94, 0.12);
+    border: 1px solid rgba(34, 197, 94, 0.25);
+    padding: 2px 6px;
+    border-radius: 4px;
+    line-height: 1;
 }
 
 .nav-item:hover {
-    background-color: #202636;
-    border-color: var(--border-color);
+    background-color: #1e293b;
+    border-color: rgba(56, 189, 248, 0.2);
     color: var(--text-primary);
 }
 
@@ -204,13 +240,136 @@ a {
     background: rgba(37, 99, 235, 0.18);
     color: #ffffff;
     border-left: 3px solid var(--primary-blue);
-    border-top: 1px solid var(--border-color);
-    border-bottom: 1px solid var(--border-color);
-    border-right: 1px solid var(--border-color);
+    border-top: 1px solid rgba(59, 130, 246, 0.25);
+    border-bottom: 1px solid rgba(59, 130, 246, 0.25);
+    border-right: 1px solid rgba(59, 130, 246, 0.25);
 }
 
 .nav-item.active .material-icons-round {
     color: #60a5fa;
+}
+
+/* Secondary Navigation & CDE Tools */
+.sidebar-secondary-nav {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+}
+
+.nav-sub-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.55rem 0.85rem;
+    border-radius: 6px;
+    color: var(--text-muted);
+    font-size: 0.86rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.nav-sub-item .material-icons-round {
+    font-size: 1.15rem;
+    color: #64748b;
+    transition: color 0.15s ease;
+}
+
+.nav-sub-item:hover {
+    background: rgba(30, 41, 59, 0.6);
+    color: var(--text-primary);
+}
+
+.nav-sub-item:hover .material-icons-round {
+    color: #38bdf8;
+}
+
+/* CDE Cloud Storage Card in Sidebar */
+.cde-storage-card {
+    margin-top: auto;
+    padding: 0.85rem;
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.75);
+    border: 1px solid rgba(51, 65, 85, 0.6);
+    box-sizing: border-box;
+}
+
+.storage-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+}
+
+.storage-bar {
+    width: 100%;
+    height: 5px;
+    background: #1e293b;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 0.45rem;
+}
+
+.storage-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #38bdf8, #2563eb);
+    border-radius: 4px;
+}
+
+.storage-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    font-family: monospace;
+}
+
+/* User Profile in Sidebar Footer */
+.user-profile-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.user-avatar-badge {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
+}
+
+.user-meta {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.15;
+}
+
+.user-name {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.user-role-badge {
+    font-size: 0.68rem;
+    color: #38bdf8;
+    font-weight: 500;
 }
 
 .sidebar-footer {

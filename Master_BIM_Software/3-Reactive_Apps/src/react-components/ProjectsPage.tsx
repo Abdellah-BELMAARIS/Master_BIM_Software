@@ -67,16 +67,33 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         finishDate = new Date();
                     }
 
+                    // Cleanly upgrade placeholder "Default Project" if present in Firestore
+                    let projectName = data.name || "Untitled Project";
+                    let projectDesc = data.description || "";
+                    let projectCost = Number(data.cost || 0);
+                    let projectProgress = Number(data.progress || 0);
+                    let projectModelType: ModelType = data.modelType || "cube";
+                    let projectIcon = data.iconColor;
+
+                    if (projectName.toLowerCase() === "default project" || projectName.toLowerCase() === "untitled project") {
+                        projectName = "BIM Modular Innovation Pavilion";
+                        projectDesc = "Modular architectural exhibition pavilion with exposed rebar grid, polished terrazzo floor, and cantilevered LED canopy.";
+                        projectCost = 120000;
+                        projectProgress = 0.80;
+                        projectModelType = "cube";
+                        projectIcon = "#2563eb";
+                    }
+
                     const projectData: IProject = {
-                        name: data.name || "Untitled Project",
-                        description: data.description || "",
+                        name: projectName,
+                        description: projectDesc,
                         status: data.status || "Active",
                         userRole: data.userRole || "Architect",
                         finishDate,
-                        cost: Number(data.cost || 0),
-                        progress: Number(data.progress || 0),
-                        modelType: data.modelType || "cube",
-                        iconColor: data.iconColor,
+                        cost: projectCost,
+                        progress: projectProgress,
+                        modelType: projectModelType,
+                        iconColor: projectIcon,
                         todos: data.todos,
                     };
 
@@ -171,6 +188,22 @@ export function ProjectsPage(props: ProjectsPageProps) {
                             { id: 1, text: "Submerged marine caisson pier foundations & cofferdam dewatering", completed: true },
                             { id: 2, text: "A-frame slip-form concrete pylon tower climbing formwork", completed: true },
                             { id: 3, text: "Aerodynamic box girder deck lifting & stay cable tension balancing", completed: false }
+                        ]
+                    },
+                    {
+                        name: "BIM Modular Innovation Pavilion",
+                        description: "Modular architectural exhibition pavilion with exposed rebar grid, polished terrazzo floor, and cantilevered LED canopy.",
+                        status: "Active",
+                        userRole: "Architect",
+                        finishDate: new Date("2026-11-20"),
+                        cost: 120000,
+                        progress: 0.80,
+                        modelType: "cube",
+                        iconColor: "#2563eb",
+                        todos: [
+                            { id: 1, text: "Reinforced concrete footing & rebar cage placement", completed: true },
+                            { id: 2, text: "Structural steel column bolting & torque inspection", completed: true },
+                            { id: 3, text: "Recessed linear LED lighting & curtain wall glazing", completed: false }
                         ]
                     }
                 ];

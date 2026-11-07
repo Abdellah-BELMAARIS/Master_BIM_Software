@@ -106,7 +106,7 @@ export function Sidebar(props: ISidebarProps) {
                 <div id="nav-buttons" style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
                     <Router.Link to="/" style={{ textDecoration: "none", display: "block" }}>
                         <bim-button
-                            label="BIM Projects"
+                            label="BIM Projects (6)"
                             icon={appIcons.projects}
                             active={activeTab === "projects"}
                             onclick={() => handleNavClick("projects")}
@@ -121,14 +121,51 @@ export function Sidebar(props: ISidebarProps) {
                         style={{ width: "100%", justifyContent: "flex-start" }}
                     ></bim-button>
                 </div>
+
+                <span className="sidebar-section-label" style={{ marginTop: "1.35rem" }}>CDE DATA & TOOLS</span>
+                <ul className="sidebar-secondary-nav">
+                    <li className="nav-sub-item" onClick={() => handleNavClick("projects")}>
+                        <span className="material-icons-round">view_in_ar</span>
+                        <span>3D BIM Models</span>
+                    </li>
+                    <li className="nav-sub-item">
+                        <span className="material-icons-round">rule</span>
+                        <span>BCF Clash Issues</span>
+                    </li>
+                    <li className="nav-sub-item">
+                        <span className="material-icons-round">analytics</span>
+                        <span>QTO & Cost Takeoff</span>
+                    </li>
+                </ul>
+
+                {/* Storage & CDE Cloud Sync Card */}
+                <div className="cde-storage-card">
+                    <div className="storage-card-header">
+                        <span className="material-icons-round" style={{ fontSize: "16px", color: "#38bdf8" }}>cloud_done</span>
+                        <span>Cloud CDE Sync</span>
+                    </div>
+                    <div className="storage-bar">
+                        <div className="storage-bar-fill" style={{ width: "68%" }}></div>
+                    </div>
+                    <div className="storage-info">
+                        <span>4.2 GB / 10 GB</span>
+                        <span>IFC4.3 Ready</span>
+                    </div>
+                </div>
             </div>
 
             <div className="sidebar-footer">
+                <div className="user-profile-bar">
+                    <div className="user-avatar-badge">AB</div>
+                    <div className="user-meta">
+                        <span className="user-name">Abdellah B.</span>
+                        <span className="user-role-badge">Lead BIM Dev</span>
+                    </div>
+                </div>
                 <div className="system-status">
                     <span className="status-dot"></span>
-                    <span className="status-text">IFC VIEWER READY</span>
+                    <span className="status-text">IFC READY</span>
                 </div>
-                <span className="status-version">IFC4 · 3D</span>
             </div>
         </aside>
     );

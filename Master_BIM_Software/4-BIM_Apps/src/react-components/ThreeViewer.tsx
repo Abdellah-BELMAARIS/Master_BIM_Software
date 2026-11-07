@@ -224,9 +224,9 @@ export function ThreeViewer(props: ThreeViewerProps) {
                     front: { target: [0, 1.5, 3.5], pos: [0, 3.5, 20] },
                 },
                 tower: {
-                    iso: { target: [0, 13, 0], pos: [28, 22, 32] },
-                    top: { target: [0, 13, 0], pos: [0, 48, 0.01] },
-                    front: { target: [0, 13, 0], pos: [0, 14, 40] },
+                    iso: { target: [0, 9, 0], pos: [32, 22, 34] },
+                    top: { target: [0, 0, 0], pos: [0, 52, 0.01] },
+                    front: { target: [0, 12, 0], pos: [0, 14, 42] },
                 },
                 bridge: {
                     iso: { target: [0, 4.5, 0], pos: [32, 18, 28] },
@@ -338,7 +338,7 @@ export function ThreeViewer(props: ThreeViewerProps) {
             if (!proj || !camera || !cameraControls) { return; }
 
             if (gui) { gui.destroy(); }
-            gui = new GUI({ container: viewerContainer, title: "Viewer Options", width: 280 });
+            gui = new GUI({ container: viewerContainer, title: "3D Viewer Options", width: 310 });
             gui.domElement.setAttribute("lang", "en-US");
             gui.domElement.style.position = "absolute";
             gui.domElement.style.top = "1rem";
@@ -347,25 +347,25 @@ export function ThreeViewer(props: ThreeViewerProps) {
 
             const nameLower = (proj.name || "").toLowerCase();
             let initialModel: ModelType = proj.modelType || "cube";
-            if (!proj.modelType) {
-                if (nameLower.includes("gear")) initialModel = "gear";
-                else if (nameLower.includes("car") || nameLower.includes("auto") || nameLower.includes("vehic")) initialModel = "car";
-                else if (nameLower.includes("villa") || nameLower.includes("house") || nameLower.includes("residence")) initialModel = "villa";
-                else if (nameLower.includes("tower") || nameLower.includes("skyscraper") || nameLower.includes("high-rise") || nameLower.includes("apex")) initialModel = "tower";
+            if (!proj.modelType || proj.modelType === "cube") {
+                if (nameLower.includes("tower") || nameLower.includes("skyscraper") || nameLower.includes("high-rise") || nameLower.includes("apex")) initialModel = "tower";
                 else if (nameLower.includes("bridge") || nameLower.includes("span") || nameLower.includes("viaduct") || nameLower.includes("nordic")) initialModel = "bridge";
+                else if (nameLower.includes("villa") || nameLower.includes("house") || nameLower.includes("residence") || nameLower.includes("azure")) initialModel = "villa";
+                else if (nameLower.includes("car") || nameLower.includes("auto") || nameLower.includes("vehic") || nameLower.includes("ev")) initialModel = "car";
+                else if (nameLower.includes("gear") || nameLower.includes("hvac") || nameLower.includes("plant") || nameLower.includes("mech")) initialModel = "gear";
             }
             activeModelType = initialModel;
             switchActiveModel(activeModelType, resetCameraView);
 
             const modelSelectorObj = { model: activeModelType };
             gui.add(modelSelectorObj, "model", {
-                "BIM Pavilion Slab (Modular)": "cube",
-                "Mechanical Core (HVAC Gear)": "gear",
-                "Civil Sedan (EV Car)": "car",
-                "Azure Coast Eco-Villa": "villa",
-                "Apex Parametric Skyscraper": "tower",
-                "Nordic Cable-Stayed Bridge": "bridge",
-            }).name("Select 3D Model").onChange((val: ModelType) => {
+                "🏢 Apex Skyscraper": "tower",
+                "🌉 Nordic Bridge": "bridge",
+                "🏡 Azure Eco-Villa": "villa",
+                "🚗 EV Cyber Coupe": "car",
+                "⚙️ HVAC Dyno Gear": "gear",
+                "🏛️ BIM Pavilion": "cube",
+            }).name("Active Model").onChange((val: ModelType) => {
                 switchActiveModel(val, true);
                 buildActiveFolder();
             });

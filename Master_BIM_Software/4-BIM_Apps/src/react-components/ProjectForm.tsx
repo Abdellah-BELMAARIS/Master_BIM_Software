@@ -166,9 +166,14 @@ export function ProjectForm(props: ProjectFormProps) {
                 noValidate
             >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                    <h2 style={{ margin: 0, fontSize: "1.35rem", fontWeight: 700 }}>
-                        {isEditing ? "Edit BIM Project" : "New BIM Project"}
-                    </h2>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.65rem" }}>
+                        <h2 style={{ margin: 0, fontSize: "1.35rem", fontWeight: 700 }}>
+                            {isEditing ? "Edit BIM Project" : "New BIM Project"}
+                        </h2>
+                        <span className="status-tag active" style={{ fontSize: "0.68rem", padding: "2px 8px", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                            CDE Studio
+                        </span>
+                    </div>
                     <button
                         type="button"
                         onClick={onClose}
@@ -314,13 +319,13 @@ export function ProjectForm(props: ProjectFormProps) {
                             <label>
                                 <span className="material-icons-round">view_in_ar</span> 3D BIM Model
                             </label>
-                            <select name="modelType" defaultValue={project?.modelType || "cube"}>
-                                <option value="cube">Architectural Slab (Cube)</option>
-                                <option value="gear">Mechanical Core (HVAC Gear)</option>
-                                <option value="car">Urban Logistics (Civil EV Car)</option>
-                                <option value="villa">Azure Coast Eco-Villa (Architectural)</option>
-                                <option value="tower">Apex Parametric Skyscraper (High-Rise)</option>
-                                <option value="bridge">Nordic Span Cable-Stayed Bridge (Infrastructure)</option>
+                            <select name="modelType" defaultValue={project?.modelType || "tower"}>
+                                <option value="tower">🏢 Apex Parametric Skyscraper (High-Rise)</option>
+                                <option value="bridge">🌉 Nordic Span Cable-Stayed Bridge (Infrastructure)</option>
+                                <option value="villa">🏡 Azure Coast Eco-Villa (Architectural)</option>
+                                <option value="car">🚗 Urban Logistics EV Cyber Coupe (Civil / Auto)</option>
+                                <option value="gear">⚙️ Mechanical HVAC Plant Core (MEP / Industrial)</option>
+                                <option value="cube">🏛️ BIM Modular Innovation Pavilion (Structural Slab)</option>
                             </select>
                         </div>
                     </div>

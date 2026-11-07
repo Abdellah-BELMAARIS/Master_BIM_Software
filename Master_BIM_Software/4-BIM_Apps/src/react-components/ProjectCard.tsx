@@ -18,14 +18,34 @@ export function ProjectCard(props: Props) {
     const initials = project.name.trim().substring(0, 2) || "PR";
     const progressPercent = Math.round((project.progress || 0) * 100);
 
-    const dateStr =
-        project.finishDate instanceof Date && !isNaN(project.finishDate.getTime())
-            ? project.finishDate.toLocaleDateString("en-US", {
-                  year: "numeric",
-                  month: "short",
-                  day: "numeric",
-              })
-            : String(project.finishDate);
+    // Resolve accurate 3D model metadata from modelType or project name
+    const getModelBadge = (proj: Project): { name: string; icon: string } => {
+        let type = proj.modelType;
+        const lower = proj.name.toLowerCase();
+        if (!type || type === "cube") {
+            if (lower.includes("tower") || lower.includes("skyscraper") || lower.includes("apex")) type = "tower";
+            else if (lower.includes("bridge") || lower.includes("span") || lower.includes("viaduct") || lower.includes("nordic")) type = "bridge";
+            else if (lower.includes("villa") || lower.includes("house") || lower.includes("residence") || lower.includes("azure")) type = "villa";
+            else if (lower.includes("car") || lower.includes("auto") || lower.includes("vehic") || lower.includes("ev")) type = "car";
+            else if (lower.includes("gear") || lower.includes("hvac") || lower.includes("plant") || lower.includes("mech")) type = "gear";
+        }
+        switch (type) {
+            case "tower":
+                return { name: "Apex Skyscraper", icon: "apartment" };
+            case "bridge":
+                return { name: "Nordic Bridge", icon: "alt_route" };
+            case "villa":
+                return { name: "Azure Eco-Villa", icon: "cottage" };
+            case "car":
+                return { name: "Civil EV Coupe", icon: "electric_car" };
+            case "gear":
+                return { name: "HVAC Dyno Gear", icon: "settings" };
+            default:
+                return { name: "BIM Pavilion", icon: "view_in_ar" };
+        }
+    };
+
+    const modelBadge = getModelBadge(project);
 
     return (
         <div
@@ -105,9 +125,9 @@ export function ProjectCard(props: Props) {
                 </div>
                 <div className="detail-row">
                     <span className="detail-label">3D Model</span>
-                    <span className="detail-value" style={{ display: "inline-flex", alignItems: "center", gap: "4px", color: "#38bdf8", fontWeight: 600 }}>
-                        <span className="material-icons-round" style={{ fontSize: "14px" }}>view_in_ar</span>
-                        {project.modelType === "gear" ? "Mechanical Gear" : project.modelType === "car" ? "Civil EV Car" : project.modelType === "villa" ? "Residential Villa" : "Architectural Slab"}
+                    <span className="detail-value" style={{ display: "inline-flex", alignItems: "center", gap: "5px", color: "#38bdf8", fontWeight: 600 }}>
+                        <span className="material-icons-round" style={{ fontSize: "15px", color: "#38bdf8" }}>{modelBadge.icon}</span>
+                        {modelBadge.name}
                     </span>
                 </div>
                 <div className="detail-row">
