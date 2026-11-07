@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "public": "Master_BIM_Software/2-Interactive_Website/dist",
+    "public": "Master_BIM_Software/3-Reactive_Apps/dist",
     "ignore": [
       "firebase.json",
       "**/.*",

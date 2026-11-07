@@ -221,7 +221,29 @@ export function buildCarShowroomEnvironment(): ICarEnvironment {
     spotRight.position.set(0.68, 0.65, 1.9);
     spotRight.target.position.set(0.68, 0, 8);
 
-    lightsGroup.add(headlampLeft, headlampRight, spotLeft, spotRight, spotLeft.target, spotRight.target);
+    // Volumetric Headlight Beams
+    const beamGeom = trackGeom(new THREE.ConeGeometry(1.6, 6.5, 16, 1, true));
+    const beamMat = trackMat(new THREE.MeshBasicMaterial({
+        color: 0x38bdf8,
+        transparent: true,
+        opacity: 0.12,
+        side: THREE.DoubleSide,
+        depthWrite: false,
+    }));
+
+    const beamLeft = new THREE.Mesh(beamGeom, beamMat);
+    beamLeft.position.set(-0.68, 0.45, 5.0);
+    beamLeft.rotation.x = Math.PI / 2;
+
+    const beamRight = new THREE.Mesh(beamGeom, beamMat);
+    beamRight.position.set(0.68, 0.45, 5.0);
+    beamRight.rotation.x = Math.PI / 2;
+
+    // Chassis Underglow Neon Light
+    const underglowLight = new THREE.PointLight(0x38bdf8, 2.0, 4.0);
+    underglowLight.position.set(0, 0.22, 0);
+
+    lightsGroup.add(headlampLeft, headlampRight, spotLeft, spotRight, spotLeft.target, spotRight.target, beamLeft, beamRight, underglowLight);
 
     // Continuous Aerodynamic Red Rear LED Lightbar
     const tailBar = new THREE.Mesh(trackGeom(new THREE.BoxGeometry(1.65, 0.08, 0.06)), taillampGlowMat);

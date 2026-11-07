@@ -8,6 +8,8 @@ import { Project, ModelType } from "../classes/Project";
 import { ProjectsManager } from "../classes/ProjectsManager";
 import { buildLuxuryVillaEnvironment, IVillaEnvironment } from "./three/VillaEnvironment";
 import { buildCarShowroomEnvironment, ICarEnvironment } from "./three/CarEnvironment";
+import { buildTowerEnvironment, ITowerEnvironment } from "./three/TowerEnvironment";
+import { buildBridgeEnvironment, IBridgeEnvironment } from "./three/BridgeEnvironment";
 
 export interface ThreeViewerProps {
     project: Project;
@@ -119,6 +121,12 @@ export function ThreeViewer(props: ThreeViewerProps) {
         const carEnv: ICarEnvironment = buildCarShowroomEnvironment();
         scene.add(carEnv.group);
 
+        const towerEnv: ITowerEnvironment = buildTowerEnvironment();
+        scene.add(towerEnv.group);
+
+        const bridgeEnv: IBridgeEnvironment = buildBridgeEnvironment();
+        scene.add(bridgeEnv.group);
+
         const clock = new THREE.Clock();
 
         let activeModelType: ModelType = "cube";
@@ -130,6 +138,8 @@ export function ThreeViewer(props: ThreeViewerProps) {
             showPool: true,
             showFurniture: true,
             showChargingHub: true,
+            showSkyGarden: true,
+            showTrafficLamps: true,
         };
 
         const boundingBoxHelper = new THREE.BoxHelper(cube, 0x38bdf8);
@@ -153,11 +163,15 @@ export function ThreeViewer(props: ThreeViewerProps) {
             // Toggle Rich Architectural Environments
             villaEnv.group.visible = (newModel === "villa");
             carEnv.group.visible = (newModel === "car");
+            towerEnv.group.visible = (newModel === "tower");
+            bridgeEnv.group.visible = (newModel === "bridge");
 
             let activeObj: THREE.Object3D = cube;
             if (newModel === "gear" && gearMesh) activeObj = gearMesh;
             else if (newModel === "car" && carMesh) activeObj = carMesh;
             else if (newModel === "villa" && villaMesh) activeObj = villaMesh;
+            else if (newModel === "tower") activeObj = towerEnv.group;
+            else if (newModel === "bridge") activeObj = bridgeEnv.group;
             boundingBoxHelper.setFromObject(activeObj);
 
             if (resetCam && cameraControls && camera) {
@@ -170,6 +184,12 @@ export function ThreeViewer(props: ThreeViewerProps) {
                 } else if (newModel === "car") {
                     cameraControls.target.set(0, 0.9, 0);
                     camera.position.set(7.5, 4.5, 8.5);
+                } else if (newModel === "tower") {
+                    cameraControls.target.set(0, 13, 0);
+                    camera.position.set(28, 22, 32);
+                } else if (newModel === "bridge") {
+                    cameraControls.target.set(0, 5, 0);
+                    camera.position.set(32, 18, 30);
                 } else {
                     cameraControls.target.set(0, 1, 0);
                     camera.position.set(4, 3.5, 5);
@@ -204,6 +224,8 @@ export function ThreeViewer(props: ThreeViewerProps) {
                 if (nameLower.includes("gear")) initialModel = "gear";
                 else if (nameLower.includes("car") || nameLower.includes("auto") || nameLower.includes("vehic")) initialModel = "car";
                 else if (nameLower.includes("villa") || nameLower.includes("house") || nameLower.includes("building") || nameLower.includes("home") || nameLower.includes("residence")) initialModel = "villa";
+                else if (nameLower.includes("tower") || nameLower.includes("skyscraper") || nameLower.includes("high-rise") || nameLower.includes("apex")) initialModel = "tower";
+                else if (nameLower.includes("bridge") || nameLower.includes("span") || nameLower.includes("viaduct") || nameLower.includes("nordic")) initialModel = "bridge";
             }
             activeModelType = initialModel;
             switchActiveModel(activeModelType, resetCameraView);
@@ -215,6 +237,8 @@ export function ThreeViewer(props: ThreeViewerProps) {
                 "Mechanical Core (Gear)": "gear",
                 "Civil Sedan (Car)": "car",
                 "Residential Villa (Architecture)": "villa",
+                "Parametric Skyscraper (Tower)": "tower",
+                "Cable-Stayed Bridge (Infrastructure)": "bridge",
             }).name("Select 3D Model").onChange((val: ModelType) => {
                 switchActiveModel(val, true);
                 buildActiveFolder();
@@ -349,6 +373,20 @@ export function ThreeViewer(props: ThreeViewerProps) {
                     } else {
                         activeModelFolder.add({ status: "Loading Villa..." }, "status").name("Status");
                     }
+                } else if (activeModelType === "tower") {
+                    activeModelFolder = gui!.addFolder("Apex Tower Controls");
+                    activeModelFolder.open();
+                    activeModelFolder.add(viewerState, "showSkyGarden").name("Sky Garden Terrace").onChange((v: boolean) => {
+                        towerEnv.toggleSkyGarden(v);
+                    });
+                    activeModelFolder.add(viewerState, "autoRotate").name("Auto-Rotate");
+                } else if (activeModelType === "bridge") {
+                    activeModelFolder = gui!.addFolder("Nordic Bridge Controls");
+                    activeModelFolder.open();
+                    activeModelFolder.add(viewerState, "showTrafficLamps").name("Roadway Lampposts").onChange((v: boolean) => {
+                        bridgeEnv.toggleTrafficLamps(v);
+                    });
+                    activeModelFolder.add(viewerState, "autoRotate").name("Auto-Rotate");
                 } else {
                     activeModelFolder = gui!.addFolder("Cube Model Controls");
                     activeModelFolder.open();
@@ -454,6 +492,12 @@ export function ThreeViewer(props: ThreeViewerProps) {
                     } else if (activeModelType === "car") {
                         cameraControls?.target.set(0, 0.75, 0);
                         camera?.position.set(0, 1.5, 9);
+                    } else if (activeModelType === "tower") {
+                        cameraControls?.target.set(0, 13, 0);
+                        camera?.position.set(0, 13, 38);
+                    } else if (activeModelType === "bridge") {
+                        cameraControls?.target.set(0, 5, 0);
+                        camera?.position.set(0, 5, 36);
                     } else {
                         cameraControls?.target.set(0, 1, 0);
                         camera?.position.set(0, 1, 7);
@@ -472,6 +516,12 @@ export function ThreeViewer(props: ThreeViewerProps) {
                     } else if (activeModelType === "car") {
                         cameraControls?.target.set(0, 0.75, 0);
                         camera?.position.set(6, 4, 7);
+                    } else if (activeModelType === "tower") {
+                        cameraControls?.target.set(0, 13, 0);
+                        camera?.position.set(28, 22, 32);
+                    } else if (activeModelType === "bridge") {
+                        cameraControls?.target.set(0, 5, 0);
+                        camera?.position.set(32, 18, 30);
                     } else {
                         cameraControls?.target.set(0, 1, 0);
                         camera?.position.set(4, 3.5, 5);
@@ -654,6 +704,10 @@ export function ThreeViewer(props: ThreeViewerProps) {
                 villaEnv.updateWater(elapsedTime);
             } else if (activeModelType === "car") {
                 carEnv.updateLights(elapsedTime);
+            } else if (activeModelType === "tower") {
+                towerEnv.updateTower(elapsedTime);
+            } else if (activeModelType === "bridge") {
+                bridgeEnv.updateBridge(elapsedTime);
             }
 
             if (viewerState.autoRotate) {
@@ -669,6 +723,10 @@ export function ThreeViewer(props: ThreeViewerProps) {
                 } else if (activeModelType === "villa" && villaMesh && villaMesh.visible) {
                     villaMesh.rotation.y += 0.01;
                     if (villaMesh.rotation.y > Math.PI) { villaMesh.rotation.y = -Math.PI; }
+                } else if (activeModelType === "tower" && towerEnv.group.visible) {
+                    towerEnv.group.rotation.y += 0.005;
+                } else if (activeModelType === "bridge" && bridgeEnv.group.visible) {
+                    bridgeEnv.group.rotation.y += 0.004;
                 }
             }
             if (boundingBoxHelper.visible) {
@@ -709,6 +767,8 @@ export function ThreeViewer(props: ThreeViewerProps) {
             }
             villaEnv.dispose();
             carEnv.dispose();
+            towerEnv.dispose();
+            bridgeEnv.dispose();
             cameraControls?.dispose();
             boxGeometry.dispose();
             cubeMaterial.dispose();

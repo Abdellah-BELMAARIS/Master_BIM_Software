@@ -6,7 +6,7 @@ export type ProjectStatus = "pending" | "active" | "finished" | "Pending" | "Act
 export type UserRole = "architect" | "engineer" | "developer" | "Architect" | "Engineer" | "Developer";
 export type TodoStatus = "pending" | "in-progress" | "completed";
 export type TodoPriority = "low" | "medium" | "high" | "critical";
-export type ModelType = "cube" | "gear" | "car" | "villa";
+export type ModelType = "cube" | "gear" | "car" | "villa" | "tower" | "bridge";
 
 export interface IProjectTask {
     id: number;

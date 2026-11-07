@@ -1,5 +1,6 @@
 import * as React from "react";
 import * as Router from "react-router-dom";
+import * as BUI from "@thatopen/ui";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../core/database";
 import { IProject, Project } from "../classes/Project";
@@ -8,6 +9,7 @@ import { ProjectInfoCard } from "./details/ProjectInfoCard";
 import { ProjectTasksList } from "./details/ProjectTasksList";
 import { ProjectNotFound } from "./details/ProjectNotFound";
 import { ThreeViewer } from "./ThreeViewer";
+import * as templates from "../ui-templates";
 
 export interface ProjectDetailsPageProps {
     projectsManager: ProjectsManager;
@@ -15,15 +17,15 @@ export interface ProjectDetailsPageProps {
 
 /**
  * Modular ProjectDetailsPage
- * Features:
- * - Direct Firestore reload recovery (fixes the common blank page on refresh when navigating directly to /project/:id)
- * - Single Responsibility decomposed cards: ProjectInfoCard & ProjectTasksList
- * - Encapsulated ThreeViewer with WebGL lifecycle cleanup
+ * Module 4 — Lesson 2.4: Creating the BIM Components grid and integrating into ViewerGrid
  */
 export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
     const { projectsManager } = props;
     const routeParams = Router.useParams<{ id: string }>();
     const projectId = routeParams.id;
+
+    // Lesson 2.4 Assignment: Strongly typed ViewerGrid reference
+    const gridRef = React.useRef<templates.ViewerGrid | null>(null);
 
     // 1. Check local ProjectsManager memory first
     let project = projectId ? projectsManager.getProject(projectId) : null;
@@ -31,6 +33,42 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
     const [isLoadingFromCloud, setIsLoadingFromCloud] = React.useState<boolean>(!project);
     const [, setTick] = React.useState(0);
     const forceUpdate = () => setTick((t) => t + 1);
+
+    // Lesson 2.3 & 2.4: Configure <bim-grid> templates, layouts, and componentsGridTemplate on mount
+    React.useEffect(() => {
+        const grid = gridRef.current;
+        if (!grid) return;
+
+        // 1. Define possible UI elements inside the grid (templates and initial states)
+        grid.elements = {
+            header: {
+                template: () => BUI.html`<div></div>`,
+                initialState: {},
+            },
+            sidebar: {
+                template: () => BUI.html`<div></div>`,
+                initialState: {},
+            },
+            components: {
+                template: templates.componentsGridTemplate,
+                initialState: {},
+            },
+        };
+
+        // 2. Define the grid layouts using CSS grid-template strings
+        grid.layouts = {
+            main: {
+                template: `
+                    "header header" auto
+                    "sidebar components" 1fr
+                    / auto 1fr
+                `,
+            },
+        };
+
+        // 3. Set the default active layout
+        grid.layout = "main";
+    }, []);
 
     // 2. Direct Firestore fallback: If page is refreshed directly on /project/:id, fetch from Cloud Firestore
     React.useEffect(() => {
@@ -134,50 +172,53 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
         projectsManager.activeProject = project;
     }
 
+    // Lesson 2.3: Replace parent div with <bim-grid className="viewer-grid" ref={gridRef}>
     return (
-        <div className="page" id="project-details">
-            {/* Details Header */}
-            <header id="details-header">
-                <div className="details-header-left">
-                    <Router.Link
-                        to="/"
-                        className="btn-back-projects"
-                        id="back-to-projects-btn"
-                        title="Back to Projects List"
-                    >
-                        <span className="material-icons-round">arrow_back</span>
-                    </Router.Link>
-                    <div className="header-title-box">
-                        <span className="header-eyebrow">PROJECT CDE / 3D COORDINATION</span>
-                        <h2 id="details-page-title">{project.name}</h2>
-                        <p id="details-page-desc">{project.description}</p>
+        <bim-grid className="viewer-grid" ref={gridRef}>
+            {/* 
+            Module 3 legacy layout commented out as instructed in Lesson 2.3:
+            <div className="page" id="project-details">
+                <header id="details-header">
+                    <div className="details-header-left">
+                        <Router.Link
+                            to="/"
+                            className="btn-back-projects"
+                            id="back-to-projects-btn"
+                            title="Back to Projects List"
+                        >
+                            <span className="material-icons-round">arrow_back</span>
+                        </Router.Link>
+                        <div className="header-title-box">
+                            <span className="header-eyebrow">PROJECT CDE / 3D COORDINATION</span>
+                            <h2 id="details-page-title">{project.name}</h2>
+                            <p id="details-page-desc">{project.description}</p>
+                        </div>
                     </div>
-                </div>
-                <div className="details-header-right">
-                    <span className="bim-coord-badge">
-                        <span className="material-icons-round">view_in_ar</span>
-                        <span>IFC4 · LOD 350</span>
-                    </span>
-                </div>
-            </header>
+                    <div className="details-header-right">
+                        <span className="bim-coord-badge">
+                            <span className="material-icons-round">view_in_ar</span>
+                            <span>IFC4 · LOD 350</span>
+                        </span>
+                    </div>
+                </header>
 
-            {/* Details Content Grid: Left Column (Modular Cards/ToDos) + Right Column (3D Viewer) */}
-            <div className="main-page-content">
-                <div className="details-left-column">
-                    <ProjectInfoCard
-                        project={project}
-                        projectsManager={projectsManager}
-                        onProjectUpdated={forceUpdate}
-                    />
-                    <ProjectTasksList
-                        project={project}
-                        onTodosUpdated={forceUpdate}
-                    />
-                </div>
+                <div className="main-page-content">
+                    <div className="details-left-column">
+                        <ProjectInfoCard
+                            project={project}
+                            projectsManager={projectsManager}
+                            onProjectUpdated={forceUpdate}
+                        />
+                        <ProjectTasksList
+                            project={project}
+                            onTodosUpdated={forceUpdate}
+                        />
+                    </div>
 
-                {/* Right Column: Encapsulated Three.js Viewer (Lesson 3.12 & 3.13) */}
-                <ThreeViewer project={project} projectsManager={projectsManager} />
+                    <ThreeViewer project={project} projectsManager={projectsManager} />
+                </div>
             </div>
-        </div>
+            */}
+        </bim-grid>
     );
 }

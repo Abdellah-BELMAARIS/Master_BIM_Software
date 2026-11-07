@@ -7,41 +7,20 @@ export interface SearchBoxProps {
 
 export type Props = SearchBoxProps;
 
-// Lesson 3.11: SearchBox React Component with onChange function prop
+// Module 04 — Lesson 2.2: SearchBox with That Open Engine <bim-text-input> & native debounce
 export function SearchBox(props: SearchBoxProps) {
-    const [searchValue, setSearchValue] = React.useState("");
-
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const value = e.target.value;
-        setSearchValue(value);
-        props.onChange(value);
-    };
-
-    const handleClear = () => {
-        setSearchValue("");
-        props.onChange("");
+    const handleInput = (e: any) => {
+        const val = e.target?.value ?? "";
+        props.onChange(val);
     };
 
     return (
-        <div className="search-input-pill projects-search-box">
-            <span className="material-icons-round">search</span>
-            <input
-                type="text"
+        <div className="projects-search-box" style={{ minWidth: "280px" }}>
+            <bim-text-input
                 placeholder={props.placeholder || "Search projects by name, description, or role..."}
-                value={searchValue}
-                onChange={handleInputChange}
-            />
-            {searchValue.trim().length > 0 && (
-                <button
-                    type="button"
-                    className="btn-clear-search"
-                    id="clear-search-btn"
-                    title="Clear search text"
-                    onClick={handleClear}
-                >
-                    <span className="material-icons-round">close</span>
-                </button>
-            )}
+                debounce={200}
+                oninput={handleInput}
+            ></bim-text-input>
         </div>
     );
 }
