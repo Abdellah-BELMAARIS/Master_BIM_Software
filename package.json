@@ -3,8 +3,16 @@
   "private": true,
   "description": "Master BIM Software Development Workspace",
   "scripts": {
-    "dev": "npm --prefix Master_BIM_Software/2-Interactive_Website run dev",
+    "dev": "npm run dev:m4",
+    "dev:m1": "npx vite Master_BIM_Software/1-Static_website",
     "dev:m2": "npm --prefix Master_BIM_Software/2-Interactive_Website run dev",
-    "dev:m3": "npm --prefix Master_BIM_Software/3-Reactive_Apps run dev"
+    "dev:m3": "npm --prefix Master_BIM_Software/3-Reactive_Apps run dev",
+    "dev:m4": "npm --prefix Master_BIM_Software/4-BIM_Apps run dev",
+    "dev:m5": "npm --prefix Master_BIM_Software/5-Connecting_Workflows run dev",
+    "dev:m6": "npm --prefix Master_BIM_Software/6-AI_BIM_Developers run dev",
+    "dev:m7": "npm --prefix Master_BIM_Software/7-Freedom_Course run dev",
+    "build:m2": "npm --prefix Master_BIM_Software/2-Interactive_Website run build",
+    "build:m3": "npm --prefix Master_BIM_Software/3-Reactive_Apps run build",
+    "build:m4": "npm --prefix Master_BIM_Software/4-BIM_Apps run build"
   }
 }

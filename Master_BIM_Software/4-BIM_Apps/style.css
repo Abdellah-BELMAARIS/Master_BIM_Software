@@ -2667,6 +2667,96 @@ dialog#error-modal::backdrop {
     }
 }
 
+/* ==========================================================================
+   Professional 3D CAD Viewer Navigation HUD (Glassmorphism Overlay)
+   ========================================================================== */
+.viewer-pro-hud {
+    position: absolute;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(56, 189, 248, 0.28);
+    padding: 0.35rem 0.65rem;
+    border-radius: 9999px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 0 15px rgba(56, 189, 248, 0.2);
+    pointer-events: auto;
+    user-select: none;
+    transition: all 0.25s ease;
+}
+
+.viewer-pro-hud:hover {
+    border-color: rgba(56, 189, 248, 0.5);
+    box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.7), 0 0 20px rgba(56, 189, 248, 0.3);
+}
+
+.hud-pill-group {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.hud-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: transparent;
+    border: 1px solid transparent;
+    color: #cbd5e1;
+    padding: 0.4rem 0.65rem;
+    border-radius: 9999px;
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-weight: 600;
+    font-family: inherit;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+}
+
+.hud-btn .material-icons-round {
+    font-size: 1.15rem;
+}
+
+.hud-btn:hover {
+    background: rgba(56, 189, 248, 0.18);
+    color: #38bdf8;
+    border-color: rgba(56, 189, 248, 0.35);
+    transform: translateY(-1px);
+}
+
+.hud-btn.active {
+    background: #0284c7;
+    color: #ffffff;
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.6);
+}
+
+.hud-divider {
+    width: 1px;
+    height: 18px;
+    background: rgba(148, 163, 184, 0.25);
+    margin: 0 0.2rem;
+}
+
+@media (max-width: 768px) {
+    .viewer-pro-hud {
+        bottom: 0.75rem;
+        padding: 0.25rem 0.4rem;
+        gap: 0.3rem;
+        max-width: 95%;
+        overflow-x: auto;
+    }
+
+    .hud-btn span.hud-label {
+        display: none;
+    }
+}
+
 /* Lesson 2.3: That Open Engine UI Base Viewer Grid */
 .viewer-grid {
     display: grid;
