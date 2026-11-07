@@ -2,7 +2,15 @@ import * as BUI from "@thatopen/ui";
 import { ComponentsGrid } from "./src";
 import { viewportTemplate } from "../../containers";
 
-export const componentsGridTemplate = (_state: any) => {
+export interface ComponentsGridState {
+  viewport?: HTMLElement;
+}
+
+export const componentsGridTemplate: BUI.StatefullComponent<ComponentsGridState> = (
+  state: ComponentsGridState
+) => {
+  const { viewport } = state;
+
   const onGridCreated = (element?: Element) => {
     if (!element) return;
     const grid = element as ComponentsGrid;
@@ -10,7 +18,7 @@ export const componentsGridTemplate = (_state: any) => {
     grid.elements = {
       viewport: {
         template: viewportTemplate,
-        initialState: {},
+        initialState: { viewport },
       },
     };
 

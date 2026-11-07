@@ -10,6 +10,7 @@ import { ProjectTasksList } from "./details/ProjectTasksList";
 import { ProjectNotFound } from "./details/ProjectNotFound";
 import { ThreeViewer } from "./ThreeViewer";
 import * as templates from "../ui-templates";
+import { setupComponents } from "../bim-components";
 
 export interface ProjectDetailsPageProps {
     projectsManager: ProjectsManager;
@@ -17,57 +18,80 @@ export interface ProjectDetailsPageProps {
 
 /**
  * Modular ProjectDetailsPage
- * Module 4 — Lesson 2.4: Creating the BIM Components grid and integrating into ViewerGrid
+ * Module 4 — Lesson 3.3: Working with BIM Worlds
+ * Seamless integration of That Open Engine BIM World (<bim-grid> + <bim-viewport>)
+ * with 3D Parametric Digital Twins and full project management.
  */
 export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
     const { projectsManager } = props;
     const routeParams = Router.useParams<{ id: string }>();
     const projectId = routeParams.id;
 
-    // Lesson 2.4 Assignment: Strongly typed ViewerGrid reference
+    // Lesson 2.4 & 3.3: Strongly typed ViewerGrid reference
     const gridRef = React.useRef<templates.ViewerGrid | null>(null);
 
     // 1. Check local ProjectsManager memory first
     let project = projectId ? projectsManager.getProject(projectId) : null;
 
     const [isLoadingFromCloud, setIsLoadingFromCloud] = React.useState<boolean>(!project);
+    const [viewerMode, setViewerMode] = React.useState<"bim-world" | "parametric">("bim-world");
     const [, setTick] = React.useState(0);
     const forceUpdate = () => setTick((t) => t + 1);
 
-    // Lesson 2.3 & 2.4: Configure <bim-grid> templates, layouts, and componentsGridTemplate on mount
+    // Lesson 3.3: Working with BIM Worlds — asynchronous setupComponents call in useEffect
     React.useEffect(() => {
-        const grid = gridRef.current;
-        if (!grid) return;
+        let componentsInstance: any = null;
 
-        // 1. Define possible UI elements inside the grid (templates and initial states)
-        grid.elements = {
-            header: {
-                template: (_state: any) => BUI.html`<div></div>`,
-                initialState: {},
-            },
-            sidebar: {
-                template: (_state: any) => BUI.html`<div></div>`,
-                initialState: {},
-            },
-            components: {
-                template: templates.componentsGridTemplate,
-                initialState: {},
-            },
+        const setupGrid = async () => {
+            try {
+                // Initialize That Open Engine components and BIM World
+                const { components, viewport } = await setupComponents();
+                componentsInstance = components;
+
+                const grid = gridRef.current;
+                if (!grid) return;
+
+                // Configure grid elements with viewport passed to componentsGridTemplate
+                grid.elements = {
+                    header: {
+                        template: (_state: any) => BUI.html`<div></div>`,
+                        initialState: {},
+                    },
+                    sidebar: {
+                        template: (_state: any) => BUI.html`<div></div>`,
+                        initialState: {},
+                    },
+                    components: {
+                        template: templates.componentsGridTemplate,
+                        initialState: { viewport },
+                    },
+                };
+
+                // Define CSS Grid layout
+                grid.layouts = {
+                    main: {
+                        template: `
+                            "header header" auto
+                            "sidebar components" 1fr
+                            / auto 1fr
+                        `,
+                    },
+                };
+
+                // Set default active layout
+                grid.layout = "main";
+            } catch (err) {
+                console.error("Failed to setup That Open Engine BIM World:", err);
+            }
         };
 
-        // 2. Define the grid layouts using CSS grid-template strings
-        grid.layouts = {
-            main: {
-                template: `
-                    "header header" auto
-                    "sidebar components" 1fr
-                    / auto 1fr
-                `,
-            },
-        };
+        setupGrid();
 
-        // 3. Set the default active layout
-        grid.layout = "main";
+        return () => {
+            if (componentsInstance) {
+                componentsInstance.dispose();
+            }
+        };
     }, []);
 
     // 2. Direct Firestore fallback: If page is refreshed directly on /project/:id, fetch from Cloud Firestore
@@ -191,7 +215,54 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                         <p id="details-page-desc">{project.description}</p>
                     </div>
                 </div>
-                <div className="details-header-right">
+                <div className="details-header-right" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <div className="viewer-mode-selector" style={{ display: "inline-flex", background: "rgba(15, 23, 42, 0.8)", border: "1px solid var(--border-color)", borderRadius: "6px", padding: "2px" }}>
+                        <button
+                            type="button"
+                            onClick={() => setViewerMode("bim-world")}
+                            style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "6px",
+                                padding: "4px 10px",
+                                border: "none",
+                                borderRadius: "4px",
+                                background: viewerMode === "bim-world" ? "var(--primary-blue)" : "transparent",
+                                color: viewerMode === "bim-world" ? "#ffffff" : "var(--text-secondary)",
+                                cursor: "pointer",
+                                fontSize: "0.82rem",
+                                fontWeight: 600,
+                                transition: "all 0.15s ease",
+                            }}
+                            title="That Open Engine BIM World (Lesson 3.3)"
+                        >
+                            <span className="material-icons-round" style={{ fontSize: "16px" }}>public</span>
+                            <span>BIM World</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setViewerMode("parametric")}
+                            style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "6px",
+                                padding: "4px 10px",
+                                border: "none",
+                                borderRadius: "4px",
+                                background: viewerMode === "parametric" ? "var(--primary-blue)" : "transparent",
+                                color: viewerMode === "parametric" ? "#ffffff" : "var(--text-secondary)",
+                                cursor: "pointer",
+                                fontSize: "0.82rem",
+                                fontWeight: 600,
+                                transition: "all 0.15s ease",
+                            }}
+                            title="Parametric 3D Digital Twin"
+                        >
+                            <span className="material-icons-round" style={{ fontSize: "16px" }}>apartment</span>
+                            <span>3D Twin</span>
+                        </button>
+                    </div>
+
                     <span className="bim-coord-badge">
                         <span className="material-icons-round">view_in_ar</span>
                         <span>{project.ifcSchema ? `${project.ifcSchema} OpenBIM` : "IFC4 · LOD 350"}</span>
@@ -212,10 +283,22 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                     />
                 </div>
 
-                <div className="details-viewer-wrapper" style={{ position: "relative", width: "100%", height: "100%", flex: 1, minHeight: 0 }}>
-                    <ThreeViewer project={project} projectsManager={projectsManager} />
-                    {/* Lesson 2.3 & 2.4: BIM Grid container initialized and available */}
-                    <bim-grid className="viewer-grid" ref={gridRef} style={{ display: "none" }}></bim-grid>
+                <div className="details-viewer-wrapper" style={{ position: "relative", width: "100%", height: "100%", flex: 1, minHeight: 0, overflow: "hidden" }}>
+                    {/* Lesson 3.3: That Open Engine BIM World Viewport Grid */}
+                    <bim-grid
+                        className="viewer-grid"
+                        ref={gridRef}
+                        style={{
+                            width: "100%",
+                            height: "100%",
+                            display: viewerMode === "bim-world" ? "block" : "none",
+                        }}
+                    ></bim-grid>
+
+                    {/* Parametric 3D Model View */}
+                    <div style={{ width: "100%", height: "100%", display: viewerMode === "parametric" ? "block" : "none" }}>
+                        <ThreeViewer project={project} projectsManager={projectsManager} />
+                    </div>
                 </div>
             </div>
         </div>

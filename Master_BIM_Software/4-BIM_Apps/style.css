@@ -3001,10 +3001,26 @@ dialog#error-modal::backdrop {
     }
 }
 
-/* Lesson 2.3: That Open Engine UI Base Viewer Grid */
+/* Lesson 2.3 & 3.3: That Open Engine UI Base Viewer Grid & BIM Viewport */
 .viewer-grid {
     display: grid;
     width: 100%;
     height: 100%;
+    overflow: hidden;
+}
+
+bim-viewport {
+    width: 100%;
+    height: 100%;
+    display: block;
+    position: relative;
+    overflow: hidden;
+}
+
+.viewport-container {
+    width: 100%;
+    height: 100%;
+    display: block;
+    position: relative;
     overflow: hidden;
 }
