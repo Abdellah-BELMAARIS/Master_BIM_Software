@@ -224,9 +224,9 @@ export function ThreeViewer(props: ThreeViewerProps) {
                     front: { target: [0, 1.5, 3.5], pos: [0, 3.5, 20] },
                 },
                 tower: {
-                    iso: { target: [0, 9, 0], pos: [32, 22, 34] },
-                    top: { target: [0, 0, 0], pos: [0, 52, 0.01] },
-                    front: { target: [0, 12, 0], pos: [0, 14, 42] },
+                    iso: { target: [0, 11, 0], pos: [18, 16, 20] },
+                    top: { target: [0, 0, 0], pos: [0, 42, 0.01] },
+                    front: { target: [0, 11, 0], pos: [0, 12, 25] },
                 },
                 bridge: {
                     iso: { target: [0, 4.5, 0], pos: [32, 18, 28] },

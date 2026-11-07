@@ -201,11 +201,86 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         cost: 120000,
                         progress: 0.80,
                         modelType: "cube",
+                        modelCategory: "3d",
                         iconColor: "#2563eb",
                         todos: [
                             { id: 1, text: "Reinforced concrete footing & rebar cage placement", completed: true },
                             { id: 2, text: "Structural steel column bolting & torque inspection", completed: true },
                             { id: 3, text: "Recessed linear LED lighting & curtain wall glazing", completed: false }
+                        ]
+                    },
+                    // That Open Company Course IFC Sample Models (D:\MyDocs\ifc_files)
+                    {
+                        name: "TOC Master Structural Complex (IFC4)",
+                        description: "Official That Open Company structural engineering model in IFC4 schema, featuring column grids, concrete foundation footings, and composite slabs.",
+                        status: "Active",
+                        userRole: "Engineer",
+                        finishDate: new Date("2027-04-15"),
+                        cost: 850000,
+                        progress: 0.70,
+                        modelType: "tower",
+                        modelCategory: "ifc",
+                        ifcFileName: "MBSD-TOC-P01-MOD-EST-001.ifc",
+                        ifcSchema: "IFC4",
+                        iconColor: "#059669",
+                        todos: [
+                            { id: 1, text: "Verify IFC4 STEP schema compliance & Express ID integrity", completed: true },
+                            { id: 2, text: "Extract structural column property sets (IfcPropertySet)", completed: true },
+                            { id: 3, text: "BIM spatial containment hierarchy (IfcRelContainedInSpatialStructure)", completed: false }
+                        ]
+                    },
+                    {
+                        name: "HNS Central Pavilion Architectural (IFC2X3)",
+                        description: "Comprehensive architectural BIM model authored in Autodesk Revit 2024, exported in IFC2X3 Coordination View V2.0 with curtain walls and spatial rooms.",
+                        status: "Active",
+                        userRole: "Architect",
+                        finishDate: new Date("2027-08-30"),
+                        cost: 1250000,
+                        progress: 0.45,
+                        modelType: "villa",
+                        modelCategory: "ifc",
+                        ifcFileName: "HNS-CTL-N01-MOD-ARQ.ifc",
+                        ifcSchema: "IFC2X3",
+                        iconColor: "#0284c7",
+                        todos: [
+                            { id: 1, text: "Revit 2024 IFC2X3 coordination view export validation", completed: true },
+                            { id: 2, text: "Curtain wall panel & spatial room boundary classification", completed: false }
+                        ]
+                    },
+                    {
+                        name: "HNS Structural Superstructure (IFC2X3)",
+                        description: "Full structural framing model with steel trusses, shear walls, and rebar schedules exported in IFC2X3 Coordination View V2.0.",
+                        status: "Pending",
+                        userRole: "Engineer",
+                        finishDate: new Date("2027-11-20"),
+                        cost: 2100000,
+                        progress: 0.30,
+                        modelType: "bridge",
+                        modelCategory: "ifc",
+                        ifcFileName: "HNS-CTL-ZZZ-MOD-EST.ifc",
+                        ifcSchema: "IFC2X3",
+                        iconColor: "#7c3aed",
+                        todos: [
+                            { id: 1, text: "Steel truss connection detailing & clash tolerance check", completed: true },
+                            { id: 2, text: "Rebar schedule export to IFC Quantity Takeoff (QTO)", completed: false }
+                        ]
+                    },
+                    {
+                        name: "ProVI Infrastructure Civil Viaduct (IFC4)",
+                        description: "Civil infrastructure and alignment sample model in IFC4, featuring road corridors, bridge abutments, and earthworks terrain.",
+                        status: "Active",
+                        userRole: "Engineer",
+                        finishDate: new Date("2028-02-15"),
+                        cost: 3400000,
+                        progress: 0.50,
+                        modelType: "bridge",
+                        modelCategory: "ifc",
+                        ifcFileName: "NAV-IPI-ET1_E01-ZZZ-M3D-EST.ifc",
+                        ifcSchema: "IFC4",
+                        iconColor: "#d97706",
+                        todos: [
+                            { id: 1, text: "Civil alignment & bridge abutment spatial referencing", completed: true },
+                            { id: 2, text: "Earthworks terrain cut/fill balance calculation in IFC", completed: false }
                         ]
                     }
                 ];
@@ -284,10 +359,15 @@ export function ProjectsPage(props: ProjectsPageProps) {
                 !q ||
                 project.name.toLowerCase().includes(q) ||
                 project.description.toLowerCase().includes(q) ||
-                project.userRole.toLowerCase().includes(q);
+                project.userRole.toLowerCase().includes(q) ||
+                (project.ifcFileName && project.ifcFileName.toLowerCase().includes(q));
             const matchesStatus =
                 statusFilter === "all" || project.status.toLowerCase() === statusFilter;
-            return matchesSearch && matchesStatus;
+            const matchesCategory =
+                categoryFilter === "all" ||
+                (categoryFilter === "ifc" && (project.modelCategory === "ifc" || project.ifcFileName || project.name.toLowerCase().includes("ifc"))) ||
+                (categoryFilter === "3d" && project.modelCategory !== "ifc" && !project.ifcFileName && !project.name.toLowerCase().includes("ifc"));
+            return matchesSearch && matchesStatus && matchesCategory;
         })
         .sort((a, b) => {
             switch (sortBy) {
@@ -310,6 +390,9 @@ export function ProjectsPage(props: ProjectsPageProps) {
     const activeCount = projects.filter((p) => p.status.toLowerCase() === "active").length;
     const pendingCount = projects.filter((p) => p.status.toLowerCase() === "pending").length;
     const finishedCount = projects.filter((p) => p.status.toLowerCase() === "finished").length;
+
+    const ifcCount = projects.filter((p) => p.modelCategory === "ifc" || p.ifcFileName || p.name.toLowerCase().includes("ifc")).length;
+    const parametricCount = projects.filter((p) => p.modelCategory !== "ifc" && !p.ifcFileName && !p.name.toLowerCase().includes("ifc")).length;
 
     const onDeleteProjectCard = async (proj: Project) => {
         const confirmed = window.confirm(`Are you sure you want to delete "${proj.name}" from Cloud Firestore and workspace?`);
@@ -385,8 +468,35 @@ export function ProjectsPage(props: ProjectsPageProps) {
                 </div>
             </header>
 
-            {/* Status Filter & Sort Toolbar */}
-            <div className="projects-toolbar">
+            {/* Category (IFC vs 3D) & Status Filter Toolbar */}
+            <div className="projects-toolbar" style={{ flexWrap: "wrap", gap: "10px" }}>
+                <div className="projects-category-filter-group" id="project-category-filter-group">
+                    <button
+                        type="button"
+                        className={`category-pill ${categoryFilter === "all" ? "active" : ""}`}
+                        onClick={() => setCategoryFilter("all")}
+                    >
+                        <span className="material-icons-round" style={{ fontSize: "16px" }}>dashboard</span>
+                        All Models <span className="filter-count">{totalCount}</span>
+                    </button>
+                    <button
+                        type="button"
+                        className={`category-pill ifc-pill ${categoryFilter === "ifc" ? "active" : ""}`}
+                        onClick={() => setCategoryFilter("ifc")}
+                    >
+                        <span className="material-icons-round" style={{ fontSize: "16px" }}>description</span>
+                        IFC OpenBIM <span className="filter-count">{ifcCount}</span>
+                    </button>
+                    <button
+                        type="button"
+                        className={`category-pill parametric-pill ${categoryFilter === "3d" ? "active" : ""}`}
+                        onClick={() => setCategoryFilter("3d")}
+                    >
+                        <span className="material-icons-round" style={{ fontSize: "16px" }}>view_in_ar</span>
+                        3D Parametric <span className="filter-count">{parametricCount}</span>
+                    </button>
+                </div>
+
                 <div className="projects-filter-group" id="project-filter-group">
                     <button
                         type="button"

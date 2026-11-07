@@ -94,7 +94,35 @@ export function ProjectForm(props: ProjectFormProps) {
         const rawProgress = Number(formData.get("progress") ?? 25);
         const clampedProgress = Math.min(100, Math.max(0, isNaN(rawProgress) ? 25 : rawProgress)) / 100;
 
-        const modelType = (formData.get("modelType") as ModelType) || "cube";
+        const selectedModel = (formData.get("modelType") as string) || "tower";
+        let modelType: ModelType = "cube";
+        let modelCategory: "ifc" | "3d" = "3d";
+        let ifcFileName: string | undefined = undefined;
+        let ifcSchema: "IFC4" | "IFC2X3" | "IFC4.3" | undefined = undefined;
+
+        if (selectedModel.startsWith("ifc-")) {
+            modelCategory = "ifc";
+            if (selectedModel === "ifc-toc") {
+                modelType = "tower";
+                ifcFileName = "MBSD-TOC-P01-MOD-EST-001.ifc";
+                ifcSchema = "IFC4";
+            } else if (selectedModel === "ifc-hns-arq") {
+                modelType = "villa";
+                ifcFileName = "HNS-CTL-N01-MOD-ARQ.ifc";
+                ifcSchema = "IFC2X3";
+            } else if (selectedModel === "ifc-hns-est") {
+                modelType = "bridge";
+                ifcFileName = "HNS-CTL-ZZZ-MOD-EST.ifc";
+                ifcSchema = "IFC2X3";
+            } else if (selectedModel === "ifc-provi") {
+                modelType = "bridge";
+                ifcFileName = "NAV-IPI-ET1_E01-ZZZ-M3D-EST.ifc";
+                ifcSchema = "IFC4";
+            }
+        } else {
+            modelType = selectedModel as ModelType;
+            modelCategory = "3d";
+        }
 
         const randomIndex = Math.floor(Math.random() * PROJECT_ICON_COLORS.length);
         const iconColor = (project?.iconColor && project.iconColor.trim())
@@ -110,6 +138,9 @@ export function ProjectForm(props: ProjectFormProps) {
             cost,
             progress: clampedProgress,
             modelType,
+            modelCategory,
+            ifcFileName,
+            ifcSchema,
             iconColor,
             todos: project?.todos ? project.todos : [],
         };
@@ -317,15 +348,35 @@ export function ProjectForm(props: ProjectFormProps) {
 
                         <div className="form-field">
                             <label>
-                                <span className="material-icons-round">view_in_ar</span> 3D BIM Model
+                                <span className="material-icons-round">view_in_ar</span> 3D BIM Model / IFC File
                             </label>
-                            <select name="modelType" defaultValue={project?.modelType || "tower"}>
-                                <option value="tower">🏢 Apex Parametric Skyscraper (High-Rise)</option>
-                                <option value="bridge">🌉 Nordic Span Cable-Stayed Bridge (Infrastructure)</option>
-                                <option value="villa">🏡 Azure Coast Eco-Villa (Architectural)</option>
-                                <option value="car">🚗 Urban Logistics EV Cyber Coupe (Civil / Auto)</option>
-                                <option value="gear">⚙️ Mechanical HVAC Plant Core (MEP / Industrial)</option>
-                                <option value="cube">🏛️ BIM Modular Innovation Pavilion (Structural Slab)</option>
+                            <select
+                                name="modelType"
+                                defaultValue={project?.ifcFileName ? `ifc-${project.ifcFileName.includes("TOC") ? "toc" : project.ifcFileName.includes("ARQ") ? "hns-arq" : project.ifcFileName.includes("ZZZ") ? "hns-est" : "provi"}` : (project?.modelType || "tower")}
+                                style={{
+                                    backgroundColor: "var(--bg-main)",
+                                    color: "var(--text-primary)",
+                                    border: "1px solid var(--border-color)",
+                                    padding: "0.55rem 0.75rem",
+                                    borderRadius: "4px",
+                                    fontSize: "0.9rem",
+                                    width: "100%",
+                                }}
+                            >
+                                <optgroup label="3D Parametric Digital Twins">
+                                    <option value="tower">🏢 Apex Parametric Skyscraper (High-Rise)</option>
+                                    <option value="villa">🏡 Azure Coast Eco-Villa & Residence (Architectural)</option>
+                                    <option value="car">🚗 Urban Logistics EV Cyber Coupe (Civil / Auto)</option>
+                                    <option value="bridge">🌉 Nordic Span Cable-Stayed Bridge (Infrastructure)</option>
+                                    <option value="gear">⚙️ Mechanical HVAC Plant Core (MEP / Industrial)</option>
+                                    <option value="cube">🏛️ BIM Modular Innovation Pavilion (Structural Slab)</option>
+                                </optgroup>
+                                <optgroup label="IFC OpenBIM Course Models (D:\MyDocs\ifc_files)">
+                                    <option value="ifc-toc">🏗️ TOC Master Structural Complex (IFC4)</option>
+                                    <option value="ifc-hns-arq">🏛️ HNS Central Pavilion Architectural (IFC2X3)</option>
+                                    <option value="ifc-hns-est">🏗️ HNS Structural Superstructure (IFC2X3)</option>
+                                    <option value="ifc-provi">🌉 ProVI Infrastructure Civil Viaduct (IFC4)</option>
+                                </optgroup>
                             </select>
                         </div>
                     </div>
