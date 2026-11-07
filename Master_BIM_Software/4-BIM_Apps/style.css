@@ -2666,3 +2666,11 @@ dialog#error-modal::backdrop {
         font-size: 0.8rem;
     }
 }
+
+/* Lesson 2.3: That Open Engine UI Base Viewer Grid */
+.viewer-grid {
+    display: grid;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}

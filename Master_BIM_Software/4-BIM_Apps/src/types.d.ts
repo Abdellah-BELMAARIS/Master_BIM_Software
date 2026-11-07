@@ -27,6 +27,11 @@ declare global {
         vertical?: boolean;
         oninput?: (e: any) => void;
       };
+      "bim-grid": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
+        floating?: boolean;
+        layout?: string;
+        ref?: any;
+      };
     }
   }
 }

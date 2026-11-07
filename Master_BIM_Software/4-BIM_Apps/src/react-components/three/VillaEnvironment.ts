@@ -167,6 +167,19 @@ export function buildLuxuryVillaEnvironment(): IVillaEnvironment {
     poolUnderLight.position.set(0, 0.05, poolCenterZ);
     poolGroup.add(poolUnderLight);
 
+    // Glass Infinity Edge Barrier along the front of the pool
+    const glassEdgeGeom = trackGeom(new THREE.BoxGeometry(poolWidth + 0.4, 0.65, 0.06));
+    const glassEdgeMat = trackMat(new THREE.MeshStandardMaterial({
+        color: 0x38bdf8,
+        roughness: 0.1,
+        metalness: 0.9,
+        transparent: true,
+        opacity: 0.55,
+    }));
+    const glassEdge = new THREE.Mesh(glassEdgeGeom, glassEdgeMat);
+    glassEdge.position.set(0, 0.45, poolCenterZ + poolDepth / 2 + 0.28);
+    poolGroup.add(glassEdge);
+
     // Pool Stainless Steel Grab Rails / Ladder
     const railGeom = trackGeom(new THREE.CylinderGeometry(0.025, 0.025, 0.8, 12));
     const leftRail = new THREE.Mesh(railGeom, chromeMat);

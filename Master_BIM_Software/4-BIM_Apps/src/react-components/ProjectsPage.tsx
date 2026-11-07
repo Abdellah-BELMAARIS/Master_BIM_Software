@@ -1,7 +1,7 @@
 import * as React from "react";
 import * as Router from "react-router-dom";
-import { getDocs } from "firebase/firestore";
-import { getCollection, deleteDocument } from "../core/database";
+import { getDocs, addDoc } from "firebase/firestore";
+import { getCollection, deleteDocument, sanitizeForFirestore } from "../core/database";
 import { IProject, Project, ProjectStatus, UserRole } from "../classes/Project";
 import { ProjectsManager } from "../classes/ProjectsManager";
 import { ProjectCard } from "./ProjectCard";
@@ -90,6 +90,104 @@ export function ProjectsPage(props: ProjectsPageProps) {
                             projectsManager.getProjectByName(projectData.name);
                         if (existing) {
                             projectsManager.updateProject(existing.id, projectData);
+                        }
+                    }
+                }
+
+                // Ensure the 3 signature 3D showcase projects exist so the app is always fully loaded and impressive
+                const SHOWCASE_PROJECTS: IProject[] = [
+                    {
+                        name: "Azure Coast Eco-Villa",
+                        description: "Ultra-luxury Mediterranean architectural villa featuring infinity pool, teakwood deck, and smart bioclimatic shading.",
+                        status: "Active",
+                        userRole: "Architect",
+                        finishDate: new Date("2026-12-15"),
+                        cost: 485000,
+                        progress: 0.65,
+                        modelType: "villa",
+                        iconColor: "#38bdf8",
+                        todos: [
+                            { id: 1, text: "Hydraulic excavation for cantilevered infinity pool", completed: true },
+                            { id: 2, text: "Structural glulam timber deck & panoramic curtain wall", completed: true },
+                            { id: 3, text: "Interior living area furniture & recessed LED ambient setup", completed: false }
+                        ]
+                    },
+                    {
+                        name: "Urban Logistics EV Center",
+                        description: "Autonomous commercial fleet hub with high-speed EV chargers, structural steel canopy, and showroom flooring.",
+                        status: "Active",
+                        userRole: "Engineer",
+                        finishDate: new Date("2026-11-30"),
+                        cost: 320000,
+                        progress: 0.40,
+                        modelType: "car",
+                        iconColor: "#22c55e",
+                        todos: [
+                            { id: 1, text: "High-voltage grid connection & showroom epoxy floor", completed: true },
+                            { id: 2, text: "Civil autonomous transport bay calibration", completed: false }
+                        ]
+                    },
+                    {
+                        name: "Mechanical HVAC Plant Core",
+                        description: "High-performance central industrial chiller & titanium transmission gear assembly for district cooling.",
+                        status: "Pending",
+                        userRole: "BIM Specialist",
+                        finishDate: new Date("2027-01-20"),
+                        cost: 195000,
+                        progress: 0.20,
+                        modelType: "gear",
+                        iconColor: "#f59e0b",
+                        todos: [
+                            { id: 1, text: "PBR metallic surface tolerance & vibration damping analysis", completed: true },
+                            { id: 2, text: "Primary chilled water loop balancing & BMS integration", completed: false }
+                        ]
+                    },
+                    {
+                        name: "Apex Parametric Skyscraper",
+                        description: "28-story corporate commercial high-rise with double-skin curtain wall glass, exterior diagrid steel, and rooftop helipad.",
+                        status: "Active",
+                        userRole: "Architect",
+                        finishDate: new Date("2027-06-30"),
+                        cost: 1450000,
+                        progress: 0.55,
+                        modelType: "tower",
+                        iconColor: "#7c3aed",
+                        todos: [
+                            { id: 1, text: "Perimeter diagrid steel exoskeleton erection (floors 1-18)", completed: true },
+                            { id: 2, text: "Sky Garden cantilever terrace & biophilic lounge fit-out", completed: true },
+                            { id: 3, text: "Rooftop helipad landing ring & aviation beacon strobe setup", completed: false }
+                        ]
+                    },
+                    {
+                        name: "Nordic Span Cable-Stayed Bridge",
+                        description: "Monumental dual-pylon cable-stayed suspension bridge over deep fjord with 32 tension stay cables and roadway LED luminaires.",
+                        status: "Active",
+                        userRole: "Engineer",
+                        finishDate: new Date("2027-09-15"),
+                        cost: 2850000,
+                        progress: 0.35,
+                        modelType: "bridge",
+                        iconColor: "#0f766e",
+                        todos: [
+                            { id: 1, text: "Submerged marine caisson pier foundations & cofferdam dewatering", completed: true },
+                            { id: 2, text: "A-frame slip-form concrete pylon tower climbing formwork", completed: true },
+                            { id: 3, text: "Aerodynamic box girder deck lifting & stay cable tension balancing", completed: false }
+                        ]
+                    }
+                ];
+
+                for (const showcase of SHOWCASE_PROJECTS) {
+                    const exists = projectsManager.list.some(
+                        (p) => p.modelType === showcase.modelType || p.name.toLowerCase() === showcase.name.toLowerCase()
+                    );
+                    if (!exists) {
+                        try {
+                            const p = projectsManager.newProject(showcase);
+                            addDoc(projectsCollection, sanitizeForFirestore(showcase))
+                                .then((docRef) => { p.id = docRef.id; })
+                                .catch(() => {});
+                        } catch {
+                            // ignore duplicate error
                         }
                     }
                 }

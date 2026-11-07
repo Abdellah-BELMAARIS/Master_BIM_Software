@@ -318,7 +318,9 @@ export function ProjectForm(props: ProjectFormProps) {
                                 <option value="cube">Architectural Slab (Cube)</option>
                                 <option value="gear">Mechanical Core (HVAC Gear)</option>
                                 <option value="car">Urban Logistics (Civil EV Car)</option>
-                                <option value="villa">Skyline Luxury Villa & Residence</option>
+                                <option value="villa">Azure Coast Eco-Villa (Architectural)</option>
+                                <option value="tower">Apex Parametric Skyscraper (High-Rise)</option>
+                                <option value="bridge">Nordic Span Cable-Stayed Bridge (Infrastructure)</option>
                             </select>
                         </div>
                     </div>
