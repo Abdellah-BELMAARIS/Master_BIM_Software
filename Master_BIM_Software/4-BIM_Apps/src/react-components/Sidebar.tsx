@@ -103,14 +103,14 @@ export function Sidebar(props: ISidebarProps) {
 
             <div className="sidebar-nav-section">
                 <span className="sidebar-section-label">WORKSPACE</span>
-                <div id="nav-buttons" style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-                    <Router.Link to="/" style={{ textDecoration: "none", display: "block" }}>
+                <div id="nav-buttons" style={{ display: "flex", flexDirection: "column", gap: "6px", flex: "none", width: "100%" }}>
+                    <Router.Link to="/" style={{ textDecoration: "none", display: "block", width: "100%" }}>
                         <bim-button
-                            label="BIM Projects (6)"
+                            label="BIM Projects"
                             icon={appIcons.projects}
                             active={activeTab === "projects"}
                             onclick={() => handleNavClick("projects")}
-                            style={{ width: "100%", justifyContent: "flex-start" }}
+                            style={{ width: "100%", height: "42px", minHeight: "42px", maxHeight: "42px", flex: "none", justifyContent: "flex-start" }}
                         ></bim-button>
                     </Router.Link>
                     <bim-button
@@ -118,7 +118,7 @@ export function Sidebar(props: ISidebarProps) {
                         icon={appIcons.users}
                         active={activeTab === "users"}
                         onclick={() => handleNavClick("users")}
-                        style={{ width: "100%", justifyContent: "flex-start" }}
+                        style={{ width: "100%", height: "42px", minHeight: "42px", maxHeight: "42px", flex: "none", justifyContent: "flex-start" }}
                     ></bim-button>
                 </div>
 

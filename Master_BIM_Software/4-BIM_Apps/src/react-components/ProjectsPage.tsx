@@ -29,6 +29,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
     const [projects, setProjects] = React.useState<Project[]>(projectsManager.list);
     const [searchQuery, setSearchQuery] = React.useState<string>("");
     const [statusFilter, setStatusFilter] = React.useState<string>("all");
+    const [categoryFilter, setCategoryFilter] = React.useState<"all" | "ifc" | "3d">("all");
     const [sortBy, setSortBy] = React.useState<string>("name-asc");
     const [isNewProjectModalOpen, setIsNewProjectModalOpen] = React.useState<boolean>(false);
 

@@ -17,8 +17,19 @@ export function ProjectCard(props: Props) {
     const initials = project.name.trim().substring(0, 2) || "PR";
     const progressPercent = Math.round((project.progress || 0) * 100);
 
-    // Resolve accurate 3D model metadata from modelType or project name
-    const getModelBadge = (proj: Project): { name: string; icon: string } => {
+    // Resolve accurate 3D model metadata from modelCategory, modelType, or IFC properties
+    const getModelBadge = (proj: Project): { name: string; icon: string; category: "ifc" | "3d"; schema?: string } => {
+        if (proj.modelCategory === "ifc" || proj.ifcFileName || proj.name.toLowerCase().includes(".ifc") || proj.name.toLowerCase().includes("ifc")) {
+            const schema = proj.ifcSchema || (proj.name.includes("IFC4") || (proj.ifcFileName && proj.ifcFileName.includes("IFC4")) ? "IFC4" : "IFC2X3");
+            const label = proj.ifcFileName ? proj.ifcFileName.replace(".ifc", "") : `${schema} Model`;
+            return {
+                name: label.length > 20 ? `${label.substring(0, 18)}...` : label,
+                icon: "description",
+                category: "ifc",
+                schema,
+            };
+        }
+
         let type = proj.modelType;
         const lower = proj.name.toLowerCase();
         if (!type || type === "cube") {
@@ -30,17 +41,17 @@ export function ProjectCard(props: Props) {
         }
         switch (type) {
             case "tower":
-                return { name: "Apex Skyscraper", icon: "apartment" };
+                return { name: "Apex Skyscraper", icon: "apartment", category: "3d" };
             case "bridge":
-                return { name: "Nordic Bridge", icon: "alt_route" };
+                return { name: "Nordic Bridge", icon: "alt_route", category: "3d" };
             case "villa":
-                return { name: "Azure Eco-Villa", icon: "cottage" };
+                return { name: "Azure Eco-Villa", icon: "cottage", category: "3d" };
             case "car":
-                return { name: "Civil EV Coupe", icon: "electric_car" };
+                return { name: "Civil EV Coupe", icon: "electric_car", category: "3d" };
             case "gear":
-                return { name: "HVAC Dyno Gear", icon: "settings" };
+                return { name: "HVAC Dyno Gear", icon: "settings", category: "3d" };
             default:
-                return { name: "BIM Pavilion", icon: "view_in_ar" };
+                return { name: "BIM Pavilion", icon: "view_in_ar", category: "3d" };
         }
     };
 
@@ -123,10 +134,15 @@ export function ProjectCard(props: Props) {
                     <span className="detail-value">{dateStr}</span>
                 </div>
                 <div className="detail-row">
-                    <span className="detail-label">3D Model</span>
-                    <span className="detail-value" style={{ display: "inline-flex", alignItems: "center", gap: "5px", color: "#38bdf8", fontWeight: 600 }}>
-                        <span className="material-icons-round" style={{ fontSize: "15px", color: "#38bdf8" }}>{modelBadge.icon}</span>
-                        {modelBadge.name}
+                    <span className="detail-label">{modelBadge.category === "ifc" ? "IFC Model" : "3D Model"}</span>
+                    <span className="detail-value" style={{ display: "inline-flex", alignItems: "center", gap: "6px", color: modelBadge.category === "ifc" ? "#34d399" : "#38bdf8", fontWeight: 600 }}>
+                        <span className="material-icons-round" style={{ fontSize: "15px", color: modelBadge.category === "ifc" ? "#10b981" : "#38bdf8" }}>{modelBadge.icon}</span>
+                        <span>{modelBadge.name}</span>
+                        {modelBadge.schema && (
+                            <span style={{ fontSize: "0.68rem", padding: "1px 5px", borderRadius: "3px", background: "rgba(16, 185, 129, 0.2)", border: "1px solid rgba(16, 185, 129, 0.4)", color: "#6ee7b7", fontFamily: "monospace", fontWeight: 700 }}>
+                                {modelBadge.schema}
+                            </span>
+                        )}
                     </span>
                 </div>
                 <div className="detail-row">
