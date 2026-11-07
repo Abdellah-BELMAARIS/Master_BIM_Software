@@ -18,6 +18,11 @@ export function ProjectCard(props: Props) {
     const initials = project.name.trim().substring(0, 2) || "PR";
     const progressPercent = Math.round((project.progress || 0) * 100);
 
+    const dateObj = project.finishDate instanceof Date ? project.finishDate : new Date(project.finishDate);
+    const dateStr = !isNaN(dateObj.getTime())
+        ? dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+        : "N/A";
+
     // Resolve accurate 3D model metadata from modelCategory, modelType, or IFC properties
     const getModelBadge = (proj: Project): { name: string; icon: string; category: "ifc" | "3d"; schema?: string } => {
         if (proj.modelCategory === "ifc" || proj.ifcFileName || proj.name.toLowerCase().includes(".ifc") || proj.name.toLowerCase().includes("ifc")) {

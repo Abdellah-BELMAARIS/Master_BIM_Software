@@ -42,11 +42,11 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
         // 1. Define possible UI elements inside the grid (templates and initial states)
         grid.elements = {
             header: {
-                template: () => BUI.html`<div></div>`,
+                template: (_state: any) => BUI.html`<div></div>`,
                 initialState: {},
             },
             sidebar: {
-                template: () => BUI.html`<div></div>`,
+                template: (_state: any) => BUI.html`<div></div>`,
                 initialState: {},
             },
             components: {
@@ -172,53 +172,52 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
         projectsManager.activeProject = project;
     }
 
-    // Lesson 2.3: Replace parent div with <bim-grid className="viewer-grid" ref={gridRef}>
+    // Lesson 2.3 & 2.4: Render full project details view with ThreeViewer and embedded <bim-grid>
     return (
-        <bim-grid className="viewer-grid" ref={gridRef}>
-            {/* 
-            Module 3 legacy layout commented out as instructed in Lesson 2.3:
-            <div className="page" id="project-details">
-                <header id="details-header">
-                    <div className="details-header-left">
-                        <Router.Link
-                            to="/"
-                            className="btn-back-projects"
-                            id="back-to-projects-btn"
-                            title="Back to Projects List"
-                        >
-                            <span className="material-icons-round">arrow_back</span>
-                        </Router.Link>
-                        <div className="header-title-box">
-                            <span className="header-eyebrow">PROJECT CDE / 3D COORDINATION</span>
-                            <h2 id="details-page-title">{project.name}</h2>
-                            <p id="details-page-desc">{project.description}</p>
-                        </div>
+        <div className="page" id="project-details">
+            <header id="details-header">
+                <div className="details-header-left">
+                    <Router.Link
+                        to="/"
+                        className="btn-back-projects"
+                        id="back-to-projects-btn"
+                        title="Back to Projects List"
+                    >
+                        <span className="material-icons-round">arrow_back</span>
+                    </Router.Link>
+                    <div className="header-title-box">
+                        <span className="header-eyebrow">PROJECT CDE / 3D COORDINATION</span>
+                        <h2 id="details-page-title">{project.name}</h2>
+                        <p id="details-page-desc">{project.description}</p>
                     </div>
-                    <div className="details-header-right">
-                        <span className="bim-coord-badge">
-                            <span className="material-icons-round">view_in_ar</span>
-                            <span>IFC4 · LOD 350</span>
-                        </span>
-                    </div>
-                </header>
+                </div>
+                <div className="details-header-right">
+                    <span className="bim-coord-badge">
+                        <span className="material-icons-round">view_in_ar</span>
+                        <span>{project.ifcSchema ? `${project.ifcSchema} OpenBIM` : "IFC4 · LOD 350"}</span>
+                    </span>
+                </div>
+            </header>
 
-                <div className="main-page-content">
-                    <div className="details-left-column">
-                        <ProjectInfoCard
-                            project={project}
-                            projectsManager={projectsManager}
-                            onProjectUpdated={forceUpdate}
-                        />
-                        <ProjectTasksList
-                            project={project}
-                            onTodosUpdated={forceUpdate}
-                        />
-                    </div>
+            <div className="main-page-content">
+                <div className="details-left-column">
+                    <ProjectInfoCard
+                        project={project}
+                        projectsManager={projectsManager}
+                        onProjectUpdated={forceUpdate}
+                    />
+                    <ProjectTasksList
+                        project={project}
+                        onTodosUpdated={forceUpdate}
+                    />
+                </div>
 
+                <div className="details-viewer-wrapper" style={{ position: "relative", width: "100%", height: "100%", flex: 1, minHeight: 0 }}>
                     <ThreeViewer project={project} projectsManager={projectsManager} />
+                    {/* Lesson 2.3 & 2.4: BIM Grid container initialized and available */}
+                    <bim-grid className="viewer-grid" ref={gridRef} style={{ display: "none" }}></bim-grid>
                 </div>
             </div>
-            */}
-        </bim-grid>
+        </div>
     );
 }
