@@ -4,10 +4,38 @@ import * as ReactDOM from "react-dom/client";
 import { flushSync } from "react-dom";
 import * as Router from "react-router-dom";
 import * as BUI from "@thatopen/ui";
+import * as WEBIFC from "web-ifc";
 import { Sidebar } from "./react-components/Sidebar";
 import { ProjectsPage } from "./react-components/ProjectsPage";
 import { ProjectDetailsPage } from "./react-components/ProjectDetailsPage";
 import { ProjectsManager } from "./classes/ProjectsManager";
+
+// Emscripten WASM 3-arg vs 4-arg compatibility bridge for web-ifc
+if ((WEBIFC as any)?.IfcAPI?.prototype) {
+    const proto = (WEBIFC as any).IfcAPI.prototype;
+    const origStreamMeshes = proto.StreamMeshes;
+    proto.StreamMeshes = function (modelID: number, expressIDs: any, meshCallback: any, applyLinearScalingFactor?: boolean) {
+        try {
+            return origStreamMeshes.call(this, modelID, expressIDs, meshCallback, applyLinearScalingFactor);
+        } catch (err: any) {
+            if (err && String(err).includes("expected 3")) {
+                return (this as any).wasmModule.StreamMeshes(modelID, expressIDs, meshCallback);
+            }
+            throw err;
+        }
+    };
+    const origStreamAllMeshes = proto.StreamAllMeshes;
+    proto.StreamAllMeshes = function (modelID: number, meshCallback: any, applyLinearScalingFactor?: boolean) {
+        try {
+            return origStreamAllMeshes.call(this, modelID, meshCallback, applyLinearScalingFactor);
+        } catch (err: any) {
+            if (err && String(err).includes("expected 2")) {
+                return (this as any).wasmModule.StreamAllMeshes(modelID, meshCallback);
+            }
+            throw err;
+        }
+    };
+}
 
 // Initialize That Open Engine UI Web Components
 BUI.Manager.init();

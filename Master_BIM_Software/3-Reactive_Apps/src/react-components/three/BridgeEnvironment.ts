@@ -7,6 +7,8 @@ import * as THREE from "three";
  * - Massive twin A-frame reinforced concrete pylon towers
  * - 32 high-tensile steel tension stay cables in harp/fan configuration
  * - Continuous 4-lane aerodynamic box girder roadway deck
+ * - Highway traffic with 4 driving 3D cars (headlights & taillights)
+ * - Maritime yacht / patrol vessel cruising beneath the center span
  * - Lane dividers, pedestrian sidewalks, and illuminated LED roadway lampposts
  * - Marine navigation markers and aviation warning beacons atop pylons
  */
@@ -24,6 +26,9 @@ export function buildBridgeEnvironment(): IBridgeEnvironment {
     const lampsGroup = new THREE.Group();
     lampsGroup.name = "RoadwayLampposts";
 
+    const trafficGroup = new THREE.Group();
+    trafficGroup.name = "BridgeTrafficVehicles";
+
     const disposables: { geometries: THREE.BufferGeometry[]; materials: THREE.Material[] } = {
         geometries: [],
         materials: [],
@@ -40,7 +45,7 @@ export function buildBridgeEnvironment(): IBridgeEnvironment {
     };
 
     // --- Engineering Grade Materials ---
-    const waterGeom = trackGeom(new THREE.PlaneGeometry(60, 60, 48, 48));
+    const waterGeom = trackGeom(new THREE.PlaneGeometry(64, 64, 48, 48));
     const waterMat = trackMat(new THREE.MeshStandardMaterial({
         color: 0x0369a1, // Deep coastal fjord blue
         roughness: 0.1,
@@ -105,14 +110,23 @@ export function buildBridgeEnvironment(): IBridgeEnvironment {
     const navGreenMat = trackMat(new THREE.MeshStandardMaterial({
         color: 0x22c55e, // Marine navigation starboard
         emissive: 0x16a34a,
-        emissiveIntensity: 0.8,
+        emissiveIntensity: 0.9,
     }));
 
     const navRedMat = trackMat(new THREE.MeshStandardMaterial({
         color: 0xef4444, // Marine navigation port
         emissive: 0xdc2626,
-        emissiveIntensity: 0.8,
+        emissiveIntensity: 0.9,
     }));
+
+    // Highway Vehicle Paint Materials
+    const carRedMat = trackMat(new THREE.MeshStandardMaterial({ color: 0xdc2626, metalness: 0.8, roughness: 0.2 }));
+    const carWhiteMat = trackMat(new THREE.MeshStandardMaterial({ color: 0xf8fafc, metalness: 0.6, roughness: 0.3 }));
+    const carBlueMat = trackMat(new THREE.MeshStandardMaterial({ color: 0x2563eb, metalness: 0.85, roughness: 0.2 }));
+    const carSilverMat = trackMat(new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9, roughness: 0.15 }));
+    const headlampMat = trackMat(new THREE.MeshBasicMaterial({ color: 0xe0f2fe }));
+    const taillampMat = trackMat(new THREE.MeshBasicMaterial({ color: 0xef4444 }));
+    const carTireMat = trackMat(new THREE.MeshStandardMaterial({ color: 0x020617, roughness: 0.9 }));
 
     // =========================================================================
     // 1. DYNAMIC OCEAN WATER BASE
@@ -136,7 +150,7 @@ export function buildBridgeEnvironment(): IBridgeEnvironment {
         pier.receiveShadow = true;
         rootGroup.add(pier);
 
-        // Marine navigation lights under the bridge for maritime navigation
+        // Marine navigation lights under the bridge
         const greenLight = new THREE.Mesh(trackGeom(new THREE.SphereGeometry(0.18, 8, 8)), navGreenMat);
         greenLight.position.set(px + (px > 0 ? -1.8 : 1.8), 2.2, 3.2);
         rootGroup.add(greenLight);
@@ -156,7 +170,6 @@ export function buildBridgeEnvironment(): IBridgeEnvironment {
         const pylonGroup = new THREE.Group();
         pylonGroup.position.set(px, 0, 0);
 
-        // North and South inclined pylon legs forming an A-Frame
         const legGeom = trackGeom(new THREE.CylinderGeometry(0.45, 0.85, pylonTotalHeight, 12));
         const inclineAngle = 0.085;
 
@@ -174,21 +187,18 @@ export function buildBridgeEnvironment(): IBridgeEnvironment {
         legSouth.receiveShadow = true;
         pylonGroup.add(legSouth);
 
-        // Lower Deck Cross-Beam Strut
         const lowerStrutGeom = trackGeom(new THREE.BoxGeometry(1.4, 0.85, 4.4));
         const lowerStrut = new THREE.Mesh(lowerStrutGeom, concretePylonMat);
         lowerStrut.position.set(0, deckLevelY - 0.45, 0);
         lowerStrut.castShadow = true;
         pylonGroup.add(lowerStrut);
 
-        // Upper Crown Cable Anchorage Chamber
         const upperStrutGeom = trackGeom(new THREE.BoxGeometry(1.2, 4.2, 1.6));
         const upperStrut = new THREE.Mesh(upperStrutGeom, concretePylonMat);
         upperStrut.position.set(0, pylonTotalHeight - 2.1, 0);
         upperStrut.castShadow = true;
         pylonGroup.add(upperStrut);
 
-        // Flashing Aviation Beacon Atop Pylon
         const beaconGeom = trackGeom(new THREE.SphereGeometry(0.24, 12, 12));
         const beacon = new THREE.Mesh(beaconGeom, pylonBeaconMat);
         beacon.position.set(0, pylonTotalHeight + 0.15, 0);
@@ -204,7 +214,6 @@ export function buildBridgeEnvironment(): IBridgeEnvironment {
     const deckWidth = 6.4;
     const deckThickness = 0.55;
 
-    // Steel Girder Deck Base
     const deckGeom = trackGeom(new THREE.BoxGeometry(deckLength, deckThickness, deckWidth));
     const deckMesh = new THREE.Mesh(deckGeom, asphaltMat);
     deckMesh.position.set(0, deckLevelY, 0);
@@ -212,7 +221,6 @@ export function buildBridgeEnvironment(): IBridgeEnvironment {
     deckMesh.receiveShadow = true;
     rootGroup.add(deckMesh);
 
-    // Pedestrian Sidewalks on Both Shoulders
     const sidewalkGeom = trackGeom(new THREE.BoxGeometry(deckLength, 0.15, 0.85));
     [-deckWidth / 2 + 0.42, deckWidth / 2 - 0.42].forEach((sz) => {
         const sidewalk = new THREE.Mesh(sidewalkGeom, sidewalkMat);
@@ -221,7 +229,6 @@ export function buildBridgeEnvironment(): IBridgeEnvironment {
         sidewalk.receiveShadow = true;
         rootGroup.add(sidewalk);
 
-        // Crash Guardrail Barriers
         const railGeom = trackGeom(new THREE.BoxGeometry(deckLength, 0.45, 0.08));
         const rail = new THREE.Mesh(railGeom, guardrailMat);
         rail.position.set(0, deckLevelY + deckThickness / 2 + 0.35, sz + (sz > 0 ? 0.38 : -0.38));
@@ -229,7 +236,6 @@ export function buildBridgeEnvironment(): IBridgeEnvironment {
         rootGroup.add(rail);
     });
 
-    // Dashed White Lane Divider Striping
     const dashLength = 1.4;
     const dashGap = 1.2;
     const dashCount = Math.floor(deckLength / (dashLength + dashGap));
@@ -243,7 +249,7 @@ export function buildBridgeEnvironment(): IBridgeEnvironment {
     }
 
     // =========================================================================
-    // 5. 32 HIGH-TENSILE STEEL STAY CABLES (HARP / FAN CONFIGURATION)
+    // 5. 32 HIGH-TENSILE STEEL STAY CABLES
     // =========================================================================
     const cablesPerSide = 8;
     const anchorSpacing = 2.4;
@@ -251,13 +257,11 @@ export function buildBridgeEnvironment(): IBridgeEnvironment {
 
     pylonXPositions.forEach((px) => {
         for (let i = 0; i < cablesPerSide; i++) {
-            // Anchor point in the upper pylon mast
             const towerAnchorY = pylonTotalHeight - 3.8 + i * 0.45;
             const dir = i % 2 === 0 ? 1 : -1;
             const distIndex = Math.floor(i / 2) + 1;
             const deckAnchorX = px + dir * (distIndex * anchorSpacing + 0.5);
 
-            // Left & Right Stay Cables to Deck Edges
             [-deckWidth / 2 + 0.45, deckWidth / 2 - 0.45].forEach((anchorZ) => {
                 const start = new THREE.Vector3(px, towerAnchorY, anchorZ * 0.28);
                 const end = new THREE.Vector3(deckAnchorX, deckLevelY + 0.2, anchorZ);
@@ -266,7 +270,6 @@ export function buildBridgeEnvironment(): IBridgeEnvironment {
                 const cableGeom = trackGeom(new THREE.CylinderGeometry(cableRadius, cableRadius, length, 6));
                 const cable = new THREE.Mesh(cableGeom, cableSteelMat);
 
-                // Orient cylinder along cable vector
                 cable.position.copy(start.clone().add(end).multiplyScalar(0.5));
                 cable.quaternion.setFromUnitVectors(
                     new THREE.Vector3(0, 1, 0),
@@ -306,6 +309,120 @@ export function buildBridgeEnvironment(): IBridgeEnvironment {
     }
     rootGroup.add(lampsGroup);
 
+    // =========================================================================
+    // 7. HIGHWAY TRAFFIC VEHICLES (DRIVING ON BRIDGE LANES)
+    // =========================================================================
+    const createHighwayCar = (paintMat: THREE.Material): THREE.Group => {
+        const car = new THREE.Group();
+        const bodyGeom = trackGeom(new THREE.BoxGeometry(2.8, 0.45, 1.4));
+        const body = new THREE.Mesh(bodyGeom, paintMat);
+        body.position.y = 0.35;
+        body.castShadow = true;
+        car.add(body);
+
+        const cabinGeom = trackGeom(new THREE.BoxGeometry(1.6, 0.4, 1.2));
+        const cabin = new THREE.Mesh(cabinGeom, paintMat);
+        cabin.position.set(-0.2, 0.7, 0);
+        car.add(cabin);
+
+        // Front Headlights
+        const hlGeom = trackGeom(new THREE.BoxGeometry(0.05, 0.08, 0.2));
+        const hlLeft = new THREE.Mesh(hlGeom, headlampMat);
+        hlLeft.position.set(1.42, 0.38, 0.4);
+        const hlRight = new THREE.Mesh(hlGeom, headlampMat);
+        hlRight.position.set(1.42, 0.38, -0.4);
+        car.add(hlLeft, hlRight);
+
+        // Rear Taillights
+        const tlGeom = trackGeom(new THREE.BoxGeometry(0.05, 0.08, 0.22));
+        const tlLeft = new THREE.Mesh(tlGeom, taillampMat);
+        tlLeft.position.set(-1.42, 0.38, 0.4);
+        const tlRight = new THREE.Mesh(tlGeom, taillampMat);
+        tlRight.position.set(-1.42, 0.38, -0.4);
+        car.add(tlLeft, tlRight);
+
+        return car;
+    };
+
+    // Commercial Freight Semi-Truck
+    const createFreightTruck = (): THREE.Group => {
+        const truck = new THREE.Group();
+        const cab = new THREE.Mesh(trackGeom(new THREE.BoxGeometry(1.6, 1.2, 1.5)), carBlueMat);
+        cab.position.set(2.0, 0.7, 0);
+        const container = new THREE.Mesh(trackGeom(new THREE.BoxGeometry(4.2, 1.5, 1.6)), carSilverMat);
+        container.position.set(-1.0, 0.95, 0);
+        const wheels = new THREE.Mesh(trackGeom(new THREE.BoxGeometry(4.8, 0.35, 1.4)), carTireMat);
+        wheels.position.set(0.3, 0.2, 0);
+        truck.add(cab, container, wheels);
+        return truck;
+    };
+
+    // Eastbound Traffic (z = 1.4)
+    const trafficCar1 = createHighwayCar(carRedMat);
+    trafficCar1.position.set(-14, deckLevelY + deckThickness / 2, 1.4);
+    trafficGroup.add(trafficCar1);
+
+    const trafficCar2 = createHighwayCar(carWhiteMat);
+    trafficCar2.position.set(8, deckLevelY + deckThickness / 2, 1.4);
+    trafficGroup.add(trafficCar2);
+
+    const trafficTruck = createFreightTruck();
+    trafficTruck.position.set(-2, deckLevelY + deckThickness / 2, 1.4);
+    trafficGroup.add(trafficTruck);
+
+    // Westbound Traffic (z = -1.4, rotated 180 degrees)
+    const trafficCar3 = createHighwayCar(carBlueMat);
+    trafficCar3.rotation.y = Math.PI;
+    trafficCar3.position.set(14, deckLevelY + deckThickness / 2, -1.4);
+    trafficGroup.add(trafficCar3);
+
+    const trafficCar4 = createHighwayCar(carSilverMat);
+    trafficCar4.rotation.y = Math.PI;
+    trafficCar4.position.set(-6, deckLevelY + deckThickness / 2, -1.4);
+    trafficGroup.add(trafficCar4);
+
+    const trafficVan = createHighwayCar(trackMat(new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.3 })));
+    trafficVan.rotation.y = Math.PI;
+    trafficVan.position.set(4, deckLevelY + deckThickness / 2, -1.4);
+    trafficGroup.add(trafficVan);
+
+    rootGroup.add(trafficGroup);
+
+    // =========================================================================
+    // 8. MARITIME YACHT / PATROL VESSEL CRUISING BENEATH MAIN SPAN
+    // =========================================================================
+    const boatGroup = new THREE.Group();
+    boatGroup.position.set(0, 0, -18);
+
+    const hullGeom = trackGeom(new THREE.BoxGeometry(2.4, 0.85, 7.2));
+    const hull = new THREE.Mesh(hullGeom, carWhiteMat);
+    hull.position.y = 0.25;
+    hull.castShadow = true;
+    boatGroup.add(hull);
+
+    const bowGeom = trackGeom(new THREE.ConeGeometry(1.2, 2.0, 4));
+    const bow = new THREE.Mesh(bowGeom, carWhiteMat);
+    bow.rotation.x = Math.PI / 2;
+    bow.rotation.y = Math.PI / 4;
+    bow.position.set(0, 0.25, 4.2);
+    boatGroup.add(bow);
+
+    const boatCabinGeom = trackGeom(new THREE.BoxGeometry(1.8, 0.95, 3.4));
+    const boatCabin = new THREE.Mesh(boatCabinGeom, carBlueMat);
+    boatCabin.position.set(0, 0.95, -0.4);
+    boatGroup.add(boatCabin);
+
+    // Starboard (Green) and Port (Red) Navigation Lights
+    const boatGreen = new THREE.Mesh(trackGeom(new THREE.SphereGeometry(0.12, 8, 8)), navGreenMat);
+    boatGreen.position.set(1.25, 0.65, 2.8);
+    boatGroup.add(boatGreen);
+
+    const boatRed = new THREE.Mesh(trackGeom(new THREE.SphereGeometry(0.12, 8, 8)), navRedMat);
+    boatRed.position.set(-1.25, 0.65, 2.8);
+    boatGroup.add(boatRed);
+
+    rootGroup.add(boatGroup);
+
     // Dynamic Updates
     const updateBridge = (time: number) => {
         // Dynamic water wave undulation
@@ -322,6 +439,19 @@ export function buildBridgeEnvironment(): IBridgeEnvironment {
         // Aviation warning strobe pulse
         const strobe = Math.pow(Math.sin(time * 3.0), 6);
         pylonBeaconMat.emissiveIntensity = 0.4 + 2.6 * strobe;
+
+        // Eastbound & Westbound Traffic Motion
+        trafficCar1.position.x = -22 + ((time * 6.5) % 44);
+        trafficCar2.position.x = -22 + (((time * 6.5) + 16) % 44);
+        trafficTruck.position.x = -22 + (((time * 5.0) + 30) % 44);
+        trafficCar3.position.x = 22 - ((time * 6.0) % 44);
+        trafficCar4.position.x = 22 - (((time * 6.0) + 14) % 44);
+        trafficVan.position.x = 22 - (((time * 5.5) + 28) % 44);
+
+        // Boat Navigation Motion across the fjord
+        boatGroup.position.z = -22 + ((time * 2.2) % 44);
+        boatGroup.position.y = Math.sin(time * 2.0) * 0.05; // Gentle water bobbing
+        boatGroup.rotation.z = Math.sin(time * 1.5) * 0.03; // Gentle water rolling
     };
 
     const toggleTrafficLamps = (visible: boolean) => {
@@ -342,4 +472,3 @@ export function buildBridgeEnvironment(): IBridgeEnvironment {
         dispose,
     };
 }
-

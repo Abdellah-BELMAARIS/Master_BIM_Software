@@ -103,7 +103,7 @@ export function Sidebar(props: ISidebarProps) {
             <div className="sidebar-nav-section">
                 <span className="sidebar-section-label">WORKSPACE</span>
                 <ul id="nav-buttons">
-                    <Router.Link to="/">
+                    <Router.Link to="/" style={{ textDecoration: "none", width: "100%", display: "block" }}>
                         <li
                             className={`nav-item ${activeTab === "projects" ? "active" : ""}`}
                             id="nav-projects-btn"
@@ -111,6 +111,7 @@ export function Sidebar(props: ISidebarProps) {
                         >
                             <span className="material-icons-round">domain</span>
                             <span className="nav-label">BIM Projects</span>
+                            <span className="nav-badge">6</span>
                         </li>
                     </Router.Link>
                     <li
@@ -120,16 +121,46 @@ export function Sidebar(props: ISidebarProps) {
                     >
                         <span className="material-icons-round">engineering</span>
                         <span className="nav-label">AEC Team</span>
+                        <span className="nav-pill-role">Online</span>
                     </li>
+                </ul>
+
+                <span className="sidebar-section-label" style={{ marginTop: "1.35rem" }}>CDE DATA & TOOLS</span>
+                <ul className="sidebar-secondary-nav">
+                    <Router.Link to="/?category=ifc" style={{ textDecoration: "none", color: "inherit", display: "block" }}>
+                        <li
+                            className={`nav-sub-item ${location.pathname === "/" && location.search.includes("category=ifc") ? "active" : ""}`}
+                            onClick={() => handleNavClick("projects")}
+                            title="Filter to IFC OpenBIM Models"
+                        >
+                            <span className="material-icons-round" style={{ color: "#38bdf8" }}>description</span>
+                            <span>IFC OpenBIM Models</span>
+                        </li>
+                    </Router.Link>
+                    <Router.Link to="/?category=3d" style={{ textDecoration: "none", color: "inherit", display: "block" }}>
+                        <li
+                            className={`nav-sub-item ${location.pathname === "/" && location.search.includes("category=3d") ? "active" : ""}`}
+                            onClick={() => handleNavClick("projects")}
+                            title="Filter to 3D Parametric Digital Twins"
+                        >
+                            <span className="material-icons-round" style={{ color: "#a855f7" }}>view_in_ar</span>
+                            <span>3D BIM Models</span>
+                        </li>
+                    </Router.Link>
                 </ul>
             </div>
 
             <div className="sidebar-footer">
+                <div className="user-profile-bar">
+                    <div className="user-avatar-badge">AB</div>
+                    <div className="user-meta">
+                        <span className="user-name">Abdellah B.</span>
+                    </div>
+                </div>
                 <div className="system-status">
                     <span className="status-dot"></span>
-                    <span className="status-text">IFC VIEWER READY</span>
+                    <span className="status-text">IFC READY</span>
                 </div>
-                <span className="status-version">IFC4 · 3D</span>
             </div>
         </aside>
     );

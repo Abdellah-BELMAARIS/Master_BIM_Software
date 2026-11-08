@@ -143,6 +143,7 @@ a {
     width: 100%;
     padding: 1.15rem 0.9rem;
     box-sizing: border-box;
+    overflow-y: auto;
 }
 
 .sidebar-section-label {
@@ -153,6 +154,7 @@ a {
     text-transform: uppercase;
     padding: 0 0.75rem 0.55rem 0.75rem;
     user-select: none;
+    display: block;
 }
 
 #nav-buttons {
@@ -161,9 +163,9 @@ a {
     padding: 0;
     display: flex;
     flex-direction: column;
-    row-gap: 8px;
+    row-gap: 6px;
     width: 100%;
-    flex: 1;
+    flex: none;
     box-sizing: border-box;
 }
 
@@ -171,32 +173,70 @@ a {
     --bim-ui_bg-base: transparent;
     --bim-ui_main-base: var(--primary-blue);
     width: 100%;
+    height: 42px !important;
+    min-height: 42px !important;
+    max-height: 42px !important;
+    flex: none !important;
     cursor: pointer;
 }
 
 .nav-item {
     display: flex;
     align-items: center;
-    gap: 0.95rem;
-    padding: 0.9rem 1.1rem;
+    gap: 0.85rem;
+    padding: 0 1rem;
+    height: 44px;
+    min-height: 44px;
+    max-height: 44px;
     border-radius: var(--radius-straight);
     color: var(--text-secondary);
-    font-size: 1.05rem;
+    font-size: 0.95rem;
     font-weight: 600;
     cursor: pointer;
     width: 100%;
     box-sizing: border-box;
     border: 1px solid transparent;
     transition: all 0.15s ease;
+    user-select: none;
 }
 
 .nav-item .material-icons-round {
-    font-size: 1.45rem;
+    font-size: 1.35rem;
+    flex-shrink: 0;
+}
+
+.nav-item .nav-label {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.nav-badge {
+    background: rgba(37, 99, 235, 0.25);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 10px;
+    line-height: 1;
+}
+
+.nav-pill-role {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #22c55e;
+    background: rgba(34, 197, 94, 0.12);
+    border: 1px solid rgba(34, 197, 94, 0.25);
+    padding: 2px 6px;
+    border-radius: 4px;
+    line-height: 1;
 }
 
 .nav-item:hover {
-    background-color: #202636;
-    border-color: var(--border-color);
+    background-color: #1e293b;
+    border-color: rgba(56, 189, 248, 0.2);
     color: var(--text-primary);
 }
 
@@ -204,13 +244,275 @@ a {
     background: rgba(37, 99, 235, 0.18);
     color: #ffffff;
     border-left: 3px solid var(--primary-blue);
-    border-top: 1px solid var(--border-color);
-    border-bottom: 1px solid var(--border-color);
-    border-right: 1px solid var(--border-color);
+    border-top: 1px solid rgba(59, 130, 246, 0.25);
+    border-bottom: 1px solid rgba(59, 130, 246, 0.25);
+    border-right: 1px solid rgba(59, 130, 246, 0.25);
 }
 
 .nav-item.active .material-icons-round {
     color: #60a5fa;
+}
+
+/* Secondary Navigation & CDE Tools */
+.sidebar-secondary-nav {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+}
+
+.nav-sub-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.55rem 0.85rem;
+    border-radius: 6px;
+    color: var(--text-muted);
+    font-size: 0.86rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.nav-sub-item .material-icons-round {
+    font-size: 1.15rem;
+    color: #64748b;
+    transition: color 0.15s ease;
+}
+
+.nav-sub-item:hover {
+    background: rgba(30, 41, 59, 0.6);
+    color: var(--text-primary);
+}
+
+.nav-sub-item:hover .material-icons-round {
+    color: #38bdf8;
+}
+
+.nav-sub-item.active {
+    background: rgba(37, 99, 235, 0.22);
+    color: #ffffff;
+    border-left: 3px solid var(--primary-blue);
+    font-weight: 600;
+}
+
+.nav-sub-item.active .material-icons-round {
+    color: #38bdf8;
+}
+
+/* CAD & BIM Measurement HUD Banner */
+.measurement-banner {
+    position: absolute;
+    top: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(15, 23, 42, 0.92);
+    border: 1px solid #f59e0b;
+    border-radius: 24px;
+    padding: 6px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #fef3c7;
+    font-size: 0.82rem;
+    font-weight: 600;
+    z-index: 25;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+    pointer-events: none;
+    animation: fadeInDown 0.2s ease;
+}
+
+.measurement-banner .material-icons-round {
+    color: #f59e0b;
+    font-size: 1.15rem;
+}
+
+/* Floating BIM Element Inspector Card */
+.element-inspector-card {
+    position: absolute;
+    bottom: 80px;
+    right: 20px;
+    width: 290px;
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    border-radius: 10px;
+    padding: 12px 14px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(12px);
+    z-index: 25;
+    animation: fadeInUp 0.2s ease;
+}
+
+.inspector-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+}
+
+.inspector-header h4 {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #f8fafc;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 200px;
+}
+
+.btn-close-inspector {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 1.2rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: 2px 6px;
+}
+.btn-close-inspector:hover {
+    color: #f8fafc;
+}
+
+.inspector-body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.inspector-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.76rem;
+}
+
+.inspector-row .label {
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+.inspector-row .value {
+    color: #38bdf8;
+    font-weight: 600;
+    font-family: monospace;
+}
+
+/* Local IFC Parser Loading Modal */
+.ifc-loading-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(8px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    z-index: 50;
+}
+
+.ifc-loading-spinner {
+    width: 44px;
+    height: 44px;
+    border: 3px solid rgba(56, 189, 248, 0.2);
+    border-top-color: #38bdf8;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+.ifc-loading-overlay p {
+    color: #f8fafc;
+    font-size: 0.92rem;
+    font-weight: 600;
+}
+
+/* CDE Cloud Storage Card in Sidebar */
+.cde-storage-card {
+    margin-top: auto;
+    padding: 0.85rem;
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.75);
+    border: 1px solid rgba(51, 65, 85, 0.6);
+    box-sizing: border-box;
+}
+
+.storage-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+}
+
+.storage-bar {
+    width: 100%;
+    height: 5px;
+    background: #1e293b;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 0.45rem;
+}
+
+.storage-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #38bdf8, #2563eb);
+    border-radius: 4px;
+}
+
+.storage-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    font-family: monospace;
+}
+
+/* User Profile in Sidebar Footer */
+.user-profile-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.user-avatar-badge {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
+}
+
+.user-meta {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.15;
+}
+
+.user-name {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.user-role-badge {
+    font-size: 0.68rem;
+    color: #38bdf8;
+    font-weight: 500;
 }
 
 .sidebar-footer {
@@ -278,29 +580,32 @@ dialog {
     pointer-events: auto;
 }
 
-/* Structural BIM Top Header */
+/* Structural BIM Top Header — Fluid & 100% Responsive for All Devices & Split-Screen */
 #main-header {
-    height: 86px;
-    min-height: 86px;
+    height: auto;
+    min-height: 80px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 2.5rem;
+    padding: 0.75rem 2rem;
     background: var(--bg-sidebar);
     border-bottom: 1px solid var(--border-color);
     box-sizing: border-box;
     z-index: 5;
+    gap: 1rem;
+    flex-wrap: wrap;
 }
 
 .header-title-box {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    gap: 0.25rem;
+    gap: 0.2rem;
+    flex-shrink: 0;
 }
 
 .header-eyebrow {
-    font-size: 0.76rem;
+    font-size: 0.74rem;
     font-weight: 700;
     color: #60a5fa;
     letter-spacing: 0.08em;
@@ -309,7 +614,7 @@ dialog {
 }
 
 #main-header h2 {
-    font-size: 1.72rem;
+    font-size: 1.6rem;
     font-weight: 700;
     color: var(--text-primary);
     letter-spacing: -0.02em;
@@ -320,7 +625,15 @@ dialog {
 .header-actions {
     display: flex;
     align-items: center;
-    gap: 0.85rem;
+    gap: 0.65rem;
+    flex-shrink: 0;
+}
+
+.projects-search-box {
+    flex: 1 1 200px;
+    min-width: 140px;
+    max-width: 380px;
+    position: relative;
 }
 
 .btn-action-tool {
@@ -444,6 +757,58 @@ dialog {
     align-items: center;
     gap: 0.6rem;
     flex-wrap: wrap;
+}
+
+/* Model Category Filter Group (IFC vs 3D Parametric) */
+.projects-category-filter-group {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+    background: rgba(15, 23, 42, 0.65);
+    padding: 3px;
+    border-radius: 8px;
+    border: 1px solid rgba(51, 65, 85, 0.6);
+}
+
+.category-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.45rem 0.85rem;
+    border-radius: 6px;
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    background: transparent;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+
+.category-pill:hover {
+    color: var(--text-primary);
+    background: rgba(30, 41, 59, 0.7);
+}
+
+.category-pill.active {
+    color: #ffffff;
+    background: #1e293b;
+    border-color: rgba(56, 189, 248, 0.35);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.category-pill.active.ifc-pill {
+    border-color: rgba(16, 185, 129, 0.5);
+    background: rgba(16, 185, 129, 0.18);
+    color: #34d399;
+}
+
+.category-pill.active.parametric-pill {
+    border-color: rgba(56, 189, 248, 0.5);
+    background: rgba(56, 189, 248, 0.18);
+    color: #38bdf8;
 }
 
 .filter-count {
@@ -1119,25 +1484,29 @@ dialog#error-modal::backdrop {
 }
 
 #details-header {
-    height: 86px;
-    min-height: 86px;
+    min-height: 72px;
+    height: auto !important;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0 2.5rem;
-    background: rgba(14, 19, 29, 0.92);
+    padding: 0.75rem 2rem;
+    background: rgba(14, 19, 29, 0.94);
     backdrop-filter: blur(14px);
     border-bottom: 1px solid var(--border-color);
     box-sizing: border-box;
-    gap: 1rem;
-    z-index: 5;
+    gap: 0.85rem 1.25rem;
+    z-index: 10;
+    flex-wrap: wrap;
 }
 
 .details-header-left {
     display: flex;
     align-items: center;
-    gap: 1rem;
+    gap: 0.85rem;
     min-width: 0;
+    flex: 1 1 280px;
+    max-width: calc(100% - 330px);
+    overflow: hidden;
 }
 
 .btn-back-projects {
@@ -1161,31 +1530,57 @@ dialog#error-modal::backdrop {
     background: rgba(37, 99, 235, 0.12);
 }
 
+.details-header-left .header-title-box {
+    min-width: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
 #details-header h2 {
-    font-size: 1.55rem;
+    font-size: 1.35rem;
     font-weight: 700;
     color: var(--text-primary);
-    line-height: 1.15;
+    line-height: 1.2;
+    margin: 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    max-width: 100%;
 }
 
 #details-page-desc {
     color: var(--text-secondary);
-    font-size: 0.88rem;
-    line-height: 1.25;
+    font-size: 0.84rem;
+    line-height: 1.3;
+    margin: 2px 0 0 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 520px;
+    max-width: 100%;
 }
 
 .details-header-right {
     display: flex;
     align-items: center;
-    gap: 0.75rem;
+    gap: 0.65rem;
     flex-shrink: 0;
+    flex-wrap: wrap;
+    margin-left: auto;
+}
+
+@media (max-width: 960px) {
+    .details-header-left {
+        max-width: 100%;
+        width: 100%;
+    }
+    .details-header-right {
+        width: 100%;
+        justify-content: space-between;
+        margin-top: 4px;
+    }
 }
 
 .bim-coord-badge {
@@ -1207,6 +1602,39 @@ dialog#error-modal::backdrop {
     font-size: 1.1rem;
 }
 
+.viewer-hud-overlay {
+    max-width: calc(100% - 24px);
+    width: max-content;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    box-sizing: border-box;
+}
+
+.viewer-hud-overlay::-webkit-scrollbar {
+    display: none;
+}
+
+.hud-btn-label {
+    display: inline-block;
+    transition: opacity 0.15s ease;
+}
+
+@media (max-width: 900px) {
+    .viewer-hud-overlay {
+        bottom: 10px !important;
+        padding: 4px 8px !important;
+        gap: 4px !important;
+    }
+    .viewer-hud-overlay button {
+        padding: 4px 8px !important;
+        font-size: 0.74rem !important;
+    }
+    .hud-btn-label {
+        display: none !important;
+    }
+}
+
 #project-details > .main-page-content {
     display: grid;
     grid-template-columns: minmax(360px, 420px) minmax(460px, 1fr);
@@ -1226,6 +1654,32 @@ dialog#error-modal::backdrop {
     min-width: 0;
     height: 100%;
     padding-right: 2px;
+}
+
+.details-viewer-wrapper {
+    container-type: inline-size;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    flex: 1;
+    overflow: hidden;
+    border-radius: var(--radius-straight);
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+}
+
+@container (max-width: 580px) {
+    .viewer-hud-overlay .hud-btn-label {
+        display: none !important;
+    }
+    .viewer-hud-overlay {
+        gap: 3px !important;
+        padding: 4px 6px !important;
+    }
+    .viewer-hud-overlay button {
+        padding: 5px 7px !important;
+    }
 }
 
 /* Project Details Card - Prevents flexbox vertical clipping */
@@ -2140,10 +2594,14 @@ dialog#error-modal::backdrop {
 
     .sidebar-header,
     #main-header,
-    #details-header,
     #users-header {
         height: 86px;
         min-height: 86px;
+    }
+
+    #details-header {
+        min-height: 86px;
+        height: auto;
     }
 
     #company-logo {
@@ -2212,17 +2670,27 @@ dialog#error-modal::backdrop {
     }
 
     #main-header,
-    #details-header,
     #users-header {
         height: 82px;
         min-height: 82px;
         padding: 0 1.5rem;
     }
 
+    #details-header {
+        height: auto;
+        min-height: 68px;
+        padding: 0.65rem 1.5rem;
+        flex-wrap: wrap;
+        gap: 0.75rem 1rem;
+    }
+
     #main-header h2,
-    #users-header h2,
-    #details-header h2 {
+    #users-header h2 {
         font-size: 1.42rem;
+    }
+
+    #details-header h2 {
+        font-size: 1.25rem;
     }
 
     .btn-action-tool .btn-tool-label {
@@ -2247,18 +2715,30 @@ dialog#error-modal::backdrop {
         grid-template-columns: 1fr;
         overflow-y: auto;
         overflow-x: hidden;
-        padding: 1.25rem 1.5rem 2rem 1.5rem;
-        gap: 1.25rem;
+        padding: 1.25rem 1.5rem 2.5rem 1.5rem;
+        gap: 1.5rem;
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
     }
 
     .details-left-column {
         overflow-y: visible;
         height: auto;
+        min-width: 0;
+        width: 100%;
+    }
+
+    .details-viewer-wrapper {
+        min-height: 520px !important;
+        height: 560px !important;
+        width: 100%;
+        flex: none !important;
     }
 
     #viewer-container {
-        min-height: 420px;
-        height: 460px;
+        min-height: 520px !important;
+        height: 100% !important;
+        width: 100%;
     }
 
     .users-content-area {
@@ -2300,9 +2780,16 @@ dialog#error-modal::backdrop {
         padding: 0.95rem 1rem;
     }
 
+    .details-viewer-wrapper {
+        min-height: 480px !important;
+        height: 520px !important;
+        width: 100%;
+        flex: none !important;
+    }
+
     #viewer-container {
-        min-height: 380px;
-        height: 380px;
+        min-height: 480px !important;
+        height: 100% !important;
     }
 }
 
@@ -2390,15 +2877,33 @@ dialog#error-modal::backdrop {
         width: 100%;
     }
 
-    /* Straight Single-Row Headers on Phones */
+    /* Responsive Header Layout on Phones */
     #main-header,
     #details-header,
     #users-header {
-        height: 68px;
-        min-height: 68px;
-        padding: 0 1rem;
-        flex-wrap: nowrap;
-        gap: 0.5rem;
+        height: auto;
+        min-height: 64px;
+        padding: 0.65rem 1rem;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+        align-items: center;
+    }
+
+    #main-header .header-title-box {
+        order: 1;
+    }
+
+    #main-header .header-actions {
+        order: 2;
+        gap: 0.4rem;
+        flex-shrink: 0;
+    }
+
+    #main-header .projects-search-box {
+        order: 3;
+        width: 100%;
+        max-width: 100%;
+        flex: 1 1 100%;
     }
 
     #main-header h2,
@@ -2554,9 +3059,16 @@ dialog#error-modal::backdrop {
         border: 1px solid rgba(255, 255, 255, 0.08);
     }
 
+    .details-viewer-wrapper {
+        min-height: 420px !important;
+        height: 460px !important;
+        width: 100%;
+        flex: none !important;
+    }
+
     #viewer-container {
-        min-height: 360px;
-        height: 360px;
+        min-height: 420px !important;
+        height: 100% !important;
         border-radius: var(--radius-straight);
     }
 
@@ -2667,10 +3179,116 @@ dialog#error-modal::backdrop {
     }
 }
 
-/* Lesson 2.3: That Open Engine UI Base Viewer Grid */
+/* ==========================================================================
+   Professional 3D CAD Viewer Navigation HUD (Glassmorphism Overlay)
+   ========================================================================== */
+.viewer-pro-hud {
+    position: absolute;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(15, 23, 42, 0.8);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(56, 189, 248, 0.28);
+    padding: 0.35rem 0.65rem;
+    border-radius: 9999px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 0 15px rgba(56, 189, 248, 0.2);
+    pointer-events: auto;
+    user-select: none;
+    transition: all 0.25s ease;
+}
+
+.viewer-pro-hud:hover {
+    border-color: rgba(56, 189, 248, 0.5);
+    box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.7), 0 0 20px rgba(56, 189, 248, 0.3);
+}
+
+.hud-pill-group {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.hud-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: transparent;
+    border: 1px solid transparent;
+    color: #cbd5e1;
+    padding: 0.4rem 0.65rem;
+    border-radius: 9999px;
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-weight: 600;
+    font-family: inherit;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+}
+
+.hud-btn .material-icons-round {
+    font-size: 1.15rem;
+}
+
+.hud-btn:hover {
+    background: rgba(56, 189, 248, 0.18);
+    color: #38bdf8;
+    border-color: rgba(56, 189, 248, 0.35);
+    transform: translateY(-1px);
+}
+
+.hud-btn.active {
+    background: #0284c7;
+    color: #ffffff;
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.6);
+}
+
+.hud-divider {
+    width: 1px;
+    height: 18px;
+    background: rgba(148, 163, 184, 0.25);
+    margin: 0 0.2rem;
+}
+
+@media (max-width: 768px) {
+    .viewer-pro-hud {
+        bottom: 0.75rem;
+        padding: 0.25rem 0.4rem;
+        gap: 0.3rem;
+        max-width: 95%;
+        overflow-x: auto;
+    }
+
+    .hud-btn span.hud-label {
+        display: none;
+    }
+}
+
+/* Lesson 2.3 & 3.3: That Open Engine UI Base Viewer Grid & BIM Viewport */
 .viewer-grid {
     display: grid;
     width: 100%;
     height: 100%;
+    overflow: hidden;
+}
+
+bim-viewport {
+    width: 100%;
+    height: 100%;
+    display: block;
+    position: relative;
+    overflow: hidden;
+}
+
+.viewport-container {
+    width: 100%;
+    height: 100%;
+    display: block;
+    position: relative;
     overflow: hidden;
 }

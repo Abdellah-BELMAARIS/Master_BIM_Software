@@ -28,6 +28,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
     const [projects, setProjects] = React.useState<Project[]>(projectsManager.list);
     const [searchQuery, setSearchQuery] = React.useState<string>("");
     const [statusFilter, setStatusFilter] = React.useState<string>("all");
+    const [categoryFilter, setCategoryFilter] = React.useState<"all" | "ifc" | "3d">("all");
     const [sortBy, setSortBy] = React.useState<string>("name-asc");
     const [isNewProjectModalOpen, setIsNewProjectModalOpen] = React.useState<boolean>(false);
 
@@ -54,6 +55,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
         const getFirestoreProjects = async () => {
             try {
                 const querySnapshot = await getDocs(projectsCollection);
+                projectsManager.list = [];
 
                 for (const doc of querySnapshot.docs) {
                     const data = doc.data() as any;
@@ -67,16 +69,33 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         finishDate = new Date();
                     }
 
+                    // Cleanly upgrade placeholder "Default Project" if present in Firestore
+                    let projectName = data.name || "Untitled Project";
+                    let projectDesc = data.description || "";
+                    let projectCost = Number(data.cost || 0);
+                    let projectProgress = Number(data.progress || 0);
+                    let projectModelType: ModelType = data.modelType || "cube";
+                    let projectIcon = data.iconColor;
+
+                    if (projectName.toLowerCase() === "default project" || projectName.toLowerCase() === "untitled project") {
+                        projectName = "BIM Modular Innovation Pavilion";
+                        projectDesc = "Modular architectural exhibition pavilion with exposed rebar grid, polished terrazzo floor, and cantilevered LED canopy.";
+                        projectCost = 120000;
+                        projectProgress = 0.80;
+                        projectModelType = "cube";
+                        projectIcon = "#2563eb";
+                    }
+
                     const projectData: IProject = {
-                        name: data.name || "Untitled Project",
-                        description: data.description || "",
+                        name: projectName,
+                        description: projectDesc,
                         status: data.status || "Active",
                         userRole: data.userRole || "Architect",
                         finishDate,
-                        cost: Number(data.cost || 0),
-                        progress: Number(data.progress || 0),
-                        modelType: data.modelType || "cube",
-                        iconColor: data.iconColor,
+                        cost: projectCost,
+                        progress: projectProgress,
+                        modelType: projectModelType,
+                        iconColor: projectIcon,
                         todos: data.todos,
                     };
 
@@ -172,6 +191,151 @@ export function ProjectsPage(props: ProjectsPageProps) {
                             { id: 2, text: "A-frame slip-form concrete pylon tower climbing formwork", completed: true },
                             { id: 3, text: "Aerodynamic box girder deck lifting & stay cable tension balancing", completed: false }
                         ]
+                    },
+                    {
+                        name: "BIM Modular Innovation Pavilion",
+                        description: "Modular architectural exhibition pavilion with exposed rebar grid, polished terrazzo floor, and cantilevered LED canopy.",
+                        status: "Active",
+                        userRole: "Architect",
+                        finishDate: new Date("2026-11-20"),
+                        cost: 120000,
+                        progress: 0.80,
+                        modelType: "cube",
+                        modelCategory: "3d",
+                        iconColor: "#2563eb",
+                        todos: [
+                            { id: 1, text: "Reinforced concrete footing & rebar cage placement", completed: true },
+                            { id: 2, text: "Structural steel column bolting & torque inspection", completed: true },
+                            { id: 3, text: "Recessed linear LED lighting & curtain wall glazing", completed: false }
+                        ]
+                    },
+                    // The 7 Official That Open Company Course IFC Models
+                    {
+                        name: "That Open Company - Structural Complex (IFC4)",
+                        description: "Official That Open Company structural engineering model in IFC4 schema, featuring column grids, concrete foundation footings, and composite slabs.",
+                        status: "Active",
+                        userRole: "Engineer",
+                        finishDate: new Date("2027-04-15"),
+                        cost: 850000,
+                        progress: 0.70,
+                        modelType: "tower",
+                        modelCategory: "ifc",
+                        ifcFileName: "MBSD-TOC-P01-MOD-EST-001.ifc",
+                        ifcSchema: "IFC4",
+                        iconColor: "#059669",
+                        todos: [
+                            { id: 1, text: "Verify IFC4 STEP schema compliance & Express ID integrity", completed: true },
+                            { id: 2, text: "Extract structural column property sets (IfcPropertySet)", completed: true },
+                            { id: 3, text: "BIM spatial containment hierarchy (IfcRelContainedInSpatialStructure)", completed: false }
+                        ]
+                    },
+                    {
+                        name: "HNS Central Pavilion - Architectural Model (IFC2X3)",
+                        description: "Comprehensive architectural BIM model authored in Autodesk Revit 2024, exported in IFC2X3 Coordination View V2.0 with curtain walls and spatial rooms.",
+                        status: "Active",
+                        userRole: "Architect",
+                        finishDate: new Date("2027-08-30"),
+                        cost: 1250000,
+                        progress: 0.45,
+                        modelType: "villa",
+                        modelCategory: "ifc",
+                        ifcFileName: "HNS-CTL-N01-MOD-ARQ.ifc",
+                        ifcSchema: "IFC2X3",
+                        iconColor: "#0284c7",
+                        todos: [
+                            { id: 1, text: "Revit 2024 IFC2X3 coordination view export validation", completed: true },
+                            { id: 2, text: "Curtain wall panel & spatial room boundary classification", completed: false }
+                        ]
+                    },
+                    {
+                        name: "HNS Central Pavilion - Structural Superstructure (IFC2X3)",
+                        description: "Full structural framing model with steel trusses, shear walls, and rebar schedules exported in IFC2X3 Coordination View V2.0.",
+                        status: "Pending",
+                        userRole: "Engineer",
+                        finishDate: new Date("2027-11-20"),
+                        cost: 2100000,
+                        progress: 0.30,
+                        modelType: "tower",
+                        modelCategory: "ifc",
+                        ifcFileName: "HNS-CTL-ZZZ-MOD-EST.ifc",
+                        ifcSchema: "IFC2X3",
+                        iconColor: "#7c3aed",
+                        todos: [
+                            { id: 1, text: "Steel truss connection detailing & clash tolerance check", completed: true },
+                            { id: 2, text: "Rebar schedule export to IFC Quantity Takeoff (QTO)", completed: false }
+                        ]
+                    },
+                    {
+                        name: "ProVI Infrastructure - Viaduct Alignment Span E01 (IFC4)",
+                        description: "Civil infrastructure and alignment sample model in IFC4, featuring road corridors, bridge abutments, and earthworks terrain.",
+                        status: "Active",
+                        userRole: "Engineer",
+                        finishDate: new Date("2028-02-15"),
+                        cost: 3400000,
+                        progress: 0.50,
+                        modelType: "bridge",
+                        modelCategory: "ifc",
+                        ifcFileName: "NAV-IPI-ET1_E01-ZZZ-M3D-EST.ifc",
+                        ifcSchema: "IFC4",
+                        iconColor: "#d97706",
+                        todos: [
+                            { id: 1, text: "Civil alignment & bridge abutment spatial referencing", completed: true },
+                            { id: 2, text: "Earthworks terrain cut/fill balance calculation in IFC", completed: false }
+                        ]
+                    },
+                    {
+                        name: "ProVI Infrastructure - Viaduct Box Girder Span E02 (IFC4)",
+                        description: "Civil viaduct superstructure segment E02 in IFC4 schema with pre-stressed box girders and expansion joints.",
+                        status: "Active",
+                        userRole: "Engineer",
+                        finishDate: new Date("2028-05-30"),
+                        cost: 2800000,
+                        progress: 0.35,
+                        modelType: "bridge",
+                        modelCategory: "ifc",
+                        ifcFileName: "NAV-IPI-ET1_E02-ZZZ-M3D-EST.ifc",
+                        ifcSchema: "IFC4",
+                        iconColor: "#0284c7",
+                        todos: [
+                            { id: 1, text: "Box girder longitudinal prestressing tendon layout", completed: true },
+                            { id: 2, text: "Seismic expansion joint clearance inspection", completed: false }
+                        ]
+                    },
+                    {
+                        name: "ProVI Infrastructure - Viaduct Pier & Foundation E03 (IFC4)",
+                        description: "Reinforced concrete viaduct substructure pier E03 with pile caps, bored piles, and elastomeric bearing pads.",
+                        status: "Pending",
+                        userRole: "Engineer",
+                        finishDate: new Date("2028-08-15"),
+                        cost: 1950000,
+                        progress: 0.20,
+                        modelType: "bridge",
+                        modelCategory: "ifc",
+                        ifcFileName: "NAV-IPI-ET1_E03-ZZZ-M3D-EST.ifc",
+                        ifcSchema: "IFC4",
+                        iconColor: "#059669",
+                        todos: [
+                            { id: 1, text: "Deep foundation bored pile depth & rock socketing", completed: true },
+                            { id: 2, text: "Elastomeric bearing seat elevation verification", completed: false }
+                        ]
+                    },
+                    {
+                        name: "ProVI Infrastructure - Viaduct Abutment & Retaining Wall E07 (IFC4)",
+                        description: "Terminal approach abutment and retaining wall system in IFC4 with backfill drainage and transition approach slab.",
+                        status: "Active",
+                        userRole: "Engineer",
+                        finishDate: new Date("2028-11-01"),
+                        cost: 1450000,
+                        progress: 0.60,
+                        modelType: "bridge",
+                        modelCategory: "ifc",
+                        ifcFileName: "NAV-IPI-ET1_E07-ZZZ-M3D-EST.ifc",
+                        ifcSchema: "IFC4",
+                        iconColor: "#7c3aed",
+                        todos: [
+                            { id: 1, text: "Wingwall reinforcement & approach slab tie-in check", completed: true },
+                            { id: 2, text: "Weephole and geotextile filter drainage review", completed: false }
+                        ]
                     }
                 ];
 
@@ -249,10 +413,15 @@ export function ProjectsPage(props: ProjectsPageProps) {
                 !q ||
                 project.name.toLowerCase().includes(q) ||
                 project.description.toLowerCase().includes(q) ||
-                project.userRole.toLowerCase().includes(q);
+                project.userRole.toLowerCase().includes(q) ||
+                (project.ifcFileName && project.ifcFileName.toLowerCase().includes(q));
             const matchesStatus =
                 statusFilter === "all" || project.status.toLowerCase() === statusFilter;
-            return matchesSearch && matchesStatus;
+            const matchesCategory =
+                categoryFilter === "all" ||
+                (categoryFilter === "ifc" && (project.modelCategory === "ifc" || project.ifcFileName || project.name.toLowerCase().includes("ifc"))) ||
+                (categoryFilter === "3d" && project.modelCategory !== "ifc" && !project.ifcFileName && !project.name.toLowerCase().includes("ifc"));
+            return matchesSearch && matchesStatus && matchesCategory;
         })
         .sort((a, b) => {
             switch (sortBy) {
@@ -275,6 +444,9 @@ export function ProjectsPage(props: ProjectsPageProps) {
     const activeCount = projects.filter((p) => p.status.toLowerCase() === "active").length;
     const pendingCount = projects.filter((p) => p.status.toLowerCase() === "pending").length;
     const finishedCount = projects.filter((p) => p.status.toLowerCase() === "finished").length;
+
+    const ifcCount = projects.filter((p) => p.modelCategory === "ifc" || p.ifcFileName || p.name.toLowerCase().includes("ifc")).length;
+    const parametricCount = projects.filter((p) => p.modelCategory !== "ifc" && !p.ifcFileName && !p.name.toLowerCase().includes("ifc")).length;
 
     const onDeleteProjectCard = async (proj: Project) => {
         const confirmed = window.confirm(`Are you sure you want to delete "${proj.name}" from Cloud Firestore and workspace?`);
@@ -354,8 +526,35 @@ export function ProjectsPage(props: ProjectsPageProps) {
                 </div>
             </header>
 
-            {/* Status Filter & Sort Toolbar */}
-            <div className="projects-toolbar">
+            {/* Category (IFC vs 3D) & Status Filter Toolbar */}
+            <div className="projects-toolbar" style={{ flexWrap: "wrap", gap: "10px" }}>
+                <div className="projects-category-filter-group" id="project-category-filter-group">
+                    <button
+                        type="button"
+                        className={`category-pill ${categoryFilter === "all" ? "active" : ""}`}
+                        onClick={() => setCategoryFilter("all")}
+                    >
+                        <span className="material-icons-round" style={{ fontSize: "16px" }}>dashboard</span>
+                        All Models <span className="filter-count">{totalCount}</span>
+                    </button>
+                    <button
+                        type="button"
+                        className={`category-pill ifc-pill ${categoryFilter === "ifc" ? "active" : ""}`}
+                        onClick={() => setCategoryFilter("ifc")}
+                    >
+                        <span className="material-icons-round" style={{ fontSize: "16px" }}>description</span>
+                        IFC OpenBIM <span className="filter-count">{ifcCount}</span>
+                    </button>
+                    <button
+                        type="button"
+                        className={`category-pill parametric-pill ${categoryFilter === "3d" ? "active" : ""}`}
+                        onClick={() => setCategoryFilter("3d")}
+                    >
+                        <span className="material-icons-round" style={{ fontSize: "16px" }}>view_in_ar</span>
+                        3D Parametric <span className="filter-count">{parametricCount}</span>
+                    </button>
+                </div>
+
                 <div className="projects-filter-group" id="project-filter-group">
                     <button
                         type="button"

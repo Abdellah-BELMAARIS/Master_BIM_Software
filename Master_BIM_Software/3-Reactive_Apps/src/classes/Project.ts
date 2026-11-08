@@ -7,6 +7,7 @@ export type UserRole = "architect" | "engineer" | "developer" | "Architect" | "E
 export type TodoStatus = "pending" | "in-progress" | "completed";
 export type TodoPriority = "low" | "medium" | "high" | "critical";
 export type ModelType = "cube" | "gear" | "car" | "villa" | "tower" | "bridge";
+export type ModelCategory = "ifc" | "3d";
 
 export interface IProjectTask {
     id: number;
@@ -39,6 +40,9 @@ export interface IProject {
     iconColor?: string;
     todos?: IProjectTask[];
     modelType?: ModelType;
+    modelCategory?: ModelCategory;
+    ifcFileName?: string;
+    ifcSchema?: "IFC4" | "IFC2X3" | "IFC4.3";
 }
 
 // 3. Project class implementing IProject (UI is now managed by React <ProjectCard /> component)
@@ -51,6 +55,9 @@ export class Project implements IProject {
     finishDate: Date;
     todos: IProjectTask[] = [];
     modelType: ModelType;
+    modelCategory: ModelCategory = "3d";
+    ifcFileName?: string;
+    ifcSchema?: "IFC4" | "IFC2X3" | "IFC4.3";
 
     // Unique alphanumeric UUID identifier
     id: string;
@@ -72,8 +79,15 @@ export class Project implements IProject {
             detectedModel = "car";
         } else if (nameLower.includes("villa") || nameLower.includes("house") || nameLower.includes("building") || nameLower.includes("residence")) {
             detectedModel = "villa";
+        } else if (nameLower.includes("tower") || nameLower.includes("skyscraper") || nameLower.includes("apex")) {
+            detectedModel = "tower";
+        } else if (nameLower.includes("bridge") || nameLower.includes("span") || nameLower.includes("viaduct") || nameLower.includes("nordic")) {
+            detectedModel = "bridge";
         }
         this.modelType = detectedModel;
+        this.modelCategory = data.modelCategory || (data.ifcFileName || nameLower.includes("ifc") ? "ifc" : "3d");
+        this.ifcFileName = data.ifcFileName;
+        this.ifcSchema = data.ifcSchema;
 
         // Dynamic object iteration (ignoring undefined values to avoid overwriting defaults)
         for (const key in data) {
