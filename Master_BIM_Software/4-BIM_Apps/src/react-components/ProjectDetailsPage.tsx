@@ -12,7 +12,7 @@ import { ProjectTasksList } from "./details/ProjectTasksList";
 import { ProjectNotFound } from "./details/ProjectNotFound";
 import { ThreeViewer } from "./ThreeViewer";
 import * as templates from "../ui-templates";
-import { setupComponents, BimMeasurementSystem, loadIfcFromBuffer } from "../bim-components";
+import { setupComponents, BimMeasurementSystem, loadIfcFromBuffer, resolveBimElementInfo, BimElementInfo, DataEnhancer, SmartViews } from "../bim-components";
 
 export interface ProjectDetailsPageProps {
     projectsManager: ProjectsManager;
@@ -64,6 +64,9 @@ class ViewerErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBound
     }
 }
 
+// Re-export Universal Semantic BIM Element Metadata Resolver
+export { resolveBimElementInfo } from "../bim-components/setup/src/load-project-model";
+
 /**
  * Modular ProjectDetailsPage
  * Module 4 — Lesson 3.3: Working with BIM Worlds
@@ -83,7 +86,9 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
 
     const [isLoadingFromCloud, setIsLoadingFromCloud] = React.useState<boolean>(!project);
     // Every project is a That Open Engine BIM World with its 3D model populated!
-    const [viewerMode, setViewerMode] = React.useState<"bim-world" | "parametric">("bim-world");
+    // For IFC models: BIM World (3D) vs 2D Plan (Orthographic)
+    // For 3D models: BIM World vs 3D Model (Studio)
+    const [viewerMode, setViewerMode] = React.useState<"bim-world" | "2d-plan" | "parametric">("bim-world");
     const worldRef = React.useRef<any>(null);
     const componentsRef = React.useRef<any>(null);
     const [isAutoRotating, setIsAutoRotating] = React.useState<boolean>(false);
@@ -96,20 +101,94 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
     const [isMeasuring, setIsMeasuring] = React.useState<boolean>(false);
     const [measurementsCount, setMeasurementsCount] = React.useState<number>(0);
 
-    const [selectedElement, setSelectedElement] = React.useState<{
-        name: string;
-        type: string;
-        point: THREE.Vector3;
-        width: number;
-        height: number;
-        depth: number;
-        triangleCount: number;
-    } | null>(null);
+    const [selectedElement, setSelectedElement] = React.useState<BimElementInfo | null>(null);
     const selectionBoxRef = React.useRef<THREE.BoxHelper | null>(null);
 
     const fileInputRef = React.useRef<HTMLInputElement | null>(null);
     const [isParsingIfc, setIsParsingIfc] = React.useState<boolean>(false);
     const [customIfcName, setCustomIfcName] = React.useState<string | null>(null);
+
+    // That Open Company Course Tools Integration (Lessons 3.5, 3.6, 3.11, 3.12, 4.x, 5.x)
+    const [showModelsPanel, setShowModelsPanel] = React.useState<boolean>(false);
+    const [showPropertiesPanel, setShowPropertiesPanel] = React.useState<boolean>(false);
+    const [showQueryPanel, setShowQueryPanel] = React.useState<boolean>(false);
+    const [showDataEnhancer, setShowDataEnhancer] = React.useState<boolean>(false);
+    const [showSmartViews, setShowSmartViews] = React.useState<boolean>(false);
+
+    const modelsContainerRef = React.useRef<HTMLDivElement | null>(null);
+    const propertiesContainerRef = React.useRef<HTMLDivElement | null>(null);
+    const queryContainerRef = React.useRef<HTMLDivElement | null>(null);
+    const dataEnhancerContainerRef = React.useRef<HTMLDivElement | null>(null);
+    const smartViewsContainerRef = React.useRef<HTMLDivElement | null>(null);
+
+    // Lessons 3.11 & 3.12: Mount Query & Find Items UI Panel
+    React.useEffect(() => {
+        if (showQueryPanel && queryContainerRef.current && componentsRef.current) {
+            try {
+                const queryPanel = BUI.Component.create<BUI.Panel, templates.QueryPanelState>(
+                    templates.queryPanelTemplate,
+                    { components: componentsRef.current }
+                );
+                queryContainerRef.current.replaceChildren(queryPanel as any);
+            } catch (err) {
+                console.warn("[QueryPanel] Error mounting query panel:", err);
+            }
+        }
+    }, [showQueryPanel]);
+
+    React.useEffect(() => {
+        if (showModelsPanel && modelsContainerRef.current && componentsRef.current) {
+            try {
+                const [modelsPanel] = BUI.Component.create<BUI.PanelSection, templates.ModelsState>(
+                    templates.modelsTemplate,
+                    { components: componentsRef.current }
+                );
+                modelsContainerRef.current.replaceChildren(modelsPanel);
+            } catch (err) {
+                console.warn("[ThatOpen] Error mounting models panel:", err);
+            }
+        }
+    }, [showModelsPanel]);
+
+    React.useEffect(() => {
+        if (showPropertiesPanel && propertiesContainerRef.current && componentsRef.current) {
+            try {
+                const [propsPanel] = BUI.Component.create<BUI.PanelSection, templates.ItemsDataState>(
+                    templates.itemsDataTemplate,
+                    { components: componentsRef.current }
+                );
+                propertiesContainerRef.current.replaceChildren(propsPanel);
+            } catch (err) {
+                console.warn("[ThatOpen] Error mounting properties panel:", err);
+            }
+        }
+    }, [showPropertiesPanel]);
+
+    // Section 4: Mount custom DataEnhancer Component UI (Lessons 4.1 – 4.5)
+    React.useEffect(() => {
+        if (showDataEnhancer && dataEnhancerContainerRef.current && componentsRef.current) {
+            try {
+                const dataEnhancer = componentsRef.current.get(DataEnhancer);
+                const panel = dataEnhancer.createUI(project?.id);
+                dataEnhancerContainerRef.current.replaceChildren(panel);
+            } catch (err) {
+                console.warn("[DataEnhancer] Error mounting UI:", err);
+            }
+        }
+    }, [showDataEnhancer, project?.id]);
+
+    // Section 5: Mount custom SmartViews Component UI (Lessons 5.1 – 5.5)
+    React.useEffect(() => {
+        if (showSmartViews && smartViewsContainerRef.current && componentsRef.current) {
+            try {
+                const smartViews = componentsRef.current.get(SmartViews);
+                const panel = smartViews.createUI();
+                smartViewsContainerRef.current.replaceChildren(panel);
+            } catch (err) {
+                console.warn("[SmartViews] Error mounting UI:", err);
+            }
+        }
+    }, [showSmartViews]);
 
     // Measurement & Inspection Controls
     const toggleMeasuring = () => {
@@ -180,6 +259,9 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
         }
 
         if (preset === "iso") {
+            if (viewerMode === "2d-plan") {
+                setViewerMode("bim-world");
+            }
             controls.setLookAt(
                 modelCenter.x + dist * 0.75,
                 modelCenter.y + dist * 0.65,
@@ -190,6 +272,9 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                 true
             );
         } else if (preset === "plan") {
+            if (isIfcProject && viewerMode === "bim-world") {
+                setViewerMode("2d-plan");
+            }
             controls.setLookAt(
                 modelCenter.x,
                 modelCenter.y + dist * 1.5,
@@ -200,6 +285,9 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                 true
             );
         } else if (preset === "front") {
+            if (viewerMode === "2d-plan") {
+                setViewerMode("bim-world");
+            }
             controls.setLookAt(
                 modelCenter.x,
                 modelCenter.y + dist * 0.25,
@@ -282,29 +370,20 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                 const grid = gridRef.current;
                 if (!grid) return;
 
-                // Configure grid elements with viewport passed to componentsGridTemplate
+                // Direct full-bleed 3D Viewport in That Open Engine BIM World (no blocking side panels)
                 grid.elements = {
-                    header: {
-                        template: (_state: any) => BUI.html`<div></div>`,
-                        initialState: {},
-                    },
-                    sidebar: {
-                        template: (_state: any) => BUI.html`<div></div>`,
-                        initialState: {},
-                    },
-                    components: {
-                        template: templates.componentsGridTemplate,
+                    viewport: {
+                        template: templates.viewportTemplate,
                         initialState: { viewport },
                     },
                 };
 
-                // Define CSS Grid layout
+                // Full-bleed 100% viewport layout
                 grid.layouts = {
                     main: {
                         template: `
-                            "header header" auto
-                            "sidebar components" 1fr
-                            / auto 1fr
+                            "viewport" 1fr
+                            / 1fr
                         `,
                     },
                 };
@@ -377,19 +456,8 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                             world.scene.three.add(boxHelper);
                             selectionBoxRef.current = boxHelper;
 
-                            const triCount = mesh.geometry?.index
-                                ? mesh.geometry.index.count / 3
-                                : (mesh.geometry?.attributes?.position?.count || 0) / 3;
-
-                            setSelectedElement({
-                                name: mesh.name || `BIM Structural Member (#${mesh.id})`,
-                                type: mesh.type,
-                                point: validHit.point.clone(),
-                                width: size.x,
-                                height: size.y,
-                                depth: size.z,
-                                triangleCount: Math.round(triCount),
-                            });
+                            const info = resolveBimElementInfo(mesh, validHit.point, project);
+                            setSelectedElement(info);
                         }
                     }
                 };
@@ -540,6 +608,19 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
         projectsManager.activeProject = project;
     }
 
+    const pNameLower = (project.name || "").toLowerCase();
+    const pFileLower = (project.ifcFileName || "").toLowerCase();
+    const isIfcProject = Boolean(
+        project.modelCategory === "ifc" ||
+        project.ifcFileName ||
+        pNameLower.includes("ifc") ||
+        pNameLower.includes("viaduct") ||
+        pNameLower.includes("hns") ||
+        pNameLower.includes("provi") ||
+        pNameLower.includes("structural complex") ||
+        pFileLower.endsWith(".ifc")
+    );
+
     // Lesson 2.3 & 2.4: Render full project details view with ThreeViewer and embedded <bim-grid>
     return (
         <div className="page" id="project-details">
@@ -555,58 +636,11 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                     </Router.Link>
                     <div className="header-title-box">
                         <span className="header-eyebrow">PROJECT CDE / 3D COORDINATION</span>
-                        <h2 id="details-page-title">{project.name}</h2>
-                        <p id="details-page-desc">{project.description}</p>
+                        <h2 id="details-page-title" title={project.name}>{project.name}</h2>
+                        <p id="details-page-desc" title={project.description}>{project.description}</p>
                     </div>
                 </div>
-                <div className="details-header-right" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                    <div className="viewer-mode-selector" style={{ display: "inline-flex", background: "rgba(15, 23, 42, 0.8)", border: "1px solid var(--border-color)", borderRadius: "6px", padding: "2px" }}>
-                        <button
-                            type="button"
-                            onClick={() => setViewerMode("bim-world")}
-                            style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: "6px",
-                                padding: "4px 10px",
-                                border: "none",
-                                borderRadius: "4px",
-                                background: viewerMode === "bim-world" ? "var(--primary-blue)" : "transparent",
-                                color: viewerMode === "bim-world" ? "#ffffff" : "var(--text-secondary)",
-                                cursor: "pointer",
-                                fontSize: "0.82rem",
-                                fontWeight: 600,
-                                transition: "all 0.15s ease",
-                            }}
-                            title="That Open Engine BIM World (Lesson 3.3)"
-                        >
-                            <span className="material-icons-round" style={{ fontSize: "16px" }}>public</span>
-                            <span>BIM World</span>
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setViewerMode("parametric")}
-                            style={{
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: "6px",
-                                padding: "4px 10px",
-                                border: "none",
-                                borderRadius: "4px",
-                                background: viewerMode === "parametric" ? "var(--primary-blue)" : "transparent",
-                                color: viewerMode === "parametric" ? "#ffffff" : "var(--text-secondary)",
-                                cursor: "pointer",
-                                fontSize: "0.82rem",
-                                fontWeight: 600,
-                                transition: "all 0.15s ease",
-                            }}
-                            title="Parametric 3D Digital Twin"
-                        >
-                            <span className="material-icons-round" style={{ fontSize: "16px" }}>apartment</span>
-                            <span>3D Twin</span>
-                        </button>
-                    </div>
-
+                <div className="details-header-right">
                     <span className="bim-coord-badge">
                         <span className="material-icons-round">view_in_ar</span>
                         <span>{customIfcName ? `Loaded: ${customIfcName}` : (project.ifcSchema ? `${project.ifcSchema} OpenBIM` : "IFC4 · LOD 350")}</span>
@@ -628,9 +662,213 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                 </div>
 
                 <div className="details-viewer-wrapper">
+                    {/* Floating High-End CAD Viewport Mode Switcher & That Open Company Course Tools */}
+                    <div className="viewer-mode-switch-bar">
+                        <button
+                            type="button"
+                            className={`viewer-mode-tab ${viewerMode === "bim-world" ? "active" : ""}`}
+                            onClick={() => {
+                                setViewerMode("bim-world");
+                                setCameraPreset("iso");
+                            }}
+                            title="That Open Engine BIM World (3D Perspective View)"
+                        >
+                            <span className="material-icons-round">public</span>
+                            <span>BIM World</span>
+                        </button>
+
+                        <button
+                            type="button"
+                            className={`viewer-mode-tab ${viewerMode === "2d-plan" ? "active" : ""}`}
+                            onClick={() => {
+                                setViewerMode("2d-plan");
+                                setCameraPreset("plan");
+                            }}
+                            title="2D Top-Down Orthographic CAD Plan View"
+                        >
+                            <span className="material-icons-round">architecture</span>
+                            <span>2D Plan</span>
+                        </button>
+
+                        {project.modelCategory === "3d" && (
+                            <button
+                                type="button"
+                                className={`viewer-mode-tab ${viewerMode === "parametric" ? "active" : ""}`}
+                                onClick={() => setViewerMode("parametric")}
+                                title="High-Performance 3D CAD Studio (Three.js)"
+                            >
+                                <span className="material-icons-round">view_in_ar</span>
+                                <span>3D Model</span>
+                            </button>
+                        )}
+
+                        <div style={{ width: "1px", height: "18px", background: "rgba(148, 163, 184, 0.3)", margin: "0 2px" }} />
+
+                        {/* That Open Company Course Lesson 3.6 Tool: Models Manager Panel Toggle */}
+                        <button
+                            type="button"
+                            className={`viewer-mode-tab toc-course-pill ${showModelsPanel ? "active" : ""}`}
+                            onClick={() => setShowModelsPanel((prev) => !prev)}
+                            title="Toggle That Open Company Models Manager (Lesson 3.6 & 3.7)"
+                        >
+                            <span className="material-icons-round">folder_open</span>
+                            <span>Models</span>
+                        </button>
+
+                        {/* That Open Company Course Lessons 3.11 & 3.12: Query & Find Items Toggle */}
+                        <button
+                            type="button"
+                            className={`viewer-mode-tab toc-course-pill ${showQueryPanel ? "active" : ""}`}
+                            onClick={() => setShowQueryPanel((prev) => !prev)}
+                            title="Toggle BIM Query & Element Finder (Lessons 3.11 & 3.12)"
+                        >
+                            <span className="material-icons-round">search</span>
+                            <span>Query</span>
+                        </button>
+
+                        {/* That Open Company Course Lesson 3.5 Tool: BIM Properties Table Toggle */}
+                        <button
+                            type="button"
+                            className={`viewer-mode-tab toc-course-pill ${showPropertiesPanel ? "active" : ""}`}
+                            onClick={() => setShowPropertiesPanel((prev) => !prev)}
+                            title="Toggle That Open Company BIM Properties Data Table (Lesson 3.5)"
+                        >
+                            <span className="material-icons-round">table_chart</span>
+                            <span>Properties</span>
+                        </button>
+
+                        <div style={{ width: "1px", height: "18px", background: "rgba(148, 163, 184, 0.3)", margin: "0 2px" }} />
+
+                        {/* Module 4 Section 4 Tool: Custom Data Enhancer Component Toggle (Lessons 4.1 – 4.5) */}
+                        <button
+                            type="button"
+                            className={`viewer-mode-tab toc-course-pill ${showDataEnhancer ? "active" : ""}`}
+                            onClick={() => setShowDataEnhancer((prev) => !prev)}
+                            title="Toggle Custom Data Enhancer Component (Section 4 Lessons 4.1–4.5)"
+                        >
+                            <span className="material-icons-round">database</span>
+                            <span>Enhance</span>
+                        </button>
+
+                        {/* Module 4 Section 5 Tool: Custom Smart Views Component Toggle (Lessons 5.1 – 5.5) */}
+                        <button
+                            type="button"
+                            className={`viewer-mode-tab toc-course-pill ${showSmartViews ? "active" : ""}`}
+                            onClick={() => setShowSmartViews((prev) => !prev)}
+                            title="Toggle Custom Smart Views Viewpoint Manager (Section 5 Lessons 5.1–5.5)"
+                        >
+                            <span className="material-icons-round">camera</span>
+                            <span>Smart Views</span>
+                        </button>
+                    </div>
+
                     <ViewerErrorBoundary>
-                        {/* Lesson 3.3: That Open Engine BIM World Viewport Grid with Populated 3D Model */}
-                        <div style={{ position: "relative", width: "100%", height: "100%", display: viewerMode === "bim-world" ? "block" : "none" }}>
+                        {/* Lesson 3.3 & 3.7: That Open Engine Viewport Grid (BIM World & 2D Plan View) */}
+                        <div style={{ position: "relative", width: "100%", height: "100%", display: (viewerMode === "bim-world" || viewerMode === "2d-plan") ? "block" : "none" }}>
+                            {/* That Open Company Course Lesson 3.6 & 3.7: Dockable Models Manager Drawer */}
+                            {showModelsPanel && (
+                                <div className="toc-dock-panel toc-dock-left">
+                                    <div className="toc-dock-header">
+                                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                            <span className="material-icons-round" style={{ color: "#38bdf8", fontSize: "18px" }}>folder_open</span>
+                                            <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f8fafc" }}>BIM Models Manager · Lesson 3.6</span>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowModelsPanel(false)}
+                                            className="btn-close-dock"
+                                            title="Close Models Panel"
+                                        >
+                                            &times;
+                                        </button>
+                                    </div>
+                                    <div ref={modelsContainerRef} className="toc-dock-body"></div>
+                                </div>
+                            )}
+
+                            {/* That Open Company Course Lessons 3.11 & 3.12: Query & Find Items Drawer */}
+                            {showQueryPanel && (
+                                <div className="toc-dock-panel toc-dock-right" style={{ right: showPropertiesPanel ? "404px" : "16px" }}>
+                                    <div className="toc-dock-header">
+                                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                            <span className="material-icons-round" style={{ color: "#38bdf8", fontSize: "18px" }}>search</span>
+                                            <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f8fafc" }}>Query & Filter · Lessons 3.11–3.12</span>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowQueryPanel(false)}
+                                            className="btn-close-dock"
+                                            title="Close Query Panel"
+                                        >
+                                            &times;
+                                        </button>
+                                    </div>
+                                    <div ref={queryContainerRef} className="toc-dock-body"></div>
+                                </div>
+                            )}
+
+                            {/* That Open Company Course Lesson 3.5: Dockable Elements Data Properties Drawer */}
+                            {showPropertiesPanel && (
+                                <div className="toc-dock-panel toc-dock-right">
+                                    <div className="toc-dock-header">
+                                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                            <span className="material-icons-round" style={{ color: "#38bdf8", fontSize: "18px" }}>table_chart</span>
+                                            <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f8fafc" }}>BIM Properties Data · Lesson 3.5</span>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPropertiesPanel(false)}
+                                            className="btn-close-dock"
+                                            title="Close Properties Panel"
+                                        >
+                                            &times;
+                                        </button>
+                                    </div>
+                                    <div ref={propertiesContainerRef} className="toc-dock-body"></div>
+                                </div>
+                            )}
+
+                            {/* Module 4 Section 4: Custom Data Enhancer Drawer (Lessons 4.1 – 4.5) */}
+                            {showDataEnhancer && (
+                                <div className="toc-dock-panel toc-dock-right" style={{ right: showPropertiesPanel ? "404px" : "16px" }}>
+                                    <div className="toc-dock-header">
+                                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                            <span className="material-icons-round" style={{ color: "#38bdf8", fontSize: "18px" }}>database</span>
+                                            <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f8fafc" }}>Data Enhancer · Lessons 4.1–4.5</span>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowDataEnhancer(false)}
+                                            className="btn-close-dock"
+                                            title="Close Data Enhancer Panel"
+                                        >
+                                            &times;
+                                        </button>
+                                    </div>
+                                    <div ref={dataEnhancerContainerRef} className="toc-dock-body"></div>
+                                </div>
+                            )}
+
+                            {/* Module 4 Section 5: Custom Smart Views Drawer (Lessons 5.1 – 5.5) */}
+                            {showSmartViews && (
+                                <div className="toc-dock-panel toc-dock-left" style={{ left: showModelsPanel ? "404px" : "16px" }}>
+                                    <div className="toc-dock-header">
+                                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                            <span className="material-icons-round" style={{ color: "#38bdf8", fontSize: "18px" }}>camera</span>
+                                            <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f8fafc" }}>Smart Views · Lessons 5.1–5.5</span>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowSmartViews(false)}
+                                            className="btn-close-dock"
+                                            title="Close Smart Views Panel"
+                                        >
+                                            &times;
+                                        </button>
+                                    </div>
+                                    <div ref={smartViewsContainerRef} className="toc-dock-body"></div>
+                                </div>
+                            )}
                             <bim-grid
                                 className="viewer-grid"
                                 ref={gridRef}
@@ -640,6 +878,31 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                     display: "block",
                                 }}
                             ></bim-grid>
+
+                            {/* 2D Plan CAD Sheet Banner */}
+                            {viewerMode === "2d-plan" && (
+                                <div className="plan-mode-banner" style={{
+                                    position: "absolute",
+                                    top: "60px",
+                                    left: "16px",
+                                    zIndex: 20,
+                                    background: "rgba(15, 23, 42, 0.94)",
+                                    border: "1px solid rgba(56, 189, 248, 0.45)",
+                                    borderRadius: "20px",
+                                    padding: "5px 14px",
+                                    color: "#38bdf8",
+                                    fontSize: "0.82rem",
+                                    fontWeight: 600,
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: "7px",
+                                    backdropFilter: "blur(12px)",
+                                    boxShadow: "0 6px 20px rgba(0,0,0,0.45)"
+                                }}>
+                                    <span className="material-icons-round" style={{ fontSize: "17px", color: "#38bdf8" }}>architecture</span>
+                                    <span>2D Engineering Plan View · Orthographic CAD Sheet</span>
+                                </div>
+                            )}
 
                             {/* Hidden file input for Local IFC File Picker */}
                             <input
@@ -662,9 +925,11 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                             {selectedElement && (
                                 <div className="element-inspector-card">
                                     <div className="inspector-header">
-                                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
-                                            <span className="material-icons-round" style={{ color: "#38bdf8", fontSize: "18px" }}>layers</span>
-                                            <h4>{selectedElement.name}</h4>
+                                        <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0, flex: 1 }}>
+                                            <span className="material-icons-round" style={{ color: "#38bdf8", fontSize: "18px", flexShrink: 0 }}>layers</span>
+                                            <h4 style={{ margin: 0, fontSize: "0.88rem", color: "#f8fafc", fontWeight: 700, lineHeight: 1.35, wordBreak: "break-word" }}>
+                                                {selectedElement.name}
+                                            </h4>
                                         </div>
                                         <button
                                             type="button"
@@ -683,6 +948,12 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                         </button>
                                     </div>
                                     <div className="inspector-body">
+                                        <div className="inspector-row">
+                                            <span className="label">Element ID:</span>
+                                            <span className="value" style={{ color: "#38bdf8", fontFamily: "monospace", fontWeight: 600 }}>
+                                                #{selectedElement.elementId || "BIM-OBJ"}
+                                            </span>
+                                        </div>
                                         <div className="inspector-row">
                                             <span className="label">Component Type:</span>
                                             <span className="value">{selectedElement.type}</span>
@@ -725,18 +996,20 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                     transform: "translateX(-50%)",
                                     display: "flex",
                                     alignItems: "center",
-                                    gap: "5px",
-                                    padding: "6px 12px",
+                                    justifyContent: "flex-start",
+                                    gap: "4px",
+                                    padding: "5px 8px",
                                     background: "rgba(15, 23, 42, 0.94)",
                                     backdropFilter: "blur(14px)",
                                     border: "1px solid rgba(56, 189, 248, 0.35)",
                                     borderRadius: "30px",
-                                    zIndex: 10,
+                                    zIndex: 20,
                                     boxShadow: "0 8px 32px rgba(0, 0, 0, 0.65)",
                                     maxWidth: "calc(100% - 24px)",
                                     overflowX: "auto",
                                     scrollbarWidth: "none",
-                                    whiteSpace: "nowrap",
+                                    boxSizing: "border-box",
+                                    flexWrap: "nowrap",
                                 }}
                             >
                                 <button
@@ -745,19 +1018,20 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                     style={{
                                         display: "inline-flex",
                                         alignItems: "center",
-                                        gap: "5px",
-                                        padding: "6px 11px",
+                                        gap: "4px",
+                                        padding: "5px 9px",
                                         background: "rgba(30, 41, 59, 0.85)",
                                         border: "1px solid rgba(148, 163, 184, 0.25)",
                                         borderRadius: "20px",
                                         color: "#f8fafc",
                                         cursor: "pointer",
-                                        fontSize: "0.8rem",
+                                        fontSize: "0.76rem",
                                         fontWeight: 600,
+                                        flexShrink: 0,
                                     }}
                                     title="Axonometric 3D Perspective View (ISO)"
                                 >
-                                    <span className="material-icons-round" style={{ fontSize: "16px", color: "#38bdf8" }}>view_in_ar</span>
+                                    <span className="material-icons-round" style={{ fontSize: "15px", color: "#38bdf8" }}>view_in_ar</span>
                                     <span className="hud-btn-label">3D ISO</span>
                                 </button>
                                 <button
@@ -766,19 +1040,20 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                     style={{
                                         display: "inline-flex",
                                         alignItems: "center",
-                                        gap: "5px",
-                                        padding: "6px 11px",
+                                        gap: "4px",
+                                        padding: "5px 9px",
                                         background: "rgba(30, 41, 59, 0.85)",
                                         border: "1px solid rgba(148, 163, 184, 0.25)",
                                         borderRadius: "20px",
                                         color: "#f8fafc",
                                         cursor: "pointer",
-                                        fontSize: "0.8rem",
+                                        fontSize: "0.76rem",
                                         fontWeight: 600,
+                                        flexShrink: 0,
                                     }}
                                     title="Top Plan View (Orthographic 2D/3D)"
                                 >
-                                    <span className="material-icons-round" style={{ fontSize: "16px", color: "#38bdf8" }}>layers</span>
+                                    <span className="material-icons-round" style={{ fontSize: "15px", color: "#38bdf8" }}>layers</span>
                                     <span className="hud-btn-label">Plan</span>
                                 </button>
                                 <button
@@ -787,37 +1062,38 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                     style={{
                                         display: "inline-flex",
                                         alignItems: "center",
-                                        gap: "5px",
-                                        padding: "6px 11px",
+                                        gap: "4px",
+                                        padding: "5px 9px",
                                         background: "rgba(30, 41, 59, 0.85)",
                                         border: "1px solid rgba(148, 163, 184, 0.25)",
                                         borderRadius: "20px",
                                         color: "#f8fafc",
                                         cursor: "pointer",
-                                        fontSize: "0.8rem",
+                                        fontSize: "0.76rem",
                                         fontWeight: 600,
+                                        flexShrink: 0,
                                     }}
                                     title="Front Elevation View"
                                 >
-                                    <span className="material-icons-round" style={{ fontSize: "16px", color: "#38bdf8" }}>crop_portrait</span>
+                                    <span className="material-icons-round" style={{ fontSize: "15px", color: "#38bdf8" }}>crop_portrait</span>
                                     <span className="hud-btn-label">Front</span>
                                 </button>
-                                <div style={{ width: "1px", height: "18px", background: "rgba(148, 163, 184, 0.3)", margin: "0 2px" }} />
+                                <div style={{ width: "1px", height: "16px", background: "rgba(148, 163, 184, 0.3)", margin: "0 1px", flexShrink: 0 }} />
                                 <button
                                     type="button"
                                     onClick={() => handleZoom(true)}
-                                    style={{ padding: "6px 8px", background: "transparent", border: "none", color: "#cbd5e1", cursor: "pointer", display: "inline-flex", alignItems: "center" }}
+                                    style={{ padding: "5px 7px", background: "transparent", border: "none", color: "#cbd5e1", cursor: "pointer", display: "inline-flex", alignItems: "center", flexShrink: 0 }}
                                     title="Smooth Zoom In (Dolly +)"
                                 >
-                                    <span className="material-icons-round" style={{ fontSize: "18px" }}>add</span>
+                                    <span className="material-icons-round" style={{ fontSize: "17px" }}>add</span>
                                 </button>
                                 <button
                                     type="button"
                                     onClick={() => handleZoom(false)}
-                                    style={{ padding: "6px 8px", background: "transparent", border: "none", color: "#cbd5e1", cursor: "pointer", display: "inline-flex", alignItems: "center" }}
+                                    style={{ padding: "5px 7px", background: "transparent", border: "none", color: "#cbd5e1", cursor: "pointer", display: "inline-flex", alignItems: "center", flexShrink: 0 }}
                                     title="Smooth Zoom Out (Dolly -)"
                                 >
-                                    <span className="material-icons-round" style={{ fontSize: "18px" }}>remove</span>
+                                    <span className="material-icons-round" style={{ fontSize: "17px" }}>remove</span>
                                 </button>
                                 <button
                                     type="button"
@@ -826,40 +1102,42 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                         display: "inline-flex",
                                         alignItems: "center",
                                         gap: "4px",
-                                        padding: "6px 10px",
+                                        padding: "5px 9px",
                                         background: "rgba(30, 41, 59, 0.85)",
                                         border: "1px solid rgba(148, 163, 184, 0.25)",
                                         borderRadius: "20px",
                                         color: "#f8fafc",
                                         cursor: "pointer",
-                                        fontSize: "0.8rem",
+                                        fontSize: "0.76rem",
                                         fontWeight: 600,
+                                        flexShrink: 0,
                                     }}
                                     title="Fit Model to Viewport (Center & Focus)"
                                 >
-                                    <span className="material-icons-round" style={{ fontSize: "16px", color: "#38bdf8" }}>center_focus_strong</span>
+                                    <span className="material-icons-round" style={{ fontSize: "15px", color: "#38bdf8" }}>center_focus_strong</span>
                                     <span className="hud-btn-label">Fit</span>
                                 </button>
-                                <div style={{ width: "1px", height: "18px", background: "rgba(148, 163, 184, 0.3)", margin: "0 2px" }} />
+                                <div style={{ width: "1px", height: "16px", background: "rgba(148, 163, 184, 0.3)", margin: "0 1px", flexShrink: 0 }} />
                                 <button
                                     type="button"
                                     onClick={toggleAutoOrbit}
                                     style={{
                                         display: "inline-flex",
                                         alignItems: "center",
-                                        gap: "5px",
-                                        padding: "6px 11px",
+                                        gap: "4px",
+                                        padding: "5px 9px",
                                         background: isAutoRotating ? "var(--primary-blue)" : "rgba(30, 41, 59, 0.85)",
                                         border: "1px solid rgba(148, 163, 184, 0.25)",
                                         borderRadius: "20px",
                                         color: "#f8fafc",
                                         cursor: "pointer",
-                                        fontSize: "0.8rem",
+                                        fontSize: "0.76rem",
                                         fontWeight: 600,
+                                        flexShrink: 0,
                                     }}
                                     title="Toggle Auto-Orbit Turntable"
                                 >
-                                    <span className="material-icons-round" style={{ fontSize: "16px" }}>sync</span>
+                                    <span className="material-icons-round" style={{ fontSize: "15px" }}>sync</span>
                                     <span className="hud-btn-label">Orbit</span>
                                 </button>
                                 <button
@@ -868,22 +1146,23 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                     style={{
                                         display: "inline-flex",
                                         alignItems: "center",
-                                        gap: "5px",
-                                        padding: "6px 11px",
+                                        gap: "4px",
+                                        padding: "5px 9px",
                                         background: isGridVisible ? "rgba(30, 41, 59, 0.85)" : "transparent",
                                         border: "1px solid rgba(148, 163, 184, 0.25)",
                                         borderRadius: "20px",
                                         color: isGridVisible ? "#38bdf8" : "#94a3b8",
                                         cursor: "pointer",
-                                        fontSize: "0.8rem",
+                                        fontSize: "0.76rem",
                                         fontWeight: 600,
+                                        flexShrink: 0,
                                     }}
                                     title="Toggle That Open Engine Infinite CAD Grid"
                                 >
-                                    <span className="material-icons-round" style={{ fontSize: "16px" }}>grid_on</span>
+                                    <span className="material-icons-round" style={{ fontSize: "15px" }}>grid_on</span>
                                     <span className="hud-btn-label">Grid</span>
                                 </button>
-                                <div style={{ width: "1px", height: "18px", background: "rgba(148, 163, 184, 0.3)", margin: "0 2px" }} />
+                                <div style={{ width: "1px", height: "16px", background: "rgba(148, 163, 184, 0.3)", margin: "0 1px", flexShrink: 0 }} />
                                 {/* Advanced Option B Tool 1: 3D Length Measurement Tool */}
                                 <button
                                     type="button"
@@ -891,20 +1170,21 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                     style={{
                                         display: "inline-flex",
                                         alignItems: "center",
-                                        gap: "5px",
-                                        padding: "6px 11px",
+                                        gap: "4px",
+                                        padding: "5px 9px",
                                         background: isMeasuring ? "#d97706" : "rgba(30, 41, 59, 0.85)",
                                         border: isMeasuring ? "1px solid #f59e0b" : "1px solid rgba(148, 163, 184, 0.25)",
                                         borderRadius: "20px",
                                         color: isMeasuring ? "#ffffff" : "#f8fafc",
                                         cursor: "pointer",
-                                        fontSize: "0.8rem",
+                                        fontSize: "0.76rem",
                                         fontWeight: 600,
+                                        flexShrink: 0,
                                     }}
                                     title="Toggle Interactive 3D Measurement & Dimension Tool"
                                 >
-                                    <span className="material-icons-round" style={{ fontSize: "16px", color: isMeasuring ? "#ffffff" : "#f59e0b" }}>straighten</span>
-                                    <span className="hud-btn-label">Measure {measurementsCount > 0 ? `(${measurementsCount})` : ""}</span>
+                                    <span className="material-icons-round" style={{ fontSize: "15px", color: isMeasuring ? "#ffffff" : "#f59e0b" }}>straighten</span>
+                                    <span className="hud-btn-label">Measure{measurementsCount > 0 ? ` (${measurementsCount})` : ""}</span>
                                 </button>
                                 {measurementsCount > 0 && (
                                     <button
@@ -913,17 +1193,18 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                         style={{
                                             display: "inline-flex",
                                             alignItems: "center",
-                                            padding: "6px 8px",
+                                            padding: "5px 7px",
                                             background: "rgba(239, 68, 68, 0.15)",
                                             border: "1px solid rgba(239, 68, 68, 0.35)",
                                             borderRadius: "20px",
                                             color: "#ef4444",
                                             cursor: "pointer",
-                                            fontSize: "0.8rem",
+                                            fontSize: "0.76rem",
+                                            flexShrink: 0,
                                         }}
                                         title="Clear All 3D Dimensions"
                                     >
-                                        <span className="material-icons-round" style={{ fontSize: "16px" }}>clear</span>
+                                        <span className="material-icons-round" style={{ fontSize: "15px" }}>clear</span>
                                     </button>
                                 )}
                                 {/* Advanced Option B Tool 2: Local IFC File Picker & Loader */}
@@ -933,19 +1214,20 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                     style={{
                                         display: "inline-flex",
                                         alignItems: "center",
-                                        gap: "5px",
-                                        padding: "6px 11px",
+                                        gap: "4px",
+                                        padding: "5px 9px",
                                         background: "rgba(16, 185, 129, 0.18)",
                                         border: "1px solid rgba(16, 185, 129, 0.45)",
                                         borderRadius: "20px",
                                         color: "#34d399",
                                         cursor: "pointer",
-                                        fontSize: "0.8rem",
+                                        fontSize: "0.76rem",
                                         fontWeight: 600,
+                                        flexShrink: 0,
                                     }}
                                     title="Open and load an IFC model from your local computer"
                                 >
-                                    <span className="material-icons-round" style={{ fontSize: "16px" }}>file_upload</span>
+                                    <span className="material-icons-round" style={{ fontSize: "15px" }}>file_upload</span>
                                     <span className="hud-btn-label">Load IFC</span>
                                 </button>
                             </div>

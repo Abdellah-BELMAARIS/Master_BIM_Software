@@ -23,8 +23,10 @@
   },
   "dependencies": {
     "@thatopen/components": "^3.6.0",
+    "@thatopen/components-front": "^3.6.0",
     "@thatopen/fragments": "^3.6.0",
     "@thatopen/ui": "~3.1",
+    "@thatopen/ui-obc": "^3.4.5",
     "camera-controls": "^3.1.2",
     "firebase": "^13.2.0",
     "react": "^19.3.1",

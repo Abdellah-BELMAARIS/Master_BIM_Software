@@ -17,7 +17,15 @@ declare global {
         disabled?: boolean;
         "label-hidden"?: boolean;
         "icon-hidden"?: boolean;
+        tooltip?: string;
         onclick?: (e: any) => void;
+      };
+      "bim-context-menu": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement>;
+      "bim-panel-section": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
+        label?: string;
+        icon?: string;
+        fixed?: boolean;
+        collapsed?: boolean;
       };
       "bim-text-input": React.DetailedHTMLProps<React.HTMLAttributes<HTMLElement>, HTMLElement> & {
         placeholder?: string;

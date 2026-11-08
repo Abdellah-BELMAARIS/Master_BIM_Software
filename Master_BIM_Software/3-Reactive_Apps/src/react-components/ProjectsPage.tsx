@@ -1,8 +1,8 @@
 import * as React from "react";
 import * as Router from "react-router-dom";
-import { getDocs, addDoc } from "firebase/firestore";
+import { getDocs, addDoc, deleteDoc } from "firebase/firestore";
 import { getCollection, deleteDocument, sanitizeForFirestore } from "../core/database";
-import { IProject, Project, ProjectStatus, UserRole } from "../classes/Project";
+import { IProject, Project, ProjectStatus, UserRole, ModelType } from "../classes/Project";
 import { ProjectsManager } from "../classes/ProjectsManager";
 import { ProjectCard } from "./ProjectCard";
 import { SearchBox } from "./SearchBox";
@@ -23,14 +23,37 @@ export function ProjectsPage(props: ProjectsPageProps) {
     );
 
     const navigate = Router.useNavigate();
+    const [searchParams, setSearchParams] = Router.useSearchParams();
+    const urlCategory = searchParams.get("category");
 
     // Lesson 3.5: Introducing React State with TypeScript Generics (React.useState<Project[]>)
     const [projects, setProjects] = React.useState<Project[]>(projectsManager.list);
     const [searchQuery, setSearchQuery] = React.useState<string>("");
     const [statusFilter, setStatusFilter] = React.useState<string>("all");
-    const [categoryFilter, setCategoryFilter] = React.useState<"all" | "ifc" | "3d">("all");
+    const [categoryFilter, setCategoryFilter] = React.useState<"all" | "ifc" | "3d">(
+        urlCategory === "ifc" || urlCategory === "3d" ? urlCategory : "all"
+    );
     const [sortBy, setSortBy] = React.useState<string>("name-asc");
     const [isNewProjectModalOpen, setIsNewProjectModalOpen] = React.useState<boolean>(false);
+
+    // Sync URL query params with category filter
+    React.useEffect(() => {
+        const cat = searchParams.get("category");
+        if (cat === "ifc" || cat === "3d") {
+            setCategoryFilter(cat);
+        } else {
+            setCategoryFilter("all");
+        }
+    }, [searchParams]);
+
+    const handleCategoryChange = (cat: "all" | "ifc" | "3d") => {
+        setCategoryFilter(cat);
+        if (cat === "all") {
+            setSearchParams({});
+        } else {
+            setSearchParams({ category: cat });
+        }
+    };
 
     // Lesson 3.6: Wire ProjectsManager custom events (onProjectCreated & onProjectDeleted) to update React state
     projectsManager.onProjectCreated = () => {
@@ -56,6 +79,56 @@ export function ProjectsPage(props: ProjectsPageProps) {
             try {
                 const querySnapshot = await getDocs(projectsCollection);
                 projectsManager.list = [];
+
+                const seenKeys = new Set<string>();
+
+                // Canonical title normalization map to eliminate old duplicate records
+                // Canonical project info resolver to guarantee zero duplication across Firestore & local runs
+                const getCanonicalProjectInfo = (name: string, ifcFileName?: string) => {
+                    const n = (name || "").toLowerCase().trim();
+                    const f = (ifcFileName || "").toLowerCase().trim();
+
+                    if (n.includes("e01") || f.includes("e01")) {
+                        return { canonicalName: "ProVI Infrastructure Civil Viaduct Span E01 (IFC4)", ifcFileName: "NAV-IPI-ET1_E01-ZZZ-M3D-EST.ifc", dedupeKey: "provi-e01", ifcSchema: "IFC4", modelCategory: "ifc" as const, twinType: "bridge" as const };
+                    }
+                    if (n.includes("e02") || f.includes("e02")) {
+                        return { canonicalName: "ProVI Infrastructure Civil Viaduct Span E02 (IFC4)", ifcFileName: "NAV-IPI-ET1_E02-ZZZ-M3D-EST.ifc", dedupeKey: "provi-e02", ifcSchema: "IFC4", modelCategory: "ifc" as const, twinType: "bridge" as const };
+                    }
+                    if (n.includes("e03") || f.includes("e03") || n.includes("pier")) {
+                        return { canonicalName: "ProVI Infrastructure Civil Viaduct Pier E03 (IFC4)", ifcFileName: "NAV-IPI-ET1_E03-ZZZ-M3D-EST.ifc", dedupeKey: "provi-e03", ifcSchema: "IFC4", modelCategory: "ifc" as const, twinType: "bridge" as const };
+                    }
+                    if (n.includes("e07") || f.includes("e07") || n.includes("abutment")) {
+                        return { canonicalName: "ProVI Infrastructure Civil Viaduct Abutment E07 (IFC4)", ifcFileName: "NAV-IPI-ET1_E07-ZZZ-M3D-EST.ifc", dedupeKey: "provi-e07", ifcSchema: "IFC4", modelCategory: "ifc" as const, twinType: "bridge" as const };
+                    }
+                    if (n.includes("structural complex") || n.includes("toc master") || f.includes("est-001") || n.includes("mbsd-toc")) {
+                        return { canonicalName: "That Open Company - Structural Complex (IFC4)", ifcFileName: "MBSD-TOC-P01-MOD-EST-001.ifc", dedupeKey: "toc-complex", ifcSchema: "IFC4", modelCategory: "ifc" as const, twinType: "bridge" as const };
+                    }
+                    if (n.includes("hns") && (n.includes("superstructure") || f.includes("zzz"))) {
+                        return { canonicalName: "HNS Central Pavilion - Structural Superstructure (IFC2X3)", ifcFileName: "HNS-CTL-ZZZ-MOD-EST.ifc", dedupeKey: "hns-est", ifcSchema: "IFC2X3", modelCategory: "ifc" as const, twinType: "tower" as const };
+                    }
+                    if (n.includes("hns") || f.includes("arq")) {
+                        return { canonicalName: "HNS Central Pavilion - Architectural Model (IFC2X3)", ifcFileName: "HNS-CTL-N01-MOD-ARQ.ifc", dedupeKey: "hns-arq", ifcSchema: "IFC2X3", modelCategory: "ifc" as const, twinType: "tower" as const };
+                    }
+                    if (n.includes("villa") || n.includes("azure")) {
+                        return { canonicalName: "Azure Coast Luxury Eco-Villa", dedupeKey: "3d-villa", modelCategory: "3d" as const, twinType: "villa" as const };
+                    }
+                    if (n.includes("ev") || n.includes("logistics")) {
+                        return { canonicalName: "Urban Logistics EV Center", dedupeKey: "3d-car", modelCategory: "3d" as const, twinType: "car" as const };
+                    }
+                    if (n.includes("gear") || n.includes("mechanical") || n.includes("hvac")) {
+                        return { canonicalName: "Mechanical HVAC Plant Core", dedupeKey: "3d-gear", modelCategory: "3d" as const, twinType: "gear" as const };
+                    }
+                    if (n.includes("skyscraper") || n.includes("apex")) {
+                        return { canonicalName: "Apex Parametric Skyscraper", dedupeKey: "3d-tower", modelCategory: "3d" as const, twinType: "tower" as const };
+                    }
+                    if (n.includes("cable") || n.includes("nordic") || (n.includes("bridge") && !n.includes("provi"))) {
+                        return { canonicalName: "Nordic Span Cable-Stayed Bridge", dedupeKey: "3d-bridge", modelCategory: "3d" as const, twinType: "bridge" as const };
+                    }
+                    if (n.includes("modular") || n.includes("pavilion") || n.includes("default") || n.includes("untitled")) {
+                        return { canonicalName: "BIM Modular Innovation Pavilion", dedupeKey: "3d-cube", modelCategory: "3d" as const, twinType: "cube" as const };
+                    }
+                    return null;
+                };
 
                 for (const doc of querySnapshot.docs) {
                     const data = doc.data() as any;
@@ -85,6 +158,24 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         projectModelType = "cube";
                         projectIcon = "#2563eb";
                     }
+
+                    const canonical = getCanonicalProjectInfo(projectName, data.ifcFileName);
+                    if (canonical) {
+                        projectName = canonical.canonicalName;
+                        if (canonical.ifcFileName) data.ifcFileName = canonical.ifcFileName;
+                        if (canonical.ifcSchema) data.ifcSchema = canonical.ifcSchema;
+                        projectModelType = canonical.twinType;
+                    }
+
+                    const dedupeKey = canonical ? canonical.dedupeKey : (data.ifcFileName ? data.ifcFileName.toLowerCase() : projectName.toLowerCase().trim());
+                    if (seenKeys.has(dedupeKey)) {
+                        console.log(`[Deduplicate] Purging duplicate Firestore project: "${data.name}" / "${projectName}" (${doc.id})`);
+                        try {
+                            await deleteDoc(doc.ref);
+                        } catch {}
+                        continue;
+                    }
+                    seenKeys.add(dedupeKey);
 
                     const projectData: IProject = {
                         name: projectName,
@@ -218,7 +309,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         finishDate: new Date("2027-04-15"),
                         cost: 850000,
                         progress: 0.70,
-                        modelType: "tower",
+                        modelType: "bridge",
                         modelCategory: "ifc",
                         ifcFileName: "MBSD-TOC-P01-MOD-EST-001.ifc",
                         ifcSchema: "IFC4",
@@ -237,7 +328,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         finishDate: new Date("2027-08-30"),
                         cost: 1250000,
                         progress: 0.45,
-                        modelType: "villa",
+                        modelType: "tower",
                         modelCategory: "ifc",
                         ifcFileName: "HNS-CTL-N01-MOD-ARQ.ifc",
                         ifcSchema: "IFC2X3",
@@ -540,7 +631,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
                     <button
                         type="button"
                         className={`category-pill ifc-pill ${categoryFilter === "ifc" ? "active" : ""}`}
-                        onClick={() => setCategoryFilter("ifc")}
+                        onClick={() => handleCategoryChange("ifc")}
                     >
                         <span className="material-icons-round" style={{ fontSize: "16px" }}>description</span>
                         IFC OpenBIM <span className="filter-count">{ifcCount}</span>
@@ -548,7 +639,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
                     <button
                         type="button"
                         className={`category-pill parametric-pill ${categoryFilter === "3d" ? "active" : ""}`}
-                        onClick={() => setCategoryFilter("3d")}
+                        onClick={() => handleCategoryChange("3d")}
                     >
                         <span className="material-icons-round" style={{ fontSize: "16px" }}>view_in_ar</span>
                         3D Parametric <span className="filter-count">{parametricCount}</span>

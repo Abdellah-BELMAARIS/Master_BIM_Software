@@ -2926,23 +2926,36 @@ dialog#error-modal::backdrop {
    ========================================================================== */
 .viewer-pro-hud {
     position: absolute;
-    bottom: 1.5rem;
+    bottom: 16px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 30;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    background: rgba(15, 23, 42, 0.8);
+    gap: 0.4rem;
+    background: rgba(15, 23, 42, 0.94);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
-    border: 1px solid rgba(56, 189, 248, 0.28);
-    padding: 0.35rem 0.65rem;
-    border-radius: 9999px;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 0 15px rgba(56, 189, 248, 0.2);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    padding: 6px 12px;
+    border-radius: 30px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.65);
     pointer-events: auto;
     user-select: none;
+    max-width: calc(100% - 24px);
+    box-sizing: border-box;
+    overflow-x: auto;
+    scrollbar-width: none;
+    white-space: nowrap;
     transition: all 0.25s ease;
+}
+
+.viewer-pro-hud::-webkit-scrollbar {
+    display: none;
+}
+
+.hud-btn {
+    flex-shrink: 0 !important;
 }
 
 .viewer-pro-hud:hover {
@@ -2997,6 +3010,16 @@ dialog#error-modal::backdrop {
     margin: 0 0.2rem;
 }
 
+@media (max-width: 1250px) {
+    .viewer-pro-hud .hud-label {
+        display: none !important;
+    }
+    .viewer-pro-hud .hud-btn {
+        padding: 6px 9px !important;
+        border-radius: 8px !important;
+    }
+}
+
 @media (max-width: 768px) {
     .viewer-pro-hud {
         bottom: 0.75rem;
@@ -3009,4 +3032,22 @@ dialog#error-modal::backdrop {
     .hud-btn span.hud-label {
         display: none;
     }
+}
+
+/* ==========================================================================
+   Project Form 3D / IFC Model Upload Dropzone
+   ========================================================================== */
+.btn-upload-model-dropzone:hover {
+    background: rgba(30, 41, 59, 0.8) !important;
+    border-color: var(--primary-blue) !important;
+    box-shadow: 0 0 16px rgba(37, 99, 235, 0.25);
+}
+
+.model-file-attached {
+    transition: all 0.2s ease;
+}
+
+.model-file-attached:hover {
+    border-color: rgba(56, 189, 248, 0.6) !important;
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.2);
 }
