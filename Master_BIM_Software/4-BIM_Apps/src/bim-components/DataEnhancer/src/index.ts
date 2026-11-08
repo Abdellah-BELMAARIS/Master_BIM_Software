@@ -1,206 +1,343 @@
 import * as OBC from "@thatopen/components";
-import * as OBCF from "@thatopen/components-front";
-import * as BUI from "@thatopen/ui";
-import { doc, setDoc, getDoc } from "firebase/firestore";
+import * as FRAGS from "@thatopen/fragments";
+import { collection, doc, getDocs, setDoc } from "firebase/firestore";
 import { database } from "../../../core/database";
-import { EnhancedDataRecord, DataEnhancerSource } from "./types";
+import {
+  DataEnhancerResultMap,
+  DataEnhancerSource,
+  EnhancedDataRecord,
+} from "./types";
+
+/**
+ * Unwraps an ItemData scalar/object field cleanly.
+ */
+export function unwrapIfcAttr(field: any): string {
+  if (field === null || field === undefined) return "";
+  if (typeof field === "object" && "value" in field) {
+    return String(field.value ?? "");
+  }
+  return String(field);
+}
 
 /**
  * Module 4 — Section 4: Custom BIM Component: Data Enhancer
  * (Lessons 4.1 to 4.5)
  *
- * Extends OBC.Component to allow architects, engineers, and BIM managers
- * to enrich any 3D IFC element with arbitrary metadata, inspection logs,
- * or cost codes, caching in memory and synchronizing with Cloud Firestore.
+ * Extends OBC.Component to integrate external technical datasheets,
+ * discipline cost/QA matrices, and Cloud Firestore field inspection logs
+ * with multi-tier caching (per-source dataset + per-item matched results)
+ * and reverse item lookup (highlighting 3D elements from any table row).
  */
 export class DataEnhancer extends OBC.Component implements OBC.Disposable {
   static readonly uuid = "e85746b1-0967-4cf3-bfdb-93510cba4837";
   enabled = true;
 
+  readonly sources = new FRAGS.DataMap<string, DataEnhancerSource>();
+
   readonly onDataEnhanced = new OBC.Event<EnhancedDataRecord>();
   readonly onDataCleared = new OBC.Event<void>();
+  readonly onSourcesChanged = new OBC.Event<void>();
   readonly onDisposed = new OBC.Event<void>();
 
-  // In-memory cache for hyper-speed query performance (indexed by `${modelId}_${expressId}`)
-  private _cache = new Map<string, EnhancedDataRecord[]>();
+  projectId?: string;
 
-  // Active data sources (Lesson 4.2)
-  sources: DataEnhancerSource[] = [
-    { id: "memory-cache", name: "In-Memory Fast Cache", type: "memory" },
-    { id: "cloud-firestore", name: "Cloud Firestore Database", type: "firestore" },
-  ];
+  // Lesson 4.3: Two-tier caching (source datasets & per-item matches)
+  private _sourceDataCache = new Map<string, Record<string, any>[]>();
+  private _itemResultCache = new Map<
+    string,
+    Record<string, Record<string, any>[]>
+  >();
+
+  // Local mirror of Cloud Firestore EnhancedDataRecords (per-element logs)
+  private _recordsByElement = new Map<string, EnhancedDataRecord[]>();
+  private _loadedProjectId: string | null = null;
 
   constructor(components: OBC.Components) {
     super(components);
     components.add(DataEnhancer.uuid, this);
   }
 
-  private getKey(modelId: string, expressId: number): string {
-    return `${modelId}_${expressId}`;
+  private getElementKey(modelId: string, expressId: number): string {
+    return `${modelId}::${expressId}`;
+  }
+
+  clearCache(sourceId?: string): void {
+    if (sourceId) {
+      this._sourceDataCache.delete(sourceId);
+      for (const itemMap of this._itemResultCache.values()) {
+        delete itemMap[sourceId];
+      }
+    } else {
+      this._sourceDataCache.clear();
+      this._itemResultCache.clear();
+    }
   }
 
   /**
-   * Lesson 4.3: Add or update enhanced data for a specific element
+   * Loads and caches all rows from a named source.
+   */
+  async getSourceRows(
+    sourceId: string,
+    forceRefresh = false
+  ): Promise<Record<string, any>[]> {
+    const source = this.sources.get(sourceId);
+    if (!source) return [];
+
+    if (!forceRefresh && this._sourceDataCache.has(sourceId)) {
+      return this._sourceDataCache.get(sourceId)!;
+    }
+
+    try {
+      const rows = await source.data();
+      this._sourceDataCache.set(sourceId, rows);
+      return rows;
+    } catch (err) {
+      console.warn(`[DataEnhancer] Failed fetching rows for "${sourceId}":`, err);
+      return [];
+    }
+  }
+
+  /**
+   * Lesson 4.3: Matches selected BIM elements against registered external data sources
+   * using cached source rows and cached per-item match results, returned as OBC.ModelIdDataMap.
+   */
+  async getData(
+    items: OBC.ModelIdMap,
+    config?: { sourceIds?: string[]; forceRefresh?: boolean }
+  ): Promise<DataEnhancerResultMap> {
+    const result: DataEnhancerResultMap = new FRAGS.DataMap();
+    const forceRefresh = Boolean(config?.forceRefresh);
+    const activeSourceIds = config?.sourceIds?.length
+      ? config.sourceIds
+      : [...this.sources.keys()];
+
+    if (OBC.ModelIdMapUtils.isEmpty(items) || activeSourceIds.length === 0) {
+      return result;
+    }
+
+    const fragments = this.components.get(OBC.FragmentsManager);
+    const missingItems: OBC.ModelIdMap = {};
+
+    // Check cache first per item
+    for (const [modelId, ids] of Object.entries(items)) {
+      const modelMap = new FRAGS.DataMap<
+        number,
+        Record<string, Record<string, any>[]>
+      >();
+      result.set(modelId, modelMap);
+
+      for (const localId of ids) {
+        const key = this.getElementKey(modelId, localId);
+        const cached = !forceRefresh ? this._itemResultCache.get(key) : undefined;
+        const hasAllSources =
+          cached && activeSourceIds.every((sid) => sid in cached);
+
+        if (hasAllSources && cached) {
+          modelMap.set(localId, { ...cached });
+        } else {
+          if (!missingItems[modelId]) missingItems[modelId] = new Set<number>();
+          missingItems[modelId].add(localId);
+        }
+      }
+    }
+
+    if (OBC.ModelIdMapUtils.isEmpty(missingItems)) {
+      return result;
+    }
+
+    // Fetch IFC attributes & Property Sets (IsDefinedBy) only for uncached items
+    const rawDataByModel = await fragments.getData(missingItems, {
+      attributesDefault: true,
+      relations: {
+        IsDefinedBy: { attributes: true, relations: true },
+      },
+    });
+
+    // Preload active source datasets once (cached!)
+    const sourceDatasets = new Map<string, Record<string, any>[]>();
+    await Promise.all(
+      activeSourceIds.map(async (sid) => {
+        const rows = await this.getSourceRows(sid, forceRefresh);
+        sourceDatasets.set(sid, rows);
+      })
+    );
+
+    for (const [modelId, itemsData] of Object.entries(rawDataByModel)) {
+      let modelMap = result.get(modelId);
+      if (!modelMap) {
+        modelMap = new FRAGS.DataMap();
+        result.set(modelId, modelMap);
+      }
+
+      for (const itemData of itemsData) {
+        const localIdRaw = unwrapIfcAttr((itemData as any)._localId);
+        const localId = Number(localIdRaw);
+        if (!Number.isFinite(localId)) continue;
+
+        const key = this.getElementKey(modelId, localId);
+        const entry = this._itemResultCache.get(key) || {};
+
+        for (const sid of activeSourceIds) {
+          const source = this.sources.get(sid);
+          const rows = sourceDatasets.get(sid) || [];
+          if (!source) continue;
+          try {
+            entry[sid] = source.matcher(itemData, rows);
+          } catch {
+            entry[sid] = [];
+          }
+        }
+
+        this._itemResultCache.set(key, entry);
+        modelMap.set(localId, { ...entry });
+      }
+    }
+
+    return result;
+  }
+
+  /**
+   * Lesson 4.4 Challenge: Reverse lookup — finds all 3D BIM elements matching a clicked row
+   * inside any DataEnhancer source table.
+   */
+  async findItemsBySourceRow(
+    _sourceId: string,
+    row: Record<string, any>
+  ): Promise<OBC.ModelIdMap> {
+    const fragments = this.components.get(OBC.FragmentsManager);
+    const finder = this.components.get(OBC.ItemsFinder);
+
+    // 1. Direct Express/Local ID + Model match (from Cloud Field Logs)
+    if (row._modelId && row._expressId !== undefined) {
+      const numId = Number(row._expressId);
+      if (fragments.list.has(String(row._modelId)) && Number.isFinite(numId)) {
+        return { [String(row._modelId)]: new Set([numId]) };
+      }
+    }
+
+    // 2. Direct IFC GlobalId (GUID) match across loaded models
+    const guid = row.GUID || row._guid || row.GlobalId;
+    if (typeof guid === "string" && guid.length > 0) {
+      try {
+        const guidMap = await fragments.guidsToModelIdMap([guid]);
+        if (guidMap && !OBC.ModelIdMapUtils.isEmpty(guidMap)) {
+          return guidMap;
+        }
+      } catch {}
+    }
+
+    // 3. IFC Category regex match (e.g. "IFCSLAB", "IFCWALL|IFCWALLSTANDARDCASE", "IFCBUILDINGELEMENTPROXY")
+    const categoryPattern = row.CategoryRegex || row.Category;
+    if (typeof categoryPattern === "string" && categoryPattern.trim().length > 0) {
+      try {
+        const escaped = categoryPattern
+          .split("|")
+          .map((s) => s.trim())
+          .filter(Boolean)
+          .join("|");
+        const matched = await finder.getItems([
+          { categories: [new RegExp(escaped, "i")] },
+        ]);
+        if (!OBC.ModelIdMapUtils.isEmpty(matched)) {
+          return matched;
+        }
+      } catch (err) {
+        console.warn("[DataEnhancer] Category lookup error:", err);
+      }
+    }
+
+    return {};
+  }
+
+  /**
+   * Lesson 4.5: Attach and persist custom inspection / specification parameters
+   * for selected BIM elements to Cloud Firestore + invalidate Firestore source cache.
    */
   async set(record: EnhancedDataRecord, projectId?: string): Promise<void> {
-    const key = this.getKey(record.modelId, record.expressId);
-    const existing = this._cache.get(key) || [];
-    existing.push(record);
-    this._cache.set(key, existing);
+    const pid = projectId || this.projectId;
+    const key = this.getElementKey(record.modelId, record.expressId);
+    const existing = this._recordsByElement.get(key) || [];
+    const updated = [...existing, record];
+    this._recordsByElement.set(key, updated);
 
-    // Lesson 4.5: Persist to Firebase if project context is available
-    if (projectId && database) {
+    if (pid && database) {
       try {
-        const docRef = doc(database, "projects", projectId, "enhanced_data", key);
-        await setDoc(docRef, { records: existing }, { merge: true });
+        const safeDocId = `${record.modelId.replace(/[^a-zA-Z0-9_-]/g, "_")}_${record.expressId}`;
+        const docRef = doc(database, "projects", pid, "enhanced_data", safeDocId);
+        await setDoc(docRef, { records: updated }, { merge: true });
       } catch (err) {
         console.warn("[DataEnhancer] Firestore sync deferred:", err);
       }
     }
 
+    this.clearCache("Cloud Field Logs & Inspections");
     this.onDataEnhanced.trigger(record);
+    this.onSourcesChanged.trigger();
   }
 
-  /**
-   * Retrieves all enhanced data records for a specific element
-   */
   get(modelId: string, expressId: number): EnhancedDataRecord[] {
-    const key = this.getKey(modelId, expressId);
-    return this._cache.get(key) || [];
+    return this._recordsByElement.get(this.getElementKey(modelId, expressId)) || [];
+  }
+
+  getAllLocalRecords(): EnhancedDataRecord[] {
+    const all: EnhancedDataRecord[] = [];
+    for (const arr of this._recordsByElement.values()) {
+      all.push(...arr);
+    }
+    return all;
   }
 
   /**
-   * Lesson 4.5: Load existing enhanced records from Firebase for the current project
+   * Loads existing enhanced field logs from Cloud Firestore for the active project.
    */
-  async loadProjectData(projectId: string, modelId: string, expressIds: number[]): Promise<void> {
-    if (!projectId || !database) return;
-    for (const expressId of expressIds) {
-      const key = this.getKey(modelId, expressId);
-      try {
-        const docRef = doc(database, "projects", projectId, "enhanced_data", key);
-        const snapshot = await getDoc(docRef);
-        if (snapshot.exists()) {
-          const data = snapshot.data();
-          if (data && Array.isArray(data.records)) {
-            this._cache.set(key, data.records);
+  async loadProjectData(projectId?: string): Promise<EnhancedDataRecord[]> {
+    const pid = projectId || this.projectId;
+    if (!pid || !database) return this.getAllLocalRecords();
+
+    if (this._loadedProjectId === pid && this._recordsByElement.size > 0) {
+      return this.getAllLocalRecords();
+    }
+
+    try {
+      const colRef = collection(database, "projects", pid, "enhanced_data");
+      const snap = await getDocs(colRef);
+      this._loadedProjectId = pid;
+      for (const docSnap of snap.docs) {
+        const data = docSnap.data();
+        if (data && Array.isArray(data.records)) {
+          for (const rec of data.records as EnhancedDataRecord[]) {
+            const key = this.getElementKey(rec.modelId, rec.expressId);
+            const list = this._recordsByElement.get(key) || [];
+            if (!list.some((r) => r.createdAt === rec.createdAt && r.propertyName === rec.propertyName)) {
+              list.push(rec);
+              this._recordsByElement.set(key, list);
+            }
           }
         }
-      } catch (err) {
-        console.warn(`[DataEnhancer] Failed to load data for ${key}:`, err);
       }
+    } catch (err) {
+      console.warn("[DataEnhancer] Could not fetch project Firestore records:", err);
     }
+
+    return this.getAllLocalRecords();
   }
 
-  /**
-   * Clears in-memory enhanced records
-   */
   clear(): void {
-    this._cache.clear();
+    this.clearCache();
+    this._recordsByElement.clear();
+    this._loadedProjectId = null;
     this.onDataCleared.trigger();
-  }
-
-  /**
-   * Lesson 4.4: Creates reactive That Open UI panel for adding enhanced metadata
-   */
-  createUI(projectId?: string): HTMLElement {
-    let propNameInput: BUI.TextInput | null = null;
-    let propValInput: BUI.TextInput | null = null;
-    let categoryInput: BUI.TextInput | null = null;
-    let statusLabel: BUI.Label | null = null;
-
-    const onAddProperty = async () => {
-      const highlighter = this.components.get(OBCF.Highlighter);
-      const selection = highlighter.selection.select;
-
-      if (!selection || OBC.ModelIdMapUtils.isEmpty(selection)) {
-        if (statusLabel) statusLabel.textContent = "Select an element first in 3D View!";
-        return;
-      }
-
-      const propName = propNameInput?.value?.trim() || "";
-      const propVal = propValInput?.value?.trim() || "";
-      const category = categoryInput?.value?.trim() || "General Specification";
-
-      if (!propName || !propVal) {
-        if (statusLabel) statusLabel.textContent = "Please enter both Property Name and Value.";
-        return;
-      }
-
-      for (const [modelId, ids] of Object.entries(selection)) {
-        for (const expressId of ids) {
-          const record: EnhancedDataRecord = {
-            modelId,
-            expressId,
-            propertyName: propName,
-            propertyValue: propVal,
-            category,
-            author: "Abdellah B. (BIMPulse)",
-            createdAt: Date.now(),
-          };
-          await this.set(record, projectId);
-        }
-      }
-
-      if (propNameInput) propNameInput.value = "";
-      if (propValInput) propValInput.value = "";
-      if (statusLabel) statusLabel.textContent = "Property successfully saved!";
-      setTimeout(() => {
-        if (statusLabel) statusLabel.textContent = "";
-      }, 3000);
-    };
-
-    return BUI.Component.create<BUI.Panel>(() => {
-      return BUI.html`
-        <bim-panel style="min-width: 20rem; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 12px; padding: 1rem;">
-          <bim-panel-section label="Data Enhancer (Lesson 4.1 – 4.5)" icon="material-symbols:database">
-            <bim-label style="color: #94a3b8; font-size: 0.82rem; margin-bottom: 0.75rem;">
-              Enrich selected 3D BIM elements with custom parameters, inspection notes, or cost codes.
-            </bim-label>
-
-            <bim-text-input
-              ${BUI.ref((el) => { propNameInput = el as BUI.TextInput; })}
-              label="Property Name"
-              placeholder="e.g. Fire Rating, Acoustic Spec, Cost Code"
-            ></bim-text-input>
-
-            <bim-text-input
-              ${BUI.ref((el) => { propValInput = el as BUI.TextInput; })}
-              label="Property Value"
-              placeholder="e.g. REI 120, 45 dB, CC-2026-A"
-              style="margin-top: 0.5rem;"
-            ></bim-text-input>
-
-            <bim-text-input
-              ${BUI.ref((el) => { categoryInput = el as BUI.TextInput; })}
-              label="Category / Tag"
-              placeholder="e.g. Maintenance, Structural, LEED"
-              value="Specification"
-              style="margin-top: 0.5rem;"
-            ></bim-text-input>
-
-            <bim-button
-              @click=${onAddProperty}
-              label="Attach to Selection"
-              icon="material-symbols:add-link"
-              style="margin-top: 0.85rem; --bim-button-background: #0284c7; color: white; font-weight: 600;"
-            ></bim-button>
-
-            <bim-label
-              ${BUI.ref((el) => { statusLabel = el as BUI.Label; })}
-              style="color: #38bdf8; font-size: 0.8rem; margin-top: 0.5rem; display: block;"
-            ></bim-label>
-          </bim-panel-section>
-        </bim-panel>
-      `;
-    });
   }
 
   dispose(): void {
     this.clear();
+    this.sources.dispose();
     this.onDataEnhanced.reset();
     this.onDataCleared.reset();
+    this.onSourcesChanged.reset();
     this.onDisposed.trigger();
     this.onDisposed.reset();
   }
 }
 
+export * from "./types";

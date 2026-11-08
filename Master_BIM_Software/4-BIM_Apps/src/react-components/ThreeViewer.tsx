@@ -347,8 +347,8 @@ export function ThreeViewer(props: ThreeViewerProps) {
             gui = new GUI({ container: viewerContainer, title: "3D Viewer Options", width: 310 });
             gui.domElement.setAttribute("lang", "en-US");
             gui.domElement.style.position = "absolute";
-            gui.domElement.style.top = "1rem";
-            gui.domElement.style.right = "1rem";
+            gui.domElement.style.top = "calc(var(--mode-bar-bottom, 96px) + 10px)";
+            gui.domElement.style.right = "16px";
             gui.domElement.style.zIndex = "25";
 
             const nameLower = (proj.name || "").toLowerCase();

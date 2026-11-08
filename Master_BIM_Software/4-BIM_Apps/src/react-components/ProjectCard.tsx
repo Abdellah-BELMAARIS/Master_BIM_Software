@@ -37,8 +37,8 @@ export function ProjectCard(props: Props) {
             if (nameLow.includes("aurora") || nameLow.includes("10-villa") || fileLow.includes("aurora") || fileLow.includes("ten_villa")) {
                 return { name: `10-Villa Estate · ${schema}`, icon: "holiday_village", category: "ifc", schema };
             }
-            if (nameLow.includes("office") || nameLow.includes("hq") || nameLow.includes("structural complex") || fileLow.includes("mbsd")) {
-                return { name: `Commercial HQ · ${schema}`, icon: "corporate_fare", category: "ifc", schema };
+            if (nameLow.includes("office") || nameLow.includes("hq") || nameLow.includes("structural complex") || fileLow.includes("mbsd") || nameLow.includes("overpass") || nameLow.includes("provi civil")) {
+                return { name: `Civil Overpass · ${schema}`, icon: "alt_route", category: "ifc", schema };
             }
             if (nameLow.includes("superstructure") || fileLow.includes("zzz")) {
                 return { name: `Civic Framing · ${schema}`, icon: "domain", category: "ifc", schema };

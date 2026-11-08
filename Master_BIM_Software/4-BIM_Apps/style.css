@@ -1,5 +1,16 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
+/* Hide That Open Company watermark logo permanently */
+[data-thatopen-logo],
+.thatopen-logo,
+img[src*="thatopen"],
+a[href*="thatopen.com"][style*="position: absolute"] {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
 /* ==========================================================================
    Projects Dashboard Stylesheet — That Open Company Module 1 Target
    ========================================================================== */
@@ -306,7 +317,7 @@ a {
 /* CAD & BIM Measurement HUD Banner */
 .measurement-banner {
     position: absolute;
-    top: 16px;
+    top: calc(var(--toolbar-bottom, 166px) + 8px);
     left: 50%;
     transform: translateX(-50%);
     background: rgba(15, 23, 42, 0.92);
@@ -322,6 +333,7 @@ a {
     z-index: 25;
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
     pointer-events: none;
+    max-width: calc(100% - 28px);
     animation: fadeInDown 0.2s ease;
 }
 
@@ -344,7 +356,7 @@ a {
     box-shadow: 0 12px 36px rgba(0, 0, 0, 0.7);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    z-index: 35;
+    z-index: 26;
     animation: fadeInUp 0.2s ease;
 }
 
@@ -1681,32 +1693,35 @@ dialog#error-modal::backdrop {
 
 .viewer-mode-switch-bar {
     position: absolute;
-    top: 14px;
-    left: 16px;
+    top: 12px;
+    left: 14px;
     z-index: 30;
     display: inline-flex;
     align-items: center;
+    flex-wrap: wrap;
+    max-width: calc(100% - 28px);
     background: rgba(15, 23, 42, 0.92);
     backdrop-filter: blur(14px);
     border: 1px solid rgba(56, 189, 248, 0.32);
-    border-radius: 24px;
-    padding: 3px;
+    border-radius: 14px;
+    padding: 4px;
     box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
-    gap: 2px;
+    gap: 3px;
 }
 
 .viewer-mode-tab {
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 14px;
+    gap: 5px;
+    padding: 5px 9px;
     border: none;
-    border-radius: 20px;
+    border-radius: 10px;
     background: transparent;
     color: var(--text-secondary);
     cursor: pointer;
-    font-size: 0.82rem;
+    font-size: 0.75rem;
     font-weight: 600;
+    white-space: nowrap;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -1723,6 +1738,54 @@ dialog#error-modal::backdrop {
 
 .viewer-mode-tab .material-icons-round {
     font-size: 16px;
+}
+
+.toc-viewport-floating-grid {
+    padding: calc(var(--mode-bar-bottom, 54px) + 8px) 14px 14px 14px !important;
+    z-index: 22;
+    pointer-events: none !important;
+    align-content: start;
+    justify-content: start;
+}
+
+/* Responsive Fluid Support for Phones & Laptops across Viewer Mode Bar & Toolbar */
+@media (max-width: 768px) {
+    .viewer-mode-switch-bar {
+        top: 8px;
+        left: 8px;
+        max-width: calc(100% - 16px);
+        padding: 3px 4px;
+        border-radius: 10px;
+        gap: 2px;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        scrollbar-width: none;
+    }
+    .viewer-mode-tab {
+        padding: 4px 7px;
+        font-size: 0.70rem;
+    }
+    .viewer-mode-tab .material-icons-round {
+        font-size: 14px;
+    }
+    .toc-viewport-floating-grid {
+        padding: calc(var(--mode-bar-bottom, 48px) + 6px) 8px 8px 8px !important;
+    }
+    .plan-mode-banner {
+        top: calc(var(--toolbar-bottom, 120px) + 6px) !important;
+        right: 8px !important;
+        font-size: 0.72rem !important;
+        padding: 4px 10px !important;
+    }
+}
+
+@container (max-width: 860px) {
+    [data-thatopen-logo] {
+        bottom: 58px !important;
+        left: 14px !important;
+        width: 4.4rem !important;
+        opacity: 0.72 !important;
+    }
 }
 
 @container (max-width: 1050px) {
@@ -2274,12 +2337,12 @@ dialog#error-modal::backdrop {
 #viewer-container > .lil-gui,
 #viewer-container .lil-gui.root {
     position: absolute !important;
-    top: 1rem !important;
-    right: 1rem !important;
+    top: calc(var(--mode-bar-bottom, 96px) + 10px) !important;
+    right: 16px !important;
     z-index: 50 !important;
     width: 280px !important;
     max-width: calc(100% - 2rem) !important;
-    max-height: calc(100% - 2rem) !important;
+    max-height: calc(100% - var(--mode-bar-bottom, 96px) - 82px) !important;
     overflow-y: auto !important;
     overflow-x: hidden !important;
     pointer-events: auto !important;
@@ -3168,10 +3231,10 @@ dialog#error-modal::backdrop {
 
     #viewer-container > .lil-gui,
     #viewer-container .lil-gui.root {
-        top: 0.6rem !important;
+        top: calc(var(--mode-bar-bottom, 58px) + 8px) !important;
         right: 0.6rem !important;
         width: 220px !important;
-        max-height: calc(100% - 4rem);
+        max-height: calc(100% - 4.5rem);
     }
 
     .viewer-hud-telemetry {
@@ -3406,7 +3469,7 @@ bim-viewport {
     background: rgba(30, 41, 59, 0.65) !important;
     border: 1px solid rgba(148, 163, 184, 0.25) !important;
     color: #94a3b8 !important;
-    font-size: 0.78rem !important;
+    font-size: 0.75rem !important;
 }
 
 .toc-course-pill:hover {
@@ -3424,10 +3487,10 @@ bim-viewport {
 
 .toc-dock-panel {
     position: absolute;
-    top: 58px;
-    bottom: 74px;
-    width: 380px;
-    max-width: calc(100% - 32px);
+    top: calc(var(--toolbar-bottom, 166px) + 8px);
+    bottom: 68px;
+    width: clamp(310px, 56%, 390px);
+    max-width: calc(100% - 28px);
     background: rgba(15, 23, 42, 0.96);
     border: 1px solid rgba(56, 189, 248, 0.35);
     border-radius: 12px;
@@ -3447,6 +3510,10 @@ bim-viewport {
 
 .toc-dock-right {
     right: 16px;
+}
+
+.toc-dock-panel[data-drawer="properties"] {
+    width: clamp(340px, 64%, 440px);
 }
 
 .toc-dock-header {
