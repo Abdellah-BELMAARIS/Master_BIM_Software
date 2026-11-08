@@ -2,5 +2,8 @@ export * from "./create-world";
 export * from "./fragments-manager";
 export * from "./ifc-loader";
 export * from "./highlighter";
+export * from "./items-finder";
+export * from "./data-enhancer";
+export * from "./smart-views";
 export * from "./load-project-model";
 export * from "./measurement-tool";

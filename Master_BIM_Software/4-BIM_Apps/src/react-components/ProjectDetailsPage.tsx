@@ -3,6 +3,7 @@ import * as Router from "react-router-dom";
 import * as THREE from "three";
 import * as BUI from "@thatopen/ui";
 import * as OBC from "@thatopen/components";
+import * as OBCF from "@thatopen/components-front";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../core/database";
 import { IProject, Project } from "../classes/Project";
@@ -12,7 +13,17 @@ import { ProjectTasksList } from "./details/ProjectTasksList";
 import { ProjectNotFound } from "./details/ProjectNotFound";
 import { ThreeViewer } from "./ThreeViewer";
 import * as templates from "../ui-templates";
-import { setupComponents, BimMeasurementSystem, loadIfcFromBuffer, resolveBimElementInfo, BimElementInfo, DataEnhancer, SmartViews } from "../bim-components";
+import {
+    setupComponents,
+    BimMeasurementSystem,
+    loadIfcFromBuffer,
+    resolveBimElementInfo,
+    getProjectIfcFile,
+    getCanonicalProjectInfo,
+    BimElementInfo,
+    DataEnhancer,
+    unwrapIfcAttr,
+} from "../bim-components";
 
 export interface ProjectDetailsPageProps {
     projectsManager: ProjectsManager;
@@ -34,7 +45,10 @@ class ViewerErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBound
     }
 
     static getDerivedStateFromError(error: Error): ErrorBoundaryState {
-        return { hasError: true, errorMessage: error?.message || "An unexpected error occurred in the 3D Viewer." };
+        return {
+            hasError: true,
+            errorMessage: error?.message || "An unexpected error occurred in the 3D Viewer.",
+        };
     }
 
     componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
@@ -44,8 +58,23 @@ class ViewerErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBound
     render() {
         if (this.state.hasError) {
             return (
-                <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", width: "100%", color: "#ef4444", padding: "2rem", textAlign: "center", background: "#0b0f19" }}>
-                    <span className="material-icons-round" style={{ fontSize: "42px", marginBottom: "8px" }}>warning</span>
+                <div
+                    style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        height: "100%",
+                        width: "100%",
+                        color: "#ef4444",
+                        padding: "2rem",
+                        textAlign: "center",
+                        background: "#0b0f19",
+                    }}
+                >
+                    <span className="material-icons-round" style={{ fontSize: "42px", marginBottom: "8px" }}>
+                        warning
+                    </span>
                     <h3 style={{ margin: "0 0 8px 0", color: "#f8fafc" }}>3D BIM Engine Notice</h3>
                     <p style={{ color: "#94a3b8", fontSize: "0.88rem", maxWidth: "420px", marginBottom: "16px" }}>
                         {this.state.errorMessage}
@@ -64,39 +93,38 @@ class ViewerErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBound
     }
 }
 
-// Re-export Universal Semantic BIM Element Metadata Resolver
 export { resolveBimElementInfo } from "../bim-components/setup/src/load-project-model";
 
 /**
  * Modular ProjectDetailsPage
- * Module 4 — Lesson 3.3: Working with BIM Worlds
- * Seamless integration of That Open Engine BIM World (<bim-grid> + <bim-viewport>)
- * with 3D Parametric Digital Twins and full project management.
+ * Module 4 (Lessons 2.3 – 5.5): Full That Open Engine BIM Application
+ * - BIM World (3D Perspective) + 2D Plan (Orthographic Projection synced to Fragments)
+ * - 3D Parametric Studio view (for 3D digital twin projects)
+ * - Lesson 3.5: Element Data & Properties Inspector
+ * - Lesson 3.6–3.7: Models Manager & .frag Binary Export
+ * - Lesson 3.8–3.13: Viewport Floating Toolbar (Colorize, Hide, Isolate, Show All, Ghost, Focus)
+ * - Lesson 3.11–3.12: ItemsFinder Data & Relational Queries Drawer
+ * - Section 4 (Lessons 4.1–4.5): DataEnhancer Sources & Cloud Firestore Element Notes
+ * - Section 5 (Lessons 5.1–5.5): SmartViews Discipline Coordination & State Capture
  */
 export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
     const { projectsManager } = props;
     const routeParams = Router.useParams<{ id: string }>();
     const projectId = routeParams.id;
 
-    // Lesson 2.4 & 3.3: Strongly typed ViewerGrid reference
     const gridRef = React.useRef<templates.ViewerGrid | null>(null);
 
-    // 1. Check local ProjectsManager memory first
     let project = projectId ? projectsManager.getProject(projectId) : null;
 
     const [isLoadingFromCloud, setIsLoadingFromCloud] = React.useState<boolean>(!project);
-    // Every project is a That Open Engine BIM World with its 3D model populated!
-    // For IFC models: BIM World (3D) vs 2D Plan (Orthographic)
-    // For 3D models: BIM World vs 3D Model (Studio)
     const [viewerMode, setViewerMode] = React.useState<"bim-world" | "2d-plan" | "parametric">("bim-world");
-    const worldRef = React.useRef<any>(null);
-    const componentsRef = React.useRef<any>(null);
+    const worldRef = React.useRef<OBC.World | null>(null);
+    const componentsRef = React.useRef<OBC.Components | null>(null);
     const [isAutoRotating, setIsAutoRotating] = React.useState<boolean>(false);
     const [isGridVisible, setIsGridVisible] = React.useState<boolean>(true);
     const [, setTick] = React.useState(0);
     const forceUpdate = () => setTick((t) => t + 1);
 
-    // Advanced Option B State: Real-Time Measurements, Local IFC Loader & Element Inspector
     const measurementSystemRef = React.useRef<BimMeasurementSystem | null>(null);
     const [isMeasuring, setIsMeasuring] = React.useState<boolean>(false);
     const [measurementsCount, setMeasurementsCount] = React.useState<number>(0);
@@ -108,95 +136,188 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
     const [isParsingIfc, setIsParsingIfc] = React.useState<boolean>(false);
     const [customIfcName, setCustomIfcName] = React.useState<string | null>(null);
 
-    // That Open Company Course Tools Integration (Lessons 3.5, 3.6, 3.11, 3.12, 4.x, 5.x)
-    const [showModelsPanel, setShowModelsPanel] = React.useState<boolean>(false);
-    const [showPropertiesPanel, setShowPropertiesPanel] = React.useState<boolean>(false);
-    const [showQueryPanel, setShowQueryPanel] = React.useState<boolean>(false);
-    const [showDataEnhancer, setShowDataEnhancer] = React.useState<boolean>(false);
-    const [showSmartViews, setShowSmartViews] = React.useState<boolean>(false);
+    type DockDrawerId = "models" | "query" | "properties" | "enhance" | "smart-views";
+    const [activeDrawer, setActiveDrawer] = React.useState<DockDrawerId | null>(null);
+    const toggleDrawer = (drawer: DockDrawerId) => {
+        setActiveDrawer((prev) => (prev === drawer ? null : drawer));
+    };
+    const [engineReadyTick, setEngineReadyTick] = React.useState<number>(0);
 
+    const viewerWrapperRef = React.useRef<HTMLDivElement | null>(null);
+    const modeBarRef = React.useRef<HTMLDivElement | null>(null);
     const modelsContainerRef = React.useRef<HTMLDivElement | null>(null);
     const propertiesContainerRef = React.useRef<HTMLDivElement | null>(null);
     const queryContainerRef = React.useRef<HTMLDivElement | null>(null);
     const dataEnhancerContainerRef = React.useRef<HTMLDivElement | null>(null);
     const smartViewsContainerRef = React.useRef<HTMLDivElement | null>(null);
 
-    // Lessons 3.11 & 3.12: Mount Query & Find Items UI Panel
+    // Measure .viewer-mode-switch-bar and floating <bim-toolbar> dynamically -> --mode-bar-bottom & --toolbar-bottom
+    // Guarantees zero overlap between top bar, floating toolbar, dockable drawers, and banners at all breakpoints
     React.useEffect(() => {
-        if (showQueryPanel && queryContainerRef.current && componentsRef.current) {
+        const wrapper = viewerWrapperRef.current;
+        const bar = modeBarRef.current;
+        if (!wrapper || !bar) return;
+
+        let observedToolbar: Element | null = null;
+
+        const syncLayoutOffsets = () => {
+            const wrapperRect = wrapper.getBoundingClientRect();
+            const barRect = bar.getBoundingClientRect();
+            const modeBarBottom = Math.max(52, Math.round(barRect.bottom - wrapperRect.top));
+            wrapper.style.setProperty("--mode-bar-bottom", `${modeBarBottom}px`);
+
+            const toolbarEl = wrapper.querySelector("bim-toolbar");
+            if (toolbarEl && toolbarEl !== observedToolbar) {
+                observedToolbar = toolbarEl;
+                ro.observe(toolbarEl);
+            }
+            const tr = toolbarEl?.getBoundingClientRect();
+            const toolbarBottom =
+                tr && tr.height > 10
+                    ? Math.round(tr.bottom - wrapperRect.top)
+                    : modeBarBottom + 92;
+            wrapper.style.setProperty("--toolbar-bottom", `${toolbarBottom}px`);
+        };
+
+        const ro = new ResizeObserver(syncLayoutOffsets);
+        ro.observe(bar);
+        ro.observe(wrapper);
+
+        const mo = new MutationObserver(() => syncLayoutOffsets());
+        mo.observe(wrapper, { childList: true, subtree: true });
+
+        syncLayoutOffsets();
+        const rafId = requestAnimationFrame(syncLayoutOffsets);
+
+        return () => {
+            cancelAnimationFrame(rafId);
+            ro.disconnect();
+            mo.disconnect();
+        };
+    }, [project?.id, viewerMode, project?.modelCategory, engineReadyTick]);
+
+    // Mount all 5 course BUI drawers ONCE per engine initialization (prevents listener leaks on drawer toggle)
+    React.useEffect(() => {
+        const components = componentsRef.current;
+        if (engineReadyTick === 0 || !components) return;
+
+        if (queryContainerRef.current) {
             try {
-                const queryPanel = BUI.Component.create<BUI.Panel, templates.QueryPanelState>(
-                    templates.queryPanelTemplate,
-                    { components: componentsRef.current }
-                );
-                queryContainerRef.current.replaceChildren(queryPanel as any);
+                const [queriesSection] = BUI.Component.create<
+                    BUI.PanelSection,
+                    templates.QueriesSectionState
+                >(templates.queriesTemplate, { components });
+                queryContainerRef.current.replaceChildren(queriesSection);
             } catch (err) {
                 console.warn("[QueryPanel] Error mounting query panel:", err);
             }
         }
-    }, [showQueryPanel]);
 
-    React.useEffect(() => {
-        if (showModelsPanel && modelsContainerRef.current && componentsRef.current) {
+        if (modelsContainerRef.current) {
             try {
-                const [modelsPanel] = BUI.Component.create<BUI.PanelSection, templates.ModelsState>(
-                    templates.modelsTemplate,
-                    { components: componentsRef.current }
-                );
+                const [modelsPanel] = BUI.Component.create<
+                    BUI.PanelSection,
+                    templates.ModelsState
+                >(templates.modelsTemplate, { components });
                 modelsContainerRef.current.replaceChildren(modelsPanel);
             } catch (err) {
                 console.warn("[ThatOpen] Error mounting models panel:", err);
             }
         }
-    }, [showModelsPanel]);
 
-    React.useEffect(() => {
-        if (showPropertiesPanel && propertiesContainerRef.current && componentsRef.current) {
+        if (propertiesContainerRef.current) {
             try {
-                const [propsPanel] = BUI.Component.create<BUI.PanelSection, templates.ItemsDataState>(
-                    templates.itemsDataTemplate,
-                    { components: componentsRef.current }
-                );
+                const [propsPanel] = BUI.Component.create<
+                    BUI.PanelSection,
+                    templates.ItemsDataState
+                >(templates.itemsDataTemplate, { components });
                 propertiesContainerRef.current.replaceChildren(propsPanel);
             } catch (err) {
                 console.warn("[ThatOpen] Error mounting properties panel:", err);
             }
         }
-    }, [showPropertiesPanel]);
 
-    // Section 4: Mount custom DataEnhancer Component UI (Lessons 4.1 – 4.5)
-    React.useEffect(() => {
-        if (showDataEnhancer && dataEnhancerContainerRef.current && componentsRef.current) {
+        if (dataEnhancerContainerRef.current) {
             try {
-                const dataEnhancer = componentsRef.current.get(DataEnhancer);
-                const panel = dataEnhancer.createUI(project?.id);
-                dataEnhancerContainerRef.current.replaceChildren(panel);
+                const [enhancerSection] = BUI.Component.create<
+                    BUI.PanelSection,
+                    templates.DataSourcesState
+                >(templates.dataSourcesTemplate, {
+                    components,
+                    projectId: project?.id,
+                });
+                dataEnhancerContainerRef.current.replaceChildren(enhancerSection);
             } catch (err) {
                 console.warn("[DataEnhancer] Error mounting UI:", err);
             }
         }
-    }, [showDataEnhancer, project?.id]);
 
-    // Section 5: Mount custom SmartViews Component UI (Lessons 5.1 – 5.5)
-    React.useEffect(() => {
-        if (showSmartViews && smartViewsContainerRef.current && componentsRef.current) {
+        if (smartViewsContainerRef.current) {
             try {
-                const smartViews = componentsRef.current.get(SmartViews);
-                const panel = smartViews.createUI();
-                smartViewsContainerRef.current.replaceChildren(panel);
+                const [smartViewsSection] = BUI.Component.create<
+                    BUI.PanelSection,
+                    templates.SmartViewsSectionState
+                >(templates.smartViewsSectionTemplate, { components });
+                smartViewsContainerRef.current.replaceChildren(smartViewsSection);
             } catch (err) {
                 console.warn("[SmartViews] Error mounting UI:", err);
             }
         }
-    }, [showSmartViews]);
+    }, [engineReadyTick, project?.id]);
 
-    // Measurement & Inspection Controls
+    // Helper: Compute combined bounding box of Fragments + Parametric scene meshes
+    const computeSceneBounds = async (): Promise<THREE.Box3> => {
+        const world = worldRef.current;
+        const components = componentsRef.current;
+        const bbox = new THREE.Box3();
+        if (!world || !components) return bbox;
+
+        try {
+            const fragments = components.get(OBC.FragmentsManager);
+            if (fragments.initialized && fragments.list.size > 0) {
+                for (const [, model] of fragments.list) {
+                    if (model?.box && !model.box.isEmpty()) {
+                        bbox.union(model.box);
+                    }
+                }
+                if (bbox.isEmpty()) {
+                    const boxer = components.get(OBC.BoundingBoxer);
+                    boxer.list.clear();
+                    boxer.addFromModels();
+                    const modelBox = boxer.get();
+                    if (!modelBox.isEmpty()) bbox.union(modelBox);
+                }
+            }
+        } catch {}
+
+        if (world.scene?.three) {
+            world.scene.three.traverse((child: any) => {
+                if (
+                    child.isMesh &&
+                    child.visible &&
+                    !child.name?.includes("grid") &&
+                    !child.name?.includes("selection-box") &&
+                    !(child as any).isGrid
+                ) {
+                    bbox.expandByObject(child);
+                }
+            });
+        }
+        return bbox;
+    };
+
     const toggleMeasuring = () => {
         const next = !isMeasuring;
         setIsMeasuring(next);
         if (measurementSystemRef.current) {
             measurementSystemRef.current.setEnabled(next);
         }
+        try {
+            if (componentsRef.current) {
+                const highlighter = componentsRef.current.get(OBCF.Highlighter);
+                highlighter.enabled = !next;
+            }
+        } catch {}
         if (next) {
             setSelectedElement(null);
             if (selectionBoxRef.current && worldRef.current) {
@@ -234,97 +355,154 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
         }
     };
 
-    // That Open Engine CAD Navigation helpers
-    const setCameraPreset = (preset: "iso" | "plan" | "front") => {
+    // Camera Presets + True Perspective <-> Orthographic 2D Plan projection synchronization
+    const setCameraPreset = async (preset: "iso" | "plan" | "front") => {
         const world = worldRef.current;
-        const controls = world?.camera?.controls;
-        if (!controls) return;
+        const components = componentsRef.current;
+        const camera = world?.camera;
+        const controls = (camera as any)?.controls;
+        if (!world || !camera || !controls) return;
 
-        // Calculate model bounding center dynamically
+        const wasParametric = viewerMode === "parametric";
+        const bbox = await computeSceneBounds();
         const modelCenter = new THREE.Vector3(0, 3, 0);
         let dist = 32;
-        if (world.scene.three) {
-            const bbox = new THREE.Box3();
-            world.scene.three.traverse((child: any) => {
-                if (child.isMesh && !child.name.includes("grid") && !child.name.includes("selection-box")) {
-                    bbox.expandByObject(child);
-                }
-            });
-            if (!bbox.isEmpty()) {
-                bbox.getCenter(modelCenter);
-                const size = new THREE.Vector3();
-                bbox.getSize(size);
-                dist = Math.max(size.x, size.y, size.z) * 1.5;
+        if (!bbox.isEmpty()) {
+            bbox.getCenter(modelCenter);
+            const size = new THREE.Vector3();
+            bbox.getSize(size);
+            dist = Math.max(size.length() * 0.65, Math.max(size.x, size.y, size.z) * 1.35, 16);
+        }
+
+        const fragments = components?.get(OBC.FragmentsManager);
+
+        if (preset === "plan") {
+            const switchingProj =
+                camera instanceof OBC.OrthoPerspectiveCamera &&
+                camera.projection.current !== "Orthographic";
+            setViewerMode("2d-plan");
+            if (switchingProj && camera instanceof OBC.OrthoPerspectiveCamera) {
+                try {
+                    await camera.projection.set("Orthographic");
+                } catch {}
+            }
+            await controls.setLookAt(
+                modelCenter.x,
+                modelCenter.y + dist * 1.45,
+                modelCenter.z + 0.01,
+                modelCenter.x,
+                modelCenter.y,
+                modelCenter.z,
+                false
+            );
+            if (camera instanceof OBC.SimpleCamera && !bbox.isEmpty()) {
+                try {
+                    if (fragments?.initialized && fragments.list.size > 0) {
+                        await camera.fitToItems();
+                    }
+                } catch {}
+            }
+        } else {
+            const switchingProj =
+                camera instanceof OBC.OrthoPerspectiveCamera &&
+                camera.projection.current !== "Perspective";
+            if (viewerMode === "2d-plan" || viewerMode === "parametric") {
+                setViewerMode("bim-world");
+            }
+            if (switchingProj && camera instanceof OBC.OrthoPerspectiveCamera) {
+                try {
+                    await camera.projection.set("Perspective");
+                    await controls.zoomTo(1, false);
+                } catch {}
+            }
+            const animateTransition = !switchingProj && !wasParametric;
+            if (preset === "iso") {
+                await controls.setLookAt(
+                    modelCenter.x + dist * 0.78,
+                    modelCenter.y + dist * 0.62,
+                    modelCenter.z + dist * 0.78,
+                    modelCenter.x,
+                    modelCenter.y,
+                    modelCenter.z,
+                    animateTransition
+                );
+            } else {
+                await controls.setLookAt(
+                    modelCenter.x,
+                    modelCenter.y + dist * 0.25,
+                    modelCenter.z + dist * 1.25,
+                    modelCenter.x,
+                    modelCenter.y,
+                    modelCenter.z,
+                    animateTransition
+                );
             }
         }
 
-        if (preset === "iso") {
-            if (viewerMode === "2d-plan") {
-                setViewerMode("bim-world");
-            }
-            controls.setLookAt(
-                modelCenter.x + dist * 0.75,
-                modelCenter.y + dist * 0.65,
-                modelCenter.z + dist * 0.75,
-                modelCenter.x,
-                modelCenter.y,
-                modelCenter.z,
-                true
-            );
-        } else if (preset === "plan") {
-            if (isIfcProject && viewerMode === "bim-world") {
-                setViewerMode("2d-plan");
-            }
-            controls.setLookAt(
-                modelCenter.x,
-                modelCenter.y + dist * 1.5,
-                modelCenter.z + 0.001,
-                modelCenter.x,
-                modelCenter.y,
-                modelCenter.z,
-                true
-            );
-        } else if (preset === "front") {
-            if (viewerMode === "2d-plan") {
-                setViewerMode("bim-world");
-            }
-            controls.setLookAt(
-                modelCenter.x,
-                modelCenter.y + dist * 0.25,
-                modelCenter.z + dist * 1.25,
-                modelCenter.x,
-                modelCenter.y,
-                modelCenter.z,
-                true
-            );
-        }
+        const syncFragmentsToCamera = () => {
+            try {
+                if (world.isDisposing) return;
+                if (wasParametric) {
+                    if (world.renderer instanceof OBC.SimpleRenderer) {
+                        world.renderer.resize();
+                    }
+                    if (camera instanceof OBC.OrthoPerspectiveCamera) {
+                        camera.updateAspect();
+                    }
+                }
+                const activeThreeCam = camera.three;
+                if (
+                    fragments?.initialized &&
+                    (activeThreeCam instanceof THREE.PerspectiveCamera ||
+                        activeThreeCam instanceof THREE.OrthographicCamera)
+                ) {
+                    for (const [, model] of fragments.list) {
+                        model?.useCamera(activeThreeCam);
+                    }
+                    fragments.core.update(true);
+                }
+            } catch {}
+        };
+
+        syncFragmentsToCamera();
+        requestAnimationFrame(syncFragmentsToCamera);
     };
 
     const handleZoom = (zoomIn: boolean) => {
-        const controls = worldRef.current?.camera?.controls;
+        const controls = (worldRef.current?.camera as any)?.controls;
         if (!controls) return;
         controls.dolly(zoomIn ? 3 : -3, true);
     };
 
-    const fitModelView = () => {
+    const fitModelView = async () => {
         const world = worldRef.current;
-        const controls = world?.camera?.controls;
-        if (!controls || !world?.scene?.three) return;
-        const bbox = new THREE.Box3();
-        world.scene.three.traverse((child: any) => {
-            if (child.isMesh && !child.name.includes("grid") && !child.name.includes("selection-box")) {
-                bbox.expandByObject(child);
+        const components = componentsRef.current;
+        const controls = (world?.camera as any)?.controls;
+        if (!world || !controls) return;
+
+        try {
+            const fragments = components?.get(OBC.FragmentsManager);
+            if (world.camera instanceof OBC.SimpleCamera && fragments?.initialized && fragments.list.size > 0) {
+                await world.camera.fitToItems();
+                return;
             }
-        });
+        } catch {}
+
+        const bbox = await computeSceneBounds();
         if (!bbox.isEmpty()) {
-            controls.fitToBox(bbox, true, { paddingLeft: 1.25, paddingRight: 1.25, paddingTop: 1.25, paddingBottom: 1.25 });
+            await controls.fitToBox(bbox, true, {
+                paddingLeft: 1.25,
+                paddingRight: 1.25,
+                paddingTop: 1.25,
+                paddingBottom: 1.25,
+            });
         } else {
-            controls.setLookAt(20, 14, 22, 0, 3, 0, true);
+            await controls.setLookAt(20, 14, 22, 0, 3, 0, true);
         }
     };
 
     const toggleAutoOrbit = () => {
-        const controls = worldRef.current?.camera?.controls;
+        const controls = (worldRef.current?.camera as any)?.controls;
         if (!controls) return;
         controls.autoRotate = !controls.autoRotate;
         controls.autoRotateSpeed = 2.0;
@@ -354,42 +532,109 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
     // Lesson 3.3: Working with BIM Worlds — asynchronous setupComponents with populated project model
     React.useEffect(() => {
         if (!project) return;
-        let componentsInstance: any = null;
+        let disposed = false;
+        let componentsInstance: OBC.Components | null = null;
         let loadedModelInstance: any = null;
         let animId: number | null = null;
+        let attachedCanvas: HTMLCanvasElement | null = null;
+        let pointerMoveHandler: ((evt: MouseEvent) => void) | null = null;
+        let pointerClickHandler: ((evt: MouseEvent) => void) | null = null;
+
+        setSelectedElement(null);
+        setActiveDrawer(null);
+        setIsMeasuring(false);
+        setMeasurementsCount(0);
+        setCustomIfcName(null);
 
         const setupGrid = async () => {
             try {
-                // Initialize That Open Engine components and BIM World with active project's 3D model!
-                const { components, world, viewport, loadedModel } = await setupComponents(project);
+                const { components, world, viewport, loadedModel } = await setupComponents(project ?? undefined);
+                if (disposed) {
+                    try { loadedModel?.dispose(); } catch {}
+                    try { components.dispose(); } catch {}
+                    return;
+                }
+
                 componentsInstance = components;
                 componentsRef.current = components;
                 worldRef.current = world;
                 loadedModelInstance = loadedModel;
+                setEngineReadyTick((n) => n + 1);
 
                 const grid = gridRef.current;
-                if (!grid) return;
+                if (grid) {
+                    grid.elements = {
+                        viewport: {
+                            template: templates.viewportTemplate,
+                            initialState: { viewport },
+                        },
+                    };
 
-                // Direct full-bleed 3D Viewport in That Open Engine BIM World (no blocking side panels)
-                grid.elements = {
-                    viewport: {
-                        template: templates.viewportTemplate,
-                        initialState: { viewport },
-                    },
-                };
+                    grid.layouts = {
+                        main: {
+                            template: `
+                                "viewport" 1fr
+                                / 1fr
+                            `,
+                        },
+                    };
 
-                // Full-bleed 100% viewport layout
-                grid.layouts = {
-                    main: {
-                        template: `
-                            "viewport" 1fr
-                            / 1fr
-                        `,
-                    },
-                };
+                    grid.layout = "main";
+                }
 
-                // Set default active layout
-                grid.layout = "main";
+                // Wire Highlighter Selection Events -> Element Inspector Card with real IFC Metadata
+                try {
+                    const highlighter = components.get(OBCF.Highlighter);
+                    const fragments = components.get(OBC.FragmentsManager);
+                    const boxer = components.get(OBC.BoundingBoxer);
+
+                    highlighter.events.select.onHighlight.add(async (modelIdMap) => {
+                        if (disposed || !fragments.initialized || OBC.ModelIdMapUtils.isEmpty(modelIdMap)) return;
+                        try {
+                            const dataMap = await fragments.getData(modelIdMap, { attributesDefault: true });
+                            if (disposed) return;
+                            boxer.list.clear();
+                            await boxer.addFromModelIdMap(modelIdMap);
+                            const bbox = boxer.get();
+                            const size = new THREE.Vector3();
+                            const center = new THREE.Vector3();
+                            if (!bbox.isEmpty()) {
+                                bbox.getSize(size);
+                                bbox.getCenter(center);
+                            }
+
+                            for (const [, items] of Object.entries(dataMap)) {
+                                const first = items?.[0];
+                                if (!first) continue;
+                                const localId = unwrapIfcAttr((first as any)._localId) || "IFC";
+                                const category = unwrapIfcAttr((first as any)._category) || "IfcProduct";
+                                const elName =
+                                    unwrapIfcAttr((first as any).Name) ||
+                                    unwrapIfcAttr((first as any).ObjectType) ||
+                                    `${category} #${localId}`;
+                                const guid = unwrapIfcAttr((first as any)._guid);
+
+                                setSelectedElement({
+                                    elementId: guid ? `${localId} · ${guid.slice(0, 8)}` : String(localId),
+                                    name: elName,
+                                    type: `${category} · OpenBIM`,
+                                    point: center,
+                                    width: size.x,
+                                    height: size.y,
+                                    depth: size.z,
+                                    triangleCount: Math.max(12, Math.round(size.length() * 24)),
+                                });
+                                break;
+                            }
+                        } catch (err) {
+                            console.warn("[Inspector] Could not resolve fragment attributes:", err);
+                        }
+                    });
+
+                    highlighter.events.select.onClear.add(() => {
+                        if (!disposed) setSelectedElement(null);
+                    });
+                } catch {}
 
                 // Initialize Advanced BIM Measurement System
                 const measureSystem = new BimMeasurementSystem(components, world);
@@ -398,55 +643,126 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                     setMeasurementsCount(records.length);
                 };
 
-                // Attach Precision Raycasting for Measurement & Element Inspector
-                const canvas = world.renderer.three.domElement;
-                const raycaster = new THREE.Raycaster();
+                const canvas = world.renderer?.three.domElement || null;
+                if (canvas) {
+                    attachedCanvas = canvas;
+                    const raycaster = new THREE.Raycaster();
+                    const fragments = components.get(OBC.FragmentsManager);
+                    let isPickingMeasureHover = false;
 
-                const onPointerMove = (evt: MouseEvent) => {
-                    const rect = canvas.getBoundingClientRect();
-                    const x = ((evt.clientX - rect.left) / rect.width) * 2 - 1;
-                    const y = -((evt.clientY - rect.top) / rect.height) * 2 + 1;
-                    raycaster.setFromCamera(new THREE.Vector2(x, y), world.camera.three);
+                    // Only raycast explicit parametric Three.js Meshes with valid non-interleaved float position attributes.
+                    // Prevents THREE.Raycaster from indexing internal Fragments LOD/BVH placeholder geometries (BufferAttribute.getX crash).
+                    const collectPickableMeshes = (): THREE.Mesh[] => {
+                        const meshes: THREE.Mesh[] = [];
+                        if (!world.scene?.three) return meshes;
+                        world.scene.three.traverse((obj) => {
+                            if (!(obj instanceof THREE.Mesh)) return;
+                            if (!obj.visible) return;
+                            if (
+                                obj.name.includes("measurement") ||
+                                obj.name.includes("selection-box") ||
+                                obj.name.includes("grid") ||
+                                (obj as any).isGrid
+                            ) {
+                                return;
+                            }
+                            const posAttr = obj.geometry?.attributes?.position;
+                            if (
+                                !posAttr ||
+                                posAttr.count <= 0 ||
+                                (posAttr as any).isInterleavedBufferAttribute
+                            ) {
+                                return;
+                            }
+                            meshes.push(obj);
+                        });
+                        return meshes;
+                    };
 
-                    const hits = raycaster.intersectObjects(world.scene.three.children, true);
-                    const validHit = hits.find(
-                        (h) => h.object.visible &&
-                               !h.object.name.includes("measurement") &&
-                               !h.object.name.includes("selection-box") &&
-                               h.object.type === "Mesh"
-                    );
-
-                    if (measureSystem.enabled) {
-                        measureSystem.handlePointerMove(validHit ? validHit.point : null);
-                    }
-                };
-
-                const onPointerClick = (evt: MouseEvent) => {
-                    const rect = canvas.getBoundingClientRect();
-                    const x = ((evt.clientX - rect.left) / rect.width) * 2 - 1;
-                    const y = -((evt.clientY - rect.top) / rect.height) * 2 + 1;
-                    raycaster.setFromCamera(new THREE.Vector2(x, y), world.camera.three);
-
-                    const hits = raycaster.intersectObjects(world.scene.three.children, true);
-                    const validHit = hits.find(
-                        (h) => h.object.visible &&
-                               !h.object.name.includes("measurement") &&
-                               !h.object.name.includes("selection-box") &&
-                               h.object.type === "Mesh"
-                    );
-
-                    if (measureSystem.enabled) {
-                        if (validHit) {
-                            measureSystem.handleClick(validHit.point);
+                    const safePickThreeMeshes = (x: number, y: number): THREE.Intersection | null => {
+                        const cam = (world as unknown as { _camera?: OBC.OrthoPerspectiveCamera })._camera;
+                        if (disposed || world.isDisposing || !cam) return null;
+                        const pickables = collectPickableMeshes();
+                        if (pickables.length === 0) return null;
+                        raycaster.setFromCamera(new THREE.Vector2(x, y), cam.three);
+                        try {
+                            const hits = raycaster.intersectObjects(pickables, false);
+                            return hits[0] ?? null;
+                        } catch {
+                            return null;
                         }
-                    } else {
-                        // Element Inspector Selection
+                    };
+
+                    pointerMoveHandler = (evt: MouseEvent) => {
+                        if (disposed || world.isDisposing || !measureSystem.enabled) return;
+                        const rect = canvas.getBoundingClientRect();
+                        if (rect.width <= 0 || rect.height <= 0) return;
+                        const x = ((evt.clientX - rect.left) / rect.width) * 2 - 1;
+                        const y = -((evt.clientY - rect.top) / rect.height) * 2 + 1;
+
+                        const hasFragments = fragments.initialized && fragments.list.size > 0;
+                        if (hasFragments) {
+                            if (isPickingMeasureHover) return;
+                            isPickingMeasureHover = true;
+                            void (async () => {
+                                try {
+                                    if (disposed || world.isDisposing || !fragments.initialized) return;
+                                    const worldRaycaster = components.get(OBC.Raycasters).get(world);
+                                    const hit = await worldRaycaster.castRay({ items: [] });
+                                    if (!disposed && measureSystem.enabled) {
+                                        measureSystem.handlePointerMove(hit?.point ?? null);
+                                    }
+                                } catch {
+                                } finally {
+                                    isPickingMeasureHover = false;
+                                }
+                            })();
+                            return;
+                        }
+
+                        const validHit = safePickThreeMeshes(x, y);
+                        measureSystem.handlePointerMove(validHit ? validHit.point : null);
+                    };
+
+                    pointerClickHandler = (evt: MouseEvent) => {
+                        if (disposed || world.isDisposing) return;
+                        const rect = canvas.getBoundingClientRect();
+                        if (rect.width <= 0 || rect.height <= 0) return;
+                        const x = ((evt.clientX - rect.left) / rect.width) * 2 - 1;
+                        const y = -((evt.clientY - rect.top) / rect.height) * 2 + 1;
+
+                        const hasFragments = fragments.initialized && fragments.list.size > 0;
+
+                        if (measureSystem.enabled) {
+                            if (hasFragments) {
+                                void (async () => {
+                                    try {
+                                        if (disposed || world.isDisposing || !fragments.initialized) return;
+                                        const worldRaycaster = components.get(OBC.Raycasters).get(world);
+                                        const hit = await worldRaycaster.castRay({ items: [] });
+                                        if (!disposed && measureSystem.enabled && hit?.point) {
+                                            measureSystem.handleClick(hit.point);
+                                        }
+                                    } catch {}
+                                })();
+                            } else {
+                                const validHit = safePickThreeMeshes(x, y);
+                                if (validHit) {
+                                    measureSystem.handleClick(validHit.point);
+                                }
+                            }
+                            return;
+                        }
+
+                        // Let OBCF.Highlighter handle Fragment models via real IFC Express IDs;
+                        // run semantic Three.js Mesh picking ONLY for 3D Parametric digital twin scenes.
+                        if (hasFragments) {
+                            return;
+                        }
+
+                        const validHit = safePickThreeMeshes(x, y);
                         if (validHit && validHit.object instanceof THREE.Mesh) {
                             const mesh = validHit.object;
-                            const bbox = new THREE.Box3().setFromObject(mesh);
-                            const size = new THREE.Vector3();
-                            bbox.getSize(size);
-
                             if (selectionBoxRef.current) {
                                 world.scene.three.remove(selectionBoxRef.current);
                                 selectionBoxRef.current.dispose();
@@ -456,25 +772,28 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                             world.scene.three.add(boxHelper);
                             selectionBoxRef.current = boxHelper;
 
-                            const info = resolveBimElementInfo(mesh, validHit.point, project);
+                            const info = resolveBimElementInfo(mesh, validHit.point, project ?? undefined);
                             setSelectedElement(info);
                         }
-                    }
-                };
+                    };
 
-                canvas.addEventListener("mousemove", onPointerMove);
-                canvas.addEventListener("click", onPointerClick);
+                    canvas.addEventListener("mousemove", pointerMoveHandler);
+                    canvas.addEventListener("click", pointerClickHandler);
+                }
 
-                // Continuous Animation Loop for Camera Transitions, Auto-Orbit, and Dynamic Models
-                let lastTime = performance.now();
+                // Continuous Animation Loop for Camera Controls & Dynamic Twin Updates
+                const startTime = performance.now();
+                let lastTime = startTime;
                 const loop = (time: number) => {
+                    if (disposed || world.isDisposing) return;
                     const delta = Math.min((time - lastTime) / 1000, 0.1);
+                    const elapsedSeconds = (time - startTime) / 1000;
                     lastTime = time;
-                    if (world?.camera?.controls) {
-                        world.camera.controls.update(delta);
+                    if ((world?.camera as any)?.controls) {
+                        (world.camera as any).controls.update(delta);
                     }
                     if (loadedModel?.update) {
-                        loadedModel.update(delta);
+                        loadedModel.update(elapsedSeconds);
                     }
                     animId = requestAnimationFrame(loop);
                 };
@@ -487,26 +806,53 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
         setupGrid();
 
         return () => {
+            disposed = true;
             if (animId) cancelAnimationFrame(animId);
+            if (attachedCanvas && pointerMoveHandler) {
+                attachedCanvas.removeEventListener("mousemove", pointerMoveHandler);
+            }
+            if (attachedCanvas && pointerClickHandler) {
+                attachedCanvas.removeEventListener("click", pointerClickHandler);
+            }
+            modelsContainerRef.current?.replaceChildren();
+            propertiesContainerRef.current?.replaceChildren();
+            queryContainerRef.current?.replaceChildren();
+            dataEnhancerContainerRef.current?.replaceChildren();
+            smartViewsContainerRef.current?.replaceChildren();
+
             if (selectionBoxRef.current && worldRef.current) {
                 try {
                     worldRef.current.scene.three.remove(selectionBoxRef.current);
                     selectionBoxRef.current.dispose();
                 } catch {}
+                selectionBoxRef.current = null;
             }
             if (measurementSystemRef.current) {
                 try { measurementSystemRef.current.dispose(); } catch {}
+                measurementSystemRef.current = null;
             }
             if (loadedModelInstance) {
                 try { loadedModelInstance.dispose(); } catch {}
             }
             if (componentsInstance) {
+                try {
+                    const hl = componentsInstance.get(OBCF.Highlighter);
+                    hl.enabled = false;
+                } catch {}
+                try {
+                    const rc = worldRef.current
+                        ? componentsInstance.get(OBC.Raycasters).get(worldRef.current)
+                        : null;
+                    if (rc) rc.enabled = false;
+                } catch {}
                 try { componentsInstance.dispose(); } catch {}
             }
+            worldRef.current = null;
+            componentsRef.current = null;
         };
     }, [project?.id]);
 
-    // 2. Direct Firestore fallback: If page is refreshed directly on /project/:id, fetch from Cloud Firestore
+    // Direct Firestore fallback on hard refresh of /project/:id
     React.useEffect(() => {
         if (!projectId || project) return;
 
@@ -529,24 +875,39 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                         finishDate = new Date();
                     }
 
+                    const rawName = data.name || "Untitled Project";
+                    const canonical = getCanonicalProjectInfo(rawName, data.ifcFileName);
+                    const resolvedName = canonical ? canonical.canonicalName : rawName;
+                    const resolvedCategory = canonical
+                        ? canonical.modelCategory
+                        : (data.modelCategory || (data.ifcFileName ? "ifc" : "3d"));
+                    const ifcMeta = resolvedCategory === "3d"
+                        ? null
+                        : getProjectIfcFile({
+                            name: resolvedName,
+                            ifcFileName: canonical?.ifcFileName || data.ifcFileName,
+                            modelCategory: resolvedCategory,
+                        });
+
                     const projectData: IProject = {
-                        name: data.name || "Untitled Project",
+                        name: resolvedName,
                         description: data.description || "",
                         status: data.status || "Active",
                         userRole: data.userRole || "Architect",
                         finishDate,
                         cost: Number(data.cost || 0),
                         progress: Number(data.progress || 0),
-                        modelType: data.modelType || "cube",
+                        modelType: canonical ? canonical.twinType : (ifcMeta ? ifcMeta.twinType : (data.modelType || "cube")),
+                        modelCategory: canonical ? canonical.modelCategory : (ifcMeta ? "ifc" : (data.modelCategory || (data.ifcFileName ? "ifc" : "3d"))),
+                        ifcFileName: canonical?.modelCategory === "3d" ? undefined : (ifcMeta ? ifcMeta.fileName : data.ifcFileName),
+                        ifcSchema: canonical?.modelCategory === "3d" ? undefined : (canonical?.ifcSchema || (ifcMeta ? ifcMeta.schema : data.ifcSchema)),
                         iconColor: data.iconColor,
                         todos: data.todos || [],
                     };
 
                     try {
                         projectsManager.newProject(projectData, docSnap.id);
-                    } catch {
-                        // Project might already exist
-                    }
+                    } catch {}
                     forceUpdate();
                 }
             } catch (err) {
@@ -565,10 +926,8 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
         };
     }, [projectId, project, projectsManager]);
 
-    // Re-query after potential state update
     project = projectId ? projectsManager.getProject(projectId) : null;
 
-    // Guard 1: Missing ID in URL parameters
     if (!projectId) {
         return (
             <ProjectNotFound
@@ -578,10 +937,13 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
         );
     }
 
-    // Loading state while fetching from Cloud Firestore on hard refresh
     if (!project && isLoadingFromCloud) {
         return (
-            <div className="page" id="project-details" style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}>
+            <div
+                className="page"
+                id="project-details"
+                style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh" }}
+            >
                 <div style={{ textAlign: "center", color: "var(--color-primary, #60a5fa)" }}>
                     <span className="material-icons-round" style={{ fontSize: "48px", animation: "spin 1s linear infinite" }}>
                         autorenew
@@ -594,7 +956,6 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
         );
     }
 
-    // Guard 2: Project not found anywhere (local or cloud)
     if (!project) {
         return (
             <ProjectNotFound
@@ -608,20 +969,14 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
         projectsManager.activeProject = project;
     }
 
-    const pNameLower = (project.name || "").toLowerCase();
-    const pFileLower = (project.ifcFileName || "").toLowerCase();
-    const isIfcProject = Boolean(
-        project.modelCategory === "ifc" ||
-        project.ifcFileName ||
-        pNameLower.includes("ifc") ||
-        pNameLower.includes("viaduct") ||
-        pNameLower.includes("hns") ||
-        pNameLower.includes("provi") ||
-        pNameLower.includes("structural complex") ||
-        pFileLower.endsWith(".ifc")
-    );
+    const badgeText = customIfcName
+        ? `Loaded: ${customIfcName}`
+        : project.ifcSchema
+        ? `${project.ifcSchema} · OpenBIM`
+        : project.modelCategory === "3d"
+        ? "3D Parametric Twin"
+        : "IFC4 · OpenBIM";
 
-    // Lesson 2.3 & 2.4: Render full project details view with ThreeViewer and embedded <bim-grid>
     return (
         <div className="page" id="project-details">
             <header id="details-header">
@@ -643,7 +998,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                 <div className="details-header-right">
                     <span className="bim-coord-badge">
                         <span className="material-icons-round">view_in_ar</span>
-                        <span>{customIfcName ? `Loaded: ${customIfcName}` : (project.ifcSchema ? `${project.ifcSchema} OpenBIM` : "IFC4 · LOD 350")}</span>
+                        <span>{badgeText}</span>
                     </span>
                 </div>
             </header>
@@ -661,16 +1016,13 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                     />
                 </div>
 
-                <div className="details-viewer-wrapper">
-                    {/* Floating High-End CAD Viewport Mode Switcher & That Open Company Course Tools */}
-                    <div className="viewer-mode-switch-bar">
+                <div className="details-viewer-wrapper" ref={viewerWrapperRef}>
+                    {/* Top Viewport Mode Switcher & Course Tools Bar */}
+                    <div className="viewer-mode-switch-bar" ref={modeBarRef}>
                         <button
                             type="button"
                             className={`viewer-mode-tab ${viewerMode === "bim-world" ? "active" : ""}`}
-                            onClick={() => {
-                                setViewerMode("bim-world");
-                                setCameraPreset("iso");
-                            }}
+                            onClick={() => setCameraPreset("iso")}
                             title="That Open Engine BIM World (3D Perspective View)"
                         >
                             <span className="material-icons-round">public</span>
@@ -680,10 +1032,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                         <button
                             type="button"
                             className={`viewer-mode-tab ${viewerMode === "2d-plan" ? "active" : ""}`}
-                            onClick={() => {
-                                setViewerMode("2d-plan");
-                                setCameraPreset("plan");
-                            }}
+                            onClick={() => setCameraPreset("plan")}
                             title="2D Top-Down Orthographic CAD Plan View"
                         >
                             <span className="material-icons-round">architecture</span>
@@ -694,7 +1043,10 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                             <button
                                 type="button"
                                 className={`viewer-mode-tab ${viewerMode === "parametric" ? "active" : ""}`}
-                                onClick={() => setViewerMode("parametric")}
+                                onClick={() => {
+                                    setActiveDrawer(null);
+                                    setViewerMode("parametric");
+                                }}
                                 title="High-Performance 3D CAD Studio (Three.js)"
                             >
                                 <span className="material-icons-round">view_in_ar</span>
@@ -702,60 +1054,51 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                             </button>
                         )}
 
-                        <div style={{ width: "1px", height: "18px", background: "rgba(148, 163, 184, 0.3)", margin: "0 2px" }} />
-
-                        {/* That Open Company Course Lesson 3.6 Tool: Models Manager Panel Toggle */}
                         <button
                             type="button"
-                            className={`viewer-mode-tab toc-course-pill ${showModelsPanel ? "active" : ""}`}
-                            onClick={() => setShowModelsPanel((prev) => !prev)}
-                            title="Toggle That Open Company Models Manager (Lesson 3.6 & 3.7)"
+                            className={`viewer-mode-tab toc-course-pill ${activeDrawer === "models" ? "active" : ""}`}
+                            onClick={() => toggleDrawer("models")}
+                            title="Toggle Models Manager (Lessons 3.6 & 3.7)"
                         >
                             <span className="material-icons-round">folder_open</span>
                             <span>Models</span>
                         </button>
 
-                        {/* That Open Company Course Lessons 3.11 & 3.12: Query & Find Items Toggle */}
                         <button
                             type="button"
-                            className={`viewer-mode-tab toc-course-pill ${showQueryPanel ? "active" : ""}`}
-                            onClick={() => setShowQueryPanel((prev) => !prev)}
-                            title="Toggle BIM Query & Element Finder (Lessons 3.11 & 3.12)"
+                            className={`viewer-mode-tab toc-course-pill ${activeDrawer === "query" ? "active" : ""}`}
+                            onClick={() => toggleDrawer("query")}
+                            title="Toggle Data Queries & ItemsFinder (Lessons 3.11 & 3.12)"
                         >
                             <span className="material-icons-round">search</span>
                             <span>Query</span>
                         </button>
 
-                        {/* That Open Company Course Lesson 3.5 Tool: BIM Properties Table Toggle */}
                         <button
                             type="button"
-                            className={`viewer-mode-tab toc-course-pill ${showPropertiesPanel ? "active" : ""}`}
-                            onClick={() => setShowPropertiesPanel((prev) => !prev)}
-                            title="Toggle That Open Company BIM Properties Data Table (Lesson 3.5)"
+                            className={`viewer-mode-tab toc-course-pill ${activeDrawer === "properties" ? "active" : ""}`}
+                            onClick={() => toggleDrawer("properties")}
+                            title="Toggle Element Properties Table (Lesson 3.5)"
                         >
                             <span className="material-icons-round">table_chart</span>
                             <span>Properties</span>
                         </button>
 
-                        <div style={{ width: "1px", height: "18px", background: "rgba(148, 163, 184, 0.3)", margin: "0 2px" }} />
-
-                        {/* Module 4 Section 4 Tool: Custom Data Enhancer Component Toggle (Lessons 4.1 – 4.5) */}
                         <button
                             type="button"
-                            className={`viewer-mode-tab toc-course-pill ${showDataEnhancer ? "active" : ""}`}
-                            onClick={() => setShowDataEnhancer((prev) => !prev)}
-                            title="Toggle Custom Data Enhancer Component (Section 4 Lessons 4.1–4.5)"
+                            className={`viewer-mode-tab toc-course-pill ${activeDrawer === "enhance" ? "active" : ""}`}
+                            onClick={() => toggleDrawer("enhance")}
+                            title="Toggle Custom DataEnhancer (Lessons 4.1–4.5)"
                         >
-                            <span className="material-icons-round">database</span>
+                            <span className="material-icons-round">storage</span>
                             <span>Enhance</span>
                         </button>
 
-                        {/* Module 4 Section 5 Tool: Custom Smart Views Component Toggle (Lessons 5.1 – 5.5) */}
                         <button
                             type="button"
-                            className={`viewer-mode-tab toc-course-pill ${showSmartViews ? "active" : ""}`}
-                            onClick={() => setShowSmartViews((prev) => !prev)}
-                            title="Toggle Custom Smart Views Viewpoint Manager (Section 5 Lessons 5.1–5.5)"
+                            className={`viewer-mode-tab toc-course-pill ${activeDrawer === "smart-views" ? "active" : ""}`}
+                            onClick={() => toggleDrawer("smart-views")}
+                            title="Toggle Custom SmartViews (Lessons 5.1–5.5)"
                         >
                             <span className="material-icons-round">camera</span>
                             <span>Smart Views</span>
@@ -763,112 +1106,130 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                     </div>
 
                     <ViewerErrorBoundary>
-                        {/* Lesson 3.3 & 3.7: That Open Engine Viewport Grid (BIM World & 2D Plan View) */}
-                        <div style={{ position: "relative", width: "100%", height: "100%", display: (viewerMode === "bim-world" || viewerMode === "2d-plan") ? "block" : "none" }}>
-                            {/* That Open Company Course Lesson 3.6 & 3.7: Dockable Models Manager Drawer */}
-                            {showModelsPanel && (
-                                <div className="toc-dock-panel toc-dock-left">
-                                    <div className="toc-dock-header">
-                                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                            <span className="material-icons-round" style={{ color: "#38bdf8", fontSize: "18px" }}>folder_open</span>
-                                            <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f8fafc" }}>BIM Models Manager · Lesson 3.6</span>
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowModelsPanel(false)}
-                                            className="btn-close-dock"
-                                            title="Close Models Panel"
-                                        >
-                                            &times;
-                                        </button>
+                        {/* That Open Engine Viewport Grid (BIM World & 2D Plan View) */}
+                        <div
+                            style={{
+                                position: "relative",
+                                width: "100%",
+                                height: "100%",
+                                display: viewerMode === "bim-world" || viewerMode === "2d-plan" ? "block" : "none",
+                            }}
+                        >
+                            {/* Dockable Models Manager Drawer (Lesson 3.6 & 3.7) — Mounted Once */}
+                            <div
+                                className="toc-dock-panel toc-dock-left"
+                                data-drawer="models"
+                                style={{ display: activeDrawer === "models" ? "flex" : "none" }}
+                            >
+                                <div className="toc-dock-header">
+                                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                        <span className="material-icons-round" style={{ color: "#38bdf8", fontSize: "18px" }}>folder_open</span>
+                                        <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f8fafc" }}>BIM Models Manager · Lesson 3.6</span>
                                     </div>
-                                    <div ref={modelsContainerRef} className="toc-dock-body"></div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveDrawer(null)}
+                                        className="btn-close-dock"
+                                        title="Close Models Panel"
+                                    >
+                                        &times;
+                                    </button>
                                 </div>
-                            )}
+                                <div ref={modelsContainerRef} className="toc-dock-body"></div>
+                            </div>
 
-                            {/* That Open Company Course Lessons 3.11 & 3.12: Query & Find Items Drawer */}
-                            {showQueryPanel && (
-                                <div className="toc-dock-panel toc-dock-right" style={{ right: showPropertiesPanel ? "404px" : "16px" }}>
-                                    <div className="toc-dock-header">
-                                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                            <span className="material-icons-round" style={{ color: "#38bdf8", fontSize: "18px" }}>search</span>
-                                            <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f8fafc" }}>Query & Filter · Lessons 3.11–3.12</span>
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowQueryPanel(false)}
-                                            className="btn-close-dock"
-                                            title="Close Query Panel"
-                                        >
-                                            &times;
-                                        </button>
+                            {/* Dockable Query & ItemsFinder Drawer (Lessons 3.11 & 3.12) — Mounted Once */}
+                            <div
+                                className="toc-dock-panel toc-dock-right"
+                                data-drawer="query"
+                                style={{ display: activeDrawer === "query" ? "flex" : "none" }}
+                            >
+                                <div className="toc-dock-header">
+                                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                        <span className="material-icons-round" style={{ color: "#38bdf8", fontSize: "18px" }}>search</span>
+                                        <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f8fafc" }}>ItemsFinder Queries · Lessons 3.11–3.12</span>
                                     </div>
-                                    <div ref={queryContainerRef} className="toc-dock-body"></div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveDrawer(null)}
+                                        className="btn-close-dock"
+                                        title="Close Query Panel"
+                                    >
+                                        &times;
+                                    </button>
                                 </div>
-                            )}
+                                <div ref={queryContainerRef} className="toc-dock-body"></div>
+                            </div>
 
-                            {/* That Open Company Course Lesson 3.5: Dockable Elements Data Properties Drawer */}
-                            {showPropertiesPanel && (
-                                <div className="toc-dock-panel toc-dock-right">
-                                    <div className="toc-dock-header">
-                                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                            <span className="material-icons-round" style={{ color: "#38bdf8", fontSize: "18px" }}>table_chart</span>
-                                            <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f8fafc" }}>BIM Properties Data · Lesson 3.5</span>
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowPropertiesPanel(false)}
-                                            className="btn-close-dock"
-                                            title="Close Properties Panel"
-                                        >
-                                            &times;
-                                        </button>
+                            {/* Dockable Element Properties Drawer (Lesson 3.5) — Mounted Once */}
+                            <div
+                                className="toc-dock-panel toc-dock-right"
+                                data-drawer="properties"
+                                style={{ display: activeDrawer === "properties" ? "flex" : "none" }}
+                            >
+                                <div className="toc-dock-header">
+                                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                        <span className="material-icons-round" style={{ color: "#38bdf8", fontSize: "18px" }}>table_chart</span>
+                                        <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f8fafc" }}>BIM Properties Data · Lesson 3.5</span>
                                     </div>
-                                    <div ref={propertiesContainerRef} className="toc-dock-body"></div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveDrawer(null)}
+                                        className="btn-close-dock"
+                                        title="Close Properties Panel"
+                                    >
+                                        &times;
+                                    </button>
                                 </div>
-                            )}
+                                <div ref={propertiesContainerRef} className="toc-dock-body"></div>
+                            </div>
 
-                            {/* Module 4 Section 4: Custom Data Enhancer Drawer (Lessons 4.1 – 4.5) */}
-                            {showDataEnhancer && (
-                                <div className="toc-dock-panel toc-dock-right" style={{ right: showPropertiesPanel ? "404px" : "16px" }}>
-                                    <div className="toc-dock-header">
-                                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                            <span className="material-icons-round" style={{ color: "#38bdf8", fontSize: "18px" }}>database</span>
-                                            <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f8fafc" }}>Data Enhancer · Lessons 4.1–4.5</span>
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowDataEnhancer(false)}
-                                            className="btn-close-dock"
-                                            title="Close Data Enhancer Panel"
-                                        >
-                                            &times;
-                                        </button>
+                            {/* Dockable Data Enhancer Drawer (Lessons 4.1 – 4.5) — Mounted Once */}
+                            <div
+                                className="toc-dock-panel toc-dock-right"
+                                data-drawer="enhance"
+                                style={{ display: activeDrawer === "enhance" ? "flex" : "none" }}
+                            >
+                                <div className="toc-dock-header">
+                                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                        <span className="material-icons-round" style={{ color: "#38bdf8", fontSize: "18px" }}>storage</span>
+                                        <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f8fafc" }}>Data Enhancer · Lessons 4.1–4.5</span>
                                     </div>
-                                    <div ref={dataEnhancerContainerRef} className="toc-dock-body"></div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveDrawer(null)}
+                                        className="btn-close-dock"
+                                        title="Close Data Enhancer Panel"
+                                    >
+                                        &times;
+                                    </button>
                                 </div>
-                            )}
+                                <div ref={dataEnhancerContainerRef} className="toc-dock-body"></div>
+                            </div>
 
-                            {/* Module 4 Section 5: Custom Smart Views Drawer (Lessons 5.1 – 5.5) */}
-                            {showSmartViews && (
-                                <div className="toc-dock-panel toc-dock-left" style={{ left: showModelsPanel ? "404px" : "16px" }}>
-                                    <div className="toc-dock-header">
-                                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                            <span className="material-icons-round" style={{ color: "#38bdf8", fontSize: "18px" }}>camera</span>
-                                            <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f8fafc" }}>Smart Views · Lessons 5.1–5.5</span>
-                                        </div>
-                                        <button
-                                            type="button"
-                                            onClick={() => setShowSmartViews(false)}
-                                            className="btn-close-dock"
-                                            title="Close Smart Views Panel"
-                                        >
-                                            &times;
-                                        </button>
+                            {/* Dockable Smart Views Drawer (Lessons 5.1 – 5.5) — Mounted Once */}
+                            <div
+                                className="toc-dock-panel toc-dock-left"
+                                data-drawer="smart-views"
+                                style={{ display: activeDrawer === "smart-views" ? "flex" : "none" }}
+                            >
+                                <div className="toc-dock-header">
+                                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                        <span className="material-icons-round" style={{ color: "#38bdf8", fontSize: "18px" }}>camera</span>
+                                        <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f8fafc" }}>Smart Views · Lessons 5.1–5.5</span>
                                     </div>
-                                    <div ref={smartViewsContainerRef} className="toc-dock-body"></div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveDrawer(null)}
+                                        className="btn-close-dock"
+                                        title="Close Smart Views Panel"
+                                    >
+                                        &times;
+                                    </button>
                                 </div>
-                            )}
+                                <div ref={smartViewsContainerRef} className="toc-dock-body"></div>
+                            </div>
+
                             <bim-grid
                                 className="viewer-grid"
                                 ref={gridRef}
@@ -879,32 +1240,37 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                 }}
                             ></bim-grid>
 
-                            {/* 2D Plan CAD Sheet Banner */}
+                            {/* 2D Plan CAD Sheet Banner (right-aligned below toolbar so it never overlaps) */}
                             {viewerMode === "2d-plan" && (
-                                <div className="plan-mode-banner" style={{
-                                    position: "absolute",
-                                    top: "60px",
-                                    left: "16px",
-                                    zIndex: 20,
-                                    background: "rgba(15, 23, 42, 0.94)",
-                                    border: "1px solid rgba(56, 189, 248, 0.45)",
-                                    borderRadius: "20px",
-                                    padding: "5px 14px",
-                                    color: "#38bdf8",
-                                    fontSize: "0.82rem",
-                                    fontWeight: 600,
-                                    display: "inline-flex",
-                                    alignItems: "center",
-                                    gap: "7px",
-                                    backdropFilter: "blur(12px)",
-                                    boxShadow: "0 6px 20px rgba(0,0,0,0.45)"
-                                }}>
-                                    <span className="material-icons-round" style={{ fontSize: "17px", color: "#38bdf8" }}>architecture</span>
-                                    <span>2D Engineering Plan View · Orthographic CAD Sheet</span>
+                                <div
+                                    className="plan-mode-banner"
+                                    style={{
+                                        position: "absolute",
+                                        top: "calc(var(--toolbar-bottom, 166px) + 8px)",
+                                        right: "16px",
+                                        zIndex: 18,
+                                        background: "rgba(15, 23, 42, 0.94)",
+                                        border: "1px solid rgba(56, 189, 248, 0.45)",
+                                        borderRadius: "20px",
+                                        padding: "5px 14px",
+                                        color: "#38bdf8",
+                                        fontSize: "0.80rem",
+                                        fontWeight: 600,
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: "7px",
+                                        backdropFilter: "blur(12px)",
+                                        boxShadow: "0 6px 20px rgba(0,0,0,0.45)",
+                                        pointerEvents: "none",
+                                    }}
+                                >
+                                    <span className="material-icons-round" style={{ fontSize: "16px", color: "#38bdf8" }}>
+                                        architecture
+                                    </span>
+                                    <span>2D Orthographic CAD Plan View</span>
                                 </div>
                             )}
 
-                            {/* Hidden file input for Local IFC File Picker */}
                             <input
                                 type="file"
                                 ref={fileInputRef}
@@ -913,7 +1279,6 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                 style={{ display: "none" }}
                             />
 
-                            {/* Active Measurement Mode Instructions Banner */}
                             {isMeasuring && (
                                 <div className="measurement-banner">
                                     <span className="material-icons-round">straighten</span>
@@ -921,13 +1286,23 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                 </div>
                             )}
 
-                            {/* Floating BIM Element Inspector Card */}
-                            {selectedElement && (
+                            {selectedElement && !activeDrawer && (
                                 <div className="element-inspector-card">
                                     <div className="inspector-header">
                                         <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0, flex: 1 }}>
-                                            <span className="material-icons-round" style={{ color: "#38bdf8", fontSize: "18px", flexShrink: 0 }}>layers</span>
-                                            <h4 style={{ margin: 0, fontSize: "0.88rem", color: "#f8fafc", fontWeight: 700, lineHeight: 1.35, wordBreak: "break-word" }}>
+                                            <span className="material-icons-round" style={{ color: "#38bdf8", fontSize: "18px", flexShrink: 0 }}>
+                                                layers
+                                            </span>
+                                            <h4
+                                                style={{
+                                                    margin: 0,
+                                                    fontSize: "0.88rem",
+                                                    color: "#f8fafc",
+                                                    fontWeight: 700,
+                                                    lineHeight: 1.35,
+                                                    wordBreak: "break-word",
+                                                }}
+                                            >
                                                 {selectedElement.name}
                                             </h4>
                                         </div>
@@ -978,7 +1353,6 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                 </div>
                             )}
 
-                            {/* Web-IFC Parsing Animated Overlay */}
                             {isParsingIfc && (
                                 <div className="ifc-loading-overlay">
                                     <div className="ifc-loading-spinner"></div>
@@ -986,7 +1360,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                 </div>
                             )}
 
-                            {/* That Open Engine Floating CAD Navigation HUD Toolbar */}
+                            {/* Floating CAD Navigation HUD Toolbar */}
                             <div
                                 className="viewer-hud-overlay"
                                 style={{
@@ -1051,7 +1425,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                         fontWeight: 600,
                                         flexShrink: 0,
                                     }}
-                                    title="Top Plan View (Orthographic 2D/3D)"
+                                    title="Top Plan View (Orthographic 2D)"
                                 >
                                     <span className="material-icons-round" style={{ fontSize: "15px", color: "#38bdf8" }}>layers</span>
                                     <span className="hud-btn-label">Plan</span>
@@ -1163,7 +1537,6 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                     <span className="hud-btn-label">Grid</span>
                                 </button>
                                 <div style={{ width: "1px", height: "16px", background: "rgba(148, 163, 184, 0.3)", margin: "0 1px", flexShrink: 0 }} />
-                                {/* Advanced Option B Tool 1: 3D Length Measurement Tool */}
                                 <button
                                     type="button"
                                     onClick={toggleMeasuring}
@@ -1207,7 +1580,6 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                         <span className="material-icons-round" style={{ fontSize: "15px" }}>clear</span>
                                     </button>
                                 )}
-                                {/* Advanced Option B Tool 2: Local IFC File Picker & Loader */}
                                 <button
                                     type="button"
                                     onClick={handleOpenIfcFile}

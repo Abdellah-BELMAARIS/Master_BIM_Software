@@ -1,5 +1,7 @@
+import * as THREE from "three";
 import * as BUI from "@thatopen/ui";
 import * as OBC from "@thatopen/components";
+import { normalizeIfcUnitsBytes } from "../../bim-components/setup/src/load-project-model";
 
 export interface LoadButtonState {
   components: OBC.Components;
@@ -8,13 +10,23 @@ export interface LoadButtonState {
 /**
  * Module 4 — Lesson 3.7: Exporting and importing Fragment models
  * Stateful UI button template featuring a nested <bim-context-menu> supporting both:
- * 1. Loading raw IFC models (.ifc) via OBC.IfcLoader
+ * 1. Loading raw IFC models (.ifc) via OBC.IfcLoader (with auto-normalized STEP SI units)
  * 2. Loading pre-compiled That Open Fragments binary models (.frag) via OBC.FragmentsManager
  */
 export const loadButtonTemplate: BUI.StatefullComponent<LoadButtonState> = (
   state: LoadButtonState
 ) => {
   const { components } = state;
+
+  const fitCamera = async () => {
+    try {
+      const worlds = components.get(OBC.Worlds);
+      const world = [...worlds.list.values()][0];
+      if (world?.camera instanceof OBC.SimpleCamera) {
+        await world.camera.fitToItems();
+      }
+    } catch {}
+  };
 
   // 1. Native File Picker for .ifc files
   const ifcInput = document.createElement("input");
@@ -28,10 +40,14 @@ export const loadButtonTemplate: BUI.StatefullComponent<LoadButtonState> = (
 
     try {
       const buffer = await file.arrayBuffer();
-      const bytes = new Uint8Array(buffer);
+      const normalized = normalizeIfcUnitsBytes(new Uint8Array(buffer));
+      const modelId = file.name.replace(/\.ifc$/i, "");
 
       const ifcLoader = components.get(OBC.IfcLoader);
-      await ifcLoader.load(bytes);
+      await ifcLoader.setup({ autoSetWasm: false });
+      ifcLoader.settings.wasm = { path: "/", absolute: true };
+      await ifcLoader.load(normalized, true, modelId);
+      await fitCamera();
     } catch (error) {
       console.error("[ThatOpen] Error loading IFC file:", error);
     } finally {
@@ -52,37 +68,30 @@ export const loadButtonTemplate: BUI.StatefullComponent<LoadButtonState> = (
     try {
       const buffer = await file.arrayBuffer();
       const bytes = new Uint8Array(buffer);
+      const modelId = file.name.replace(/\.frag$/i, "");
 
       const fragments = components.get(OBC.FragmentsManager);
-      if (typeof (fragments as any).load === "function") {
-        await (fragments as any).load(bytes);
-      } else if (fragments.core) {
-        const modelId = file.name.replace(".frag", "");
-        const model = await fragments.core.load(bytes, { modelId });
-        const worlds = components.get(OBC.Worlds);
-        const world = [...worlds.list.values()][0];
-        if (world && model) {
-          if (model.object) world.scene.three.add(model.object);
-          if (typeof model.useCamera === "function" && world.camera?.three) {
-            model.useCamera(world.camera.three);
-          }
-          fragments.core.update(true);
-        }
-      }
+      const worlds = components.get(OBC.Worlds);
+      const world = [...worlds.list.values()][0];
+
+      const rawCam = world?.camera?.three;
+      const fragCam =
+        rawCam instanceof THREE.PerspectiveCamera || rawCam instanceof THREE.OrthographicCamera
+          ? rawCam
+          : undefined;
+
+      await fragments.core.load(bytes, {
+        modelId,
+        camera: fragCam,
+      });
+      fragments.core.update(true);
+      await fitCamera();
     } catch (error) {
       console.error("[ThatOpen] Error loading Fragments file:", error);
     } finally {
       fragInput.value = "";
     }
   });
-
-  const onLoadIfc = () => {
-    ifcInput.click();
-  };
-
-  const onLoadFrag = () => {
-    fragInput.click();
-  };
 
   return BUI.html`
     <bim-button
@@ -92,13 +101,13 @@ export const loadButtonTemplate: BUI.StatefullComponent<LoadButtonState> = (
     >
       <bim-context-menu>
         <bim-button
-          @click=${onLoadIfc}
+          @click=${() => ifcInput.click()}
           label="IFC"
           icon="solar:document-bold"
           tooltip="Import and convert raw STEP IFC model"
         ></bim-button>
         <bim-button
-          @click=${onLoadFrag}
+          @click=${() => fragInput.click()}
           label="Fragments"
           icon="solar:box-bold"
           tooltip="Import pre-compiled FlatBuffers binary Fragment model"
@@ -107,5 +116,3 @@ export const loadButtonTemplate: BUI.StatefullComponent<LoadButtonState> = (
     </bim-button>
   `;
 };
-
-

@@ -3,7 +3,15 @@ import { v4 as uuidv4 } from "uuid";
 
 // 1. Custom union types for properties with fixed choices
 export type ProjectStatus = "pending" | "active" | "finished" | "Pending" | "Active" | "Finished";
-export type UserRole = "architect" | "engineer" | "developer" | "Architect" | "Engineer" | "Developer";
+export type UserRole =
+    | "architect"
+    | "engineer"
+    | "developer"
+    | "bim specialist"
+    | "Architect"
+    | "Engineer"
+    | "Developer"
+    | "BIM Specialist";
 export type TodoStatus = "pending" | "in-progress" | "completed";
 export type TodoPriority = "low" | "medium" | "high" | "critical";
 export type ModelType = "cube" | "gear" | "car" | "villa" | "tower" | "bridge";
@@ -12,8 +20,8 @@ export type ModelCategory = "ifc" | "3d";
 export interface IProjectTask {
     id: number;
     text: string;
-    date: string;
-    status: TodoStatus;
+    date?: string;
+    status?: TodoStatus;
     priority?: TodoPriority;
     completed: boolean;
 }
@@ -48,10 +56,10 @@ export interface IProject {
 // 3. Project class implementing IProject (UI is now managed by React <ProjectCard /> component)
 export class Project implements IProject {
     // Properties from IProject
-    name: string;
-    description: string;
-    userRole: UserRole;
-    status: ProjectStatus;
+    name: string = "";
+    description: string = "";
+    userRole: UserRole = "Architect";
+    status: ProjectStatus = "Active";
     finishDate: Date;
     todos: IProjectTask[] = [];
     modelType: ModelType;
@@ -65,7 +73,7 @@ export class Project implements IProject {
     // Internal class properties with default values
     cost: number = 0;
     progress: number = 0;
-    iconColor: string;
+    iconColor: string = PROJECT_ICON_COLORS[0];
 
     constructor(data: IProject, id: string = uuidv4()) {
         this.id = id;

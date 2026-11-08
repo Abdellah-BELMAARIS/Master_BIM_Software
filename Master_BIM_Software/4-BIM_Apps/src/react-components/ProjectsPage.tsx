@@ -1,14 +1,14 @@
 import * as React from "react";
 import * as Router from "react-router-dom";
-import { getDocs, addDoc, deleteDoc } from "firebase/firestore";
-import { getCollection, deleteDocument, sanitizeForFirestore } from "../core/database";
+import { getDocs, addDoc, deleteDoc, updateDoc, deleteField, doc as fsDoc } from "firebase/firestore";
+import { getCollection, db, deleteDocument, sanitizeForFirestore } from "../core/database";
 import { IProject, Project, ProjectStatus, UserRole, ModelType } from "../classes/Project";
 import { ProjectsManager } from "../classes/ProjectsManager";
 import { ProjectCard } from "./ProjectCard";
 import { SearchBox } from "./SearchBox";
 import { ProjectForm } from "./ProjectForm";
 import { appIcons } from "../globals";
-import { getProjectIfcFile, prewarmIfcModels } from "../bim-components/setup/src/load-project-model";
+import { getCanonicalProjectInfo, getProjectIfcFile, prewarmIfcModels } from "../bim-components/setup/src/load-project-model";
 
 export interface ProjectsPageProps {
     projectsManager?: ProjectsManager;
@@ -118,59 +118,6 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         projectIcon = "#2563eb";
                     }
 
-    // Canonical project info resolver to guarantee self-explanatory, professional names across Firestore & local runs
-    const getCanonicalProjectInfo = (name: string, ifcFileName?: string) => {
-        const n = (name || "").toLowerCase().trim();
-        const f = (ifcFileName || "").toLowerCase().trim();
-
-        if (n.includes("e01") || f.includes("e01")) {
-            return { canonicalName: "High-Speed Rail Viaduct - Superstructure Span E01 (IFC4)", ifcFileName: "NAV-IPI-ET1_E01-ZZZ-M3D-EST.ifc", dedupeKey: "provi-e01", ifcSchema: "IFC4", modelCategory: "ifc" as const, twinType: "bridge" as const };
-        }
-        if (n.includes("e02") || f.includes("e02")) {
-            return { canonicalName: "High-Speed Rail Viaduct - Box Girder Span E02 (IFC4)", ifcFileName: "NAV-IPI-ET1_E02-ZZZ-M3D-EST.ifc", dedupeKey: "provi-e02", ifcSchema: "IFC4", modelCategory: "ifc" as const, twinType: "bridge" as const };
-        }
-        if (n.includes("e03") || f.includes("e03") || n.includes("pier")) {
-            return { canonicalName: "High-Speed Rail Viaduct - Concrete Pier & Foundation E03 (IFC4)", ifcFileName: "NAV-IPI-ET1_E03-ZZZ-M3D-EST.ifc", dedupeKey: "provi-e03", ifcSchema: "IFC4", modelCategory: "ifc" as const, twinType: "bridge" as const };
-        }
-        if (n.includes("e07") || f.includes("e07") || n.includes("abutment")) {
-            return { canonicalName: "High-Speed Rail Viaduct - Retaining Abutment E07 (IFC4)", ifcFileName: "NAV-IPI-ET1_E07-ZZZ-M3D-EST.ifc", dedupeKey: "provi-e07", ifcSchema: "IFC4", modelCategory: "ifc" as const, twinType: "bridge" as const };
-        }
-        if (n.includes("structural complex") || n.includes("toc master") || f.includes("est-001") || n.includes("mbsd-toc") || n.includes("office") || n.includes("that open")) {
-            return { canonicalName: "That Open HQ - Commercial Office Complex (IFC4)", ifcFileName: "MBSD-TOC-P01-MOD-EST-001.ifc", dedupeKey: "toc-complex", ifcSchema: "IFC4", modelCategory: "ifc" as const, twinType: "bridge" as const };
-        }
-        if ((n.includes("hns") || n.includes("civic")) && (n.includes("superstructure") || f.includes("zzz") || n.includes("structural"))) {
-            return { canonicalName: "Metropolitan Civic Center - Structural Superstructure (IFC2X3)", ifcFileName: "HNS-CTL-ZZZ-MOD-EST.ifc", dedupeKey: "hns-est", ifcSchema: "IFC2X3", modelCategory: "ifc" as const, twinType: "tower" as const };
-        }
-        if (n.includes("hns") || n.includes("civic") || f.includes("arq")) {
-            return { canonicalName: "Metropolitan Civic Center - Architectural Model (IFC2X3)", ifcFileName: "HNS-CTL-N01-MOD-ARQ.ifc", dedupeKey: "hns-arq", ifcSchema: "IFC2X3", modelCategory: "ifc" as const, twinType: "tower" as const };
-        }
-        if (n.includes("stadium") || f.includes("stadium") || n.includes("atlas")) {
-            return { canonicalName: "Atlas Grand Football Stadium (IFC4)", ifcFileName: "atlas_grand_professional_stadium_ifc4.ifc", dedupeKey: "atlas-stadium", ifcSchema: "IFC4", modelCategory: "ifc" as const, twinType: "bridge" as const };
-        }
-        if (n.includes("aurora") || f.includes("aurora") || n.includes("10-villa") || f.includes("ten_villa")) {
-            return { canonicalName: "Aurora 10-Villa Residential Estate (IFC4)", ifcFileName: "aurora_ten_villa_estate_ifc4.ifc", dedupeKey: "aurora-ten-villa", ifcSchema: "IFC4", modelCategory: "ifc" as const, twinType: "villa" as const };
-        }
-        if (n.includes("azure") || (n.includes("villa") && !n.includes("aurora") && !n.includes("10-villa"))) {
-            return { canonicalName: "Azure Coast Luxury Eco-Villa", dedupeKey: "3d-villa", modelCategory: "3d" as const, twinType: "villa" as const };
-        }
-        if (n.includes("ev") || n.includes("logistics")) {
-            return { canonicalName: "Urban Logistics Autonomous EV Fleet Hub", dedupeKey: "3d-car", modelCategory: "3d" as const, twinType: "car" as const };
-        }
-        if (n.includes("gear") || n.includes("mechanical") || n.includes("hvac") || n.includes("chiller") || n.includes("energy")) {
-            return { canonicalName: "Industrial District Energy HVAC Plant", dedupeKey: "3d-gear", modelCategory: "3d" as const, twinType: "gear" as const };
-        }
-        if (n.includes("skyscraper") || n.includes("apex") || n.includes("high-rise")) {
-            return { canonicalName: "Apex 28-Story Commercial Skyscraper", dedupeKey: "3d-tower", modelCategory: "3d" as const, twinType: "tower" as const };
-        }
-        if (n.includes("cable") || n.includes("nordic") || (n.includes("bridge") && !n.includes("viaduct"))) {
-            return { canonicalName: "Nordic Span Cable-Stayed Highway Bridge", dedupeKey: "3d-bridge", modelCategory: "3d" as const, twinType: "bridge" as const };
-        }
-        if (n.includes("modular") || n.includes("pavilion") || n.includes("default") || n.includes("untitled")) {
-            return { canonicalName: "BIM Modular Architectural Exhibition Pavilion", dedupeKey: "3d-cube", modelCategory: "3d" as const, twinType: "cube" as const };
-        }
-        return null;
-    };
-
                     const canonical = getCanonicalProjectInfo(projectName, data.ifcFileName);
                     if (canonical) {
                         projectName = canonical.canonicalName;
@@ -191,8 +138,8 @@ export function ProjectsPage(props: ProjectsPageProps) {
                     seenKeys.add(dedupeKey);
 
                     let modelCategory: "ifc" | "3d" = canonical ? canonical.modelCategory : (data.modelCategory || (data.ifcFileName ? "ifc" : "3d"));
-                    let ifcFileName = canonical?.modelCategory === "3d" ? undefined : (canonical ? canonical.ifcFileName : data.ifcFileName);
-                    let ifcSchema = canonical?.modelCategory === "3d" ? undefined : (canonical ? (canonical as any).ifcSchema : data.ifcSchema);
+                    let ifcFileName: string | undefined = canonical?.modelCategory === "3d" ? undefined : (canonical ? canonical.ifcFileName : data.ifcFileName);
+                    let ifcSchema: "IFC4" | "IFC2X3" | "IFC4.3" | undefined = canonical?.modelCategory === "3d" ? undefined : (canonical ? canonical.ifcSchema : data.ifcSchema);
 
                     if (canonical?.modelCategory === "3d") {
                         modelCategory = "3d";
@@ -204,6 +151,24 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         ifcFileName = ifcMeta.fileName;
                         ifcSchema = ifcMeta.schema;
                         projectModelType = ifcMeta.twinType;
+                    }
+
+                    // Repair stale Firestore metadata automatically so hard-refreshes stay clean
+                    if (
+                        data.name !== projectName ||
+                        data.modelCategory !== modelCategory ||
+                        data.ifcFileName !== ifcFileName ||
+                        data.modelType !== projectModelType
+                    ) {
+                        try {
+                            await updateDoc(doc.ref, {
+                                name: projectName,
+                                modelCategory,
+                                modelType: projectModelType,
+                                ifcFileName: ifcFileName ?? deleteField(),
+                                ifcSchema: ifcSchema ?? deleteField(),
+                            });
+                        } catch {}
                     }
 
                     const projectData: IProject = {
@@ -245,7 +210,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         finishDate: new Date("2028-08-15"),
                         cost: 95000000,
                         progress: 0.60,
-                        modelType: "bridge",
+                        modelType: "tower",
                         modelCategory: "ifc",
                         ifcFileName: "atlas_grand_professional_stadium_ifc4.ifc",
                         ifcSchema: "IFC4",
@@ -377,8 +342,8 @@ export function ProjectsPage(props: ProjectsPageProps) {
                     },
                     // The 7 Official That Open Company Course IFC Models
                     {
-                        name: "That Open HQ - Commercial Office Complex (IFC4)",
-                        description: "Official That Open Company structural engineering model in IFC4 schema, featuring column grids, concrete foundation footings, and composite slabs.",
+                        name: "ProVI Infrastructure Civil Overpass & Highway Viaduct (IFC4)",
+                        description: "Official That Open Company civil infrastructure overpass & roadway corridor in IFC4 schema, featuring road alignments, bridge abutments, and earthworks.",
                         status: "Active",
                         userRole: "Engineer",
                         finishDate: new Date("2027-04-15"),
@@ -525,8 +490,22 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         } catch {
                             // ignore duplicate error
                         }
-                    } else if (existing.name !== showcase.name) {
+                    } else {
                         existing.name = showcase.name;
+                        existing.description = existing.description || showcase.description;
+                        if (showcase.modelCategory) existing.modelCategory = showcase.modelCategory;
+                        existing.ifcFileName = showcase.ifcFileName;
+                        existing.ifcSchema = showcase.ifcSchema;
+                        if (showcase.modelType) existing.modelType = showcase.modelType;
+                        try {
+                            await updateDoc(fsDoc(db, "projects", existing.id), {
+                                name: existing.name,
+                                modelCategory: existing.modelCategory,
+                                modelType: existing.modelType,
+                                ifcFileName: existing.ifcFileName ?? deleteField(),
+                                ifcSchema: existing.ifcSchema ?? deleteField(),
+                            });
+                        } catch {}
                     }
                 }
 

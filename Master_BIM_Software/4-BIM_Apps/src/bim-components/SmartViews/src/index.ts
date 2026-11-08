@@ -1,24 +1,25 @@
 import * as THREE from "three";
 import * as OBC from "@thatopen/components";
 import * as OBCF from "@thatopen/components-front";
-import * as BUI from "@thatopen/ui";
+import * as FRAGS from "@thatopen/fragments";
 import { v4 as uuidv4 } from "uuid";
-import { SmartView } from "./types";
+import { SmartView, SmartViewCameraState } from "./types";
 
 /**
  * Module 4 — Section 5: Custom BIM Component: Smart Views
  * (Lessons 5.1 to 5.5)
  *
- * Captures, stores, and restores complete BIM viewport states:
- * - 3D Camera coordinates (Position, Target, Projection)
- * - Element visibility & isolation states (via OBC.Hider)
- * - Dynamic color highlights & themes (via OBCF.Highlighter)
+ * Captures, clones, evaluates, and restores complete BIM coordination views combining:
+ * - Dynamic query evaluation via OBC.ItemsFinder (queries + relational queries)
+ * - Visibility isolation / hiding via OBC.Hider
+ * - Persistent multi-style colorization via OBCF.Highlighter
+ * - Optional camera viewpoint & projection capture
  */
 export class SmartViews extends OBC.Component implements OBC.Disposable {
   static readonly uuid = "6b75f82c-1ad8-4667-bb89-5321f6b5bcf4";
   enabled = true;
 
-  readonly list = new Map<string, SmartView>();
+  readonly list = new FRAGS.DataMap<string, SmartView>();
 
   readonly onViewCreated = new OBC.Event<SmartView>();
   readonly onViewApplied = new OBC.Event<SmartView>();
@@ -26,125 +27,402 @@ export class SmartViews extends OBC.Component implements OBC.Disposable {
   readonly onViewsReset = new OBC.Event<void>();
   readonly onDisposed = new OBC.Event<void>();
 
+  /**
+   * Live cumulative state tracking all manual colorizations, query highlights,
+   * and visibility filters applied since the last reset (Lesson 5.4).
+   */
+  currentState: SmartView;
+
   constructor(components: OBC.Components) {
     super(components);
     components.add(SmartViews.uuid, this);
+    this.currentState = this.createEmptyState("Active Workspace");
   }
 
-  /**
-   * Lesson 5.4: Saving the current viewer state as a Smart View
-   */
-  async create(name: string): Promise<SmartView> {
-    const worlds = this.components.get(OBC.Worlds);
-    const world = [...worlds.list.values()][0];
-    const camera = world?.camera;
-    const controls = (camera as any)?.controls;
-
-    const pos = new THREE.Vector3();
-    const target = new THREE.Vector3();
-
-    if (controls) {
-      controls.getPosition(pos);
-      controls.getTarget(target);
-    } else if (camera?.three) {
-      pos.copy(camera.three.position);
-    }
-
-    const isOrtho = camera instanceof OBC.OrthoPerspectiveCamera ? camera.isOrtho : false;
-
-    // Capture active hidden elements via Hider
-    let hiddenMap: OBC.ModelIdMap | undefined;
-    try {
-      const hider = this.components.get(OBC.Hider);
-      if ((hider as any).hidden) {
-        hiddenMap = JSON.parse(JSON.stringify((hider as any).hidden));
-      }
-    } catch {}
-
-    const smartView: SmartView = {
-      id: uuidv4(),
-      name: name.trim() || `Viewpoint #${this.list.size + 1}`,
-      cameraPosition: [pos.x, pos.y, pos.z],
-      cameraTarget: [target.x, target.y, target.z],
-      isOrtho,
-      hidden: hiddenMap,
+  createEmptyState(name = "Current View State"): SmartView {
+    return {
+      id: "current-state",
+      name,
+      defaultVisibility: true,
+      visibility: {
+        exceptions: {
+          queries: new Set<string>(),
+          items: {},
+        },
+      },
+      colors: {
+        queries: new Map<string, Set<string>>(),
+        items: new Map<string, OBC.ModelIdMap>(),
+      },
       createdAt: Date.now(),
     };
-
-    this.list.set(smartView.id, smartView);
-    this.onViewCreated.trigger(smartView);
-    return smartView;
   }
 
   /**
-   * Lesson 5.3: Applying a Smart View to the active viewer
+   * Deep-clones a SmartView definition so presets are never mutated by cumulative edits.
    */
-  async apply(id: string): Promise<void> {
-    const view = this.list.get(id);
-    if (!view) {
-      console.warn(`[SmartViews] View with ID ${id} not found.`);
+  clone(view: SmartView): SmartView {
+    const visQueries = new Set<string>(view.visibility?.exceptions?.queries || []);
+    const visItems = view.visibility?.exceptions?.items
+      ? OBC.ModelIdMapUtils.clone(view.visibility.exceptions.items)
+      : {};
+
+    const colorQueries = new Map<string, Set<string>>();
+    if (view.colors?.queries) {
+      for (const [color, set] of view.colors.queries) {
+        colorQueries.set(color, new Set(set));
+      }
+    }
+
+    const colorItems = new Map<string, OBC.ModelIdMap>();
+    if (view.colors?.items) {
+      for (const [color, map] of view.colors.items) {
+        colorItems.set(color, OBC.ModelIdMapUtils.clone(map));
+      }
+    }
+
+    return {
+      id: view.id,
+      name: view.name,
+      description: view.description,
+      defaultVisibility: view.defaultVisibility,
+      visibility: {
+        exceptions: {
+          queries: visQueries,
+          items: visItems,
+        },
+      },
+      colors: {
+        queries: colorQueries,
+        items: colorItems,
+      },
+      camera: view.camera
+        ? {
+            position: [...view.camera.position],
+            target: [...view.camera.target],
+            isOrtho: view.camera.isOrtho,
+          }
+        : undefined,
+      createdAt: view.createdAt,
+    };
+  }
+
+  /**
+   * Lesson 5.4: Records a colorized FinderQuery into currentState.
+   */
+  addQueryColor(queryName: string, color: string): void {
+    if (!this.currentState.colors) this.currentState.colors = {};
+    if (!this.currentState.colors.queries) {
+      this.currentState.colors.queries = new Map();
+    }
+    const map = this.currentState.colors.queries;
+    for (const set of map.values()) {
+      set.delete(queryName);
+    }
+    let set = map.get(color);
+    if (!set) {
+      set = new Set<string>();
+      map.set(color, set);
+    }
+    set.add(queryName);
+  }
+
+  /**
+   * Lesson 5.4: Records manually colorized selection items into currentState.
+   */
+  addItemsColor(items: OBC.ModelIdMap, color: string): void {
+    if (OBC.ModelIdMapUtils.isEmpty(items)) return;
+    if (!this.currentState.colors) this.currentState.colors = {};
+    if (!this.currentState.colors.items) {
+      this.currentState.colors.items = new Map();
+    }
+    const map = this.currentState.colors.items;
+    for (const existingMap of map.values()) {
+      OBC.ModelIdMapUtils.remove(existingMap, items);
+    }
+    const currentMap = map.get(color);
+    if (currentMap) {
+      OBC.ModelIdMapUtils.add(currentMap, items);
+    } else {
+      map.set(color, OBC.ModelIdMapUtils.clone(items));
+    }
+  }
+
+  /**
+   * Lesson 5.4: Records visibility filter changes into currentState.
+   */
+  recordVisibility(
+    action: "hide" | "isolate" | "showAll",
+    items?: OBC.ModelIdMap
+  ): void {
+    if (action === "showAll") {
+      this.currentState.defaultVisibility = true;
+      this.currentState.visibility = {
+        exceptions: { queries: new Set(), items: {} },
+      };
       return;
     }
 
-    const worlds = this.components.get(OBC.Worlds);
-    const world = [...worlds.list.values()][0];
-    const camera = world?.camera;
-    const controls = (camera as any)?.controls;
-
-    // Restore camera position and target
-    if (controls) {
-      controls.setLookAt(
-        view.cameraPosition[0],
-        view.cameraPosition[1],
-        view.cameraPosition[2],
-        view.cameraTarget[0],
-        view.cameraTarget[1],
-        view.cameraTarget[2],
-        true // smooth animation transition
-      );
+    if (!items || OBC.ModelIdMapUtils.isEmpty(items)) return;
+    if (!this.currentState.visibility) {
+      this.currentState.visibility = { exceptions: { queries: new Set(), items: {} } };
+    }
+    if (!this.currentState.visibility.exceptions) {
+      this.currentState.visibility.exceptions = { queries: new Set(), items: {} };
     }
 
-    // Restore projection
-    if (camera instanceof OBC.OrthoPerspectiveCamera && camera.isOrtho !== view.isOrtho) {
-      camera.setProjection(view.isOrtho ? "Orthographic" : "Perspective");
-    }
-
-    // Restore hidden state
-    try {
-      const hider = this.components.get(OBC.Hider);
-      if (view.hidden) {
-        await hider.set(false, view.hidden);
-      } else {
-        await hider.set(true);
+    if (action === "isolate") {
+      this.currentState.defaultVisibility = false;
+      this.currentState.visibility.exceptions.queries = new Set();
+      this.currentState.visibility.exceptions.items = OBC.ModelIdMapUtils.clone(items);
+    } else {
+      // Hiding items: if defaultVisibility is true, add to hidden exceptions;
+      // if defaultVisibility is false (isolated mode), remove from visible exceptions!
+      if (!this.currentState.visibility.exceptions.items) {
+        this.currentState.visibility.exceptions.items = {};
       }
-    } catch {}
+      if (this.currentState.defaultVisibility) {
+        OBC.ModelIdMapUtils.add(this.currentState.visibility.exceptions.items, items);
+      } else {
+        OBC.ModelIdMapUtils.remove(this.currentState.visibility.exceptions.items, items);
+      }
+    }
+  }
 
-    this.onViewApplied.trigger(view);
+  captureCameraState(): SmartViewCameraState | undefined {
+    try {
+      const worlds = this.components.get(OBC.Worlds);
+      const world = [...worlds.list.values()][0];
+      const camera = world?.camera;
+      const controls = (camera as any)?.controls;
+      if (!world || !camera) return undefined;
+
+      const pos = new THREE.Vector3();
+      const target = new THREE.Vector3();
+      if (controls) {
+        controls.getPosition(pos);
+        controls.getTarget(target);
+      } else if (camera.three) {
+        pos.copy(camera.three.position);
+      }
+
+      const isOrtho =
+        camera instanceof OBC.OrthoPerspectiveCamera
+          ? camera.projection.current === "Orthographic"
+          : false;
+
+      return {
+        position: [pos.x, pos.y, pos.z],
+        target: [target.x, target.y, target.z],
+        isOrtho,
+      };
+    } catch {
+      return undefined;
+    }
   }
 
   /**
-   * Lesson 5.5: Resetting the current view state to default
+   * Registers a new Smart View definition directly in `list`.
    */
-  async reset(): Promise<void> {
-    const worlds = this.components.get(OBC.Worlds);
-    const world = [...worlds.list.values()][0];
-    const camera = world?.camera;
-    const controls = (camera as any)?.controls;
+  register(config: Omit<SmartView, "id" | "createdAt"> & { id?: string }): SmartView {
+    const id = config.id || uuidv4();
+    const view: SmartView = {
+      ...config,
+      id,
+      createdAt: Date.now(),
+    };
+    this.list.set(id, view);
+    return view;
+  }
 
-    if (controls) {
-      controls.setLookAt(20, 15, 25, 0, 3, 0, true);
+  /**
+   * Lesson 5.4: Saves the active workspace state (filters + colors + camera) as a reusable Smart View.
+   */
+  async create(name: string, description?: string): Promise<SmartView> {
+    return this.saveCurrentState(name, description);
+  }
+
+  async saveCurrentState(name: string, description?: string): Promise<SmartView> {
+    const view = this.clone(this.currentState);
+    view.id = uuidv4();
+    view.name = name.trim() || `Smart View #${this.list.size + 1}`;
+    view.description =
+      description?.trim() || "Captured camera, visibility & color overrides";
+    view.camera = this.captureCameraState();
+    view.createdAt = Date.now();
+
+    this.list.set(view.id, view);
+    this.onViewCreated.trigger(view);
+    return view;
+  }
+
+  /**
+   * Evaluates FinderQueries referenced by a Smart View into concrete ModelIdMaps.
+   */
+  private async evaluateQueryNames(names?: Iterable<string>): Promise<OBC.ModelIdMap> {
+    const merged: OBC.ModelIdMap = {};
+    if (!names) return merged;
+
+    const finder = this.components.get(OBC.ItemsFinder);
+    const promises: Promise<void>[] = [];
+
+    for (const qName of names) {
+      const finderQuery = finder.list.get(qName);
+      if (!finderQuery) continue;
+      promises.push(
+        finderQuery.test().then((map) => {
+          if (map && !OBC.ModelIdMapUtils.isEmpty(map)) {
+            OBC.ModelIdMapUtils.add(merged, map);
+          }
+        })
+      );
     }
 
-    if (camera instanceof OBC.OrthoPerspectiveCamera && camera.isOrtho) {
-      camera.setProjection("Perspective");
+    await Promise.all(promises);
+    return merged;
+  }
+
+  /**
+   * Lesson 5.3: Applies a stored Smart View — resets previous state, evaluates queries,
+   * updates Hider & Highlighter styles in parallel, and restores camera pose if present.
+   */
+  async apply(id: string): Promise<void> {
+    const targetView = this.list.get(id);
+    if (!targetView) {
+      console.warn(`[SmartViews] View with ID "${id}" not found.`);
+      return;
     }
 
+    await this.reset({ resetCamera: false });
+    this.currentState = this.clone(targetView);
+
+    const hider = this.components.get(OBC.Hider);
+    const highlighter = this.components.get(OBCF.Highlighter);
+    const ops: Promise<any>[] = [];
+
+    // 1. Apply Visibility State (defaultVisibility + query/item exceptions)
+    ops.push(hider.set(targetView.defaultVisibility));
+    const exceptionMap: OBC.ModelIdMap = targetView.visibility?.exceptions?.items
+      ? OBC.ModelIdMapUtils.clone(targetView.visibility.exceptions.items)
+      : {};
+    const queriedExceptions = await this.evaluateQueryNames(
+      targetView.visibility?.exceptions?.queries
+    );
+    OBC.ModelIdMapUtils.add(exceptionMap, queriedExceptions);
+
+    if (!OBC.ModelIdMapUtils.isEmpty(exceptionMap)) {
+      ops.push(hider.set(!targetView.defaultVisibility, exceptionMap));
+    }
+
+    // 2. Gather and merge all Color Styles (queries + static item maps)
+    const colorBuckets = new Map<string, OBC.ModelIdMap>();
+
+    if (targetView.colors?.items) {
+      for (const [hexColor, staticMap] of targetView.colors.items) {
+        if (!staticMap || OBC.ModelIdMapUtils.isEmpty(staticMap)) continue;
+        const bucket = colorBuckets.get(hexColor) || {};
+        OBC.ModelIdMapUtils.add(bucket, staticMap);
+        colorBuckets.set(hexColor, bucket);
+      }
+    }
+
+    if (targetView.colors?.queries) {
+      for (const [hexColor, querySet] of targetView.colors.queries) {
+        const queriedMap = await this.evaluateQueryNames(querySet);
+        if (!OBC.ModelIdMapUtils.isEmpty(queriedMap)) {
+          const bucket = colorBuckets.get(hexColor) || {};
+          OBC.ModelIdMapUtils.add(bucket, queriedMap);
+          colorBuckets.set(hexColor, bucket);
+        }
+      }
+    }
+
+    for (const [hexColor, colorMap] of colorBuckets) {
+      if (OBC.ModelIdMapUtils.isEmpty(colorMap)) continue;
+      if (!highlighter.styles.has(hexColor)) {
+        highlighter.styles.set(hexColor, {
+          color: new THREE.Color(hexColor),
+          opacity: 1,
+          transparent: false,
+          renderedFaces: 0,
+        });
+      }
+      ops.push(highlighter.highlightByID(hexColor, colorMap, false, false));
+    }
+
+    await Promise.all(ops);
+
+    // 3. Apply saved camera state if this Smart View captured a viewpoint
+    if (targetView.camera) {
+      try {
+        const worlds = this.components.get(OBC.Worlds);
+        const world = [...worlds.list.values()][0];
+        const camera = world?.camera;
+        const controls = (camera as any)?.controls;
+        if (camera instanceof OBC.OrthoPerspectiveCamera) {
+          const want = targetView.camera.isOrtho ? "Orthographic" : "Perspective";
+          if (camera.projection.current !== want) {
+            await camera.projection.set(want);
+          }
+        }
+        if (controls) {
+          await controls.setLookAt(
+            targetView.camera.position[0],
+            targetView.camera.position[1],
+            targetView.camera.position[2],
+            targetView.camera.target[0],
+            targetView.camera.target[1],
+            targetView.camera.target[2],
+            true
+          );
+        }
+      } catch {}
+    }
+
+    this.onViewApplied.trigger(targetView);
+  }
+
+  /**
+   * Lesson 5.5: Resets visibility, highlights, Ghost mode, currentState, and optionally camera.
+   */
+  async reset(options?: { resetCamera?: boolean }): Promise<void> {
+    const fragments = this.components.get(OBC.FragmentsManager);
+    const hider = this.components.get(OBC.Hider);
+    const highlighter = this.components.get(OBCF.Highlighter);
+
+    const promises: Promise<any>[] = [];
     try {
-      const hider = this.components.get(OBC.Hider);
-      await hider.set(true);
-      const highlighter = this.components.get(OBCF.Highlighter);
-      await highlighter.clear();
+      promises.push(hider.set(true));
+      promises.push(highlighter.clear());
     } catch {}
+
+    await Promise.all(promises);
+
+    // Also clear any active Fragments Ghost X-Ray mode
+    try {
+      if (fragments.initialized) {
+        for (const [, model] of fragments.list) {
+          model?.clearGhost?.();
+        }
+      }
+    } catch {}
+
+    this.currentState = this.createEmptyState("Active Workspace");
+
+    if (options?.resetCamera) {
+      try {
+        const worlds = this.components.get(OBC.Worlds);
+        const world = [...worlds.list.values()][0];
+        if (world?.camera instanceof OBC.OrthoPerspectiveCamera) {
+          if (world.camera.projection.current !== "Perspective") {
+            await world.camera.projection.set("Perspective");
+          }
+          await world.camera.fitToItems();
+        } else if (world?.camera instanceof OBC.SimpleCamera) {
+          await world.camera.fitToItems();
+        }
+      } catch {}
+    }
 
     this.onViewsReset.trigger();
   }
@@ -155,104 +433,8 @@ export class SmartViews extends OBC.Component implements OBC.Disposable {
     }
   }
 
-  /**
-   * Lesson 5.2: Creating a UI list for managing smart views
-   */
-  createUI(): HTMLElement {
-    let nameInput: BUI.TextInput | null = null;
-    let listContainer: HTMLElement | null = null;
-
-    const renderList = () => {
-      if (!listContainer) return;
-      listContainer.innerHTML = "";
-      if (this.list.size === 0) {
-        listContainer.innerHTML = `
-          <div style="color: #94a3b8; font-size: 0.8rem; font-style: italic; padding: 0.5rem 0;">
-            No smart viewpoints saved yet. Orbit in 3D and click "Save Viewpoint".
-          </div>
-        `;
-        return;
-      }
-
-      for (const [id, view] of this.list) {
-        const item = document.createElement("div");
-        item.style.cssText = "display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; margin-bottom: 4px; background: rgba(30, 41, 59, 0.7); border-radius: 6px; border: 1px solid rgba(148, 163, 184, 0.2);";
-        item.innerHTML = `
-          <div style="cursor: pointer; flex: 1; min-width: 0;">
-            <div style="font-size: 0.82rem; font-weight: 600; color: #f8fafc;">${view.name}</div>
-            <div style="font-size: 0.7rem; color: #38bdf8;">${view.isOrtho ? "2D Ortho" : "3D Perspective"}</div>
-          </div>
-          <div style="display: flex; gap: 4px;">
-            <button class="btn-apply" style="padding: 3px 8px; background: #0284c7; color: white; border: none; border-radius: 4px; font-size: 0.72rem; cursor: pointer;">Go</button>
-            <button class="btn-del" style="padding: 3px 6px; background: rgba(239, 68, 68, 0.2); color: #ef4444; border: none; border-radius: 4px; font-size: 0.72rem; cursor: pointer;">&times;</button>
-          </div>
-        `;
-
-        item.querySelector(".btn-apply")?.addEventListener("click", () => this.apply(id));
-        item.querySelector(".btn-del")?.addEventListener("click", () => {
-          this.delete(id);
-          renderList();
-        });
-        listContainer.appendChild(item);
-      }
-    };
-
-    const onSave = async () => {
-      const name = nameInput?.value?.trim() || "";
-      await this.create(name);
-      if (nameInput) nameInput.value = "";
-      renderList();
-    };
-
-    const onReset = async () => {
-      await this.reset();
-    };
-
-    const panel = BUI.Component.create<BUI.Panel>(() => {
-      return BUI.html`
-        <bim-panel style="min-width: 20rem; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 12px; padding: 1rem;">
-          <bim-panel-section label="Smart Views (Lesson 5.1 – 5.5)" icon="material-symbols:camera">
-            <bim-label style="color: #94a3b8; font-size: 0.82rem; margin-bottom: 0.75rem;">
-              Save and restore custom camera angles, element filters, and viewpoint presentations.
-            </bim-label>
-
-            <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
-              <bim-text-input
-                ${BUI.ref((el) => { nameInput = el as BUI.TextInput; })}
-                label="View Name"
-                placeholder="e.g. South Facade, Level 2 HVAC"
-                style="flex: 1;"
-              ></bim-text-input>
-
-              <bim-button
-                @click=${onSave}
-                label="Save"
-                icon="material-symbols:bookmark-add"
-                style="--bim-button-background: #0284c7; color: white; font-weight: 600;"
-              ></bim-button>
-            </div>
-
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; margin-bottom: 0.5rem;">
-              <span style="font-size: 0.8rem; font-weight: 700; color: #cbd5e1;">Saved Viewpoints</span>
-              <button
-                @click=${onReset}
-                style="background: transparent; border: none; color: #94a3b8; font-size: 0.75rem; cursor: pointer; text-decoration: underline;"
-              >
-                Reset View
-              </button>
-            </div>
-
-            <div ${BUI.ref((el) => { listContainer = el as HTMLElement; renderList(); })} style="max-height: 14rem; overflow-y: auto;"></div>
-          </bim-panel-section>
-        </bim-panel>
-      `;
-    });
-
-    return panel;
-  }
-
   dispose(): void {
-    this.list.clear();
+    this.list.dispose();
     this.onViewCreated.reset();
     this.onViewApplied.reset();
     this.onViewDeleted.reset();
@@ -262,3 +444,4 @@ export class SmartViews extends OBC.Component implements OBC.Disposable {
   }
 }
 
+export * from "./types";

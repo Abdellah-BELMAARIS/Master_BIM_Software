@@ -1,6 +1,10 @@
+import * as THREE from "three";
 import * as OBC from "@thatopen/components";
 import * as BUI from "@thatopen/ui";
-import { viewportGridTemplate } from "../../../ui-templates/grids/viewport";
+import {
+  viewportGridTemplate,
+  type ViewportToolbarState,
+} from "../../../ui-templates/grids/viewport";
 
 /**
  * Module 4 — Lesson 3.3 & 3.8: Working with BIM Worlds
@@ -30,11 +34,32 @@ export const createWorld = (components: OBC.Components) => {
   });
 
   world.renderer = new OBC.SimpleRenderer(components, viewport);
+  world.renderer.showLogo = false;
   world.camera = new OBC.OrthoPerspectiveCamera(components);
 
-  viewport.addEventListener("resize", () => {
-    world.renderer?.resize();
-    world.camera.updateAspect();
+  const onViewportResize = () => {
+    if (world.isDisposing) return;
+    const cam = (world as unknown as { _camera?: OBC.OrthoPerspectiveCamera })._camera;
+    if (!cam || !world.renderer) return;
+    try {
+      world.renderer.resize();
+      cam.updateAspect();
+      const fragments = components.get(OBC.FragmentsManager);
+      if (fragments.initialized && fragments.list.size > 0) {
+        const threeCam = cam.three;
+        if (threeCam instanceof THREE.PerspectiveCamera || threeCam instanceof THREE.OrthographicCamera) {
+          for (const [, model] of fragments.list) {
+            model?.useCamera(threeCam);
+          }
+        }
+        fragments.core.update(true);
+      }
+    } catch {}
+  };
+
+  viewport.addEventListener("resize", onViewportResize);
+  world.onDisposed.add(() => {
+    viewport.removeEventListener("resize", onViewportResize);
   });
 
   components.get(OBC.Raycasters).get(world);
@@ -42,10 +67,11 @@ export const createWorld = (components: OBC.Components) => {
   const grids = components.get(OBC.Grids);
   grids.create(world);
 
-  // Lesson 3.8: Floating viewport grid holding the quick-access colorizer toolbar
+  // Lesson 3.8 – 3.13: Floating viewport grid holding the quick-access toolbar
   try {
-    const viewportGrid = BUI.Component.create<BUI.Grid>(() =>
-      viewportGridTemplate({ components })
+    const [viewportGrid] = BUI.Component.create<BUI.Grid, ViewportToolbarState>(
+      viewportGridTemplate,
+      { components, world }
     );
     if (viewportGrid && viewportGrid instanceof HTMLElement) {
       viewport.append(viewportGrid);
