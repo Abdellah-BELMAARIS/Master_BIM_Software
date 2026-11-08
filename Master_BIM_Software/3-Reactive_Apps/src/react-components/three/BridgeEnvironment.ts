@@ -126,6 +126,7 @@ export function buildBridgeEnvironment(): IBridgeEnvironment {
     const carSilverMat = trackMat(new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9, roughness: 0.15 }));
     const headlampMat = trackMat(new THREE.MeshBasicMaterial({ color: 0xe0f2fe }));
     const taillampMat = trackMat(new THREE.MeshBasicMaterial({ color: 0xef4444 }));
+    const carTireMat = trackMat(new THREE.MeshStandardMaterial({ color: 0x020617, roughness: 0.9 }));
 
     // =========================================================================
     // 1. DYNAMIC OCEAN WATER BASE

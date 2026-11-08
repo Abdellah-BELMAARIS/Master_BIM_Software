@@ -124,18 +124,26 @@ export function Sidebar(props: ISidebarProps) {
 
                 <span className="sidebar-section-label" style={{ marginTop: "1.35rem" }}>CDE DATA & TOOLS</span>
                 <ul className="sidebar-secondary-nav">
-                    <li className="nav-sub-item" onClick={() => handleNavClick("projects")}>
-                        <span className="material-icons-round">view_in_ar</span>
-                        <span>3D BIM Models</span>
-                    </li>
-                    <li className="nav-sub-item">
-                        <span className="material-icons-round">rule</span>
-                        <span>BCF Clash Issues</span>
-                    </li>
-                    <li className="nav-sub-item">
-                        <span className="material-icons-round">analytics</span>
-                        <span>QTO & Cost Takeoff</span>
-                    </li>
+                    <Router.Link to="/?category=ifc" style={{ textDecoration: "none", color: "inherit", display: "block" }}>
+                        <li
+                            className={`nav-sub-item ${location.pathname === "/" && location.search.includes("category=ifc") ? "active" : ""}`}
+                            onClick={() => handleNavClick("projects")}
+                            title="Filter to IFC OpenBIM Models"
+                        >
+                            <span className="material-icons-round" style={{ color: "#38bdf8" }}>description</span>
+                            <span>IFC OpenBIM Models</span>
+                        </li>
+                    </Router.Link>
+                    <Router.Link to="/?category=3d" style={{ textDecoration: "none", color: "inherit", display: "block" }}>
+                        <li
+                            className={`nav-sub-item ${location.pathname === "/" && location.search.includes("category=3d") ? "active" : ""}`}
+                            onClick={() => handleNavClick("projects")}
+                            title="Filter to 3D Parametric Digital Twins"
+                        >
+                            <span className="material-icons-round" style={{ color: "#a855f7" }}>view_in_ar</span>
+                            <span>3D BIM Models</span>
+                        </li>
+                    </Router.Link>
                 </ul>
             </div>
 
@@ -144,7 +152,6 @@ export function Sidebar(props: ISidebarProps) {
                     <div className="user-avatar-badge">AB</div>
                     <div className="user-meta">
                         <span className="user-name">Abdellah B.</span>
-                        <span className="user-role-badge">Lead BIM Dev</span>
                     </div>
                 </div>
                 <div className="system-status">

@@ -252,7 +252,6 @@ export function ThreeViewer(props: ThreeViewerProps) {
             gearEnv.group.visible = (newModel === "gear");
             if (gearMesh) gearMesh.visible = (newModel === "gear");
             if (carMesh) carMesh.visible = (newModel === "car");
-            if (villaMesh) villaMesh.visible = (newModel === "villa");
             villaEnv.group.visible = (newModel === "villa");
             carEnv.group.visible = (newModel === "car");
             towerEnv.group.visible = (newModel === "tower");
@@ -261,7 +260,7 @@ export function ThreeViewer(props: ThreeViewerProps) {
             let activeObj: THREE.Object3D = cubeEnv.group;
             if (newModel === "gear" && gearMesh) activeObj = gearMesh;
             else if (newModel === "car" && carMesh) activeObj = carMesh;
-            else if (newModel === "villa" && villaMesh) activeObj = villaMesh;
+            else if (newModel === "villa") activeObj = villaEnv.group;
             else if (newModel === "tower") activeObj = towerEnv.group;
             else if (newModel === "bridge") activeObj = bridgeEnv.group;
 
@@ -563,33 +562,7 @@ export function ThreeViewer(props: ThreeViewerProps) {
             });
         });
 
-        const villaMtlLoader = new MTLLoader();
-        villaMtlLoader.setPath("/models/villa/");
-        villaMtlLoader.load("villa.mtl", (materials) => {
-            materials.preload();
-            const villaObjLoader = new OBJLoader();
-            villaObjLoader.setMaterials(materials);
-            villaObjLoader.setPath("/models/villa/");
-            villaObjLoader.load("villa.obj", (mesh) => {
-                if (isDisposed || !scene) return;
-                mesh.rotation.x = -Math.PI / 2;
-                mesh.updateMatrixWorld(true);
-                const box = new THREE.Box3().setFromObject(mesh);
-                const center = box.getCenter(new THREE.Vector3());
-                mesh.position.x = -center.x;
-                mesh.position.z = -center.z;
-                mesh.position.y = -box.min.y;
-                mesh.traverse((child) => {
-                    if ((child as THREE.Mesh).isMesh) {
-                        (child as THREE.Mesh).castShadow = true;
-                        (child as THREE.Mesh).receiveShadow = true;
-                    }
-                });
-                villaMesh = mesh;
-                scene.add(villaMesh);
-                villaMesh.visible = (activeModelType === "villa");
-            });
-        });
+
 
         let animFrameId: number;
         const renderScene = () => {

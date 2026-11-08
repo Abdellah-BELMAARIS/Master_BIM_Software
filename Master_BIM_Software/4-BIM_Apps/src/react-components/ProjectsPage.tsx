@@ -1,13 +1,14 @@
 import * as React from "react";
 import * as Router from "react-router-dom";
-import { getDocs, addDoc } from "firebase/firestore";
+import { getDocs, addDoc, deleteDoc } from "firebase/firestore";
 import { getCollection, deleteDocument, sanitizeForFirestore } from "../core/database";
-import { IProject, Project, ProjectStatus, UserRole } from "../classes/Project";
+import { IProject, Project, ProjectStatus, UserRole, ModelType } from "../classes/Project";
 import { ProjectsManager } from "../classes/ProjectsManager";
 import { ProjectCard } from "./ProjectCard";
 import { SearchBox } from "./SearchBox";
 import { ProjectForm } from "./ProjectForm";
 import { appIcons } from "../globals";
+import { getProjectIfcFile } from "../bim-components/setup/src/load-project-model";
 
 export interface ProjectsPageProps {
     projectsManager?: ProjectsManager;
@@ -24,14 +25,37 @@ export function ProjectsPage(props: ProjectsPageProps) {
     );
 
     const navigate = Router.useNavigate();
+    const [searchParams, setSearchParams] = Router.useSearchParams();
+    const urlCategory = searchParams.get("category");
 
     // Lesson 3.5: Introducing React State with TypeScript Generics (React.useState<Project[]>)
     const [projects, setProjects] = React.useState<Project[]>(projectsManager.list);
     const [searchQuery, setSearchQuery] = React.useState<string>("");
     const [statusFilter, setStatusFilter] = React.useState<string>("all");
-    const [categoryFilter, setCategoryFilter] = React.useState<"all" | "ifc" | "3d">("all");
+    const [categoryFilter, setCategoryFilter] = React.useState<"all" | "ifc" | "3d">(
+        urlCategory === "ifc" || urlCategory === "3d" ? urlCategory : "all"
+    );
     const [sortBy, setSortBy] = React.useState<string>("name-asc");
     const [isNewProjectModalOpen, setIsNewProjectModalOpen] = React.useState<boolean>(false);
+
+    // Sync URL query params with category filter
+    React.useEffect(() => {
+        const cat = searchParams.get("category");
+        if (cat === "ifc" || cat === "3d") {
+            setCategoryFilter(cat);
+        } else {
+            setCategoryFilter("all");
+        }
+    }, [searchParams]);
+
+    const handleCategoryChange = (cat: "all" | "ifc" | "3d") => {
+        setCategoryFilter(cat);
+        if (cat === "all") {
+            setSearchParams({});
+        } else {
+            setSearchParams({ category: cat });
+        }
+    };
 
     // Lesson 3.6: Wire ProjectsManager custom events (onProjectCreated & onProjectDeleted) to update React state
     projectsManager.onProjectCreated = () => {
@@ -56,6 +80,9 @@ export function ProjectsPage(props: ProjectsPageProps) {
         const getFirestoreProjects = async () => {
             try {
                 const querySnapshot = await getDocs(projectsCollection);
+                projectsManager.list = [];
+
+                const seenKeys = new Set<string>();
 
                 for (const doc of querySnapshot.docs) {
                     const data = doc.data() as any;
@@ -86,6 +113,47 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         projectIcon = "#2563eb";
                     }
 
+                    // Canonical title normalization map to eliminate old duplicate records
+                    const CANONICAL_MAP: Record<string, string> = {
+                        "toc master structural complex (ifc4)": "That Open Company - Structural Complex (IFC4)",
+                        "hns central pavilion architectural (ifc2x3)": "HNS Central Pavilion - Architectural Model (IFC2X3)",
+                        "hns structural superstructure (ifc2x3)": "HNS Central Pavilion - Structural Superstructure (IFC2X3)",
+                        "provi infrastructure civil viaduct span e01 (ifc4)": "ProVI Infrastructure - Viaduct Alignment Span E01 (IFC4)",
+                        "provi infrastructure civil viaduct span e02 (ifc4)": "ProVI Infrastructure - Viaduct Box Girder Span E02 (IFC4)",
+                        "provi infrastructure civil viaduct pier e03 (ifc4)": "ProVI Infrastructure - Viaduct Pier & Foundation E03 (IFC4)",
+                        "provi infrastructure civil viaduct pier & foundation e03 (ifc4)": "ProVI Infrastructure - Viaduct Pier & Foundation E03 (IFC4)",
+                        "provi infrastructure civil viaduct abutment e07 (ifc4)": "ProVI Infrastructure - Viaduct Abutment & Retaining Wall E07 (IFC4)",
+                        "provi infrastructure civil viaduct abutment & retaining wall e07 (ifc4)": "ProVI Infrastructure - Viaduct Abutment & Retaining Wall E07 (IFC4)",
+                    };
+                    const norm = projectName.toLowerCase().trim();
+                    if (CANONICAL_MAP[norm]) {
+                        projectName = CANONICAL_MAP[norm];
+                    }
+
+                    const ifcMeta = getProjectIfcFile({ name: projectName, ifcFileName: data.ifcFileName });
+
+                    // Deduplication: prevent duplicate project cards from older runs
+                    const dedupeKey = ifcMeta ? ifcMeta.fileName.toLowerCase() : projectName.toLowerCase().trim();
+                    if (seenKeys.has(dedupeKey)) {
+                        console.log(`[Deduplicate] Purging duplicate Firestore project: "${data.name}" / "${projectName}" (${doc.id})`);
+                        try {
+                            await deleteDoc(doc.ref);
+                        } catch {}
+                        continue;
+                    }
+                    seenKeys.add(dedupeKey);
+
+                    let modelCategory = data.modelCategory || (ifcMeta || data.ifcFileName || projectName.toLowerCase().includes("ifc") ? "ifc" : "3d");
+                    let ifcFileName = data.ifcFileName;
+                    let ifcSchema = data.ifcSchema;
+
+                    if (ifcMeta) {
+                        modelCategory = "ifc";
+                        ifcFileName = ifcMeta.fileName;
+                        ifcSchema = ifcMeta.schema;
+                        projectModelType = ifcMeta.twinType;
+                    }
+
                     const projectData: IProject = {
                         name: projectName,
                         description: projectDesc,
@@ -95,6 +163,9 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         cost: projectCost,
                         progress: projectProgress,
                         modelType: projectModelType,
+                        modelCategory,
+                        ifcFileName,
+                        ifcSchema,
                         iconColor: projectIcon,
                         todos: data.todos,
                     };
@@ -112,7 +183,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
                     }
                 }
 
-                // Ensure the 3 signature 3D showcase projects exist so the app is always fully loaded and impressive
+                // Ensure all 13 signature showcase projects exist (6 Parametric Twins + 7 TOC OpenBIM models)
                 const SHOWCASE_PROJECTS: IProject[] = [
                     {
                         name: "Azure Coast Eco-Villa",
@@ -123,6 +194,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         cost: 485000,
                         progress: 0.65,
                         modelType: "villa",
+                        modelCategory: "3d",
                         iconColor: "#38bdf8",
                         todos: [
                             { id: 1, text: "Hydraulic excavation for cantilevered infinity pool", completed: true },
@@ -139,6 +211,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         cost: 320000,
                         progress: 0.40,
                         modelType: "car",
+                        modelCategory: "3d",
                         iconColor: "#22c55e",
                         todos: [
                             { id: 1, text: "High-voltage grid connection & showroom epoxy floor", completed: true },
@@ -154,6 +227,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         cost: 195000,
                         progress: 0.20,
                         modelType: "gear",
+                        modelCategory: "3d",
                         iconColor: "#f59e0b",
                         todos: [
                             { id: 1, text: "PBR metallic surface tolerance & vibration damping analysis", completed: true },
@@ -169,6 +243,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         cost: 1450000,
                         progress: 0.55,
                         modelType: "tower",
+                        modelCategory: "3d",
                         iconColor: "#7c3aed",
                         todos: [
                             { id: 1, text: "Perimeter diagrid steel exoskeleton erection (floors 1-18)", completed: true },
@@ -185,6 +260,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         cost: 2850000,
                         progress: 0.35,
                         modelType: "bridge",
+                        modelCategory: "3d",
                         iconColor: "#0f766e",
                         todos: [
                             { id: 1, text: "Submerged marine caisson pier foundations & cofferdam dewatering", completed: true },
@@ -209,9 +285,9 @@ export function ProjectsPage(props: ProjectsPageProps) {
                             { id: 3, text: "Recessed linear LED lighting & curtain wall glazing", completed: false }
                         ]
                     },
-                    // That Open Company Course IFC Sample Models (D:\MyDocs\ifc_files)
+                    // The 7 Official That Open Company Course IFC Models
                     {
-                        name: "TOC Master Structural Complex (IFC4)",
+                        name: "That Open Company - Structural Complex (IFC4)",
                         description: "Official That Open Company structural engineering model in IFC4 schema, featuring column grids, concrete foundation footings, and composite slabs.",
                         status: "Active",
                         userRole: "Engineer",
@@ -230,7 +306,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         ]
                     },
                     {
-                        name: "HNS Central Pavilion Architectural (IFC2X3)",
+                        name: "HNS Central Pavilion - Architectural Model (IFC2X3)",
                         description: "Comprehensive architectural BIM model authored in Autodesk Revit 2024, exported in IFC2X3 Coordination View V2.0 with curtain walls and spatial rooms.",
                         status: "Active",
                         userRole: "Architect",
@@ -248,14 +324,14 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         ]
                     },
                     {
-                        name: "HNS Structural Superstructure (IFC2X3)",
+                        name: "HNS Central Pavilion - Structural Superstructure (IFC2X3)",
                         description: "Full structural framing model with steel trusses, shear walls, and rebar schedules exported in IFC2X3 Coordination View V2.0.",
                         status: "Pending",
                         userRole: "Engineer",
                         finishDate: new Date("2027-11-20"),
                         cost: 2100000,
                         progress: 0.30,
-                        modelType: "bridge",
+                        modelType: "tower",
                         modelCategory: "ifc",
                         ifcFileName: "HNS-CTL-ZZZ-MOD-EST.ifc",
                         ifcSchema: "IFC2X3",
@@ -266,7 +342,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         ]
                     },
                     {
-                        name: "ProVI Infrastructure Civil Viaduct (IFC4)",
+                        name: "ProVI Infrastructure - Viaduct Alignment Span E01 (IFC4)",
                         description: "Civil infrastructure and alignment sample model in IFC4, featuring road corridors, bridge abutments, and earthworks terrain.",
                         status: "Active",
                         userRole: "Engineer",
@@ -282,14 +358,71 @@ export function ProjectsPage(props: ProjectsPageProps) {
                             { id: 1, text: "Civil alignment & bridge abutment spatial referencing", completed: true },
                             { id: 2, text: "Earthworks terrain cut/fill balance calculation in IFC", completed: false }
                         ]
+                    },
+                    {
+                        name: "ProVI Infrastructure - Viaduct Box Girder Span E02 (IFC4)",
+                        description: "Civil viaduct superstructure segment E02 in IFC4 schema with pre-stressed box girders and expansion joints.",
+                        status: "Active",
+                        userRole: "Engineer",
+                        finishDate: new Date("2028-05-30"),
+                        cost: 2800000,
+                        progress: 0.35,
+                        modelType: "bridge",
+                        modelCategory: "ifc",
+                        ifcFileName: "NAV-IPI-ET1_E02-ZZZ-M3D-EST.ifc",
+                        ifcSchema: "IFC4",
+                        iconColor: "#0284c7",
+                        todos: [
+                            { id: 1, text: "Box girder longitudinal prestressing tendon layout", completed: true },
+                            { id: 2, text: "Seismic expansion joint clearance inspection", completed: false }
+                        ]
+                    },
+                    {
+                        name: "ProVI Infrastructure - Viaduct Pier & Foundation E03 (IFC4)",
+                        description: "Reinforced concrete viaduct substructure pier E03 with pile caps, bored piles, and elastomeric bearing pads.",
+                        status: "Pending",
+                        userRole: "Engineer",
+                        finishDate: new Date("2028-08-15"),
+                        cost: 1950000,
+                        progress: 0.20,
+                        modelType: "bridge",
+                        modelCategory: "ifc",
+                        ifcFileName: "NAV-IPI-ET1_E03-ZZZ-M3D-EST.ifc",
+                        ifcSchema: "IFC4",
+                        iconColor: "#059669",
+                        todos: [
+                            { id: 1, text: "Deep foundation bored pile depth & rock socketing", completed: true },
+                            { id: 2, text: "Elastomeric bearing seat elevation verification", completed: false }
+                        ]
+                    },
+                    {
+                        name: "ProVI Infrastructure - Viaduct Abutment & Retaining Wall E07 (IFC4)",
+                        description: "Terminal approach abutment and retaining wall system in IFC4 with backfill drainage and transition approach slab.",
+                        status: "Active",
+                        userRole: "Engineer",
+                        finishDate: new Date("2028-11-01"),
+                        cost: 1450000,
+                        progress: 0.60,
+                        modelType: "bridge",
+                        modelCategory: "ifc",
+                        ifcFileName: "NAV-IPI-ET1_E07-ZZZ-M3D-EST.ifc",
+                        ifcSchema: "IFC4",
+                        iconColor: "#7c3aed",
+                        todos: [
+                            { id: 1, text: "Wingwall reinforcement & approach slab tie-in check", completed: true },
+                            { id: 2, text: "Weephole and geotextile filter drainage review", completed: false }
+                        ]
                     }
                 ];
 
+                // Ensure all showcase projects are present, synchronizing names to canonical standard
                 for (const showcase of SHOWCASE_PROJECTS) {
-                    const exists = projectsManager.list.some(
-                        (p) => p.modelType === showcase.modelType || p.name.toLowerCase() === showcase.name.toLowerCase()
+                    const existing = projectsManager.list.find(
+                        (p) =>
+                            p.name.toLowerCase() === showcase.name.toLowerCase() ||
+                            (Boolean(showcase.ifcFileName) && p.ifcFileName === showcase.ifcFileName)
                     );
-                    if (!exists) {
+                    if (!existing) {
                         try {
                             const p = projectsManager.newProject(showcase);
                             addDoc(projectsCollection, sanitizeForFirestore(showcase))
@@ -298,6 +431,8 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         } catch {
                             // ignore duplicate error
                         }
+                    } else if (existing.name !== showcase.name) {
+                        existing.name = showcase.name;
                     }
                 }
 

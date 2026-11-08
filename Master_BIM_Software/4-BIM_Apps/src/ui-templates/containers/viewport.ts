@@ -13,7 +13,7 @@ export const viewportTemplate: BUI.StatefullComponent<ViewportContainerState> = 
   if (viewport) {
     content = viewport;
   } else {
-    const [missingLabel] = BUI.Component.create(() => BUI.html`
+    const missingLabel = BUI.Component.create<BUI.Label>(() => BUI.html`
       <bim-label style="align-self: center; justify-self: center; font-size: 1.1rem; color: var(--text-secondary);">
         No viewport has been defined
       </bim-label>

@@ -1,17 +1,24 @@
 import * as OBC from "@thatopen/components";
-import { createWorld } from "./src";
+import { Project } from "../../classes/Project";
+import { createWorld, loadProjectModel, LoadedWorldModel } from "./src";
 
 /**
  * Module 4 — Lesson 3.3: Root setupComponents Entry Point
  * Initializes the root OBC.Components singleton, configures the BIM World,
- * and starts the real-time engine loop.
+ * populates the project's 3D Digital Twin / IFC model, and starts the real-time engine loop.
  */
-export const setupComponents = async () => {
+export const setupComponents = async (project?: Project) => {
   const components = new OBC.Components();
   const { world, viewport } = createWorld(components);
   components.init();
 
-  return { components, world, viewport };
+  let loadedModel: LoadedWorldModel | null = null;
+  if (project) {
+    loadedModel = await loadProjectModel(components, world, project);
+  }
+
+  return { components, world, viewport, loadedModel };
 };
 
 export * from "./src";
+

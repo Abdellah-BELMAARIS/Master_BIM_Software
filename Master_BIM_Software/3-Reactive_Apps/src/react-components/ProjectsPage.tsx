@@ -55,6 +55,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
         const getFirestoreProjects = async () => {
             try {
                 const querySnapshot = await getDocs(projectsCollection);
+                projectsManager.list = [];
 
                 for (const doc of querySnapshot.docs) {
                     const data = doc.data() as any;
@@ -208,9 +209,9 @@ export function ProjectsPage(props: ProjectsPageProps) {
                             { id: 3, text: "Recessed linear LED lighting & curtain wall glazing", completed: false }
                         ]
                     },
-                    // That Open Company IFC Sample Models (D:\MyDocs\ifc_files)
+                    // The 7 Official That Open Company Course IFC Models
                     {
-                        name: "TOC Master Structural Complex (IFC4)",
+                        name: "That Open Company - Structural Complex (IFC4)",
                         description: "Official That Open Company structural engineering model in IFC4 schema, featuring column grids, concrete foundation footings, and composite slabs.",
                         status: "Active",
                         userRole: "Engineer",
@@ -229,7 +230,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         ]
                     },
                     {
-                        name: "HNS Central Pavilion Architectural (IFC2X3)",
+                        name: "HNS Central Pavilion - Architectural Model (IFC2X3)",
                         description: "Comprehensive architectural BIM model authored in Autodesk Revit 2024, exported in IFC2X3 Coordination View V2.0 with curtain walls and spatial rooms.",
                         status: "Active",
                         userRole: "Architect",
@@ -247,14 +248,14 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         ]
                     },
                     {
-                        name: "HNS Structural Superstructure (IFC2X3)",
+                        name: "HNS Central Pavilion - Structural Superstructure (IFC2X3)",
                         description: "Full structural framing model with steel trusses, shear walls, and rebar schedules exported in IFC2X3 Coordination View V2.0.",
                         status: "Pending",
                         userRole: "Engineer",
                         finishDate: new Date("2027-11-20"),
                         cost: 2100000,
                         progress: 0.30,
-                        modelType: "bridge",
+                        modelType: "tower",
                         modelCategory: "ifc",
                         ifcFileName: "HNS-CTL-ZZZ-MOD-EST.ifc",
                         ifcSchema: "IFC2X3",
@@ -265,7 +266,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         ]
                     },
                     {
-                        name: "ProVI Infrastructure Civil Viaduct (IFC4)",
+                        name: "ProVI Infrastructure - Viaduct Alignment Span E01 (IFC4)",
                         description: "Civil infrastructure and alignment sample model in IFC4, featuring road corridors, bridge abutments, and earthworks terrain.",
                         status: "Active",
                         userRole: "Engineer",
@@ -280,6 +281,60 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         todos: [
                             { id: 1, text: "Civil alignment & bridge abutment spatial referencing", completed: true },
                             { id: 2, text: "Earthworks terrain cut/fill balance calculation in IFC", completed: false }
+                        ]
+                    },
+                    {
+                        name: "ProVI Infrastructure - Viaduct Box Girder Span E02 (IFC4)",
+                        description: "Civil viaduct superstructure segment E02 in IFC4 schema with pre-stressed box girders and expansion joints.",
+                        status: "Active",
+                        userRole: "Engineer",
+                        finishDate: new Date("2028-05-30"),
+                        cost: 2800000,
+                        progress: 0.35,
+                        modelType: "bridge",
+                        modelCategory: "ifc",
+                        ifcFileName: "NAV-IPI-ET1_E02-ZZZ-M3D-EST.ifc",
+                        ifcSchema: "IFC4",
+                        iconColor: "#0284c7",
+                        todos: [
+                            { id: 1, text: "Box girder longitudinal prestressing tendon layout", completed: true },
+                            { id: 2, text: "Seismic expansion joint clearance inspection", completed: false }
+                        ]
+                    },
+                    {
+                        name: "ProVI Infrastructure - Viaduct Pier & Foundation E03 (IFC4)",
+                        description: "Reinforced concrete viaduct substructure pier E03 with pile caps, bored piles, and elastomeric bearing pads.",
+                        status: "Pending",
+                        userRole: "Engineer",
+                        finishDate: new Date("2028-08-15"),
+                        cost: 1950000,
+                        progress: 0.20,
+                        modelType: "bridge",
+                        modelCategory: "ifc",
+                        ifcFileName: "NAV-IPI-ET1_E03-ZZZ-M3D-EST.ifc",
+                        ifcSchema: "IFC4",
+                        iconColor: "#059669",
+                        todos: [
+                            { id: 1, text: "Deep foundation bored pile depth & rock socketing", completed: true },
+                            { id: 2, text: "Elastomeric bearing seat elevation verification", completed: false }
+                        ]
+                    },
+                    {
+                        name: "ProVI Infrastructure - Viaduct Abutment & Retaining Wall E07 (IFC4)",
+                        description: "Terminal approach abutment and retaining wall system in IFC4 with backfill drainage and transition approach slab.",
+                        status: "Active",
+                        userRole: "Engineer",
+                        finishDate: new Date("2028-11-01"),
+                        cost: 1450000,
+                        progress: 0.60,
+                        modelType: "bridge",
+                        modelCategory: "ifc",
+                        ifcFileName: "NAV-IPI-ET1_E07-ZZZ-M3D-EST.ifc",
+                        ifcSchema: "IFC4",
+                        iconColor: "#7c3aed",
+                        todos: [
+                            { id: 1, text: "Wingwall reinforcement & approach slab tie-in check", completed: true },
+                            { id: 2, text: "Weephole and geotextile filter drainage review", completed: false }
                         ]
                     }
                 ];

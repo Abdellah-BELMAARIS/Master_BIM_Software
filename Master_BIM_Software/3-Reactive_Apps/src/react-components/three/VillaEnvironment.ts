@@ -427,16 +427,177 @@ export function buildLuxuryVillaEnvironment(): IVillaEnvironment {
     furnitureGroup.add(upperFloorGroup);
 
     // =========================================================================
+    // 5.5 ARCHITECTURAL BUILDING ENVELOPE (WALLS, SLABS, GLASS CURTAINS, ROOF)
+    // =========================================================================
+    const buildingGroup = new THREE.Group();
+    buildingGroup.name = "ArchitecturalVillaBuilding";
+
+    // Architectural Building Materials
+    const villaWallMat = trackMat(new THREE.MeshStandardMaterial({
+        color: 0xf1f5f9, // Crisp architectural white stucco
+        roughness: 0.35,
+        metalness: 0.05,
+    }));
+    const villaSlabMat = trackMat(new THREE.MeshStandardMaterial({
+        color: 0x334155, // Charcoal slate concrete fascia
+        roughness: 0.45,
+        metalness: 0.1,
+    }));
+    const glassFacadeMat = trackMat(new THREE.MeshStandardMaterial({
+        color: 0x38bdf8,
+        roughness: 0.05,
+        metalness: 0.15,
+        transparent: true,
+        opacity: 0.42,
+    }));
+    const frameDarkMat = trackMat(new THREE.MeshStandardMaterial({
+        color: 0x0f172a, // Anodized black aluminum
+        roughness: 0.25,
+        metalness: 0.85,
+    }));
+    const entryDoorMat = trackMat(new THREE.MeshStandardMaterial({
+        color: 0x92400e, // Warm rich walnut entry door
+        roughness: 0.4,
+        metalness: 0.05,
+    }));
+
+    // Ground Floor Concrete Slab Plinth
+    const groundSlab = new THREE.Mesh(trackGeom(new THREE.BoxGeometry(11.2, 0.22, 7.8)), villaSlabMat);
+    groundSlab.position.set(0.4, 0.11, 0.1);
+    groundSlab.receiveShadow = true;
+    buildingGroup.add(groundSlab);
+
+    // Ground Floor Rear Solid Wall
+    const rearWallG = new THREE.Mesh(trackGeom(new THREE.BoxGeometry(11.2, 2.85, 0.24)), villaWallMat);
+    rearWallG.position.set(0.4, 1.62, -3.7);
+    rearWallG.castShadow = true;
+    rearWallG.receiveShadow = true;
+    buildingGroup.add(rearWallG);
+
+    // Ground Floor Right Wall
+    const rightWallG = new THREE.Mesh(trackGeom(new THREE.BoxGeometry(0.24, 2.85, 7.4)), villaWallMat);
+    rightWallG.position.set(5.9, 1.62, 0.0);
+    rightWallG.castShadow = true;
+    rightWallG.receiveShadow = true;
+    buildingGroup.add(rightWallG);
+
+    // Ground Floor Left Wall (Rear section)
+    const leftWallG = new THREE.Mesh(trackGeom(new THREE.BoxGeometry(0.24, 2.85, 3.2)), villaWallMat);
+    leftWallG.position.set(-5.1, 1.62, -2.1);
+    leftWallG.castShadow = true;
+    buildingGroup.add(leftWallG);
+
+    // Ground Floor Poolside Panoramic Glass Curtain Wall
+    const poolGlassG = new THREE.Mesh(trackGeom(new THREE.BoxGeometry(0.06, 2.75, 4.3)), glassFacadeMat);
+    poolGlassG.position.set(-5.1, 1.6, 1.65);
+    buildingGroup.add(poolGlassG);
+
+    // Ground Floor Front Entrance Wall (Right side with door)
+    const frontWallG = new THREE.Mesh(trackGeom(new THREE.BoxGeometry(4.4, 2.85, 0.24)), villaWallMat);
+    frontWallG.position.set(3.7, 1.62, 3.8);
+    frontWallG.castShadow = true;
+
+    // Modern Pivot Entrance Door
+    const frontDoor = new THREE.Mesh(trackGeom(new THREE.BoxGeometry(1.3, 2.4, 0.08)), entryDoorMat);
+    frontDoor.position.set(2.2, 1.4, 3.82);
+    const doorHandle = new THREE.Mesh(trackGeom(new THREE.CylinderGeometry(0.02, 0.02, 1.1, 8)), chromeMat);
+    doorHandle.position.set(2.7, 1.4, 3.88);
+
+    // Ground Floor Front Garden Panoramic Glass Wall
+    const frontGlassG = new THREE.Mesh(trackGeom(new THREE.BoxGeometry(6.6, 2.75, 0.06)), glassFacadeMat);
+    frontGlassG.position.set(-1.8, 1.6, 3.8);
+
+    // Aluminum Mullion Frame Accents
+    for (let mx = -4.5; mx <= 0.8; mx += 1.8) {
+        const mullion = new THREE.Mesh(trackGeom(new THREE.BoxGeometry(0.06, 2.8, 0.08)), frameDarkMat);
+        mullion.position.set(mx, 1.6, 3.8);
+        buildingGroup.add(mullion);
+    }
+    buildingGroup.add(frontWallG, frontDoor, doorHandle, frontGlassG);
+
+    // Level 01 Intermediate Cantilever Slab
+    const level1Slab = new THREE.Mesh(trackGeom(new THREE.BoxGeometry(11.8, 0.26, 8.4)), villaSlabMat);
+    level1Slab.position.set(0.4, 3.12, 0.1);
+    level1Slab.castShadow = true;
+    level1Slab.receiveShadow = true;
+    buildingGroup.add(level1Slab);
+
+    // Slender Architectural Steel Columns Supporting Cantilever Terrace
+    const col1 = new THREE.Mesh(trackGeom(new THREE.CylinderGeometry(0.07, 0.07, 2.9, 12)), frameDarkMat);
+    col1.position.set(-5.1, 1.6, 3.8);
+    const col2 = new THREE.Mesh(trackGeom(new THREE.CylinderGeometry(0.07, 0.07, 2.9, 12)), frameDarkMat);
+    col2.position.set(5.8, 1.6, 3.8);
+    buildingGroup.add(col1, col2);
+
+    // First Floor Rear Solid Wall
+    const rearWall1 = new THREE.Mesh(trackGeom(new THREE.BoxGeometry(11.2, 2.85, 0.24)), villaWallMat);
+    rearWall1.position.set(0.4, 4.67, -3.7);
+    rearWall1.castShadow = true;
+    buildingGroup.add(rearWall1);
+
+    // First Floor Right Wall
+    const rightWall1 = new THREE.Mesh(trackGeom(new THREE.BoxGeometry(0.24, 2.85, 7.4)), villaWallMat);
+    rightWall1.position.set(5.9, 4.67, 0.0);
+    rightWall1.castShadow = true;
+    buildingGroup.add(rightWall1);
+
+    // First Floor Left Wall (with modern horizontal architectural ribbon slot)
+    const leftWall1Lower = new THREE.Mesh(trackGeom(new THREE.BoxGeometry(0.24, 1.2, 7.4)), villaWallMat);
+    leftWall1Lower.position.set(-5.1, 3.85, 0.0);
+    const leftWall1Glass = new THREE.Mesh(trackGeom(new THREE.BoxGeometry(0.06, 0.9, 7.2)), glassFacadeMat);
+    leftWall1Glass.position.set(-5.1, 4.9, 0.0);
+    const leftWall1Upper = new THREE.Mesh(trackGeom(new THREE.BoxGeometry(0.24, 0.75, 7.4)), villaWallMat);
+    leftWall1Upper.position.set(-5.1, 5.72, 0.0);
+    buildingGroup.add(leftWall1Lower, leftWall1Glass, leftWall1Upper);
+
+    // First Floor Front Balcony Glass Wall & Master Suite Panorama
+    const frontGlass1 = new THREE.Mesh(trackGeom(new THREE.BoxGeometry(10.6, 2.75, 0.06)), glassFacadeMat);
+    frontGlass1.position.set(0.4, 4.65, 3.8);
+    for (let mx = -4.0; mx <= 4.8; mx += 2.2) {
+        const mullion = new THREE.Mesh(trackGeom(new THREE.BoxGeometry(0.06, 2.8, 0.08)), frameDarkMat);
+        mullion.position.set(mx, 4.65, 3.8);
+        buildingGroup.add(mullion);
+    }
+    buildingGroup.add(frontGlass1);
+
+    // Main Roof Slab (Underneath the Solar Photovoltaic Array)
+    const roofSlab = new THREE.Mesh(trackGeom(new THREE.BoxGeometry(11.8, 0.28, 8.4)), villaSlabMat);
+    roofSlab.position.set(0.4, 6.15, 0.1);
+    roofSlab.castShadow = true;
+    roofSlab.receiveShadow = true;
+    buildingGroup.add(roofSlab);
+
+    // Architectural Roof Parapet Edge Coping
+    const parapetBack = new THREE.Mesh(trackGeom(new THREE.BoxGeometry(11.8, 0.35, 0.18)), villaWallMat);
+    parapetBack.position.set(0.4, 6.45, -4.1);
+    const parapetFront = new THREE.Mesh(trackGeom(new THREE.BoxGeometry(11.8, 0.35, 0.18)), villaWallMat);
+    parapetFront.position.set(0.4, 6.45, 4.3);
+    const parapetLeft = new THREE.Mesh(trackGeom(new THREE.BoxGeometry(0.18, 0.35, 8.4)), villaWallMat);
+    parapetLeft.position.set(-5.5, 6.45, 0.1);
+    const parapetRight = new THREE.Mesh(trackGeom(new THREE.BoxGeometry(0.18, 0.35, 8.4)), villaWallMat);
+    parapetRight.position.set(6.3, 6.45, 0.1);
+    buildingGroup.add(parapetBack, parapetFront, parapetLeft, parapetRight);
+
+    // Interior Warm Lighting Glow on Both Levels
+    const interiorGlowG = new THREE.PointLight(0xfef08a, 1.6, 12);
+    interiorGlowG.position.set(0.4, 2.4, 0.1);
+    const interiorGlow1 = new THREE.PointLight(0xfef08a, 1.4, 12);
+    interiorGlow1.position.set(0.4, 5.2, 0.1);
+    buildingGroup.add(interiorGlowG, interiorGlow1);
+
+    rootGroup.add(buildingGroup);
+
+    // =========================================================================
     // 6. ROOFTOP SOLAR PHOTOVOLTAIC ARRAY
     // =========================================================================
     const roofSolarGroup = new THREE.Group();
-    roofSolarGroup.position.set(0, 6.2, 0);
+    roofSolarGroup.position.set(0.4, 6.35, 0.1);
 
     const panelGeom = trackGeom(new THREE.BoxGeometry(1.2, 0.04, 1.8));
     for (let x = -1.6; x <= 1.6; x += 1.6) {
         for (let z = -1.2; z <= 1.2; z += 2.2) {
             const panel = new THREE.Mesh(panelGeom, solarPanelMat);
-            panel.position.set(x, 0.2, z);
+            panel.position.set(x, 0.05, z);
             panel.rotation.x = 0.2; // 12-degree solar pitch
             roofSolarGroup.add(panel);
         }

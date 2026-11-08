@@ -114,9 +114,21 @@ export function ProjectForm(props: ProjectFormProps) {
                 modelType = "bridge";
                 ifcFileName = "HNS-CTL-ZZZ-MOD-EST.ifc";
                 ifcSchema = "IFC2X3";
-            } else if (selectedModel === "ifc-provi") {
+            } else if (selectedModel === "ifc-provi" || selectedModel === "ifc-provi-e01") {
                 modelType = "bridge";
                 ifcFileName = "NAV-IPI-ET1_E01-ZZZ-M3D-EST.ifc";
+                ifcSchema = "IFC4";
+            } else if (selectedModel === "ifc-provi-e02") {
+                modelType = "bridge";
+                ifcFileName = "NAV-IPI-ET1_E02-ZZZ-M3D-EST.ifc";
+                ifcSchema = "IFC4";
+            } else if (selectedModel === "ifc-provi-e03") {
+                modelType = "bridge";
+                ifcFileName = "NAV-IPI-ET1_E03-ZZZ-M3D-EST.ifc";
+                ifcSchema = "IFC4";
+            } else if (selectedModel === "ifc-provi-e07") {
+                modelType = "bridge";
+                ifcFileName = "NAV-IPI-ET1_E07-ZZZ-M3D-EST.ifc";
                 ifcSchema = "IFC4";
             }
         } else {
@@ -375,7 +387,10 @@ export function ProjectForm(props: ProjectFormProps) {
                                     <option value="ifc-toc">🏗️ TOC Master Structural Complex (IFC4)</option>
                                     <option value="ifc-hns-arq">🏛️ HNS Central Pavilion Architectural (IFC2X3)</option>
                                     <option value="ifc-hns-est">🏗️ HNS Structural Superstructure (IFC2X3)</option>
-                                    <option value="ifc-provi">🌉 ProVI Infrastructure Civil Viaduct (IFC4)</option>
+                                    <option value="ifc-provi-e01">🌉 ProVI Civil Viaduct Span E01 (IFC4)</option>
+                                    <option value="ifc-provi-e02">🌉 ProVI Civil Viaduct Span E02 (IFC4)</option>
+                                    <option value="ifc-provi-e03">🌉 ProVI Civil Viaduct Pier E03 (IFC4)</option>
+                                    <option value="ifc-provi-e07">🌉 ProVI Civil Viaduct Abutment E07 (IFC4)</option>
                                 </optgroup>
                             </select>
                         </div>

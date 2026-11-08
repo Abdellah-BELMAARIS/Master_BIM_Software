@@ -42,3 +42,4 @@ export const createWorld = (components: OBC.Components) => {
 
   return { world, viewport };
 };
+

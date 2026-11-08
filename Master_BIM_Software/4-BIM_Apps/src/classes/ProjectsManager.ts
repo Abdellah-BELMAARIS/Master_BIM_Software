@@ -96,6 +96,15 @@ export class ProjectsManager {
         if (data.modelType) {
             project.modelType = data.modelType;
         }
+        if (data.modelCategory) {
+            project.modelCategory = data.modelCategory;
+        }
+        if (data.ifcFileName !== undefined) {
+            project.ifcFileName = data.ifcFileName;
+        }
+        if (data.ifcSchema !== undefined) {
+            project.ifcSchema = data.ifcSchema;
+        }
         if (data.iconColor) {
             project.iconColor = data.iconColor;
         }
