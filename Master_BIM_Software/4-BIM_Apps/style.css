@@ -333,16 +333,18 @@ a {
 /* Floating BIM Element Inspector Card */
 .element-inspector-card {
     position: absolute;
-    bottom: 80px;
-    right: 20px;
-    width: 290px;
-    background: rgba(15, 23, 42, 0.95);
-    border: 1px solid rgba(56, 189, 248, 0.35);
-    border-radius: 10px;
+    bottom: 74px;
+    right: 18px;
+    width: 340px;
+    max-width: calc(100% - 36px);
+    background: rgba(15, 23, 42, 0.96);
+    border: 1px solid rgba(56, 189, 248, 0.45);
+    border-radius: 12px;
     padding: 12px 14px;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(12px);
-    z-index: 25;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    z-index: 35;
     animation: fadeInUp 0.2s ease;
 }
 
@@ -350,9 +352,10 @@ a {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.15);
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
     padding-bottom: 8px;
     margin-bottom: 10px;
+    gap: 8px;
 }
 
 .inspector-header h4 {
@@ -360,10 +363,10 @@ a {
     font-weight: 700;
     color: #f8fafc;
     margin: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 200px;
+    white-space: normal;
+    line-height: 1.35;
+    word-break: break-word;
+    flex: 1;
 }
 
 .btn-close-inspector {
@@ -1603,16 +1606,23 @@ dialog#error-modal::backdrop {
 }
 
 .viewer-hud-overlay {
-    max-width: calc(100% - 24px);
+    max-width: calc(100% - 24px) !important;
     width: max-content;
-    overflow-x: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    box-sizing: border-box;
+    box-sizing: border-box !important;
+    white-space: nowrap;
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+    padding: 5px 8px !important;
+    gap: 4px !important;
 }
 
 .viewer-hud-overlay::-webkit-scrollbar {
-    display: none;
+    display: none !important;
+}
+
+.viewer-hud-overlay button {
+    flex-shrink: 0 !important;
 }
 
 .hud-btn-label {
@@ -1669,17 +1679,86 @@ dialog#error-modal::backdrop {
     border: 1px solid var(--border-color);
 }
 
-@container (max-width: 580px) {
-    .viewer-hud-overlay .hud-btn-label {
+.viewer-mode-switch-bar {
+    position: absolute;
+    top: 14px;
+    left: 16px;
+    z-index: 30;
+    display: inline-flex;
+    align-items: center;
+    background: rgba(15, 23, 42, 0.92);
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(56, 189, 248, 0.32);
+    border-radius: 24px;
+    padding: 3px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+    gap: 2px;
+}
+
+.viewer-mode-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 14px;
+    border: none;
+    border-radius: 20px;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.82rem;
+    font-weight: 600;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.viewer-mode-tab:hover {
+    color: #f8fafc;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.viewer-mode-tab.active {
+    background: var(--primary-blue);
+    color: #ffffff;
+    box-shadow: 0 2px 10px rgba(37, 99, 235, 0.45);
+}
+
+.viewer-mode-tab .material-icons-round {
+    font-size: 16px;
+}
+
+@container (max-width: 1050px) {
+    .viewer-hud-overlay .hud-btn-label,
+    .viewer-pro-hud .hud-label {
         display: none !important;
     }
-    .viewer-hud-overlay {
-        gap: 3px !important;
-        padding: 4px 6px !important;
+    .viewer-hud-overlay,
+    .viewer-pro-hud {
+        gap: 4px !important;
+        padding: 5px 8px !important;
+        bottom: 12px !important;
     }
-    .viewer-hud-overlay button {
-        padding: 5px 7px !important;
+    .viewer-hud-overlay button,
+    .viewer-pro-hud .hud-btn {
+        padding: 6px 9px !important;
+        font-size: 0.74rem !important;
+        border-radius: 8px !important;
     }
+}
+
+@media (max-width: 1400px) {
+    .viewer-hud-overlay .hud-btn-label,
+    .viewer-pro-hud .hud-label {
+        display: none !important;
+    }
+    .viewer-hud-overlay button,
+    .viewer-pro-hud .hud-btn {
+        padding: 6px 9px !important;
+        border-radius: 8px !important;
+    }
+}
+
+.viewer-hud-overlay button,
+.viewer-pro-hud .hud-btn {
+    flex-shrink: 0 !important;
 }
 
 /* Project Details Card - Prevents flexbox vertical clipping */
@@ -3184,23 +3263,32 @@ dialog#error-modal::backdrop {
    ========================================================================== */
 .viewer-pro-hud {
     position: absolute;
-    bottom: 1.5rem;
+    bottom: 16px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 30;
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    background: rgba(15, 23, 42, 0.8);
+    gap: 0.4rem;
+    background: rgba(15, 23, 42, 0.94);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
-    border: 1px solid rgba(56, 189, 248, 0.28);
-    padding: 0.35rem 0.65rem;
-    border-radius: 9999px;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 0 15px rgba(56, 189, 248, 0.2);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    padding: 6px 12px;
+    border-radius: 30px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.65);
     pointer-events: auto;
     user-select: none;
+    max-width: calc(100% - 24px);
+    box-sizing: border-box;
+    overflow-x: auto;
+    scrollbar-width: none;
+    white-space: nowrap;
     transition: all 0.25s ease;
+}
+
+.viewer-pro-hud::-webkit-scrollbar {
+    display: none;
 }
 
 .viewer-pro-hud:hover {
@@ -3291,4 +3379,112 @@ bim-viewport {
     display: block;
     position: relative;
     overflow: hidden;
+}
+
+/* ==========================================================================
+   Project Form 3D / IFC Model Upload Dropzone
+   ========================================================================== */
+.btn-upload-model-dropzone:hover {
+    background: rgba(30, 41, 59, 0.8) !important;
+    border-color: var(--primary-blue) !important;
+    box-shadow: 0 0 16px rgba(37, 99, 235, 0.25);
+}
+
+.model-file-attached {
+    transition: all 0.2s ease;
+}
+
+.model-file-attached:hover {
+    border-color: rgba(56, 189, 248, 0.6) !important;
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.2);
+}
+
+/* ==========================================================================
+   That Open Company Course Tools — Dockable Glassmorphism Panels (Lessons 3.5 & 3.6)
+   ========================================================================== */
+.toc-course-pill {
+    background: rgba(30, 41, 59, 0.65) !important;
+    border: 1px solid rgba(148, 163, 184, 0.25) !important;
+    color: #94a3b8 !important;
+    font-size: 0.78rem !important;
+}
+
+.toc-course-pill:hover {
+    background: rgba(56, 189, 248, 0.15) !important;
+    border-color: rgba(56, 189, 248, 0.45) !important;
+    color: #38bdf8 !important;
+}
+
+.toc-course-pill.active {
+    background: rgba(56, 189, 248, 0.25) !important;
+    border-color: #38bdf8 !important;
+    color: #38bdf8 !important;
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+}
+
+.toc-dock-panel {
+    position: absolute;
+    top: 58px;
+    bottom: 74px;
+    width: 380px;
+    max-width: calc(100% - 32px);
+    background: rgba(15, 23, 42, 0.96);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    border-radius: 12px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: fadeIn 0.2s ease;
+}
+
+.toc-dock-left {
+    left: 16px;
+}
+
+.toc-dock-right {
+    right: 16px;
+}
+
+.toc-dock-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+    background: rgba(30, 41, 59, 0.6);
+}
+
+.btn-close-dock {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 1.3rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: color 0.15s ease;
+}
+
+.btn-close-dock:hover {
+    color: #f8fafc;
+    background: rgba(239, 68, 68, 0.2);
+}
+
+.toc-dock-body {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.toc-dock-body bim-panel-section {
+    border: none !important;
+    background: transparent !important;
 }

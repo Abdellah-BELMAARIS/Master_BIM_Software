@@ -94,6 +94,10 @@ export function Sidebar(props: ISidebarProps) {
         }
     };
 
+    const isIfcProjects = location.pathname === "/" && location.search.includes("category=ifc");
+    const is3dProjects = location.pathname === "/" && location.search.includes("category=3d");
+    const isAllProjects = activeTab === "projects" && !isIfcProjects && !is3dProjects;
+
     return (
         <aside id="sidebar">
             <div className="sidebar-header" style={{ padding: "1.25rem 1rem", display: "flex", alignItems: "center" }}>
@@ -105,13 +109,13 @@ export function Sidebar(props: ISidebarProps) {
                 <ul id="nav-buttons">
                     <Router.Link to="/" style={{ textDecoration: "none", width: "100%", display: "block" }}>
                         <li
-                            className={`nav-item ${activeTab === "projects" ? "active" : ""}`}
+                            className={`nav-item ${isAllProjects ? "active" : ""}`}
                             id="nav-projects-btn"
                             onClick={() => handleNavClick("projects")}
                         >
                             <span className="material-icons-round">domain</span>
                             <span className="nav-label">BIM Projects</span>
-                            <span className="nav-badge">6</span>
+                            <span className="nav-badge">13</span>
                         </li>
                     </Router.Link>
                     <li
@@ -129,7 +133,7 @@ export function Sidebar(props: ISidebarProps) {
                 <ul className="sidebar-secondary-nav">
                     <Router.Link to="/?category=ifc" style={{ textDecoration: "none", color: "inherit", display: "block" }}>
                         <li
-                            className={`nav-sub-item ${location.pathname === "/" && location.search.includes("category=ifc") ? "active" : ""}`}
+                            className={`nav-sub-item ${isIfcProjects ? "active" : ""}`}
                             onClick={() => handleNavClick("projects")}
                             title="Filter to IFC OpenBIM Models"
                         >
@@ -139,7 +143,7 @@ export function Sidebar(props: ISidebarProps) {
                     </Router.Link>
                     <Router.Link to="/?category=3d" style={{ textDecoration: "none", color: "inherit", display: "block" }}>
                         <li
-                            className={`nav-sub-item ${location.pathname === "/" && location.search.includes("category=3d") ? "active" : ""}`}
+                            className={`nav-sub-item ${is3dProjects ? "active" : ""}`}
                             onClick={() => handleNavClick("projects")}
                             title="Filter to 3D Parametric Digital Twins"
                         >

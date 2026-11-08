@@ -8,7 +8,7 @@ import { ProjectCard } from "./ProjectCard";
 import { SearchBox } from "./SearchBox";
 import { ProjectForm } from "./ProjectForm";
 import { appIcons } from "../globals";
-import { getProjectIfcFile } from "../bim-components/setup/src/load-project-model";
+import { getProjectIfcFile, prewarmIfcModels } from "../bim-components/setup/src/load-project-model";
 
 export interface ProjectsPageProps {
     projectsManager?: ProjectsManager;
@@ -37,6 +37,11 @@ export function ProjectsPage(props: ProjectsPageProps) {
     );
     const [sortBy, setSortBy] = React.useState<string>("name-asc");
     const [isNewProjectModalOpen, setIsNewProjectModalOpen] = React.useState<boolean>(false);
+
+    // Background Hyper-Speed Cache Pre-Warmer for IFC Models
+    React.useEffect(() => {
+        prewarmIfcModels();
+    }, []);
 
     // Sync URL query params with category filter
     React.useEffect(() => {
@@ -113,27 +118,69 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         projectIcon = "#2563eb";
                     }
 
-                    // Canonical title normalization map to eliminate old duplicate records
-                    const CANONICAL_MAP: Record<string, string> = {
-                        "toc master structural complex (ifc4)": "That Open Company - Structural Complex (IFC4)",
-                        "hns central pavilion architectural (ifc2x3)": "HNS Central Pavilion - Architectural Model (IFC2X3)",
-                        "hns structural superstructure (ifc2x3)": "HNS Central Pavilion - Structural Superstructure (IFC2X3)",
-                        "provi infrastructure civil viaduct span e01 (ifc4)": "ProVI Infrastructure - Viaduct Alignment Span E01 (IFC4)",
-                        "provi infrastructure civil viaduct span e02 (ifc4)": "ProVI Infrastructure - Viaduct Box Girder Span E02 (IFC4)",
-                        "provi infrastructure civil viaduct pier e03 (ifc4)": "ProVI Infrastructure - Viaduct Pier & Foundation E03 (IFC4)",
-                        "provi infrastructure civil viaduct pier & foundation e03 (ifc4)": "ProVI Infrastructure - Viaduct Pier & Foundation E03 (IFC4)",
-                        "provi infrastructure civil viaduct abutment e07 (ifc4)": "ProVI Infrastructure - Viaduct Abutment & Retaining Wall E07 (IFC4)",
-                        "provi infrastructure civil viaduct abutment & retaining wall e07 (ifc4)": "ProVI Infrastructure - Viaduct Abutment & Retaining Wall E07 (IFC4)",
-                    };
-                    const norm = projectName.toLowerCase().trim();
-                    if (CANONICAL_MAP[norm]) {
-                        projectName = CANONICAL_MAP[norm];
+    // Canonical project info resolver to guarantee self-explanatory, professional names across Firestore & local runs
+    const getCanonicalProjectInfo = (name: string, ifcFileName?: string) => {
+        const n = (name || "").toLowerCase().trim();
+        const f = (ifcFileName || "").toLowerCase().trim();
+
+        if (n.includes("e01") || f.includes("e01")) {
+            return { canonicalName: "High-Speed Rail Viaduct - Superstructure Span E01 (IFC4)", ifcFileName: "NAV-IPI-ET1_E01-ZZZ-M3D-EST.ifc", dedupeKey: "provi-e01", ifcSchema: "IFC4", modelCategory: "ifc" as const, twinType: "bridge" as const };
+        }
+        if (n.includes("e02") || f.includes("e02")) {
+            return { canonicalName: "High-Speed Rail Viaduct - Box Girder Span E02 (IFC4)", ifcFileName: "NAV-IPI-ET1_E02-ZZZ-M3D-EST.ifc", dedupeKey: "provi-e02", ifcSchema: "IFC4", modelCategory: "ifc" as const, twinType: "bridge" as const };
+        }
+        if (n.includes("e03") || f.includes("e03") || n.includes("pier")) {
+            return { canonicalName: "High-Speed Rail Viaduct - Concrete Pier & Foundation E03 (IFC4)", ifcFileName: "NAV-IPI-ET1_E03-ZZZ-M3D-EST.ifc", dedupeKey: "provi-e03", ifcSchema: "IFC4", modelCategory: "ifc" as const, twinType: "bridge" as const };
+        }
+        if (n.includes("e07") || f.includes("e07") || n.includes("abutment")) {
+            return { canonicalName: "High-Speed Rail Viaduct - Retaining Abutment E07 (IFC4)", ifcFileName: "NAV-IPI-ET1_E07-ZZZ-M3D-EST.ifc", dedupeKey: "provi-e07", ifcSchema: "IFC4", modelCategory: "ifc" as const, twinType: "bridge" as const };
+        }
+        if (n.includes("structural complex") || n.includes("toc master") || f.includes("est-001") || n.includes("mbsd-toc") || n.includes("office") || n.includes("that open")) {
+            return { canonicalName: "That Open HQ - Commercial Office Complex (IFC4)", ifcFileName: "MBSD-TOC-P01-MOD-EST-001.ifc", dedupeKey: "toc-complex", ifcSchema: "IFC4", modelCategory: "ifc" as const, twinType: "bridge" as const };
+        }
+        if ((n.includes("hns") || n.includes("civic")) && (n.includes("superstructure") || f.includes("zzz") || n.includes("structural"))) {
+            return { canonicalName: "Metropolitan Civic Center - Structural Superstructure (IFC2X3)", ifcFileName: "HNS-CTL-ZZZ-MOD-EST.ifc", dedupeKey: "hns-est", ifcSchema: "IFC2X3", modelCategory: "ifc" as const, twinType: "tower" as const };
+        }
+        if (n.includes("hns") || n.includes("civic") || f.includes("arq")) {
+            return { canonicalName: "Metropolitan Civic Center - Architectural Model (IFC2X3)", ifcFileName: "HNS-CTL-N01-MOD-ARQ.ifc", dedupeKey: "hns-arq", ifcSchema: "IFC2X3", modelCategory: "ifc" as const, twinType: "tower" as const };
+        }
+        if (n.includes("stadium") || f.includes("stadium") || n.includes("atlas")) {
+            return { canonicalName: "Atlas Grand Football Stadium (IFC4)", ifcFileName: "atlas_grand_professional_stadium_ifc4.ifc", dedupeKey: "atlas-stadium", ifcSchema: "IFC4", modelCategory: "ifc" as const, twinType: "bridge" as const };
+        }
+        if (n.includes("aurora") || f.includes("aurora") || n.includes("10-villa") || f.includes("ten_villa")) {
+            return { canonicalName: "Aurora 10-Villa Residential Estate (IFC4)", ifcFileName: "aurora_ten_villa_estate_ifc4.ifc", dedupeKey: "aurora-ten-villa", ifcSchema: "IFC4", modelCategory: "ifc" as const, twinType: "villa" as const };
+        }
+        if (n.includes("azure") || (n.includes("villa") && !n.includes("aurora") && !n.includes("10-villa"))) {
+            return { canonicalName: "Azure Coast Luxury Eco-Villa", dedupeKey: "3d-villa", modelCategory: "3d" as const, twinType: "villa" as const };
+        }
+        if (n.includes("ev") || n.includes("logistics")) {
+            return { canonicalName: "Urban Logistics Autonomous EV Fleet Hub", dedupeKey: "3d-car", modelCategory: "3d" as const, twinType: "car" as const };
+        }
+        if (n.includes("gear") || n.includes("mechanical") || n.includes("hvac") || n.includes("chiller") || n.includes("energy")) {
+            return { canonicalName: "Industrial District Energy HVAC Plant", dedupeKey: "3d-gear", modelCategory: "3d" as const, twinType: "gear" as const };
+        }
+        if (n.includes("skyscraper") || n.includes("apex") || n.includes("high-rise")) {
+            return { canonicalName: "Apex 28-Story Commercial Skyscraper", dedupeKey: "3d-tower", modelCategory: "3d" as const, twinType: "tower" as const };
+        }
+        if (n.includes("cable") || n.includes("nordic") || (n.includes("bridge") && !n.includes("viaduct"))) {
+            return { canonicalName: "Nordic Span Cable-Stayed Highway Bridge", dedupeKey: "3d-bridge", modelCategory: "3d" as const, twinType: "bridge" as const };
+        }
+        if (n.includes("modular") || n.includes("pavilion") || n.includes("default") || n.includes("untitled")) {
+            return { canonicalName: "BIM Modular Architectural Exhibition Pavilion", dedupeKey: "3d-cube", modelCategory: "3d" as const, twinType: "cube" as const };
+        }
+        return null;
+    };
+
+                    const canonical = getCanonicalProjectInfo(projectName, data.ifcFileName);
+                    if (canonical) {
+                        projectName = canonical.canonicalName;
+                        projectModelType = canonical.twinType;
                     }
 
                     const ifcMeta = getProjectIfcFile({ name: projectName, ifcFileName: data.ifcFileName });
 
                     // Deduplication: prevent duplicate project cards from older runs
-                    const dedupeKey = ifcMeta ? ifcMeta.fileName.toLowerCase() : projectName.toLowerCase().trim();
+                    const dedupeKey = canonical ? canonical.dedupeKey : (ifcMeta ? ifcMeta.fileName.toLowerCase() : projectName.toLowerCase().trim());
                     if (seenKeys.has(dedupeKey)) {
                         console.log(`[Deduplicate] Purging duplicate Firestore project: "${data.name}" / "${projectName}" (${doc.id})`);
                         try {
@@ -143,11 +190,16 @@ export function ProjectsPage(props: ProjectsPageProps) {
                     }
                     seenKeys.add(dedupeKey);
 
-                    let modelCategory = data.modelCategory || (ifcMeta || data.ifcFileName || projectName.toLowerCase().includes("ifc") ? "ifc" : "3d");
-                    let ifcFileName = data.ifcFileName;
-                    let ifcSchema = data.ifcSchema;
+                    let modelCategory: "ifc" | "3d" = canonical ? canonical.modelCategory : (data.modelCategory || (data.ifcFileName ? "ifc" : "3d"));
+                    let ifcFileName = canonical?.modelCategory === "3d" ? undefined : (canonical ? canonical.ifcFileName : data.ifcFileName);
+                    let ifcSchema = canonical?.modelCategory === "3d" ? undefined : (canonical ? (canonical as any).ifcSchema : data.ifcSchema);
 
-                    if (ifcMeta) {
+                    if (canonical?.modelCategory === "3d") {
+                        modelCategory = "3d";
+                        ifcFileName = undefined;
+                        ifcSchema = undefined;
+                        projectModelType = canonical.twinType;
+                    } else if (ifcMeta) {
                         modelCategory = "ifc";
                         ifcFileName = ifcMeta.fileName;
                         ifcSchema = ifcMeta.schema;
@@ -183,10 +235,48 @@ export function ProjectsPage(props: ProjectsPageProps) {
                     }
                 }
 
-                // Ensure all 13 signature showcase projects exist (6 Parametric Twins + 7 TOC OpenBIM models)
+                // Ensure all signature showcase projects exist (OpenBIM IFC-enabled with 3D Twins)
                 const SHOWCASE_PROJECTS: IProject[] = [
                     {
-                        name: "Azure Coast Eco-Villa",
+                        name: "Atlas Grand Football Stadium (IFC4)",
+                        description: "65,000-seat professional association football stadium with 105m x 68m regulation grass pitch, 1,056 seating sectors, concourses, VIP lounge, and 48 perimeter steel columns.",
+                        status: "Active",
+                        userRole: "Engineer",
+                        finishDate: new Date("2028-08-15"),
+                        cost: 95000000,
+                        progress: 0.60,
+                        modelType: "bridge",
+                        modelCategory: "ifc",
+                        ifcFileName: "atlas_grand_professional_stadium_ifc4.ifc",
+                        ifcSchema: "IFC4",
+                        iconColor: "#e11d48",
+                        todos: [
+                            { id: 1, text: "Verify 105m x 68m FIFA regulation pitch markings, goals, and player tunnel", completed: true },
+                            { id: 2, text: "Structural engineering inspection of 48 perimeter steel columns & oculus canopy", completed: true },
+                            { id: 3, text: "Floodlight tower lux level balancing & scoreboard electronics commissioning", completed: false }
+                        ]
+                    },
+                    {
+                        name: "Aurora 10-Villa Residential Estate (IFC4)",
+                        description: "Master-planned 150m x 130m private estate featuring ten independent 2-storey architectural villas, private pools, solar panel arrays, and central boulevard.",
+                        status: "Active",
+                        userRole: "Architect",
+                        finishDate: new Date("2027-06-30"),
+                        cost: 3850000,
+                        progress: 0.55,
+                        modelType: "villa",
+                        modelCategory: "ifc",
+                        ifcFileName: "aurora_ten_villa_estate_ifc4.ifc",
+                        ifcSchema: "IFC4",
+                        iconColor: "#10b981",
+                        todos: [
+                            { id: 1, text: "Site boulevard, perimeter boundary walls & security gatehouse setup", completed: true },
+                            { id: 2, text: "Verify 10 independent villa footprints & private pool hydraulic connections", completed: true },
+                            { id: 3, text: "Inspect roof solar panel arrays and smart inverter infrastructure", completed: false }
+                        ]
+                    },
+                    {
+                        name: "Azure Coast Luxury Eco-Villa",
                         description: "Ultra-luxury Mediterranean architectural villa featuring infinity pool, teakwood deck, and smart bioclimatic shading.",
                         status: "Active",
                         userRole: "Architect",
@@ -203,7 +293,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         ]
                     },
                     {
-                        name: "Urban Logistics EV Center",
+                        name: "Urban Logistics Autonomous EV Fleet Hub",
                         description: "Autonomous commercial fleet hub with high-speed EV chargers, structural steel canopy, and showroom flooring.",
                         status: "Active",
                         userRole: "Engineer",
@@ -219,7 +309,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         ]
                     },
                     {
-                        name: "Mechanical HVAC Plant Core",
+                        name: "Industrial District Energy HVAC Plant",
                         description: "High-performance central industrial chiller & titanium transmission gear assembly for district cooling.",
                         status: "Pending",
                         userRole: "BIM Specialist",
@@ -235,7 +325,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         ]
                     },
                     {
-                        name: "Apex Parametric Skyscraper",
+                        name: "Apex 28-Story Commercial Skyscraper",
                         description: "28-story corporate commercial high-rise with double-skin curtain wall glass, exterior diagrid steel, and rooftop helipad.",
                         status: "Active",
                         userRole: "Architect",
@@ -252,7 +342,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         ]
                     },
                     {
-                        name: "Nordic Span Cable-Stayed Bridge",
+                        name: "Nordic Span Cable-Stayed Highway Bridge",
                         description: "Monumental dual-pylon cable-stayed suspension bridge over deep fjord with 32 tension stay cables and roadway LED luminaires.",
                         status: "Active",
                         userRole: "Engineer",
@@ -269,7 +359,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         ]
                     },
                     {
-                        name: "BIM Modular Innovation Pavilion",
+                        name: "BIM Modular Architectural Exhibition Pavilion",
                         description: "Modular architectural exhibition pavilion with exposed rebar grid, polished terrazzo floor, and cantilevered LED canopy.",
                         status: "Active",
                         userRole: "Architect",
@@ -287,14 +377,14 @@ export function ProjectsPage(props: ProjectsPageProps) {
                     },
                     // The 7 Official That Open Company Course IFC Models
                     {
-                        name: "That Open Company - Structural Complex (IFC4)",
+                        name: "That Open HQ - Commercial Office Complex (IFC4)",
                         description: "Official That Open Company structural engineering model in IFC4 schema, featuring column grids, concrete foundation footings, and composite slabs.",
                         status: "Active",
                         userRole: "Engineer",
                         finishDate: new Date("2027-04-15"),
                         cost: 850000,
                         progress: 0.70,
-                        modelType: "tower",
+                        modelType: "bridge",
                         modelCategory: "ifc",
                         ifcFileName: "MBSD-TOC-P01-MOD-EST-001.ifc",
                         ifcSchema: "IFC4",
@@ -306,14 +396,14 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         ]
                     },
                     {
-                        name: "HNS Central Pavilion - Architectural Model (IFC2X3)",
+                        name: "Metropolitan Civic Center - Architectural Model (IFC2X3)",
                         description: "Comprehensive architectural BIM model authored in Autodesk Revit 2024, exported in IFC2X3 Coordination View V2.0 with curtain walls and spatial rooms.",
                         status: "Active",
                         userRole: "Architect",
                         finishDate: new Date("2027-08-30"),
                         cost: 1250000,
                         progress: 0.45,
-                        modelType: "villa",
+                        modelType: "tower",
                         modelCategory: "ifc",
                         ifcFileName: "HNS-CTL-N01-MOD-ARQ.ifc",
                         ifcSchema: "IFC2X3",
@@ -324,7 +414,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         ]
                     },
                     {
-                        name: "HNS Central Pavilion - Structural Superstructure (IFC2X3)",
+                        name: "Metropolitan Civic Center - Structural Superstructure (IFC2X3)",
                         description: "Full structural framing model with steel trusses, shear walls, and rebar schedules exported in IFC2X3 Coordination View V2.0.",
                         status: "Pending",
                         userRole: "Engineer",
@@ -342,7 +432,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         ]
                     },
                     {
-                        name: "ProVI Infrastructure - Viaduct Alignment Span E01 (IFC4)",
+                        name: "High-Speed Rail Viaduct - Superstructure Span E01 (IFC4)",
                         description: "Civil infrastructure and alignment sample model in IFC4, featuring road corridors, bridge abutments, and earthworks terrain.",
                         status: "Active",
                         userRole: "Engineer",
@@ -360,7 +450,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         ]
                     },
                     {
-                        name: "ProVI Infrastructure - Viaduct Box Girder Span E02 (IFC4)",
+                        name: "High-Speed Rail Viaduct - Box Girder Span E02 (IFC4)",
                         description: "Civil viaduct superstructure segment E02 in IFC4 schema with pre-stressed box girders and expansion joints.",
                         status: "Active",
                         userRole: "Engineer",
@@ -378,7 +468,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         ]
                     },
                     {
-                        name: "ProVI Infrastructure - Viaduct Pier & Foundation E03 (IFC4)",
+                        name: "High-Speed Rail Viaduct - Concrete Pier & Foundation E03 (IFC4)",
                         description: "Reinforced concrete viaduct substructure pier E03 with pile caps, bored piles, and elastomeric bearing pads.",
                         status: "Pending",
                         userRole: "Engineer",
@@ -396,7 +486,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         ]
                     },
                     {
-                        name: "ProVI Infrastructure - Viaduct Abutment & Retaining Wall E07 (IFC4)",
+                        name: "High-Speed Rail Viaduct - Retaining Abutment E07 (IFC4)",
                         description: "Terminal approach abutment and retaining wall system in IFC4 with backfill drainage and transition approach slab.",
                         status: "Active",
                         userRole: "Engineer",
@@ -417,11 +507,15 @@ export function ProjectsPage(props: ProjectsPageProps) {
 
                 // Ensure all showcase projects are present, synchronizing names to canonical standard
                 for (const showcase of SHOWCASE_PROJECTS) {
-                    const existing = projectsManager.list.find(
-                        (p) =>
-                            p.name.toLowerCase() === showcase.name.toLowerCase() ||
-                            (Boolean(showcase.ifcFileName) && p.ifcFileName === showcase.ifcFileName)
-                    );
+                    const showcaseCanonical = getCanonicalProjectInfo(showcase.name, showcase.ifcFileName);
+                    const existing = projectsManager.list.find((p) => {
+                        const pCanonical = getCanonicalProjectInfo(p.name, p.ifcFileName);
+                        if (showcaseCanonical && pCanonical) {
+                            return pCanonical.dedupeKey === showcaseCanonical.dedupeKey;
+                        }
+                        return p.name.toLowerCase() === showcase.name.toLowerCase() ||
+                            (Boolean(showcase.ifcFileName) && p.ifcFileName === showcase.ifcFileName);
+                    });
                     if (!existing) {
                         try {
                             const p = projectsManager.newProject(showcase);
@@ -498,10 +592,16 @@ export function ProjectsPage(props: ProjectsPageProps) {
                 (project.ifcFileName && project.ifcFileName.toLowerCase().includes(q));
             const matchesStatus =
                 statusFilter === "all" || project.status.toLowerCase() === statusFilter;
+            const nameLow = project.name.toLowerCase();
+            const fileLow = (project.ifcFileName || "").toLowerCase();
+            const isIfc = Boolean(
+                project.modelCategory === "ifc" ||
+                Boolean(project.ifcFileName)
+            );
             const matchesCategory =
                 categoryFilter === "all" ||
-                (categoryFilter === "ifc" && (project.modelCategory === "ifc" || project.ifcFileName || project.name.toLowerCase().includes("ifc"))) ||
-                (categoryFilter === "3d" && project.modelCategory !== "ifc" && !project.ifcFileName && !project.name.toLowerCase().includes("ifc"));
+                (categoryFilter === "ifc" && isIfc) ||
+                (categoryFilter === "3d" && !isIfc);
             return matchesSearch && matchesStatus && matchesCategory;
         })
         .sort((a, b) => {
@@ -526,8 +626,8 @@ export function ProjectsPage(props: ProjectsPageProps) {
     const pendingCount = projects.filter((p) => p.status.toLowerCase() === "pending").length;
     const finishedCount = projects.filter((p) => p.status.toLowerCase() === "finished").length;
 
-    const ifcCount = projects.filter((p) => p.modelCategory === "ifc" || p.ifcFileName || p.name.toLowerCase().includes("ifc")).length;
-    const parametricCount = projects.filter((p) => p.modelCategory !== "ifc" && !p.ifcFileName && !p.name.toLowerCase().includes("ifc")).length;
+    const ifcCount = projects.filter((p) => p.modelCategory === "ifc" || Boolean(p.ifcFileName)).length;
+    const parametricCount = projects.filter((p) => p.modelCategory !== "ifc" && !p.ifcFileName).length;
 
     const onDeleteProjectCard = async (proj: Project) => {
         const confirmed = window.confirm(`Are you sure you want to delete "${proj.name}" from Cloud Firestore and workspace?`);
@@ -609,7 +709,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
                     <button
                         type="button"
                         className={`category-pill ${categoryFilter === "all" ? "active" : ""}`}
-                        onClick={() => setCategoryFilter("all")}
+                        onClick={() => handleCategoryChange("all")}
                     >
                         <span className="material-icons-round" style={{ fontSize: "16px" }}>dashboard</span>
                         All Models <span className="filter-count">{totalCount}</span>
@@ -617,7 +717,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
                     <button
                         type="button"
                         className={`category-pill ifc-pill ${categoryFilter === "ifc" ? "active" : ""}`}
-                        onClick={() => setCategoryFilter("ifc")}
+                        onClick={() => handleCategoryChange("ifc")}
                     >
                         <span className="material-icons-round" style={{ fontSize: "16px" }}>description</span>
                         IFC OpenBIM <span className="filter-count">{ifcCount}</span>
@@ -625,7 +725,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
                     <button
                         type="button"
                         className={`category-pill parametric-pill ${categoryFilter === "3d" ? "active" : ""}`}
-                        onClick={() => setCategoryFilter("3d")}
+                        onClick={() => handleCategoryChange("3d")}
                     >
                         <span className="material-icons-round" style={{ fontSize: "16px" }}>view_in_ar</span>
                         3D Parametric <span className="filter-count">{parametricCount}</span>

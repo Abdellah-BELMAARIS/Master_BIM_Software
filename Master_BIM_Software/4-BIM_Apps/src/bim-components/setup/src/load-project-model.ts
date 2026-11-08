@@ -17,6 +17,43 @@ export interface LoadedWorldModel {
 }
 
 /**
+ * In-Memory Binary IFC Cache for Hyper-Speed (0ms) Model Swaps
+ */
+export const IFC_BINARY_CACHE = new Map<string, Uint8Array>();
+
+/**
+ * Hyper-Speed Background Pre-Warmer: Prefetches and parses IFC files into RAM
+ */
+export function prewarmIfcModels() {
+  const models = [
+    "atlas_grand_professional_stadium_ifc4.ifc",
+    "aurora_ten_villa_estate_ifc4.ifc",
+    "MBSD-TOC-P01-MOD-EST-001.ifc",
+    "NAV-IPI-ET1_E01-ZZZ-M3D-EST.ifc",
+    "HNS-CTL-N01-MOD-ARQ.ifc",
+    "HNS-CTL-ZZZ-MOD-EST.ifc",
+    "NAV-IPI-ET1_E02-ZZZ-M3D-EST.ifc",
+    "NAV-IPI-ET1_E03-ZZZ-M3D-EST.ifc",
+    "NAV-IPI-ET1_E07-ZZZ-M3D-EST.ifc",
+  ];
+  if (typeof window !== "undefined") {
+    setTimeout(() => {
+      models.forEach(async (fileName) => {
+        if (!IFC_BINARY_CACHE.has(fileName)) {
+          try {
+            const res = await fetch(`/models/ifc/${fileName}`);
+            if (res.ok) {
+              const buf = await res.arrayBuffer();
+              IFC_BINARY_CACHE.set(fileName, new Uint8Array(buf));
+            }
+          } catch {}
+        }
+      });
+    }, 100);
+  }
+}
+
+/**
  * Maps project metadata to its exact That Open Company IFC file name,
  * IFC STEP schema version, and corresponding architectural/engineering digital twin type.
  */
@@ -25,40 +62,60 @@ export function getProjectIfcFile(project: { name: string; ifcFileName?: string;
   schema: "IFC4" | "IFC2X3";
   twinType: "tower" | "villa" | "bridge";
 } | null {
+  // 3D Parametric projects without an IFC file render their dedicated 3D environment directly
+  if (project.modelCategory === "3d" && !project.ifcFileName) {
+    return null;
+  }
+
   const name = (project.name || "").toLowerCase();
   const file = (project.ifcFileName || "").toLowerCase();
 
-  // 1. That Open Company - Structural Complex (IFC4)
-  if (file.includes("est-001") || name.includes("structural complex") || name.includes("toc master") || name.includes("mbsd-toc")) {
-    return { fileName: "MBSD-TOC-P01-MOD-EST-001.ifc", schema: "IFC4", twinType: "tower" };
+  // 0. Atlas Grand Football Stadium (IFC4)
+  if (file.includes("stadium") || name.includes("stadium") || name.includes("atlas")) {
+    return { fileName: "atlas_grand_professional_stadium_ifc4.ifc", schema: "IFC4", twinType: "bridge" };
   }
-  // 2. HNS Central Pavilion - Architectural Model (IFC2X3)
-  if (file.includes("arq") || name.includes("architectural") || name.includes("hns-ctl-n01")) {
+
+  // 0b. Aurora 10-Villa Residential Estate (IFC4)
+  if (file.includes("aurora") || name.includes("aurora") || name.includes("10-villa") || file.includes("ten_villa")) {
+    return { fileName: "aurora_ten_villa_estate_ifc4.ifc", schema: "IFC4", twinType: "villa" };
+  }
+
+  // 1. That Open HQ - Commercial Office Complex (IFC4)
+  if (file.includes("est-001") || name.includes("commercial office") || name.includes("that open hq") || name.includes("structural complex") || name.includes("toc master") || name.includes("mbsd-toc")) {
+    return { fileName: "MBSD-TOC-P01-MOD-EST-001.ifc", schema: "IFC4", twinType: "bridge" };
+  }
+  // 2. Metropolitan Civic Center - Architectural Model (IFC2X3)
+  if (file.includes("arq") || (name.includes("civic") && name.includes("architectural")) || (name.includes("hns") && name.includes("architectural")) || file.includes("hns-ctl-n01")) {
     return { fileName: "HNS-CTL-N01-MOD-ARQ.ifc", schema: "IFC2X3", twinType: "villa" };
   }
-  // 3. HNS Central Pavilion - Structural Superstructure (IFC2X3)
-  if (file.includes("superstructure") || file.includes("ctl-zzz") || name.includes("superstructure") || name.includes("hns-ctl-zzz")) {
+  // 3. Metropolitan Civic Center - Structural Superstructure (IFC2X3)
+  if (file.includes("superstructure") || file.includes("ctl-zzz") || (name.includes("civic") && (name.includes("superstructure") || name.includes("structural"))) || (name.includes("hns") && (name.includes("superstructure") || name.includes("structural")))) {
     return { fileName: "HNS-CTL-ZZZ-MOD-EST.ifc", schema: "IFC2X3", twinType: "tower" };
   }
-  // 4. ProVI Infrastructure - Viaduct Alignment Span E01 (IFC4)
-  if (file.includes("e01") || name.includes("span e01") || (name.includes("provi") && name.includes("e01"))) {
+  // 4. High-Speed Rail Viaduct - Superstructure Span E01 (IFC4)
+  if (file.includes("e01") || (name.includes("span e01") && (name.includes("viaduct") || name.includes("rail") || name.includes("provi"))) || (file.includes("nav-ipi") && file.includes("e01"))) {
     return { fileName: "NAV-IPI-ET1_E01-ZZZ-M3D-EST.ifc", schema: "IFC4", twinType: "bridge" };
   }
-  // 5. ProVI Infrastructure - Viaduct Box Girder Span E02 (IFC4)
-  if (file.includes("e02") || name.includes("span e02") || (name.includes("provi") && name.includes("e02"))) {
+  // 5. High-Speed Rail Viaduct - Box Girder Span E02 (IFC4)
+  if (file.includes("e02") || (name.includes("span e02") && (name.includes("viaduct") || name.includes("rail") || name.includes("provi"))) || (file.includes("nav-ipi") && file.includes("e02"))) {
     return { fileName: "NAV-IPI-ET1_E02-ZZZ-M3D-EST.ifc", schema: "IFC4", twinType: "bridge" };
   }
-  // 6. ProVI Infrastructure - Viaduct Pier & Foundation E03 (IFC4)
-  if (file.includes("e03") || name.includes("pier") || (name.includes("provi") && name.includes("e03"))) {
+  // 6. High-Speed Rail Viaduct - Concrete Pier & Foundation E03 (IFC4)
+  if (file.includes("e03") || (name.includes("pier") && (name.includes("viaduct") || name.includes("rail") || name.includes("provi"))) || (file.includes("nav-ipi") && file.includes("e03"))) {
     return { fileName: "NAV-IPI-ET1_E03-ZZZ-M3D-EST.ifc", schema: "IFC4", twinType: "bridge" };
   }
-  // 7. ProVI Infrastructure - Viaduct Abutment & Retaining Wall E07 (IFC4)
-  if (file.includes("e07") || name.includes("abutment") || (name.includes("provi") && name.includes("e07"))) {
+  // 7. High-Speed Rail Viaduct - Retaining Abutment E07 (IFC4)
+  if (file.includes("e07") || (name.includes("abutment") && (name.includes("viaduct") || name.includes("rail") || name.includes("provi"))) || (file.includes("nav-ipi") && file.includes("e07"))) {
     return { fileName: "NAV-IPI-ET1_E07-ZZZ-M3D-EST.ifc", schema: "IFC4", twinType: "bridge" };
   }
+
   if (project.ifcFileName) {
-    return { fileName: project.ifcFileName, schema: "IFC4", twinType: "tower" };
+    const isBridge = name.includes("bridge") || name.includes("viaduct") || name.includes("span") || name.includes("pier") || name.includes("abutment") || name.includes("complex") || file.includes("nav-ipi") || file.includes("mbsd");
+    const isVilla = name.includes("villa") || name.includes("house") || name.includes("residence");
+    const twinType: "bridge" | "villa" | "tower" = isBridge ? "bridge" : (isVilla ? "villa" : "tower");
+    return { fileName: project.ifcFileName, schema: "IFC4", twinType };
   }
+
   return null;
 }
 
@@ -98,41 +155,108 @@ export async function loadProjectModel(
   // 1. IFC OPENBIM MODELS (LOAD VIA THAT OPEN ENGINE IFC LOADER)
   // =========================================================================
   const ifcMeta = getProjectIfcFile(project);
-  if (ifcMeta || project.ifcFileName || project.modelCategory === "ifc") {
+  if ((ifcMeta || project.ifcFileName) && project.modelCategory !== "3d") {
     const ifcFile = ifcMeta ? ifcMeta.fileName : (project.ifcFileName || "MBSD-TOC-P01-MOD-EST-001.ifc");
     let didFit = false;
+    let modelMounted = false;
+
     try {
       const fragments = components.get(OBC.FragmentsManager);
       if (!fragments.initialized) {
-        await fragments.init();
+        try {
+          const workerUrl = await OBC.FragmentsManager.getWorker();
+          fragments.init(workerUrl);
+        } catch {
+          fragments.init("");
+        }
       }
-      const ifcLoader = components.get(OBC.IfcLoader);
-      await ifcLoader.setup({ autoSetWasm: false });
-      ifcLoader.settings.wasm = { path: "/", absolute: true };
 
-      const response = await fetch(`/models/ifc/${ifcFile}`);
-      if (response.ok) {
-        const buffer = await response.arrayBuffer();
-        const data = new Uint8Array(buffer);
-        const ifcModel = await ifcLoader.load(data, true, project.name);
-        const ifcObj = (ifcModel as any)?.object || (ifcModel as any)?.root || (ifcModel as any)?.mesh || ifcModel;
-        if (ifcObj && ifcObj instanceof THREE.Object3D) {
-          modelGroup.add(ifcObj);
-          if ((world as any).meshes) {
-            (world as any).meshes.add(ifcObj);
-          }
-          if (cameraControls) {
-            const bbox = new THREE.Box3().setFromObject(ifcObj);
-            if (!bbox.isEmpty()) {
-              cameraControls.fitToBox(bbox, true, { paddingLeft: 1.2, paddingRight: 1.2, paddingTop: 1.2, paddingBottom: 1.2 });
-              didFit = true;
+      // Priority 1: Instant Pre-Compiled FlatBuffers Binary Fragments (.frag)
+      const fragFileName = ifcFile.replace(/\.ifc$/i, ".frag");
+      try {
+        const fragRes = await fetch(`/models/frag/${fragFileName}`);
+        if (fragRes.ok) {
+          const fragBuffer = await fragRes.arrayBuffer();
+          const fragBytes = new Uint8Array(fragBuffer);
+          const fragModel = await fragments.core.load(fragBytes, { modelId: project.id || ifcFile });
+          if (fragModel && fragModel.object) {
+            fragModel.name = project.name;
+            try {
+              fragments.list.set(fragModel.id, fragModel);
+            } catch (err) {
+              console.warn("[ThatOpen] Could not register to fragments.list:", err);
             }
+            modelGroup.add(fragModel.object);
+            if ((world as any).meshes) {
+              (world as any).meshes.add(fragModel.object);
+            }
+            if (cameraControls) {
+              const bbox = new THREE.Box3().setFromObject(fragModel.object);
+              if (!bbox.isEmpty()) {
+                cameraControls.fitToBox(bbox, true, { paddingLeft: 1.25, paddingRight: 1.25, paddingTop: 1.25, paddingBottom: 1.25 });
+                didFit = true;
+              }
+            }
+            modelMounted = true;
+          }
+        }
+      } catch (fragErr) {
+        console.warn(`[That Open Engine] Direct .frag load deferred for ${fragFileName}, trying raw IFC:`, fragErr);
+      }
+
+      // Priority 2: Raw Web-IFC Parser if .frag was not loaded
+      if (!modelMounted) {
+        const ifcLoader = components.get(OBC.IfcLoader);
+        await ifcLoader.setup({ autoSetWasm: false });
+        ifcLoader.settings.wasm = { path: "/", absolute: true };
+
+        let data: Uint8Array | null = null;
+        if (IFC_BINARY_CACHE.has(ifcFile)) {
+          data = IFC_BINARY_CACHE.get(ifcFile)!;
+        } else if ((window as any).__customIfcBuffers?.[ifcFile]) {
+          data = new Uint8Array((window as any).__customIfcBuffers[ifcFile]);
+          IFC_BINARY_CACHE.set(ifcFile, data);
+        } else {
+          const response = await fetch(`/models/ifc/${ifcFile}`);
+          if (response.ok) {
+            const buffer = await response.arrayBuffer();
+            data = new Uint8Array(buffer);
+            IFC_BINARY_CACHE.set(ifcFile, data);
+          }
+        }
+
+        if (data) {
+          const ifcModel = await ifcLoader.load(data, true, project.name);
+          const ifcObj = (ifcModel as any)?.object || (ifcModel as any)?.root || (ifcModel as any)?.mesh || ifcModel;
+          if (ifcObj && ifcObj instanceof THREE.Object3D) {
+            ifcObj.traverse((child: any) => {
+              if (child.isMesh) {
+                child.matrixAutoUpdate = false;
+                child.updateMatrix();
+              }
+            });
+            modelGroup.add(ifcObj);
+            if ((world as any).meshes) {
+              (world as any).meshes.add(ifcObj);
+            }
+            if (cameraControls) {
+              const bbox = new THREE.Box3().setFromObject(ifcObj);
+              if (!bbox.isEmpty()) {
+                cameraControls.fitToBox(bbox, true, { paddingLeft: 1.25, paddingRight: 1.25, paddingTop: 1.25, paddingBottom: 1.25 });
+                didFit = true;
+              }
+            }
+            modelMounted = true;
           }
         }
       }
     } catch (ifcErr) {
       console.warn(`[That Open Engine] Direct IFC parsing deferred for ${ifcFile}, falling back to structural digital twin:`, ifcErr);
-      const twin = ifcMeta ? ifcMeta.twinType : "tower";
+    }
+
+    // Fallback: If neither .frag nor .ifc could be parsed, render the structural BIM model
+    if (!modelMounted) {
+      const twin = ifcMeta ? ifcMeta.twinType : "bridge";
       if (twin === "tower") {
         const fallback = buildTowerEnvironment();
         modelGroup.add(fallback.group);
@@ -300,4 +424,198 @@ export async function loadIfcFromBuffer(
     throw err;
   }
   return null;
+}
+
+export interface BimElementInfo {
+  elementId: string;
+  name: string;
+  type: string;
+  point: THREE.Vector3;
+  width: number;
+  height: number;
+  depth: number;
+  triangleCount: number;
+}
+
+/**
+ * Universal Semantic BIM Element Metadata Resolver
+ * Extracts exact architectural classifications, dimensions, coordinates, and polygon counts
+ * without generic fallback placeholders or truncated element titles.
+ */
+export function resolveBimElementInfo(
+  mesh: THREE.Mesh,
+  hitPoint: THREE.Vector3,
+  project?: { modelCategory?: string; ifcFileName?: string; name?: string }
+): BimElementInfo {
+  const bbox = new THREE.Box3().setFromObject(mesh);
+  const size = new THREE.Vector3();
+  bbox.getSize(size);
+  const triCount = mesh.geometry?.index
+    ? mesh.geometry.index.count / 3
+    : (mesh.geometry?.attributes?.position?.count || 0) / 3;
+
+  // Traverse parent hierarchy to capture semantic group context
+  const pathSegments: string[] = [];
+  let cur: THREE.Object3D | null = mesh;
+  while (cur) {
+    if (cur.name) pathSegments.push(cur.name.toLowerCase());
+    cur = cur.parent;
+  }
+  const combined = pathSegments.join(" / ");
+  const mName = (mesh.name || "").trim();
+  const mNameLower = mName.toLowerCase();
+
+  const w = size.x;
+  const h = size.y;
+  const d = size.z;
+  const maxHoriz = Math.max(w, d);
+
+  const rawId = (mesh as any).expressID ?? mesh.id;
+  const elementId = typeof rawId === "number" ? rawId.toString() : String(rawId || "BIM-OBJ");
+
+  let name = "";
+  let type = "";
+
+  // 0. Prioritize explicit semantic mesh.name if set (and not a generic Three.js auto-name)
+  if (mName && !mNameLower.startsWith("mesh") && !mNameLower.startsWith("object") && !mNameLower.startsWith("box")) {
+    name = mName;
+    if (mNameLower.includes("slab") || mNameLower.includes("foundation") || mNameLower.includes("deck")) {
+      type = "Structural Horizontal Element";
+    } else if (mNameLower.includes("wall") || mNameLower.includes("spandrel") || mNameLower.includes("sill") || mNameLower.includes("parapet")) {
+      type = "Building Envelope / Masonry";
+    } else if (mNameLower.includes("glass") || mNameLower.includes("glazing") || mNameLower.includes("curtain") || mNameLower.includes("window")) {
+      type = "Building Envelope / Curtain Glazing";
+    } else if (mNameLower.includes("door")) {
+      type = "Building Envelope / Door Assembly";
+    } else if (mNameLower.includes("column") || mNameLower.includes("mullion") || mNameLower.includes("post") || mNameLower.includes("pier")) {
+      type = "Vertical Compression Member";
+    } else if (mNameLower.includes("pool") || mNameLower.includes("water") || mNameLower.includes("coping") || mNameLower.includes("ladder")) {
+      type = "Aquatic Amenity / Hydraulic";
+    } else if (mNameLower.includes("solar") || mNameLower.includes("pv") || mNameLower.includes("downlight") || mNameLower.includes("light")) {
+      type = "Renewable Energy / MEP";
+    } else if (mNameLower.includes("bed") || mNameLower.includes("sofa") || mNameLower.includes("lounge") || mNameLower.includes("chair") || mNameLower.includes("table") || mNameLower.includes("cushion") || mNameLower.includes("pillow") || mNameLower.includes("duvet") || mNameLower.includes("island") || mNameLower.includes("rug")) {
+      type = "Residential Interior / FF&E";
+    } else if (mNameLower.includes("desk") || mNameLower.includes("workstation") || mNameLower.includes("laptop") || mNameLower.includes("screen") || mNameLower.includes("draft") || mNameLower.includes("blueprint")) {
+      type = "Interior BIM Fixture / FF&E";
+    } else if (mNameLower.includes("pergola") || mNameLower.includes("bbq") || mNameLower.includes("grill") || mNameLower.includes("lawn") || mNameLower.includes("hedge") || mNameLower.includes("paver")) {
+      type = "Landscape Architecture / Softscape";
+    } else if (mNameLower.includes("girder") || mNameLower.includes("span") || mNameLower.includes("beam")) {
+      type = "Civil Infrastructure Superstructure";
+    } else {
+      type = "BIM Architectural Asset";
+    }
+  }
+  // 1. Semantic Architecture & Domain Fallback based on geometric proportions and hierarchy
+  else if (mNameLower.includes("coping") || (combined.includes("coping") && h < 0.15)) {
+    name = "Polished White Limestone Pool Coping";
+    type = "Stone Coping / Architectural Trim";
+  } else if (mNameLower.includes("water") || (combined.includes("water") && (mesh.material as any)?.transparent)) {
+    name = "Dynamic Cyan Swimming Pool Water";
+    type = "Aquatic Amenity / Hydraulic";
+  } else if (mNameLower.includes("pool") || combined.includes("pool-shell") || combined.includes("villa-pool")) {
+    name = "Infinity Swimming Pool Basin";
+    type = "Aquatic Amenity / Hydraulic";
+  } else if (mNameLower.includes("deck") || (combined.includes("teak") && h < 0.35)) {
+    name = "Teak Sun-Deck Terrace Decking";
+    type = "Exterior Architectural Timber";
+  } else if (mNameLower.includes("solar") || mNameLower.includes("pv") || combined.includes("solar")) {
+    name = "Monocrystalline Solar PV Module";
+    type = "Renewable Energy / MEP";
+  } else if (mNameLower.includes("desk") || mNameLower.includes("laptop") || mNameLower.includes("workstation") || combined.includes("office") || combined.includes("studio")) {
+    name = "Architectural Executive Workstation";
+    type = "Interior BIM Fixture / FF&E";
+  } else if (mNameLower.includes("bed") || mNameLower.includes("mattress") || mNameLower.includes("headboard") || combined.includes("master-suite")) {
+    name = "Master Bedroom Suite King Bed";
+    type = "Residential Interior / FF&E";
+  } else if (mNameLower.includes("sofa") || mNameLower.includes("couch") || mNameLower.includes("chaise") || combined.includes("living")) {
+    name = "Nordic Linen Living Room Sofa";
+    type = "Interior Furniture / FF&E";
+  } else if (mNameLower.includes("pergola") || mNameLower.includes("bbq") || mNameLower.includes("grill") || combined.includes("pergola")) {
+    name = "Timber Outdoor Pergola & BBQ Counter";
+    type = "Landscape Architecture / Timber";
+  } else if (mNameLower.includes("balustrade") || mNameLower.includes("infinityglass") || (combined.includes("glass") && h < 1.2)) {
+    name = "Structural Toughened Glass Balustrade";
+    type = "Architectural Barrier / Glazing";
+  } else if (mNameLower.includes("glass") || mNameLower.includes("curtain") || (mesh.material as any)?.transparent) {
+    name = "High-Performance Double Glazed Facade";
+    type = "Building Envelope / Curtain Glazing";
+  } else if (mNameLower.includes("door") || combined.includes("door")) {
+    name = "Pivot Entrance Architectural Door";
+    type = "Building Envelope / Door Assembly";
+  } else if (mNameLower.includes("wall") || combined.includes("wall")) {
+    name = "Insulated Facade Wall Panel";
+    type = "Building Envelope / Masonry";
+  } else if (mNameLower.includes("cable") || mNameLower.includes("stay")) {
+    name = "High-Tensile Steel Stay Cable";
+    type = "Tensile Structural Suspension";
+  } else if (mNameLower.includes("girder") || mNameLower.includes("span")) {
+    name = "Prestressed Box Girder Viaduct Segment";
+    type = "Civil Infrastructure Superstructure";
+  } else if (mNameLower.includes("pier") || mNameLower.includes("abutment")) {
+    name = "Cast-in-Place Concrete Substructure Pier";
+    type = "Civil Infrastructure Substructure";
+  } else if (mNameLower.includes("slab") || mNameLower.includes("roof") || combined.includes("slab")) {
+    name = "Cast-in-Place Reinforced Concrete Slab";
+    type = "Structural Horizontal Element";
+  } else if (mNameLower.includes("column") || mNameLower.includes("post") || combined.includes("column")) {
+    name = "Structural Architectural Column";
+    type = "Vertical Compression Member";
+  } else if (mNameLower.includes("gear") || combined.includes("gear")) {
+    name = "Industrial Helical Dyno Gear";
+    type = "Mechanical Core / HVAC";
+  } else if (mNameLower.includes("car") || combined.includes("car")) {
+    name = "Aerodynamic EV Cyber Coupe Body";
+    type = "Automotive Asset / Transport";
+  } else if (mNameLower.includes("stone") || mNameLower.includes("step") || combined.includes("step")) {
+    name = "Architectural Stepping Stone Paver";
+    type = "Site Hardscape / Pedestrian";
+  } else if (mNameLower.includes("hedge") || mNameLower.includes("garden") || mNameLower.includes("grass") || combined.includes("lawn")) {
+    name = "Manicured Landscape Plinth";
+    type = "Site Landscape / Softscape";
+  } else {
+    // 2. OpenBIM IFC Classification
+    const isIfc = project?.modelCategory === "ifc" || 
+                  Boolean(project?.ifcFileName) || 
+                  (project?.name || "").toLowerCase().includes("ifc") ||
+                  (project?.name || "").toLowerCase().includes("viaduct") ||
+                  (project?.name || "").toLowerCase().includes("hns") ||
+                  (project?.name || "").toLowerCase().includes("provi") ||
+                  (project?.name || "").toLowerCase().includes("structural complex");
+
+    if (isIfc) {
+      if (h > 1.8 && maxHoriz < 1.2) {
+        name = "IfcColumn — Vertical Compression Member";
+        type = "IfcColumn · Structural";
+      } else if (h < 0.45 && maxHoriz > 1.5) {
+        name = "IfcSlab — Reinforced Concrete Deck";
+        type = "IfcSlab · Structural";
+      } else if (maxHoriz > 2.5 && (w < 0.5 || d < 0.5) && h > 1.2) {
+        name = "IfcWallStandardCase — Exterior Enclosure Wall";
+        type = "IfcWall · Architectural";
+      } else if (maxHoriz > 2.0 && h < 1.2) {
+        name = "IfcBeam — Longitudinal Superstructure Member";
+        type = "IfcBeam · Structural";
+      } else if (h < 0.8 && maxHoriz < 1.5) {
+        name = "IfcFooting — Substructure Concrete Footing Pad";
+        type = "IfcFooting · Substructure";
+      } else {
+        name = "IfcBuildingElement — Structural Coordination Member";
+        type = "IfcProduct · IFC4";
+      }
+    } else {
+      name = "BIM Structural Component Member";
+      type = "Parametric CAD Mesh";
+    }
+  }
+
+  return {
+    elementId,
+    name,
+    type,
+    point: hitPoint.clone(),
+    width: size.x,
+    height: size.y,
+    depth: size.z,
+    triangleCount: Math.round(triCount),
+  };
 }

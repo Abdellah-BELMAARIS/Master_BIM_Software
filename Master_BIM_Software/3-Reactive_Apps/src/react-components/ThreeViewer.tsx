@@ -84,9 +84,9 @@ export function ThreeViewer(props: ThreeViewerProps) {
         cameraControls.maxPolarAngle = Math.PI / 2 + 0.08;
         cameraControls.minDistance = 1.0;
         cameraControls.maxDistance = 160;
-        cameraControls.zoomSpeed = 1.2;
-        cameraControls.rotateSpeed = 0.85;
-        cameraControls.panSpeed = 1.0;
+        cameraControls.zoomSpeed = 1.8;
+        cameraControls.rotateSpeed = 1.0;
+        cameraControls.panSpeed = 1.2;
 
         const resizeViewer = () => {
             if (!viewerContainer || !renderer || !camera) { return; }
@@ -183,7 +183,7 @@ export function ThreeViewer(props: ThreeViewerProps) {
         const cameraAnim = {
             animating: false,
             startTime: 0,
-            duration: 0.85,
+            duration: 0.35,
             startPos: new THREE.Vector3(),
             targetPos: new THREE.Vector3(),
             startLook: new THREE.Vector3(),
@@ -219,9 +219,9 @@ export function ThreeViewer(props: ThreeViewerProps) {
                     front: { target: [0, 0.7, 0], pos: [0, 1.2, 8.5] },
                 },
                 villa: {
-                    iso: { target: [0, 2.0, 3.5], pos: [16, 12, 19] },
-                    top: { target: [0, 0, 3.5], pos: [0, 28, 3.51] },
-                    front: { target: [0, 1.5, 3.5], pos: [0, 3.5, 20] },
+                    iso: { target: [-1.0, 2.0, 0], pos: [16, 12, 19] },
+                    top: { target: [-1.0, 0, 0], pos: [-1.0, 28, 0.01] },
+                    front: { target: [-1.0, 2.0, 0], pos: [-1.0, 3.5, 20] },
                 },
                 tower: {
                     iso: { target: [0, 11, 0], pos: [18, 16, 20] },
@@ -345,14 +345,21 @@ export function ThreeViewer(props: ThreeViewerProps) {
             gui.domElement.style.zIndex = "25";
 
             const nameLower = (proj.name || "").toLowerCase();
+            const fileLower = (proj.ifcFileName || "").toLowerCase();
             let initialModel: ModelType = proj.modelType || "cube";
-            if (!proj.modelType || proj.modelType === "cube") {
-                if (nameLower.includes("tower") || nameLower.includes("skyscraper") || nameLower.includes("high-rise") || nameLower.includes("apex")) initialModel = "tower";
-                else if (nameLower.includes("bridge") || nameLower.includes("span") || nameLower.includes("viaduct") || nameLower.includes("nordic")) initialModel = "bridge";
-                else if (nameLower.includes("villa") || nameLower.includes("house") || nameLower.includes("residence") || nameLower.includes("azure")) initialModel = "villa";
-                else if (nameLower.includes("car") || nameLower.includes("auto") || nameLower.includes("vehic") || nameLower.includes("ev")) initialModel = "car";
-                else if (nameLower.includes("gear") || nameLower.includes("hvac") || nameLower.includes("plant") || nameLower.includes("mech")) initialModel = "gear";
+
+            if (fileLower.includes("est-001") || nameLower.includes("structural complex") || nameLower.includes("toc master") || nameLower.includes("provi") || nameLower.includes("viaduct") || nameLower.includes("bridge") || nameLower.includes("span") || nameLower.includes("pier") || nameLower.includes("abutment")) {
+                initialModel = "bridge";
+            } else if (fileLower.includes("arq") || fileLower.includes("zzz") || nameLower.includes("pavilion") || nameLower.includes("superstructure") || nameLower.includes("tower") || nameLower.includes("skyscraper") || nameLower.includes("apex")) {
+                initialModel = "tower";
+            } else if (nameLower.includes("villa") || nameLower.includes("house") || nameLower.includes("residence") || nameLower.includes("azure")) {
+                initialModel = "villa";
+            } else if (nameLower.includes("car") || nameLower.includes("auto") || nameLower.includes("vehic") || nameLower.includes("ev")) {
+                initialModel = "car";
+            } else if (nameLower.includes("gear") || nameLower.includes("hvac") || nameLower.includes("plant") || nameLower.includes("mech")) {
+                initialModel = "gear";
             }
+
             activeModelType = initialModel;
             switchActiveModel(activeModelType, resetCameraView);
 

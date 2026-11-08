@@ -24,6 +24,52 @@ export function ProjectForm(props: ProjectFormProps) {
     const isEditing = Boolean(project);
     const dialogRef = React.useRef<HTMLDialogElement | null>(null);
     const [formError, setFormError] = React.useState<string | null>(null);
+    const [uploadedFile, setUploadedFile] = React.useState<File | null>(null);
+    const [uploadedFileName, setUploadedFileName] = React.useState<string>(project?.ifcFileName || "");
+    const [modelCategory, setModelCategory] = React.useState<"ifc" | "3d">(project?.modelCategory || (project?.ifcFileName ? "ifc" : "3d"));
+    const [detectedSchema, setDetectedSchema] = React.useState<"IFC4" | "IFC2X3" | "IFC4.3" | undefined>(project?.ifcSchema);
+    const fileInputRef = React.useRef<HTMLInputElement | null>(null);
+
+    React.useEffect(() => {
+        if (project) {
+            setUploadedFileName(project.ifcFileName || "");
+            setModelCategory(project.modelCategory || (project.ifcFileName ? "ifc" : "3d"));
+            setDetectedSchema(project.ifcSchema);
+        } else {
+            setUploadedFile(null);
+            setUploadedFileName("");
+            setModelCategory("ifc");
+            setDetectedSchema("IFC4");
+        }
+    }, [project, isOpen]);
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+        setUploadedFile(file);
+        setUploadedFileName(file.name);
+
+        const ext = file.name.slice(file.name.lastIndexOf(".")).toLowerCase();
+        if (ext === ".ifc") {
+            setModelCategory("ifc");
+            const schema = file.name.toLowerCase().includes("2x3") ? "IFC2X3" : "IFC4";
+            setDetectedSchema(schema);
+            file.arrayBuffer().then((buf) => {
+                (window as any).__customIfcBuffers = (window as any).__customIfcBuffers || {};
+                (window as any).__customIfcBuffers[file.name] = buf;
+            });
+        } else {
+            setModelCategory("3d");
+        }
+    };
+
+    const handleRemoveFile = () => {
+        setUploadedFile(null);
+        setUploadedFileName("");
+        setModelCategory("3d");
+        setDetectedSchema(undefined);
+        if (fileInputRef.current) fileInputRef.current.value = "";
+    };
 
     React.useEffect(() => {
         const dialog = dialogRef.current;
@@ -94,46 +140,45 @@ export function ProjectForm(props: ProjectFormProps) {
         const rawProgress = Number(formData.get("progress") ?? 25);
         const clampedProgress = Math.min(100, Math.max(0, isNaN(rawProgress) ? 25 : rawProgress)) / 100;
 
-        const selectedModel = (formData.get("modelType") as string) || "tower";
-        let modelType: ModelType = "cube";
-        let modelCategory: "ifc" | "3d" = "3d";
+        let finalModelCategory: "ifc" | "3d" = modelCategory;
         let ifcFileName: string | undefined = undefined;
         let ifcSchema: "IFC4" | "IFC2X3" | "IFC4.3" | undefined = undefined;
+        let modelType: ModelType = "tower";
 
-        if (selectedModel.startsWith("ifc-")) {
-            modelCategory = "ifc";
-            if (selectedModel === "ifc-toc") {
-                modelType = "tower";
-                ifcFileName = "MBSD-TOC-P01-MOD-EST-001.ifc";
-                ifcSchema = "IFC4";
-            } else if (selectedModel === "ifc-hns-arq") {
-                modelType = "villa";
-                ifcFileName = "HNS-CTL-N01-MOD-ARQ.ifc";
-                ifcSchema = "IFC2X3";
-            } else if (selectedModel === "ifc-hns-est") {
-                modelType = "bridge";
-                ifcFileName = "HNS-CTL-ZZZ-MOD-EST.ifc";
-                ifcSchema = "IFC2X3";
-            } else if (selectedModel === "ifc-provi" || selectedModel === "ifc-provi-e01") {
-                modelType = "bridge";
-                ifcFileName = "NAV-IPI-ET1_E01-ZZZ-M3D-EST.ifc";
-                ifcSchema = "IFC4";
-            } else if (selectedModel === "ifc-provi-e02") {
-                modelType = "bridge";
-                ifcFileName = "NAV-IPI-ET1_E02-ZZZ-M3D-EST.ifc";
-                ifcSchema = "IFC4";
-            } else if (selectedModel === "ifc-provi-e03") {
-                modelType = "bridge";
-                ifcFileName = "NAV-IPI-ET1_E03-ZZZ-M3D-EST.ifc";
-                ifcSchema = "IFC4";
-            } else if (selectedModel === "ifc-provi-e07") {
-                modelType = "bridge";
-                ifcFileName = "NAV-IPI-ET1_E07-ZZZ-M3D-EST.ifc";
-                ifcSchema = "IFC4";
+        if (uploadedFileName) {
+            if (uploadedFileName.toLowerCase().endsWith(".ifc")) {
+                finalModelCategory = "ifc";
+                ifcFileName = uploadedFileName;
+                ifcSchema = detectedSchema || (uploadedFileName.toLowerCase().includes("2x3") ? "IFC2X3" : "IFC4");
+                const n = (name + " " + uploadedFileName).toLowerCase();
+                if (n.includes("bridge") || n.includes("viaduct") || n.includes("span") || n.includes("pier") || n.includes("abutment") || n.includes("complex") || n.includes("nav-ipi") || n.includes("mbsd")) {
+                    modelType = "bridge";
+                } else if (n.includes("villa") || n.includes("house") || n.includes("residence")) {
+                    modelType = "villa";
+                } else if (n.includes("car") || n.includes("auto")) {
+                    modelType = "car";
+                } else if (n.includes("gear") || n.includes("plant") || n.includes("hvac")) {
+                    modelType = "gear";
+                } else {
+                    modelType = "tower";
+                }
+            } else {
+                finalModelCategory = "3d";
+                const n = (name + " " + uploadedFileName).toLowerCase();
+                if (n.includes("bridge") || n.includes("span")) modelType = "bridge";
+                else if (n.includes("villa") || n.includes("residence")) modelType = "villa";
+                else if (n.includes("car")) modelType = "car";
+                else if (n.includes("gear")) modelType = "gear";
+                else modelType = "tower";
             }
+        } else if (project?.ifcFileName) {
+            finalModelCategory = "ifc";
+            ifcFileName = project.ifcFileName;
+            ifcSchema = project.ifcSchema;
+            modelType = project.modelType || "bridge";
         } else {
-            modelType = selectedModel as ModelType;
-            modelCategory = "3d";
+            finalModelCategory = "3d";
+            modelType = project?.modelType || "tower";
         }
 
         const randomIndex = Math.floor(Math.random() * PROJECT_ICON_COLORS.length);
@@ -358,41 +403,138 @@ export function ProjectForm(props: ProjectFormProps) {
                             />
                         </div>
 
-                        <div className="form-field">
-                            <label>
-                                <span className="material-icons-round">view_in_ar</span> 3D BIM Model / IFC File
+                        <div className="form-field full-width" style={{ marginTop: "0.25rem" }}>
+                            <label style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.45rem" }}>
+                                <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                                    <span className="material-icons-round" style={{ fontSize: "18px", color: "var(--primary-blue)" }}>view_in_ar</span>
+                                    <span>3D Model or IFC OpenBIM File</span>
+                                </span>
+                                {uploadedFileName && (
+                                    <span className="badge-model-type" style={{
+                                        fontSize: "0.74rem",
+                                        fontWeight: 600,
+                                        padding: "2px 8px",
+                                        borderRadius: "12px",
+                                        background: modelCategory === "ifc" ? "rgba(16, 185, 129, 0.18)" : "rgba(56, 189, 248, 0.18)",
+                                        color: modelCategory === "ifc" ? "#34d399" : "#38bdf8",
+                                        border: modelCategory === "ifc" ? "1px solid rgba(16, 185, 129, 0.35)" : "1px solid rgba(56, 189, 248, 0.35)",
+                                    }}>
+                                        {modelCategory === "ifc" ? `IFC OpenBIM (${detectedSchema || "IFC4"})` : "3D Model"}
+                                    </span>
+                                )}
                             </label>
-                            <select
-                                name="modelType"
-                                defaultValue={project?.ifcFileName ? `ifc-${project.ifcFileName.includes("TOC") ? "toc" : project.ifcFileName.includes("ARQ") ? "hns-arq" : project.ifcFileName.includes("ZZZ") ? "hns-est" : "provi"}` : (project?.modelType || "tower")}
-                                style={{
-                                    backgroundColor: "var(--bg-main)",
-                                    color: "var(--text-primary)",
-                                    border: "1px solid var(--border-color)",
-                                    padding: "0.55rem 0.75rem",
-                                    borderRadius: "4px",
-                                    fontSize: "0.9rem",
-                                    width: "100%",
-                                }}
-                            >
-                                <optgroup label="3D Parametric Digital Twins">
-                                    <option value="tower">🏢 Apex Parametric Skyscraper (High-Rise)</option>
-                                    <option value="villa">🏡 Azure Coast Eco-Villa & Residence (Architectural)</option>
-                                    <option value="car">🚗 Urban Logistics EV Cyber Coupe (Civil / Auto)</option>
-                                    <option value="bridge">🌉 Nordic Span Cable-Stayed Bridge (Infrastructure)</option>
-                                    <option value="gear">⚙️ Mechanical HVAC Plant Core (MEP / Industrial)</option>
-                                    <option value="cube">🏛️ BIM Modular Innovation Pavilion (Structural Slab)</option>
-                                </optgroup>
-                                <optgroup label="IFC OpenBIM Course Models (D:\MyDocs\ifc_files)">
-                                    <option value="ifc-toc">🏗️ TOC Master Structural Complex (IFC4)</option>
-                                    <option value="ifc-hns-arq">🏛️ HNS Central Pavilion Architectural (IFC2X3)</option>
-                                    <option value="ifc-hns-est">🏗️ HNS Structural Superstructure (IFC2X3)</option>
-                                    <option value="ifc-provi-e01">🌉 ProVI Civil Viaduct Span E01 (IFC4)</option>
-                                    <option value="ifc-provi-e02">🌉 ProVI Civil Viaduct Span E02 (IFC4)</option>
-                                    <option value="ifc-provi-e03">🌉 ProVI Civil Viaduct Pier E03 (IFC4)</option>
-                                    <option value="ifc-provi-e07">🌉 ProVI Civil Viaduct Abutment E07 (IFC4)</option>
-                                </optgroup>
-                            </select>
+
+                            <input
+                                ref={fileInputRef}
+                                type="file"
+                                accept=".ifc,.obj,.gltf,.glb"
+                                style={{ display: "none" }}
+                                onChange={handleFileSelect}
+                            />
+
+                            {uploadedFileName ? (
+                                <div className="model-file-attached" style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "space-between",
+                                    background: "rgba(15, 23, 42, 0.75)",
+                                    border: "1px solid rgba(56, 189, 248, 0.4)",
+                                    borderRadius: "6px",
+                                    padding: "0.6rem 0.85rem",
+                                    gap: "10px",
+                                }}>
+                                    <div style={{ display: "flex", alignItems: "center", gap: "10px", minWidth: 0 }}>
+                                        <span className="material-icons-round" style={{
+                                            fontSize: "24px",
+                                            color: modelCategory === "ifc" ? "#34d399" : "#38bdf8",
+                                            flexShrink: 0,
+                                        }}>
+                                            {modelCategory === "ifc" ? "apartment" : "view_in_ar"}
+                                        </span>
+                                        <div style={{ minWidth: 0 }}>
+                                            <div style={{
+                                                color: "#f8fafc",
+                                                fontWeight: 600,
+                                                fontSize: "0.88rem",
+                                                whiteSpace: "nowrap",
+                                                overflow: "hidden",
+                                                textOverflow: "ellipsis",
+                                            }}>
+                                                {uploadedFileName}
+                                            </div>
+                                            <div style={{ color: "var(--text-secondary)", fontSize: "0.76rem" }}>
+                                                {uploadedFile ? `${(uploadedFile.size / (1024 * 1024)).toFixed(2)} MB · ` : ""}Ready for BIM World & 3D Viewer
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div style={{ display: "flex", alignItems: "center", gap: "6px", flexShrink: 0 }}>
+                                        <button
+                                            type="button"
+                                            onClick={() => fileInputRef.current?.click()}
+                                            style={{
+                                                background: "rgba(30, 41, 59, 0.8)",
+                                                border: "1px solid var(--border-color)",
+                                                color: "var(--text-secondary)",
+                                                borderRadius: "4px",
+                                                padding: "4px 8px",
+                                                fontSize: "0.78rem",
+                                                cursor: "pointer",
+                                            }}
+                                            title="Choose a different model"
+                                        >
+                                            Change
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={handleRemoveFile}
+                                            style={{
+                                                background: "rgba(239, 68, 68, 0.15)",
+                                                border: "1px solid rgba(239, 68, 68, 0.3)",
+                                                color: "#ef4444",
+                                                borderRadius: "4px",
+                                                padding: "4px 6px",
+                                                display: "inline-flex",
+                                                alignItems: "center",
+                                                cursor: "pointer",
+                                            }}
+                                            title="Remove uploaded model"
+                                        >
+                                            <span className="material-icons-round" style={{ fontSize: "16px" }}>close</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            ) : (
+                                <button
+                                    type="button"
+                                    onClick={() => fileInputRef.current?.click()}
+                                    style={{
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        gap: "6px",
+                                        width: "100%",
+                                        padding: "1rem",
+                                        background: "rgba(15, 23, 42, 0.6)",
+                                        border: "1.5px dashed rgba(56, 189, 248, 0.45)",
+                                        borderRadius: "8px",
+                                        color: "#f8fafc",
+                                        cursor: "pointer",
+                                        transition: "all 0.2s ease",
+                                    }}
+                                    className="btn-upload-model-dropzone"
+                                >
+                                    <span className="material-icons-round" style={{ fontSize: "28px", color: "var(--primary-blue)" }}>
+                                        cloud_upload
+                                    </span>
+                                    <span style={{ fontSize: "0.92rem", fontWeight: 600 }}>
+                                        Upload 3D Model or IFC File
+                                    </span>
+                                    <span style={{ fontSize: "0.78rem", color: "var(--text-secondary)" }}>
+                                        Click to browse (.ifc, .obj, .gltf, .glb)
+                                    </span>
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>

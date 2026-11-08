@@ -12,7 +12,7 @@ import { buildLuxuryVillaEnvironment, IVillaEnvironment } from "./three/VillaEnv
 import { buildCarShowroomEnvironment, ICarEnvironment } from "./three/CarEnvironment";
 import { buildTowerEnvironment, ITowerEnvironment } from "./three/TowerEnvironment";
 import { buildBridgeEnvironment, IBridgeEnvironment } from "./three/BridgeEnvironment";
-import { getProjectIfcFile } from "../bim-components/setup/src/load-project-model";
+import { getProjectIfcFile, resolveBimElementInfo, BimElementInfo } from "../bim-components/setup/src/load-project-model";
 
 export interface ThreeViewerProps {
     project: Project;
@@ -50,6 +50,11 @@ export function ThreeViewer(props: ThreeViewerProps) {
     const [isWireframe, setIsWireframe] = React.useState<boolean>(false);
     const [isTwilight, setIsTwilight] = React.useState<boolean>(false);
 
+    // Interactive 3D BIM Element Inspector State
+    const [selectedElement, setSelectedElement] = React.useState<BimElementInfo | null>(null);
+    const selectionBoxRef = React.useRef<THREE.BoxHelper | null>(null);
+    const sceneRef = React.useRef<THREE.Scene | null>(null);
+
     const viewerActionsRef = React.useRef<ViewerActions | null>(null);
 
     React.useEffect(() => {
@@ -58,6 +63,7 @@ export function ThreeViewer(props: ThreeViewerProps) {
 
         // --- 1. Scene, Camera, and WebGL Renderer ---
         let scene: THREE.Scene | null = new THREE.Scene();
+        sceneRef.current = scene;
 
         let camera: THREE.PerspectiveCamera | null = new THREE.PerspectiveCamera(55);
         camera.position.set(16, 12, 20);
@@ -85,9 +91,9 @@ export function ThreeViewer(props: ThreeViewerProps) {
         cameraControls.maxPolarAngle = Math.PI / 2 + 0.08;
         cameraControls.minDistance = 1.0;
         cameraControls.maxDistance = 160;
-        cameraControls.zoomSpeed = 1.2;
-        cameraControls.rotateSpeed = 0.85;
-        cameraControls.panSpeed = 1.0;
+        cameraControls.zoomSpeed = 1.8;
+        cameraControls.rotateSpeed = 1.0;
+        cameraControls.panSpeed = 1.2;
 
         const resizeViewer = () => {
             if (!viewerContainer || !renderer || !camera) { return; }
@@ -184,7 +190,7 @@ export function ThreeViewer(props: ThreeViewerProps) {
         const cameraAnim = {
             animating: false,
             startTime: 0,
-            duration: 0.85,
+            duration: 0.35,
             startPos: new THREE.Vector3(),
             targetPos: new THREE.Vector3(),
             startLook: new THREE.Vector3(),
@@ -220,9 +226,9 @@ export function ThreeViewer(props: ThreeViewerProps) {
                     front: { target: [0, 0.7, 0], pos: [0, 1.2, 8.5] },
                 },
                 villa: {
-                    iso: { target: [0, 2.0, 3.5], pos: [16, 12, 19] },
-                    top: { target: [0, 0, 3.5], pos: [0, 28, 3.51] },
-                    front: { target: [0, 1.5, 3.5], pos: [0, 3.5, 20] },
+                    iso: { target: [-1.0, 2.0, 0], pos: [16, 12, 19] },
+                    top: { target: [-1.0, 0, 0], pos: [-1.0, 28, 0.01] },
+                    front: { target: [-1.0, 2.0, 0], pos: [-1.0, 3.5, 20] },
                 },
                 tower: {
                     iso: { target: [0, 11, 0], pos: [18, 16, 20] },
@@ -318,7 +324,7 @@ export function ThreeViewer(props: ThreeViewerProps) {
             let activeObj: THREE.Object3D = cubeEnv.group;
             if (activeModelType === "gear" && gearMesh) activeObj = gearMesh;
             else if (activeModelType === "car" && carMesh) activeObj = carMesh;
-            else if (activeModelType === "villa" && villaMesh) activeObj = villaMesh;
+            else if (activeModelType === "villa") activeObj = villaEnv.group;
             else if (activeModelType === "tower") activeObj = towerEnv.group;
             else if (activeModelType === "bridge") activeObj = bridgeEnv.group;
 
@@ -503,6 +509,40 @@ export function ThreeViewer(props: ThreeViewerProps) {
         };
         window.addEventListener("keydown", handleKeyDown);
 
+        // Raycasting for Precise 3D Element Picking & Inspection
+        const onCanvasClick = (evt: MouseEvent) => {
+            if (!camera || !scene || !renderer) return;
+            const canvasEl = renderer.domElement;
+            const rect = canvasEl.getBoundingClientRect();
+            const x = ((evt.clientX - rect.left) / rect.width) * 2 - 1;
+            const y = -((evt.clientY - rect.top) / rect.height) * 2 + 1;
+            const raycaster = new THREE.Raycaster();
+            raycaster.setFromCamera(new THREE.Vector2(x, y), camera);
+            const hits = raycaster.intersectObjects(scene.children, true);
+            const validHit = hits.find((h) => (
+                h.object.visible &&
+                (h.object as any).isMesh &&
+                !h.object.name.includes("selection-box") &&
+                !h.object.name.includes("grid") &&
+                !(h.object as any).isGrid
+            ));
+            if (validHit && validHit.object instanceof THREE.Mesh) {
+                const mesh = validHit.object;
+                if (selectionBoxRef.current && scene) {
+                    scene.remove(selectionBoxRef.current);
+                    selectionBoxRef.current.dispose();
+                    selectionBoxRef.current = null;
+                }
+                const boxHelper = new THREE.BoxHelper(mesh, 0x38bdf8);
+                boxHelper.name = "selection-box-helper";
+                scene.add(boxHelper);
+                selectionBoxRef.current = boxHelper;
+                const info = resolveBimElementInfo(mesh, validHit.point, project);
+                setSelectedElement(info);
+            }
+        };
+        renderer.domElement.addEventListener("click", onCanvasClick);
+
         if (projectsManager) {
             projectsManager.onProjectSelected = (selectedProj) => {
                 resizeViewer();
@@ -635,7 +675,16 @@ export function ThreeViewer(props: ThreeViewerProps) {
             cancelAnimationFrame(animFrameId);
             window.removeEventListener("resize", resizeViewer);
             window.removeEventListener("keydown", handleKeyDown);
+            if (renderer?.domElement) {
+                renderer.domElement.removeEventListener("click", onCanvasClick);
+            }
             viewerResizeObserver.disconnect();
+
+            if (selectionBoxRef.current && scene) {
+                scene.remove(selectionBoxRef.current);
+                selectionBoxRef.current.dispose();
+                selectionBoxRef.current = null;
+            }
 
             if (scene) {
                 scene.traverse((child) => {
@@ -672,6 +721,7 @@ export function ThreeViewer(props: ThreeViewerProps) {
             }
 
             scene = null;
+            sceneRef.current = null;
             camera = null;
             renderer = null;
             cameraControls = null;
@@ -690,6 +740,63 @@ export function ThreeViewer(props: ThreeViewerProps) {
             ref={viewerContainerRef}
             style={{ minWidth: 0, position: "relative", width: "100%", height: "100%", overflow: "hidden" }}
         >
+            {/* Interactive 3D BIM Element Inspector Card */}
+            {selectedElement && (
+                <div className="element-inspector-card">
+                    <div className="inspector-header">
+                        <div style={{ display: "flex", alignItems: "center", gap: "8px", minWidth: 0, flex: 1 }}>
+                            <span className="material-icons-round" style={{ color: "#38bdf8", fontSize: "18px", flexShrink: 0 }}>layers</span>
+                            <h4 style={{ margin: 0, fontSize: "0.88rem", color: "#f8fafc", fontWeight: 700, lineHeight: 1.35, wordBreak: "break-word" }}>
+                                {selectedElement.name}
+                            </h4>
+                        </div>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setSelectedElement(null);
+                                if (selectionBoxRef.current && sceneRef.current) {
+                                    sceneRef.current.remove(selectionBoxRef.current);
+                                    selectionBoxRef.current.dispose();
+                                    selectionBoxRef.current = null;
+                                }
+                            }}
+                            className="btn-close-inspector"
+                            title="Close Inspector"
+                        >
+                            &times;
+                        </button>
+                    </div>
+                    <div className="inspector-body">
+                        <div className="inspector-row">
+                            <span className="label">Element ID:</span>
+                            <span className="value" style={{ color: "#38bdf8", fontFamily: "monospace", fontWeight: 600 }}>
+                                #{selectedElement.elementId || "BIM-OBJ"}
+                            </span>
+                        </div>
+                        <div className="inspector-row">
+                            <span className="label">Component Type:</span>
+                            <span className="value">{selectedElement.type}</span>
+                        </div>
+                        <div className="inspector-row">
+                            <span className="label">World Pos (m):</span>
+                            <span className="value">
+                                {selectedElement.point.x.toFixed(1)}, {selectedElement.point.y.toFixed(1)}, {selectedElement.point.z.toFixed(1)}
+                            </span>
+                        </div>
+                        <div className="inspector-row">
+                            <span className="label">Bounds (W×H×D):</span>
+                            <span className="value">
+                                {selectedElement.width.toFixed(2)} × {selectedElement.height.toFixed(2)} × {selectedElement.depth.toFixed(2)} m
+                            </span>
+                        </div>
+                        <div className="inspector-row">
+                            <span className="label">Mesh Polygons:</span>
+                            <span className="value">{selectedElement.triangleCount.toLocaleString()} tris</span>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Professional 3D CAD Navigation Floating HUD Toolbar */}
             <div className="viewer-pro-hud">
                 <div className="hud-pill-group">

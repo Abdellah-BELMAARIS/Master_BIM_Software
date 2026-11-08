@@ -1,16 +1,30 @@
 import * as OBC from "@thatopen/components";
 import { Project } from "../../classes/Project";
-import { createWorld, loadProjectModel, LoadedWorldModel } from "./src";
+import {
+  createWorld,
+  setupIfcLoader,
+  setupFragments,
+  setupHighlighter,
+  loadProjectModel,
+  LoadedWorldModel,
+} from "./src";
 
 /**
- * Module 4 — Lesson 3.3: Root setupComponents Entry Point
- * Initializes the root OBC.Components singleton, configures the BIM World,
- * populates the project's 3D Digital Twin / IFC model, and starts the real-time engine loop.
+ * Module 4 — Lessons 3.4 - 3.6: Root setupComponents Entry Point
+ * Initializes OBC.Components, BIM World, FragmentsManager, IfcLoader,
+ * Highlighter, and populates the project model.
  */
 export const setupComponents = async (project?: Project) => {
   const components = new OBC.Components();
   const { world, viewport } = createWorld(components);
   components.init();
+
+  // Lesson 3.4: Configure FragmentsManager and WebIFC-backed IfcLoader
+  await setupFragments(components, world);
+  await setupIfcLoader(components);
+
+  // Lesson 3.5: Configure Highlighter from @thatopen/components-front
+  setupHighlighter(components, world);
 
   let loadedModel: LoadedWorldModel | null = null;
   if (project) {
@@ -21,4 +35,3 @@ export const setupComponents = async (project?: Project) => {
 };
 
 export * from "./src";
-

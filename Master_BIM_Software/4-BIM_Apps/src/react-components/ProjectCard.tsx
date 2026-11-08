@@ -23,13 +23,45 @@ export function ProjectCard(props: Props) {
         ? dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
         : "N/A";
 
-    // Resolve accurate 3D model metadata from modelCategory, modelType, or IFC properties
+    // Resolve accurate, human-readable 3D model metadata and self-explanatory badge
     const getModelBadge = (proj: Project): { name: string; icon: string; category: "ifc" | "3d"; schema?: string } => {
-        if (proj.modelCategory === "ifc" || proj.ifcFileName || proj.name.toLowerCase().includes(".ifc") || proj.name.toLowerCase().includes("ifc")) {
-            const schema = proj.ifcSchema || (proj.name.includes("IFC4") || (proj.ifcFileName && proj.ifcFileName.includes("IFC4")) ? "IFC4" : "IFC2X3");
+        const nameLow = (proj.name || "").toLowerCase();
+        const fileLow = (proj.ifcFileName || "").toLowerCase();
+
+        if (proj.modelCategory === "ifc" || proj.ifcFileName || nameLow.includes("ifc")) {
+            const schema = proj.ifcSchema || (nameLow.includes("ifc4") || fileLow.includes("ifc4") ? "IFC4" : "IFC2X3");
+            
+            if (nameLow.includes("stadium") || fileLow.includes("stadium")) {
+                return { name: `65k Football Stadium · ${schema}`, icon: "sports_soccer", category: "ifc", schema };
+            }
+            if (nameLow.includes("aurora") || nameLow.includes("10-villa") || fileLow.includes("aurora") || fileLow.includes("ten_villa")) {
+                return { name: `10-Villa Estate · ${schema}`, icon: "holiday_village", category: "ifc", schema };
+            }
+            if (nameLow.includes("office") || nameLow.includes("hq") || nameLow.includes("structural complex") || fileLow.includes("mbsd")) {
+                return { name: `Commercial HQ · ${schema}`, icon: "corporate_fare", category: "ifc", schema };
+            }
+            if (nameLow.includes("superstructure") || fileLow.includes("zzz")) {
+                return { name: `Civic Framing · ${schema}`, icon: "domain", category: "ifc", schema };
+            }
+            if (nameLow.includes("civic") || nameLow.includes("hns") || fileLow.includes("arq")) {
+                return { name: `Civic Architecture · ${schema}`, icon: "apartment", category: "ifc", schema };
+            }
+            if (nameLow.includes("e01") || fileLow.includes("e01")) {
+                return { name: `Viaduct Span E01 · ${schema}`, icon: "bridge", category: "ifc", schema };
+            }
+            if (nameLow.includes("e02") || fileLow.includes("e02")) {
+                return { name: `Box Girder E02 · ${schema}`, icon: "bridge", category: "ifc", schema };
+            }
+            if (nameLow.includes("pier") || nameLow.includes("e03") || fileLow.includes("e03")) {
+                return { name: `Viaduct Pier E03 · ${schema}`, icon: "foundation", category: "ifc", schema };
+            }
+            if (nameLow.includes("abutment") || nameLow.includes("e07") || fileLow.includes("e07")) {
+                return { name: `Retaining Abutment E07 · ${schema}`, icon: "account_balance", category: "ifc", schema };
+            }
+
             const label = proj.ifcFileName ? proj.ifcFileName.replace(".ifc", "") : `${schema} Model`;
             return {
-                name: label.length > 20 ? `${label.substring(0, 18)}...` : label,
+                name: label.length > 22 ? `${label.substring(0, 20)}...` : label,
                 icon: "description",
                 category: "ifc",
                 schema,
@@ -37,27 +69,26 @@ export function ProjectCard(props: Props) {
         }
 
         let type = proj.modelType;
-        const lower = proj.name.toLowerCase();
         if (!type || type === "cube") {
-            if (lower.includes("tower") || lower.includes("skyscraper") || lower.includes("apex")) type = "tower";
-            else if (lower.includes("bridge") || lower.includes("span") || lower.includes("viaduct") || lower.includes("nordic")) type = "bridge";
-            else if (lower.includes("villa") || lower.includes("house") || lower.includes("residence") || lower.includes("azure")) type = "villa";
-            else if (lower.includes("car") || lower.includes("auto") || lower.includes("vehic") || lower.includes("ev")) type = "car";
-            else if (lower.includes("gear") || lower.includes("hvac") || lower.includes("plant") || lower.includes("mech")) type = "gear";
+            if (nameLow.includes("tower") || nameLow.includes("skyscraper") || nameLow.includes("apex")) type = "tower";
+            else if (nameLow.includes("bridge") || nameLow.includes("span") || nameLow.includes("viaduct") || nameLow.includes("nordic")) type = "bridge";
+            else if (nameLow.includes("villa") || nameLow.includes("house") || nameLow.includes("residence") || nameLow.includes("azure")) type = "villa";
+            else if (nameLow.includes("car") || nameLow.includes("auto") || nameLow.includes("vehic") || nameLow.includes("ev")) type = "car";
+            else if (nameLow.includes("gear") || nameLow.includes("hvac") || nameLow.includes("plant") || nameLow.includes("mech")) type = "gear";
         }
         switch (type) {
             case "tower":
-                return { name: "Apex Skyscraper", icon: "apartment", category: "3d" };
+                return { name: "Commercial Skyscraper · 3D", icon: "apartment", category: "3d" };
             case "bridge":
-                return { name: "Nordic Bridge", icon: "alt_route", category: "3d" };
+                return { name: "Cable-Stayed Bridge · 3D", icon: "alt_route", category: "3d" };
             case "villa":
-                return { name: "Azure Eco-Villa", icon: "cottage", category: "3d" };
+                return { name: "Luxury Modern Villa · 3D", icon: "cottage", category: "3d" };
             case "car":
-                return { name: "Civil EV Coupe", icon: "electric_car", category: "3d" };
+                return { name: "Autonomous EV Hub · 3D", icon: "electric_car", category: "3d" };
             case "gear":
-                return { name: "HVAC Dyno Gear", icon: "settings", category: "3d" };
+                return { name: "District HVAC Plant · 3D", icon: "settings", category: "3d" };
             default:
-                return { name: "BIM Pavilion", icon: "view_in_ar", category: "3d" };
+                return { name: "Exhibition Pavilion · 3D", icon: "view_in_ar", category: "3d" };
         }
     };
 

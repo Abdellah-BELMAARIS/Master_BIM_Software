@@ -460,25 +460,29 @@ export function buildTowerEnvironment(): ITowerEnvironment {
 
     const atriumGeom = trackGeom(new THREE.BoxGeometry(podiumWidth, podiumHeight, podiumWidth));
     const atriumMesh = new THREE.Mesh(atriumGeom, curtainWallGlassMat);
+    atriumMesh.name = "Grand Entrance Glass Atrium";
     atriumMesh.position.y = podiumHeight / 2 + 0.22;
     rootGroup.add(atriumMesh);
 
     // Reception Desk inside Atrium
     const receptionDeskGeom = trackGeom(new THREE.BoxGeometry(3.2, 1.0, 1.0));
     const receptionDesk = new THREE.Mesh(receptionDeskGeom, granitePlazaMat);
+    receptionDesk.name = "Plaza Reception Counter";
     receptionDesk.position.set(0, 0.72, 2.5);
     rootGroup.add(receptionDesk);
 
     // Revolving Glass Door Cylinder at Plaza Facade
     const revolvingGeom = trackGeom(new THREE.CylinderGeometry(1.4, 1.4, 2.4, 16, 1, true));
     const revolvingDoor = new THREE.Mesh(revolvingGeom, curtainWallGlassMat);
+    revolvingDoor.name = "Revolving Entrance Glass Door";
     revolvingDoor.position.set(0, 1.42, 7.0);
     rootGroup.add(revolvingDoor);
 
     // Structural Podium Columns
     const colGeom = trackGeom(new THREE.CylinderGeometry(0.25, 0.25, podiumHeight, 16));
-    [[-6, -6], [6, -6], [-6, 6], [6, 6]].forEach(([cx, cz]) => {
+    [[-6, -6], [6, -6], [-6, 6], [6, 6]].forEach(([cx, cz], cIdx) => {
         const col = new THREE.Mesh(colGeom, steelDiagridMat);
+        col.name = `Atrium Podium Steel Column C${cIdx + 1}`;
         col.position.set(cx, podiumHeight / 2 + 0.22, cz);
         col.castShadow = true;
         rootGroup.add(col);
@@ -487,6 +491,7 @@ export function buildTowerEnvironment(): ITowerEnvironment {
     // Grand Entrance Cantilevered Canopy
     const canopyGeom = trackGeom(new THREE.BoxGeometry(8, 0.25, 4.5));
     const canopy = new THREE.Mesh(canopyGeom, floorSlabMat);
+    canopy.name = "Entrance Cantilevered Canopy";
     canopy.position.set(0, 2.6, 8.2);
     canopy.castShadow = true;
     rootGroup.add(canopy);
@@ -503,6 +508,7 @@ export function buildTowerEnvironment(): ITowerEnvironment {
     const coreHeight = totalFloors * floorHeight + 2;
     const coreGeom = trackGeom(new THREE.BoxGeometry(3.4, coreHeight, 3.4));
     const coreMesh = new THREE.Mesh(coreGeom, concreteCoreMat);
+    coreMesh.name = "Reinforced Concrete Elevator Core";
     coreMesh.position.y = towerStartHeight + coreHeight / 2;
     coreMesh.castShadow = true;
     rootGroup.add(coreMesh);
@@ -573,6 +579,7 @@ export function buildTowerEnvironment(): ITowerEnvironment {
         // Perimeter Floor Slab Spandrel
         const slabGeom = trackGeom(new THREE.BoxGeometry(width, 0.16, depth));
         const slab = new THREE.Mesh(slabGeom, floorSlabMat);
+        slab.name = `Floor Slab Level ${f + 1}`;
         slab.position.y = floorY;
         slab.castShadow = true;
         slab.receiveShadow = true;
@@ -582,6 +589,7 @@ export function buildTowerEnvironment(): ITowerEnvironment {
             // High-Transparency Glass Curtain Wall
             const glassGeom = trackGeom(new THREE.BoxGeometry(width - 0.15, floorHeight - 0.16, depth - 0.15));
             const glass = new THREE.Mesh(glassGeom, curtainWallGlassMat);
+            glass.name = `Curtain Wall Facade Glazing L${f + 1}`;
             glass.position.y = floorY + floorHeight / 2;
             glass.castShadow = true;
             rootGroup.add(glass);
@@ -678,12 +686,14 @@ export function buildTowerEnvironment(): ITowerEnvironment {
 
     const helipadPadGeom = trackGeom(new THREE.CylinderGeometry(4.4, 4.6, 0.5, 12));
     const helipadPad = new THREE.Mesh(helipadPadGeom, helipadAsphaltMat);
+    helipadPad.name = "Rooftop Helipad Landing Pad";
     helipadPad.position.y = roofY + 0.25;
     helipadPad.castShadow = true;
     rootGroup.add(helipadPad);
 
     const helipadRingGeom = trackGeom(new THREE.RingGeometry(3.0, 3.3, 32));
     const helipadRing = new THREE.Mesh(helipadRingGeom, helipadMarkingMat);
+    helipadRing.name = "Helipad Circumferential Safety Ring";
     helipadRing.rotation.x = -Math.PI / 2;
     helipadRing.position.y = roofY + 0.51;
     rootGroup.add(helipadRing);
@@ -693,22 +703,26 @@ export function buildTowerEnvironment(): ITowerEnvironment {
 
     [-0.6, 0.6].forEach((hx) => {
         const hBar = new THREE.Mesh(hBarGeom, helipadWhiteMat);
+        hBar.name = "Helipad White Landing Marking H";
         hBar.rotation.x = -Math.PI / 2;
         hBar.position.set(hx, roofY + 0.52, 0);
         rootGroup.add(hBar);
     });
     const hCross = new THREE.Mesh(hCrossGeom, helipadWhiteMat);
+    hCross.name = "Helipad White Landing Marking H (Crossbar)";
     hCross.rotation.x = -Math.PI / 2;
     hCross.position.set(0, roofY + 0.52, 0);
     rootGroup.add(hCross);
 
     // Spire Mast & Strobe Beacon
     const spireMast = new THREE.Mesh(trackGeom(new THREE.CylinderGeometry(0.08, 0.45, 8.5, 8)), steelDiagridMat);
+    spireMast.name = "Architectural Communications Spire Mast";
     spireMast.position.set(2.4, roofY + 4.5, 2.4);
     spireMast.castShadow = true;
     rootGroup.add(spireMast);
 
     const beaconMesh = new THREE.Mesh(trackGeom(new THREE.SphereGeometry(0.28, 16, 16)), beaconMat);
+    beaconMesh.name = "Aviation Warning Pulsing Strobe Beacon";
     beaconMesh.position.set(2.4, roofY + 8.8, 2.4);
     rootGroup.add(beaconMesh);
 
