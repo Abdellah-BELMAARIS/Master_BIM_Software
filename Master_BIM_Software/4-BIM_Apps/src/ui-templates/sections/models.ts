@@ -79,7 +79,7 @@ export const modelsTemplate: BUI.StatefullComponent<ModelsState> = (
         <bim-button
           @click=${onExportAllFrags}
           icon="solar:download-bold"
-          tooltip-title="Export Compressed .frag Binary (Lesson 3.7)"
+          tooltip-title="Export Compressed Fragment Binaries (.frag)"
           style="flex: 0;"
         ></bim-button>
       </div>

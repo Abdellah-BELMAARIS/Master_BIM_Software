@@ -67,9 +67,47 @@ export const smartViewsSectionTemplate: BUI.StatefullComponent<
     viewsTable.queryString = input.value;
   };
 
+  // Challenge: Export (download) SmartViews to JSON
+  const onExportViews = () => {
+    try {
+      const serialized = smartViews.export();
+      const blob = new Blob([JSON.stringify(serialized, null, 2)], {
+        type: "application/json",
+      });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `bim-coordination-viewpoints-${Date.now()}.json`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+      setStatus("Viewpoints exported to JSON successfully.");
+    } catch (err: any) {
+      setStatus(`Export failed: ${err?.message || err}`, true);
+    }
+  };
+
+  // Challenge: Import (upload) SmartViews from JSON file
+  const onImportViews = () => {
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = ".json";
+    fileInput.onchange = async () => {
+      const file = fileInput.files?.[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const json = JSON.parse(text);
+        const imported = smartViews.import(json);
+        setStatus(`Imported ${imported.length} viewpoint${imported.length === 1 ? "" : "s"} successfully.`);
+      } catch (err: any) {
+        setStatus(`Import failed: ${err?.message || err}`, true);
+      }
+    };
+    fileInput.click();
+  };
+
   return BUI.html`
     <bim-panel-section
-      label="Smart Views · Saved States"
+      label="Coordination Viewpoints"
       icon="solar:layers-minimalistic-bold"
       fixed
       style="display: flex; flex-direction: column; height: 100%; overflow: hidden; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(56, 189, 248, 0.25);"
@@ -78,35 +116,47 @@ export const smartViewsSectionTemplate: BUI.StatefullComponent<
         <div style="display: flex; gap: 0.35rem; align-items: center;">
           <bim-text-input
             @input=${onSearchViews}
-            placeholder="Filter saved Smart Views..."
+            placeholder="Search coordination viewpoints..."
             style="flex: 1; min-width: 0;"
           ></bim-text-input>
           <bim-button
             @click=${onResetWorkspace}
             icon="solar:restart-bold"
-            label="Reset All"
-            tooltip-title="Reset Visibility, Colors, Ghost & Camera (Lesson 5.5)"
+            label="Restore All"
+            tooltip-title="Restore Shading, Visibility, Clear Ghost & Reset Viewport"
+            style="flex: 0;"
+          ></bim-button>
+          <bim-button
+            @click=${onExportViews}
+            icon="material-symbols:download"
+            tooltip-title="Export Viewpoints (.json)"
+            style="flex: 0;"
+          ></bim-button>
+          <bim-button
+            @click=${onImportViews}
+            icon="material-symbols:upload"
+            tooltip-title="Import Viewpoints (.json)"
             style="flex: 0;"
           ></bim-button>
         </div>
 
-        <!-- Lesson 5.4: Save Current Cumulative State as Smart View -->
+        <!-- Capture Active Viewpoint State -->
         <div style="display: flex; flex-direction: column; gap: 0.35rem; padding: 0.45rem; background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 8px;">
           <bim-text-input
             ${BUI.ref((el) => {
               nameInput = el as BUI.TextInput;
             })}
-            placeholder="Smart View Name (e.g. Steel Framing Audit)"
+            placeholder="Viewpoint Name (e.g. Structural Framing Audit)"
           ></bim-text-input>
           <bim-text-input
             ${BUI.ref((el) => {
               descInput = el as BUI.TextInput;
             })}
-            placeholder="Description (optional)"
+            placeholder="Engineering Scope / Discipline Note"
           ></bim-text-input>
           <bim-button
             @click=${onSaveCurrentView}
-            label="Save Current State & Camera"
+            label="Capture Viewpoint & Camera Pose"
             icon="solar:camera-add-bold"
             style="--bim-button-background: #0284c7; color: white; font-weight: 600;"
           ></bim-button>
@@ -117,7 +167,7 @@ export const smartViewsSectionTemplate: BUI.StatefullComponent<
             statusBadge = el as HTMLSpanElement;
           })}
           style="font-size: 0.72rem; color: #94a3b8;"
-        >Apply discipline presets or snapshot your current filters & colors.</span>
+        >Evaluate engineering viewpoints, isolate disciplines, and capture camera perspectives.</span>
       </div>
 
       <div style="flex: 1; overflow: auto; min-height: 0;">

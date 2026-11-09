@@ -89,6 +89,44 @@ export const queriesTemplate: BUI.StatefullComponent<QueriesSectionState> = (
     }
   };
 
+  // Challenge Task 1: Export (download) ItemsFinder queries to JSON
+  const onExportQueries = () => {
+    try {
+      const serialized = finder.export();
+      const blob = new Blob([JSON.stringify(serialized, null, 2)], {
+        type: "application/json",
+      });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `bim-items-finder-queries-${Date.now()}.json`;
+      link.click();
+      URL.revokeObjectURL(link.href);
+      setStatus("Queries exported to JSON successfully.");
+    } catch (err: any) {
+      setStatus(`Export failed: ${err?.message || err}`, true);
+    }
+  };
+
+  // Challenge Task 1: Import (upload) ItemsFinder queries from JSON file
+  const onImportQueries = () => {
+    const fileInput = document.createElement("input");
+    fileInput.type = "file";
+    fileInput.accept = ".json";
+    fileInput.onchange = async () => {
+      const file = fileInput.files?.[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const json = JSON.parse(text);
+        const imported = finder.import(json);
+        setStatus(`Imported ${imported.length} queries successfully.`);
+      } catch (err: any) {
+        setStatus(`Import failed: ${err?.message || err}`, true);
+      }
+    };
+    fileInput.click();
+  };
+
   const onResetFilters = async () => {
     const highlighter = components.get(OBCF.Highlighter);
     const hider = components.get(OBC.Hider);
@@ -120,6 +158,19 @@ export const queriesTemplate: BUI.StatefullComponent<QueriesSectionState> = (
             icon="flowbite:eye-outline"
             label="Show All"
             tooltip-title="Clear Highlights & Restore Visibility"
+            style="flex: 0;"
+          ></bim-button>
+          <!-- Challenge Task 1: Export/Download & Import/Upload Queries -->
+          <bim-button
+            @click=${onExportQueries}
+            icon="material-symbols:download"
+            tooltip-title="Download ItemsFinder Queries (.json)"
+            style="flex: 0;"
+          ></bim-button>
+          <bim-button
+            @click=${onImportQueries}
+            icon="material-symbols:upload"
+            tooltip-title="Upload Saved Queries (.json)"
             style="flex: 0;"
           ></bim-button>
         </div>

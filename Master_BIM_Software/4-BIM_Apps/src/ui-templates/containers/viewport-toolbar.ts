@@ -38,13 +38,20 @@ export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarStat
   };
 
   // =========================================================================
-  // Lesson 3.8: Colorizing Model Items (+ SmartViews currentState tracking)
+  // Lesson 3.8 & Mini Challenge: Colorizing Model Items + Quick Preset Palette
   // =========================================================================
-  const onApplyColor = async (e: Event) => {
-    const button = e.currentTarget as BUI.Button;
-    if (!button || !colorInput) return;
+  const PRESET_COLORS = [
+    { label: "Steel Blue", color: "#2563eb" },
+    { label: "Emerald Green", color: "#10b981" },
+    { label: "Crimson Red", color: "#ef4444" },
+    { label: "Amber Orange", color: "#f59e0b" },
+    { label: "Purple Orchid", color: "#a855f7" },
+    { label: "Cyan Aqua", color: "#06b6d4" },
+    { label: "Charcoal Slate", color: "#475569" },
+    { label: "Pure White", color: "#ffffff" },
+  ];
 
-    const hexColor = colorInput.color || colorInput.value?.color || "#3b82f6";
+  const applyColorDirectly = async (hexColor: string) => {
     const highlighter = components.get(OBCF.Highlighter);
     const selection = highlighter.selection.select;
 
@@ -54,7 +61,6 @@ export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarStat
       return;
     }
 
-    button.loading = true;
     try {
       if (!highlighter.styles.has(hexColor)) {
         highlighter.styles.set(hexColor, {
@@ -74,12 +80,24 @@ export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarStat
       try {
         const smartViews = components.get(SmartViews);
         smartViews.addItemsColor(cloned, hexColor);
-      } catch {}
+      } catch { }
     } catch (error) {
-      console.error("[Highlighter] Error applying custom color:", error);
+      console.error("[Highlighter] Error applying color:", error);
+    } finally {
+      BUI.ContextMenu.removeMenus();
+    }
+  };
+
+  const onApplyColor = async (e: Event) => {
+    const button = e.currentTarget as BUI.Button;
+    if (!button || !colorInput) return;
+
+    const hexColor = colorInput.color || colorInput.value?.color || "#3b82f6";
+    button.loading = true;
+    try {
+      await applyColorDirectly(hexColor);
     } finally {
       button.loading = false;
-      BUI.ContextMenu.removeMenus();
     }
   };
 
@@ -92,7 +110,7 @@ export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarStat
       try {
         const smartViews = components.get(SmartViews);
         smartViews.currentState.colors = { queries: new Map(), items: new Map() };
-      } catch {}
+      } catch { }
     } catch (error) {
       console.error("[Highlighter] Error clearing colors:", error);
     } finally {
@@ -121,7 +139,7 @@ export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarStat
       try {
         const smartViews = components.get(SmartViews);
         smartViews.recordVisibility("hide", cloned);
-      } catch {}
+      } catch { }
     } catch (error) {
       console.error("[Hider] Error hiding selected elements:", error);
     } finally {
@@ -147,7 +165,7 @@ export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarStat
       try {
         const smartViews = components.get(SmartViews);
         smartViews.recordVisibility("isolate", cloned);
-      } catch {}
+      } catch { }
     } catch (error) {
       console.error("[Hider] Error isolating selected elements:", error);
     } finally {
@@ -164,7 +182,7 @@ export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarStat
       try {
         const smartViews = components.get(SmartViews);
         smartViews.recordVisibility("showAll");
-      } catch {}
+      } catch { }
     } catch (error) {
       console.error("[Hider] Error restoring all hidden elements:", error);
     } finally {
@@ -173,11 +191,13 @@ export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarStat
   };
 
   // =========================================================================
-  // Lesson 3.10: Ghost Model Visualization Feature (X-Ray Translucent Mode)
-  // Smart Toggle:
-  // - If elements are selected: ghosts unselected elements (highlighting focal items).
-  // - Clicking Ghost Selected directly ghosts only the active selection.
-  // - Clear Ghost restores 100% normal shading.
+  // Architectural X-Ray Translucency & Visual Focus Engine
+  // - If elements are selected:
+  //   * "Ghost Selected Only" applies translucent shader exclusively to the selection.
+  //   * "Ghost Unselected (Focus)" makes background context translucent while focal items stay opaque.
+  // - If no elements selected:
+  //   * "Toggle Translucent X-Ray" renders the full model structure in translucent engineering glass.
+  // - "Restore Normal Shading" resets GPU ghost textures and Three.js materials.
   // =========================================================================
   const applyGhostItems = async (mode: "invert" | "selected" | "all") => {
     try {
@@ -188,21 +208,25 @@ export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarStat
       const selection = highlighter.selection.select;
       const hasSelection = selection && !OBC.ModelIdMapUtils.isEmpty(selection);
 
+      // If user asks for "selected" but nothing is selected, gracefully switch to full model x-ray
+      const effectiveMode: "invert" | "selected" | "all" =
+        mode === "selected" && !hasSelection ? "all" : mode;
+
       isGhostActive = true;
 
       // 1. Native @thatopen/fragments GPU X-Ray Ghost Mode
       if (fragments.initialized && fragments.list.size > 0) {
-        fragments.core.setGhostOpacity(0.35);
+        fragments.core.setGhostOpacity(0.28);
         for (const [modelId, model] of fragments.list) {
           if (!model) continue;
           const selectedLocalIds = selection?.[modelId] ? [...selection[modelId]] : [];
 
-          if (mode === "selected") {
+          if (effectiveMode === "selected") {
             // Ghost ONLY selected items (invert = false)
             if (selectedLocalIds.length > 0 && typeof model.setGhostItems === "function") {
               await model.setGhostItems(selectedLocalIds, false);
             }
-          } else if (mode === "invert") {
+          } else if (effectiveMode === "invert") {
             // Ghost everything EXCEPT selected items (invert = true)
             if (typeof model.setGhostItems === "function") {
               await model.setGhostItems(selectedLocalIds, true);
@@ -233,7 +257,7 @@ export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarStat
               depthWrite: mat.depthWrite,
             });
             mat.transparent = true;
-            mat.opacity = 0.30;
+            mat.opacity = 0.25;
             mat.depthWrite = false;
             mat.needsUpdate = true;
           }
@@ -245,7 +269,7 @@ export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarStat
         ghostButton.style.background = "rgba(56, 189, 248, 0.25)";
       }
     } catch (err) {
-      console.error("[Ghost] Error applying ghost mode:", err);
+      console.error("[Ghost] Error applying translucent x-ray mode:", err);
     }
   };
 
@@ -276,7 +300,7 @@ export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarStat
         ghostButton.style.background = "";
       }
     } catch (err) {
-      console.error("[Ghost] Error clearing ghost mode:", err);
+      console.error("[Ghost] Error restoring normal shading:", err);
     }
   };
 
@@ -358,25 +382,43 @@ export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarStat
 
   return BUI.html`
     <bim-toolbar style="background: rgba(15, 23, 42, 0.90); backdrop-filter: blur(16px); border: 1px solid rgba(56, 189, 248, 0.28); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); padding: 3px 5px; pointer-events: auto; --bim-button--fz: 0.72rem; max-width: 100%; overflow-x: auto;">
-      <!-- Section 1: Colorizing (Lesson 3.8) -->
+      <!-- Section 1: Colorizing -->
       <bim-toolbar-section label="Colorize">
         <bim-button
           icon="flowbite:palette-outline"
-          tooltip="Colorize Selected Items (Lesson 3.8)"
+          tooltip="Apply Discipline Color Overrides to Selection"
           label="Color"
         >
           <bim-context-menu>
-            <div style="display: flex; flex-direction: column; gap: 0.6rem; padding: 0.75rem; min-width: 14rem; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; backdrop-filter: blur(16px);">
-              <bim-color-input
-                ${BUI.ref((element) => {
-                  colorInput = element as BUI.ColorInput;
-                })}
-                label="Pick Item Color"
-                color="#3b82f6"
-              ></bim-color-input>
+            <div style="display: flex; flex-direction: column; gap: 0.6rem; padding: 0.75rem; min-width: 15rem; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; backdrop-filter: blur(16px);">
+              <!-- Mini Challenge: Preset Colors Palette -->
+              <span style="font-size: 0.70rem; color: #94a3b8; font-weight: 600; text-transform: uppercase;">AEC Discipline Palette</span>
+              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">
+                ${PRESET_COLORS.map(
+    (p) => BUI.html`
+                    <button
+                      type="button"
+                      @click=${() => applyColorDirectly(p.color)}
+                      style="width: 100%; height: 26px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: ${p.color}; cursor: pointer; transition: transform 0.15s ease;"
+                      title="${p.label}"
+                    ></button>
+                  `
+  )}
+              </div>
+
+              <!-- Custom Color Picker -->
+              <div style="border-top: 1px solid rgba(148, 163, 184, 0.2); padding-top: 0.4rem;">
+                <bim-color-input
+                  ${BUI.ref((element) => {
+    colorInput = element as BUI.ColorInput;
+  })}
+                  label="Hex Color Override"
+                  color="#3b82f6"
+                ></bim-color-input>
+              </div>
               <bim-button
                 @click=${onApplyColor}
-                label="Apply Color"
+                label="Apply Color Override"
                 icon="flowbite:check-outline"
                 style="--bim-button-background: #0284c7; color: white; font-weight: 600;"
               ></bim-button>
@@ -388,66 +430,66 @@ export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarStat
           @click=${onClearColors}
           icon="flowbite:trash-bin-outline"
           label="Reset"
-          tooltip="Clear all applied color styles"
+          tooltip="Restore Original Materials & Clear Overrides"
         ></bim-button>
       </bim-toolbar-section>
 
-      <!-- Section 2: Visibility Operations (Lesson 3.9) -->
+      <!-- Section 2: Visibility Operations -->
       <bim-toolbar-section label="Visibility">
         <bim-button
           @click=${onHideSelected}
           icon="flowbite:eye-slash-outline"
           label="Hide"
-          tooltip="Hide selected items (Lesson 3.9)"
+          tooltip="Hide Selected Elements from Scene"
         ></bim-button>
         <bim-button
           @click=${onIsolateSelected}
           icon="flowbite:expand-outline"
           label="Isolate"
-          tooltip="Isolate selected items (Lesson 3.9)"
+          tooltip="Isolate Selected Engineering Elements"
         ></bim-button>
         <bim-button
           @click=${onShowAll}
           icon="flowbite:eye-outline"
           label="Show All"
-          tooltip="Restore all hidden elements (Lesson 3.9)"
+          tooltip="Restore Full Federated Model Visibility"
         ></bim-button>
       </bim-toolbar-section>
 
-      <!-- Section 3: Visual Modes & Navigation (Lessons 3.10 & 3.13) -->
+      <!-- Section 3: Visual Modes & Navigation -->
       <bim-toolbar-section label="View">
         <bim-button
           ${BUI.ref((element) => {
-            ghostButton = element as BUI.Button;
-          })}
+    ghostButton = element as BUI.Button;
+  })}
           icon="flowbite:lightbulb-outline"
           label="Ghost"
-          tooltip="Toggle translucent X-ray ghost mode (Lesson 3.10)"
+          tooltip="Translucent Architectural X-Ray Shading"
         >
           <bim-context-menu>
-            <div style="display: flex; flex-direction: column; gap: 0.45rem; padding: 0.65rem; min-width: 13rem; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; backdrop-filter: blur(16px);">
-              <span style="font-size: 0.72rem; color: #94a3b8; font-weight: 600; text-transform: uppercase;">Ghost / X-Ray Options</span>
+            <div style="display: flex; flex-direction: column; gap: 0.45rem; padding: 0.65rem; min-width: 14rem; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; backdrop-filter: blur(16px);">
+              <span style="font-size: 0.72rem; color: #94a3b8; font-weight: 600; text-transform: uppercase;">X-Ray & Focus Shading</span>
               <bim-button
                 @click=${onToggleGhostMode}
-                label="Toggle Ghost Mode"
+                label="Toggle Translucent X-Ray"
                 icon="flowbite:lightbulb-outline"
                 style="--bim-button-background: rgba(30, 41, 59, 0.85); color: #f8fafc;"
               ></bim-button>
               <bim-button
                 @click=${onGhostSelectedOnly}
-                label="Ghost Selected Only"
+                label="X-Ray Selected Elements"
                 icon="flowbite:eye-slash-outline"
                 style="--bim-button-background: rgba(30, 41, 59, 0.85); color: #f8fafc;"
               ></bim-button>
               <bim-button
                 @click=${onGhostAllExceptSelected}
-                label="Ghost Unselected (Focus)"
+                label="Isolate Focal Elements (X-Ray Context)"
                 icon="flowbite:expand-outline"
                 style="--bim-button-background: rgba(30, 41, 59, 0.85); color: #f8fafc;"
               ></bim-button>
               <bim-button
                 @click=${onClearGhostAction}
-                label="Clear Ghost Shading"
+                label="Restore Normal Shading"
                 icon="flowbite:trash-bin-outline"
                 style="--bim-button-background: rgba(239, 68, 68, 0.2); color: #ef4444;"
               ></bim-button>
@@ -458,7 +500,7 @@ export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarStat
           @click=${onFocusSelection}
           icon="solar:camera-bold"
           label="Focus"
-          tooltip="Focus camera on selected items or whole model (Lesson 3.13)"
+          tooltip="Fit & Frame Camera to Selected Elements"
         ></bim-button>
       </bim-toolbar-section>
     </bim-toolbar>

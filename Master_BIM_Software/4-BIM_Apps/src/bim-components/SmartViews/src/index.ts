@@ -427,6 +427,113 @@ export class SmartViews extends OBC.Component implements OBC.Disposable {
     this.onViewsReset.trigger();
   }
 
+  /**
+   * Mini Challenge: Serializes Smart Views to clean JSON-safe object.
+   */
+  export(): { data: any[] } {
+    const serializedList: any[] = [];
+    for (const [, view] of this.list) {
+      serializedList.push({
+        id: view.id,
+        name: view.name,
+        description: view.description,
+        defaultVisibility: view.defaultVisibility,
+        visibility: {
+          exceptions: {
+            queries: Array.from(view.visibility?.exceptions?.queries || []),
+            items: view.visibility?.exceptions?.items || {},
+          },
+        },
+        colors: {
+          queries: view.colors?.queries
+            ? Object.fromEntries(
+                Array.from(view.colors.queries.entries()).map(([k, set]) => [
+                  k,
+                  Array.from(set),
+                ])
+              )
+            : {},
+          items: view.colors?.items
+            ? Object.fromEntries(view.colors.items.entries())
+            : {},
+        },
+        camera: view.camera ? { ...view.camera } : undefined,
+        createdAt: view.createdAt,
+      });
+    }
+    return { data: serializedList };
+  }
+
+  /**
+   * Mini Challenge: Imports serialized Smart Views and adds them to this.list.
+   */
+  import(result: { data: any[] }): SmartView[] {
+    if (!result || !Array.isArray(result.data)) return [];
+    const imported: SmartView[] = [];
+    for (const raw of result.data) {
+      if (!raw || !raw.id || !raw.name) continue;
+
+      const colorQueries = new Map<string, Set<string>>();
+      if (raw.colors?.queries) {
+        for (const [color, arr] of Object.entries(raw.colors.queries)) {
+          if (Array.isArray(arr)) {
+            colorQueries.set(color, new Set(arr as string[]));
+          }
+        }
+      }
+
+      const colorItems = new Map<string, OBC.ModelIdMap>();
+      if (raw.colors?.items) {
+        for (const [color, map] of Object.entries(raw.colors.items)) {
+          colorItems.set(color, map as OBC.ModelIdMap);
+        }
+      }
+
+      const rehydrated: SmartView = {
+        id: raw.id,
+        name: raw.name,
+        description: raw.description,
+        defaultVisibility: raw.defaultVisibility ?? true,
+        visibility: {
+          exceptions: {
+            queries: new Set(raw.visibility?.exceptions?.queries || []),
+            items: raw.visibility?.exceptions?.items || {},
+          },
+        },
+        colors: {
+          queries: colorQueries,
+          items: colorItems,
+        },
+        camera: raw.camera,
+        createdAt: raw.createdAt || Date.now(),
+      };
+
+      this.list.set(rehydrated.id, rehydrated);
+      this.onViewCreated.trigger(rehydrated);
+      imported.push(rehydrated);
+    }
+    return imported;
+  }
+
+  /**
+   * Mini Challenge: Updates an existing Smart View in place using active workspace state.
+   */
+  updateViewWithCurrentState(id: string): SmartView | null {
+    const existing = this.list.get(id);
+    if (!existing) return null;
+
+    const cloned = this.clone(this.currentState);
+    cloned.id = existing.id;
+    cloned.name = existing.name;
+    cloned.description = existing.description;
+    cloned.camera = this.captureCameraState() || existing.camera;
+    cloned.createdAt = Date.now();
+
+    this.list.set(id, cloned);
+    this.onViewCreated.trigger(cloned);
+    return cloned;
+  }
+
   delete(id: string): void {
     if (this.list.delete(id)) {
       this.onViewDeleted.trigger(id);
