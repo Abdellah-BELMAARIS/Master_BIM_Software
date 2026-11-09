@@ -197,7 +197,37 @@ export class DataEnhancer extends OBC.Component implements OBC.Disposable {
   }
 
   /**
-   * Lesson 4.4 Challenge: Reverse lookup — finds all 3D BIM elements matching a clicked row
+   * Mini Challenge: Finds all BIM elements sharing the same information
+   * based on a specified source row property (e.g. identical specification document,
+   * manufacturer, material code, or QA status).
+   */
+  async findItemsSharingData(
+    sourceId: string,
+    propertyName: string,
+    targetValue: any
+  ): Promise<OBC.ModelIdMap> {
+    const merged: OBC.ModelIdMap = {};
+    const rows = await this.getSourceRows(sourceId);
+    if (!rows || rows.length === 0) return merged;
+
+    const matchingRows = rows.filter((r) => {
+      const val = r[propertyName];
+      if (val === undefined || val === null) return false;
+      return String(val).toLowerCase().trim() === String(targetValue).toLowerCase().trim();
+    });
+
+    for (const row of matchingRows) {
+      const map = await this.findItemsBySourceRow(sourceId, row);
+      if (map && !OBC.ModelIdMapUtils.isEmpty(map)) {
+        OBC.ModelIdMapUtils.add(merged, map);
+      }
+    }
+
+    return merged;
+  }
+
+  /**
+   * Reverse lookup — finds all 3D BIM elements matching a clicked row
    * inside any DataEnhancer source table.
    */
   async findItemsBySourceRow(

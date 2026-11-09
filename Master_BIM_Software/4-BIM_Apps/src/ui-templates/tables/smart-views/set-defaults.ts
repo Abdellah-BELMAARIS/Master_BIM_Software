@@ -71,6 +71,13 @@ export const setDefaults = (
         }
       };
 
+      const onUpdateView = () => {
+        const updated = smartViews.updateViewWithCurrentState(viewId);
+        if (updated) {
+          onRefresh?.();
+        }
+      };
+
       const onDelete = () => {
         smartViews.delete(viewId);
       };
@@ -80,17 +87,22 @@ export const setDefaults = (
           <bim-button
             @click=${onApply}
             icon="flowbite:play-outline"
-            tooltip-title="Apply Smart View"
+            tooltip-title="Apply Viewpoint"
+          ></bim-button>
+          <bim-button
+            @click=${onUpdateView}
+            icon="solar:refresh-circle-bold"
+            tooltip-title="Update Viewpoint (Sync Current Camera, Visibility & Overrides)"
           ></bim-button>
           <bim-button
             @click=${onUpdateCamera}
             icon="solar:camera-bold"
-            tooltip-title="Save Current Camera Pose to View"
+            tooltip-title="Save Current Camera Viewpoint Pose"
           ></bim-button>
           <bim-button
             @click=${onDelete}
             icon="flowbite:trash-bin-outline"
-            tooltip-title="Delete Smart View"
+            tooltip-title="Remove Coordination Viewpoint"
           ></bim-button>
         </div>
       `;

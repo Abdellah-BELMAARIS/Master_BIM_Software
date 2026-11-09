@@ -138,6 +138,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
 
     type DockDrawerId = "models" | "query" | "properties" | "enhance" | "smart-views";
     const [activeDrawer, setActiveDrawer] = React.useState<DockDrawerId | null>(null);
+    const [isTopBarCollapsed, setIsTopBarCollapsed] = React.useState<boolean>(false);
     const toggleDrawer = (drawer: DockDrawerId) => {
         setActiveDrawer((prev) => (prev === drawer ? null : drawer));
     };
@@ -1018,7 +1019,14 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
 
                 <div className="details-viewer-wrapper" ref={viewerWrapperRef}>
                     {/* Top Viewport Mode Switcher & Course Tools Bar */}
-                    <div className="viewer-mode-switch-bar" ref={modeBarRef}>
+                    <div
+                        className="viewer-mode-switch-bar"
+                        ref={modeBarRef}
+                        style={{
+                            display: isTopBarCollapsed ? "none" : "flex",
+                            transition: "all 0.2s ease",
+                        }}
+                    >
                         <button
                             type="button"
                             className={`viewer-mode-tab ${viewerMode === "bim-world" ? "active" : ""}`}
@@ -1058,7 +1066,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                             type="button"
                             className={`viewer-mode-tab toc-course-pill ${activeDrawer === "models" ? "active" : ""}`}
                             onClick={() => toggleDrawer("models")}
-                            title="Toggle Models Manager (Lessons 3.6 & 3.7)"
+                            title="Open Federated BIM Models & IFC Tree"
                         >
                             <span className="material-icons-round">folder_open</span>
                             <span>Models</span>
@@ -1068,7 +1076,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                             type="button"
                             className={`viewer-mode-tab toc-course-pill ${activeDrawer === "query" ? "active" : ""}`}
                             onClick={() => toggleDrawer("query")}
-                            title="Toggle Data Queries & ItemsFinder (Lessons 3.11 & 3.12)"
+                            title="Execute Spatial & Semantic IFC Queries"
                         >
                             <span className="material-icons-round">search</span>
                             <span>Query</span>
@@ -1078,7 +1086,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                             type="button"
                             className={`viewer-mode-tab toc-course-pill ${activeDrawer === "properties" ? "active" : ""}`}
                             onClick={() => toggleDrawer("properties")}
-                            title="Toggle Element Properties Table (Lesson 3.5)"
+                            title="Inspect IFC Schema Properties & Quantity Sets"
                         >
                             <span className="material-icons-round">table_chart</span>
                             <span>Properties</span>
@@ -1088,7 +1096,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                             type="button"
                             className={`viewer-mode-tab toc-course-pill ${activeDrawer === "enhance" ? "active" : ""}`}
                             onClick={() => toggleDrawer("enhance")}
-                            title="Toggle Custom DataEnhancer (Lessons 4.1–4.5)"
+                            title="Connect External Engineering Specifications & Field QA"
                         >
                             <span className="material-icons-round">storage</span>
                             <span>Enhance</span>
@@ -1098,7 +1106,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                             type="button"
                             className={`viewer-mode-tab toc-course-pill ${activeDrawer === "smart-views" ? "active" : ""}`}
                             onClick={() => toggleDrawer("smart-views")}
-                            title="Toggle Custom SmartViews (Lessons 5.1–5.5)"
+                            title="Multi-Disciplinary BIM Coordination Viewpoints"
                         >
                             <span className="material-icons-round">camera</span>
                             <span>Smart Views</span>
@@ -1115,7 +1123,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                 display: viewerMode === "bim-world" || viewerMode === "2d-plan" ? "block" : "none",
                             }}
                         >
-                            {/* Dockable Models Manager Drawer (Lesson 3.6 & 3.7) — Mounted Once */}
+                            {/* Dockable Models Manager Drawer — Mounted Once */}
                             <div
                                 className="toc-dock-panel toc-dock-left"
                                 data-drawer="models"
@@ -1124,13 +1132,13 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                 <div className="toc-dock-header">
                                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                                         <span className="material-icons-round" style={{ color: "#38bdf8", fontSize: "18px" }}>folder_open</span>
-                                        <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f8fafc" }}>BIM Models Manager · Lesson 3.6</span>
+                                        <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f8fafc" }}>Federated Model Inventory & IFC Tree</span>
                                     </div>
                                     <button
                                         type="button"
                                         onClick={() => setActiveDrawer(null)}
                                         className="btn-close-dock"
-                                        title="Close Models Panel"
+                                        title="Close Models Inventory"
                                     >
                                         &times;
                                     </button>
@@ -1138,7 +1146,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                 <div ref={modelsContainerRef} className="toc-dock-body"></div>
                             </div>
 
-                            {/* Dockable Query & ItemsFinder Drawer (Lessons 3.11 & 3.12) — Mounted Once */}
+                            {/* Dockable Query & ItemsFinder Drawer — Mounted Once */}
                             <div
                                 className="toc-dock-panel toc-dock-right"
                                 data-drawer="query"
@@ -1147,13 +1155,13 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                 <div className="toc-dock-header">
                                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                                         <span className="material-icons-round" style={{ color: "#38bdf8", fontSize: "18px" }}>search</span>
-                                        <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f8fafc" }}>ItemsFinder Queries · Lessons 3.11–3.12</span>
+                                        <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f8fafc" }}>IFC Spatial Query & Relational Engine</span>
                                     </div>
                                     <button
                                         type="button"
                                         onClick={() => setActiveDrawer(null)}
                                         className="btn-close-dock"
-                                        title="Close Query Panel"
+                                        title="Close Query Engine"
                                     >
                                         &times;
                                     </button>
@@ -1161,7 +1169,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                 <div ref={queryContainerRef} className="toc-dock-body"></div>
                             </div>
 
-                            {/* Dockable Element Properties Drawer (Lesson 3.5) — Mounted Once */}
+                            {/* Dockable Element Properties Drawer — Mounted Once */}
                             <div
                                 className="toc-dock-panel toc-dock-right"
                                 data-drawer="properties"
@@ -1170,13 +1178,13 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                 <div className="toc-dock-header">
                                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                                         <span className="material-icons-round" style={{ color: "#38bdf8", fontSize: "18px" }}>table_chart</span>
-                                        <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f8fafc" }}>BIM Properties Data · Lesson 3.5</span>
+                                        <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f8fafc" }}>IFC Schema Property Set Inspector</span>
                                     </div>
                                     <button
                                         type="button"
                                         onClick={() => setActiveDrawer(null)}
                                         className="btn-close-dock"
-                                        title="Close Properties Panel"
+                                        title="Close Property Inspector"
                                     >
                                         &times;
                                     </button>
@@ -1184,7 +1192,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                 <div ref={propertiesContainerRef} className="toc-dock-body"></div>
                             </div>
 
-                            {/* Dockable Data Enhancer Drawer (Lessons 4.1 – 4.5) — Mounted Once */}
+                            {/* Dockable Data Enhancer Drawer — Mounted Once */}
                             <div
                                 className="toc-dock-panel toc-dock-right"
                                 data-drawer="enhance"
@@ -1193,13 +1201,13 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                 <div className="toc-dock-header">
                                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                                         <span className="material-icons-round" style={{ color: "#38bdf8", fontSize: "18px" }}>storage</span>
-                                        <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f8fafc" }}>Data Enhancer · Lessons 4.1–4.5</span>
+                                        <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f8fafc" }}>Engineering Specifications & QA Matrix</span>
                                     </div>
                                     <button
                                         type="button"
                                         onClick={() => setActiveDrawer(null)}
                                         className="btn-close-dock"
-                                        title="Close Data Enhancer Panel"
+                                        title="Close Specifications Panel"
                                     >
                                         &times;
                                     </button>
@@ -1207,7 +1215,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                 <div ref={dataEnhancerContainerRef} className="toc-dock-body"></div>
                             </div>
 
-                            {/* Dockable Smart Views Drawer (Lessons 5.1 – 5.5) — Mounted Once */}
+                            {/* Dockable Smart Views Drawer — Mounted Once */}
                             <div
                                 className="toc-dock-panel toc-dock-left"
                                 data-drawer="smart-views"
@@ -1216,13 +1224,13 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                 <div className="toc-dock-header">
                                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                                         <span className="material-icons-round" style={{ color: "#38bdf8", fontSize: "18px" }}>camera</span>
-                                        <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f8fafc" }}>Smart Views · Lessons 5.1–5.5</span>
+                                        <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f8fafc" }}>BIM Coordination Viewpoints & Overrides</span>
                                     </div>
                                     <button
                                         type="button"
                                         onClick={() => setActiveDrawer(null)}
                                         className="btn-close-dock"
-                                        title="Close Smart Views Panel"
+                                        title="Close Coordination Viewpoints"
                                     >
                                         &times;
                                     </button>
@@ -1601,6 +1609,32 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                 >
                                     <span className="material-icons-round" style={{ fontSize: "15px" }}>file_upload</span>
                                     <span className="hud-btn-label">Load IFC</span>
+                                </button>
+                                <div style={{ width: "1px", height: "16px", background: "rgba(148, 163, 184, 0.3)", margin: "0 1px", flexShrink: 0 }} />
+                                {/* Fullscreen 100% Canvas Toggle Button */}
+                                <button
+                                    type="button"
+                                    onClick={() => setIsTopBarCollapsed((prev) => !prev)}
+                                    style={{
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: "4px",
+                                        padding: "5px 9px",
+                                        background: isTopBarCollapsed ? "rgba(56, 189, 248, 0.25)" : "rgba(30, 41, 59, 0.85)",
+                                        border: isTopBarCollapsed ? "1px solid #38bdf8" : "1px solid rgba(148, 163, 184, 0.25)",
+                                        borderRadius: "20px",
+                                        color: isTopBarCollapsed ? "#38bdf8" : "#f8fafc",
+                                        cursor: "pointer",
+                                        fontSize: "0.76rem",
+                                        fontWeight: 600,
+                                        flexShrink: 0,
+                                    }}
+                                    title={isTopBarCollapsed ? "Show Navigation & Tools Bar" : "Hide Top Bar (100% Fullscreen Canvas)"}
+                                >
+                                    <span className="material-icons-round" style={{ fontSize: "15px" }}>
+                                        {isTopBarCollapsed ? "expand_more" : "fullscreen"}
+                                    </span>
+                                    <span className="hud-btn-label">{isTopBarCollapsed ? "Dock Bar" : "Fullscreen"}</span>
                                 </button>
                             </div>
                         </div>
