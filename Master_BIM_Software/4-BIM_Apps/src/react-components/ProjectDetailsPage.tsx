@@ -146,7 +146,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
     const [isParsingIfc, setIsParsingIfc] = React.useState<boolean>(false);
     const [customIfcName, setCustomIfcName] = React.useState<string | null>(null);
 
-    type DockDrawerId = "models" | "query" | "properties" | "enhance" | "smart-views";
+    type DockDrawerId = "models" | "query" | "properties" | "enhance" | "smart-views" | "gis";
     const [activeDrawer, setActiveDrawer] = React.useState<DockDrawerId | null>(null);
     const [isTopBarCollapsed, setIsTopBarCollapsed] = React.useState<boolean>(false);
     const [isFloatingToolbarCollapsed, setIsFloatingToolbarCollapsed] = React.useState<boolean>(false);
@@ -162,6 +162,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
     const queryContainerRef = React.useRef<HTMLDivElement | null>(null);
     const dataEnhancerContainerRef = React.useRef<HTMLDivElement | null>(null);
     const smartViewsContainerRef = React.useRef<HTMLDivElement | null>(null);
+    const gisContainerRef = React.useRef<HTMLDivElement | null>(null);
 
     // Measure .viewer-mode-switch-bar and floating <bim-toolbar> dynamically -> --mode-bar-bottom & --toolbar-bottom
     // Guarantees zero overlap between top bar, floating toolbar, dockable drawers, and banners at all breakpoints
@@ -295,6 +296,18 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                 }
             } catch (err) {
                 console.warn("[SmartViews] Error mounting UI:", err);
+            }
+        }
+
+        if (gisContainerRef.current) {
+            try {
+                const [gisSection] = BUI.Component.create<
+                    BUI.PanelSection,
+                    templates.GISState
+                >(templates.gisTemplate, { components });
+                gisContainerRef.current.replaceChildren(gisSection);
+            } catch (err) {
+                console.warn("[GIS] Error mounting UI:", err);
             }
         }
     }, [engineReadyTick, project?.id]);
@@ -864,6 +877,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
             queryContainerRef.current?.replaceChildren();
             dataEnhancerContainerRef.current?.replaceChildren();
             smartViewsContainerRef.current?.replaceChildren();
+            gisContainerRef.current?.replaceChildren();
 
             if (selectionBoxRef.current && worldRef.current) {
                 try {
@@ -1151,6 +1165,16 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                             <span>Smart Views</span>
                         </button>
 
+                        <button
+                            type="button"
+                            className={`viewer-mode-tab toc-course-pill ${activeDrawer === "gis" ? "active" : ""}`}
+                            onClick={() => toggleDrawer("gis")}
+                            title="Cesium GIS & Geospatial Environment"
+                        >
+                            <span className="material-icons-round">public</span>
+                            <span>GIS</span>
+                        </button>
+
                         <div style={{ width: "1px", height: "16px", background: "rgba(148, 163, 184, 0.25)", margin: "0 2px" }} />
 
                         {/* Top Bar Minimize Button */}
@@ -1320,6 +1344,29 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                     </button>
                                 </div>
                                 <div ref={smartViewsContainerRef} className="toc-dock-body"></div>
+                            </div>
+
+                            {/* Dockable GIS & Geospatial Drawer — Mounted Once */}
+                            <div
+                                className="toc-dock-panel toc-dock-left"
+                                data-drawer="gis"
+                                style={{ display: activeDrawer === "gis" ? "flex" : "none" }}
+                            >
+                                <div className="toc-dock-header">
+                                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                        <span className="material-icons-round" style={{ color: "#38bdf8", fontSize: "18px" }}>public</span>
+                                        <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f8fafc" }}>Cesium GIS & Geospatial Environment</span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveDrawer(null)}
+                                        className="btn-close-dock"
+                                        title="Close GIS Panel"
+                                    >
+                                        &times;
+                                    </button>
+                                </div>
+                                <div ref={gisContainerRef} className="toc-dock-body"></div>
                             </div>
 
                             <bim-grid

@@ -1,31 +1,30 @@
-# 🔗 Module 05 — Connecting Workflows (GIS, Sheets, MCP & ACC)
+# 🏢 Module 04 — Creating BIM Apps (That Open Engine & Fragments)
 
 ## 📌 Module Overview
-Bridge 3D BIM models with external enterprise data pipelines, geospatial information systems (GIS), cloud document management (Autodesk Construction Cloud), spreadsheets, and AI protocols (MCP).
+Master the **That Open Engine** (`@thatopen/components`) and **Fragments** format (`@thatopen/fragments`) to build browser-based Building Information Modeling (BIM) applications capable of loading gigabyte-scale IFC models in milliseconds.
 
 ---
 
 ## 🎯 Key Learning Objectives
-1. **Geospatial & GIS Integration:**
-   - Coordinate reference systems (CRS) and geolocation transforms (WGS84, UTM to local BIM coordinates).
-   - Overlaying 3D IFC models onto geospatial maps (Mapbox / Cesium / MapLibre).
+1. **That Open Engine Architecture:**
+   - Understanding `OBC.Components` and component registry patterns.
+   - Managing `OBC.World` instances (SimpleWorld, ShadowedScene, Postproduction).
+   - Viewport configuration, raycasting, and camera control extensions.
 
-2. **Spreadsheet & Tabular Data Sync:**
-   - Bidirectional synchronization with Google Sheets and Excel.
-   - Cost estimating, quantity takeoffs (QTO), and schedule linking.
+2. **IFC to Fragments Processing:**
+   - Converting heavy IFC files to lightweight flatbuffers (`.frag` format).
+   - High-throughput geometry streaming with WebGL instances.
+   - Managing spatial trees (`IfcSpatialStructure`), elements, and property sets (`Psets`).
 
-3. **Autodesk Construction Cloud (ACC) & CDE Workflows:**
-   - Connecting to Autodesk Platform Services (APS / Forge) APIs.
-   - Fetching and synchronizing project models from cloud storage.
-
-4. **Model Context Protocol (MCP):**
-   - Building MCP server endpoints exposing BIM data to AI agents.
-   - Enabling LLM clients to query IFC element counts, materials, and spatial properties.
+3. **BIM Queries & Custom Components:**
+   - Element selection, isolating, hiding, and thematic coloring.
+   - Building custom components (`OBC.Component`) for domain workflows.
+   - User Interface binding using That Open BUI (`@thatopen/ui`).
 
 ---
 
 ## 📂 Workspace Structure
 ```text
-05 - 🔗 Connecting Workflows (GIS, Sheets, MCP & ACC)/
+04 - 🏢 Creating BIM Apps (That Open Engine & Fragments)/
 ├── README.md
 ```

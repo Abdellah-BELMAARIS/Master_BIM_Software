@@ -7,6 +7,7 @@ import {
   queriesTemplate,
   dataSourcesTemplate,
   smartViewsSectionTemplate,
+  gisTemplate,
 } from "../../../sections";
 import { ComponentsGrid, ComponentsGridLayout } from "./types";
 
@@ -52,6 +53,10 @@ export const createComponentsGridLayouts = (
       template: smartViewsSectionTemplate,
       initialState: { components },
     },
+    gis: {
+      template: gisTemplate,
+      initialState: { components },
+    },
   };
 
   grid.layouts = {
@@ -94,6 +99,13 @@ export const createComponentsGridLayouts = (
       icon: "solar:layers-minimalistic-bold",
       template: `
         "smartViews viewport" 1fr
+        / 23rem 1fr
+      `,
+    },
+    GIS: {
+      icon: "material-symbols:public",
+      template: `
+        "gis viewport" 1fr
         / 23rem 1fr
       `,
     },

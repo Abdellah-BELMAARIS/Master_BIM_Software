@@ -5,6 +5,7 @@ import {
   QueriesSectionState,
   DataSourcesState,
   SmartViewsSectionState,
+  GISState,
 } from "../../../sections";
 
 export type ComponentsGridElement = [
@@ -31,6 +32,10 @@ export type ComponentsGridElement = [
   {
     name: "smartViews";
     state: SmartViewsSectionState;
+  },
+  {
+    name: "gis";
+    state: GISState;
   }
 ];
 
@@ -40,7 +45,8 @@ export type ComponentsGridLayout = [
   "Queries",
   "Properties",
   "Enhance",
-  "SmartViews"
+  "SmartViews",
+  "GIS"
 ];
 
 export type ComponentsGrid = BUI.Grid<ComponentsGridLayout, ComponentsGridElement>;
