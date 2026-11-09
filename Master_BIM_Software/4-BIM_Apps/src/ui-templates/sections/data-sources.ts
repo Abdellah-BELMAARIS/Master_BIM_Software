@@ -195,18 +195,18 @@ export const dataSourcesTemplate: BUI.StatefullComponent<DataSourcesState> = (
         <div style="display: flex; gap: 0.35rem; align-items: center;">
           <bim-dropdown
             ${BUI.ref((el) => {
-              sourceDropdown = el as BUI.Dropdown;
-              if (sourceDropdown && !sourceDropdown.value?.length && activeSource) {
-                sourceDropdown.value = [activeSource];
-              }
-            })}
+    sourceDropdown = el as BUI.Dropdown;
+    if (sourceDropdown && !sourceDropdown.value?.length && activeSource) {
+      sourceDropdown.value = [activeSource];
+    }
+  })}
             @change=${onSourceChange}
             required
             style="flex: 1; min-width: 0;"
           >
             ${sourceNames.map(
-              (name) => BUI.html`<bim-option label=${name} value=${name} ?checked=${name === activeSource}></bim-option>`
-            )}
+    (name) => BUI.html`<bim-option label=${name} value=${name} ?checked=${name === activeSource}></bim-option>`
+  )}
           </bim-dropdown>
           <bim-button
             @click=${onRefreshSource}
@@ -232,14 +232,14 @@ export const dataSourcesTemplate: BUI.StatefullComponent<DataSourcesState> = (
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem; padding: 0.45rem; background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 8px;">
           <bim-text-input
             ${BUI.ref((el) => {
-              propNameInput = el as BUI.TextInput;
-            })}
+    propNameInput = el as BUI.TextInput;
+  })}
             placeholder="Param (e.g. FireRating)"
           ></bim-text-input>
           <bim-text-input
             ${BUI.ref((el) => {
-              propValueInput = el as BUI.TextInput;
-            })}
+    propValueInput = el as BUI.TextInput;
+  })}
             placeholder="Value (e.g. REI-120)"
           ></bim-text-input>
           <bim-button
@@ -258,8 +258,8 @@ export const dataSourcesTemplate: BUI.StatefullComponent<DataSourcesState> = (
 
         <span
           ${BUI.ref((el) => {
-            statusBadge = el as HTMLSpanElement;
-          })}
+    statusBadge = el as HTMLSpanElement;
+  })}
           style="font-size: 0.72rem; color: #94a3b8;"
         >Click any row below to highlight matching BIM elements.</span>
       </div>
