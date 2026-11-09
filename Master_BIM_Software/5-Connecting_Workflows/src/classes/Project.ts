@@ -14,8 +14,8 @@ export type UserRole =
     | "BIM Specialist";
 export type TodoStatus = "pending" | "in-progress" | "completed";
 export type TodoPriority = "low" | "medium" | "high" | "critical";
-export type ModelType = "cube" | "gear" | "car" | "villa" | "tower" | "bridge";
-export type ModelCategory = "ifc" | "3d";
+export type ModelType = "cube" | "gear" | "car" | "villa" | "tower" | "bridge" | "empty";
+export type ModelCategory = "ifc" | "3d" | "empty";
 
 export interface IProjectTask {
     id: number;
@@ -51,7 +51,6 @@ export interface IProject {
     modelCategory?: ModelCategory;
     ifcFileName?: string;
     ifcSchema?: "IFC4" | "IFC2X3" | "IFC4.3";
-    smartViews?: any[];
     smartViews?: any[];
 }
 
@@ -130,14 +129,14 @@ export class Project implements IProject {
         // Structural BCF / To-Do Tasks (Challenge #6, #7, #9: Stored inside project data with status)
         this.todos = data.todos
             ? data.todos.map((t) => ({
-                  ...t,
-                  status: t.status || (t.completed ? "completed" : "pending"),
-                  completed: t.status === "completed" || Boolean(t.completed),
-              }))
+                ...t,
+                status: t.status || (t.completed ? "completed" : "pending"),
+                completed: t.status === "completed" || Boolean(t.completed),
+            }))
             : [
-                  { id: 1, text: "Verify structural foundation loads & seismic joints", date: "Fri, 20 Sep", status: "in-progress", completed: false },
-                  { id: 2, text: "Perform CYPECAD concrete reinforcement calculation & detailing", date: "Mon, 23 Sep", status: "pending", completed: false },
-                  { id: 3, text: "Resolve MEP HVAC collision with concrete beam in IFC viewer", date: "Thu, 26 Sep", status: "completed", completed: true },
-              ];
+                { id: 1, text: "Verify structural foundation loads & seismic joints", date: "Fri, 20 Sep", status: "in-progress", completed: false },
+                { id: 2, text: "Perform CYPECAD concrete reinforcement calculation & detailing", date: "Mon, 23 Sep", status: "pending", completed: false },
+                { id: 3, text: "Resolve MEP HVAC collision with concrete beam in IFC viewer", date: "Thu, 26 Sep", status: "completed", completed: true },
+            ];
     }
 }

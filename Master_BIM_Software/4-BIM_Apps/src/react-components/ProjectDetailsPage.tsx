@@ -394,6 +394,24 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
             const buffer = await file.arrayBuffer();
             await loadIfcFromBuffer(componentsRef.current, worldRef.current, buffer, file.name);
             setCustomIfcName(file.name);
+
+            // Persist uploaded model name to Firestore so it remains loaded on refresh
+            if (project?.id) {
+                try {
+                    const projectRef = doc(db, "projects", project.id);
+                    await updateDoc(projectRef, {
+                        ifcFileName: file.name,
+                        modelCategory: "ifc",
+                        ifcSchema: file.name.toLowerCase().includes("2x3") ? "IFC2X3" : "IFC4",
+                    });
+                    project.ifcFileName = file.name;
+                    project.modelCategory = "ifc";
+                    project.ifcSchema = file.name.toLowerCase().includes("2x3") ? "IFC2X3" : "IFC4";
+                    forceUpdate();
+                } catch (dbErr) {
+                    console.warn("[ProjectDetailsPage] Firestore update failed:", dbErr);
+                }
+            }
         } catch (err: any) {
             alert(`Error parsing IFC file "${file.name}": ${err?.message || err}`);
         } finally {
@@ -1413,10 +1431,85 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                             <input
                                 type="file"
                                 ref={fileInputRef}
-                                accept=".ifc"
+                                accept=".ifc,.obj,.gltf,.glb,.frag"
                                 onChange={handleIfcFileSelected}
                                 style={{ display: "none" }}
                             />
+
+                            {/* Empty Project In-Viewport Prompt */}
+                            {project?.modelCategory === "empty" && !customIfcName && !isParsingIfc && (
+                                <div
+                                    className="toc-empty-project-overlay"
+                                    style={{
+                                        position: "absolute",
+                                        top: "50%",
+                                        left: "50%",
+                                        transform: "translate(-50%, -50%)",
+                                        zIndex: 15,
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        alignItems: "center",
+                                        textAlign: "center",
+                                        gap: "14px",
+                                        background: "rgba(15, 23, 42, 0.90)",
+                                        border: "1.5px dashed rgba(56, 189, 248, 0.5)",
+                                        backdropFilter: "blur(16px)",
+                                        borderRadius: "16px",
+                                        padding: "2.2rem 2.5rem",
+                                        maxWidth: "460px",
+                                        boxShadow: "0 14px 45px rgba(0, 0, 0, 0.65)",
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            width: "60px",
+                                            height: "60px",
+                                            borderRadius: "50%",
+                                            background: "rgba(56, 189, 248, 0.12)",
+                                            border: "1px solid rgba(56, 189, 248, 0.35)",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                        }}
+                                    >
+                                        <span
+                                            className="material-icons-round"
+                                            style={{ fontSize: "32px", color: "#38bdf8" }}
+                                        >
+                                            cloud_upload
+                                        </span>
+                                    </div>
+                                    <h3 style={{ margin: 0, fontSize: "1.2rem", fontWeight: 700, color: "#f8fafc" }}>
+                                        Empty BIM Workspace
+                                    </h3>
+                                    <p style={{ margin: 0, fontSize: "0.84rem", color: "#94a3b8", lineHeight: 1.55 }}>
+                                        This project was created without a model. You can upload an IFC OpenBIM model, CAD mesh (.obj, .gltf), or stream Cesium GIS territorial data anytime.
+                                    </p>
+                                    <button
+                                        type="button"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        style={{
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            gap: "8px",
+                                            background: "linear-gradient(135deg, #0284c7, #0ea5e9)",
+                                            border: "none",
+                                            borderRadius: "10px",
+                                            padding: "10px 22px",
+                                            color: "#ffffff",
+                                            fontSize: "0.88rem",
+                                            fontWeight: 700,
+                                            cursor: "pointer",
+                                            boxShadow: "0 6px 20px rgba(14, 165, 233, 0.4)",
+                                            marginTop: "6px",
+                                            transition: "transform 0.15s ease",
+                                        }}
+                                    >
+                                        <span className="material-icons-round" style={{ fontSize: "20px" }}>file_upload</span>
+                                        <span>Upload Model Now</span>
+                                    </button>
+                                </div>
+                            )}
 
                             {isMeasuring && (
                                 <div className="measurement-banner">

@@ -26,20 +26,22 @@ export function ProjectForm(props: ProjectFormProps) {
     const [formError, setFormError] = React.useState<string | null>(null);
     const [uploadedFile, setUploadedFile] = React.useState<File | null>(null);
     const [uploadedFileName, setUploadedFileName] = React.useState<string>(project?.ifcFileName || "");
-    const [modelCategory, setModelCategory] = React.useState<"ifc" | "3d">(project?.modelCategory || (project?.ifcFileName ? "ifc" : "3d"));
+    const [modelCategory, setModelCategory] = React.useState<"ifc" | "3d" | "empty">(
+        project?.modelCategory || (project?.ifcFileName ? "ifc" : "empty")
+    );
     const [detectedSchema, setDetectedSchema] = React.useState<"IFC4" | "IFC2X3" | "IFC4.3" | undefined>(project?.ifcSchema);
     const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
     React.useEffect(() => {
         if (project) {
             setUploadedFileName(project.ifcFileName || "");
-            setModelCategory(project.modelCategory || (project.ifcFileName ? "ifc" : "3d"));
+            setModelCategory(project.modelCategory || (project.ifcFileName ? "ifc" : "empty"));
             setDetectedSchema(project.ifcSchema);
         } else {
             setUploadedFile(null);
             setUploadedFileName("");
-            setModelCategory("ifc");
-            setDetectedSchema("IFC4");
+            setModelCategory("empty");
+            setDetectedSchema(undefined);
         }
     }, [project, isOpen]);
 
@@ -140,10 +142,10 @@ export function ProjectForm(props: ProjectFormProps) {
         const rawProgress = Number(formData.get("progress") ?? 25);
         const clampedProgress = Math.min(100, Math.max(0, isNaN(rawProgress) ? 25 : rawProgress)) / 100;
 
-        let finalModelCategory: "ifc" | "3d" = modelCategory;
+        let finalModelCategory: "ifc" | "3d" | "empty" = modelCategory;
         let ifcFileName: string | undefined = undefined;
         let ifcSchema: "IFC4" | "IFC2X3" | "IFC4.3" | undefined = undefined;
-        let modelType: ModelType = "tower";
+        let modelType: ModelType = "empty";
 
         if (uploadedFileName) {
             if (uploadedFileName.toLowerCase().endsWith(".ifc")) {
@@ -176,9 +178,13 @@ export function ProjectForm(props: ProjectFormProps) {
             ifcFileName = project.ifcFileName;
             ifcSchema = project.ifcSchema;
             modelType = project.modelType || "bridge";
-        } else {
+        } else if (project?.modelCategory === "3d") {
             finalModelCategory = "3d";
-            modelType = project?.modelType || "tower";
+            modelType = project.modelType || "tower";
+        } else {
+            // Empty project: no 3D models or IFC attached initially. Can upload now or later!
+            finalModelCategory = "empty";
+            modelType = "empty";
         }
 
         const randomIndex = Math.floor(Math.random() * PROJECT_ICON_COLORS.length);

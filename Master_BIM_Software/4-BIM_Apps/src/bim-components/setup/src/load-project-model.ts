@@ -253,6 +253,20 @@ export async function loadProjectModel(
   const cameraControls = (world.camera as any).controls;
 
   // =========================================================================
+  // 0. EMPTY PROJECT (NO MODEL ATTACHED YET — READY FOR USER UPLOAD)
+  // =========================================================================
+  if (project.modelCategory === "empty" && !project.ifcFileName && !(window as any).__customIfcBuffers?.[project.name]) {
+    console.log("[loadProjectModel] Empty project: no 3D model or IFC file attached yet. Viewport ready for model upload.");
+    return {
+      group: modelGroup,
+      dispose: () => {
+        modelGroup.clear();
+        world.scene.three.remove(modelGroup);
+      },
+    };
+  }
+
+  // =========================================================================
   // 1. IFC OPENBIM MODELS (LOAD VIA THAT OPEN ENGINE IFC LOADER)
   // =========================================================================
   const ifcMeta = getProjectIfcFile(project);

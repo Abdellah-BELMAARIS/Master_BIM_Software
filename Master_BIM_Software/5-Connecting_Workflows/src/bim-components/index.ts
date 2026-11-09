@@ -1,5 +1,6 @@
 export * from "./setup";
 export * from "./DataEnhancer";
 export * from "./SmartViews";
+export * from "./GisLayers";
 
 

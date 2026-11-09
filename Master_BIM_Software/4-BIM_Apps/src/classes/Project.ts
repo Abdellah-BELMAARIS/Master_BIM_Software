@@ -14,8 +14,8 @@ export type UserRole =
     | "BIM Specialist";
 export type TodoStatus = "pending" | "in-progress" | "completed";
 export type TodoPriority = "low" | "medium" | "high" | "critical";
-export type ModelType = "cube" | "gear" | "car" | "villa" | "tower" | "bridge";
-export type ModelCategory = "ifc" | "3d";
+export type ModelType = "cube" | "gear" | "car" | "villa" | "tower" | "bridge" | "empty";
+export type ModelCategory = "ifc" | "3d" | "empty";
 
 export interface IProjectTask {
     id: number;
@@ -51,7 +51,6 @@ export interface IProject {
     modelCategory?: ModelCategory;
     ifcFileName?: string;
     ifcSchema?: "IFC4" | "IFC2X3" | "IFC4.3";
-    smartViews?: any[];
     smartViews?: any[];
 }
 

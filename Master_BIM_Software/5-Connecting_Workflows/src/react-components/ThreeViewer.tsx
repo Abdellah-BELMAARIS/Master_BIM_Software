@@ -240,6 +240,11 @@ export function ThreeViewer(props: ThreeViewerProps) {
                     top: { target: [0, 3.2, 0], pos: [0, 42, 0.01] },
                     front: { target: [0, 4.0, 0], pos: [0, 6.0, 34] },
                 },
+                empty: {
+                    iso: { target: [0, 0, 0], pos: [12, 10, 14] },
+                    top: { target: [0, 0, 0], pos: [0, 20, 0.01] },
+                    front: { target: [0, 0, 0], pos: [0, 2, 16] },
+                },
             };
 
             const p = presets[model] || presets.cube;

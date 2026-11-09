@@ -24,9 +24,13 @@ export function ProjectCard(props: Props) {
         : "N/A";
 
     // Resolve accurate, human-readable 3D model metadata and self-explanatory badge
-    const getModelBadge = (proj: Project): { name: string; icon: string; category: "ifc" | "3d"; schema?: string } => {
+    const getModelBadge = (proj: Project): { name: string; icon: string; category: "ifc" | "3d" | "empty"; schema?: string } => {
         const nameLow = (proj.name || "").toLowerCase();
         const fileLow = (proj.ifcFileName || "").toLowerCase();
+
+        if (proj.modelCategory === "empty" && !proj.ifcFileName) {
+            return { name: "No Model · Upload Later", icon: "cloud_upload", category: "empty" };
+        }
 
         if (proj.modelCategory === "ifc" || proj.ifcFileName || nameLow.includes("ifc")) {
             const schema = proj.ifcSchema || (nameLow.includes("ifc4") || fileLow.includes("ifc4") ? "IFC4" : "IFC2X3");

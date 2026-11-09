@@ -24,7 +24,9 @@ import {
     DataEnhancer,
     SmartViews,
     unwrapIfcAttr,
+    GISLayers,
 } from "../bim-components";
+import { NavigationCube } from "./NavigationCube";
 
 export interface ProjectDetailsPageProps {
     projectsManager: ProjectsManager;
@@ -116,7 +118,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
     const gridRef = React.useRef<templates.ViewerGrid | null>(null);
 
     let project = projectId ? projectsManager.getProject(projectId) : null;
-    if (project && (project.ifcFileName || project.name.toLowerCase().includes("ifc"))) {
+    if (project && project.modelCategory !== "empty" && (project.ifcFileName || project.name.toLowerCase().includes("ifc"))) {
         if (project.modelCategory !== "ifc") {
             project.modelCategory = "ifc";
             try {
@@ -138,6 +140,8 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
     const measurementSystemRef = React.useRef<BimMeasurementSystem | null>(null);
     const [isMeasuring, setIsMeasuring] = React.useState<boolean>(false);
     const [measurementsCount, setMeasurementsCount] = React.useState<number>(0);
+    const [isSectioningActive, setIsSectioningActive] = React.useState<boolean>(false);
+    const [sectionPlanesCount, setSectionPlanesCount] = React.useState<number>(0);
 
     const [selectedElement, setSelectedElement] = React.useState<BimElementInfo | null>(null);
     const selectionBoxRef = React.useRef<THREE.BoxHelper | null>(null);
@@ -145,13 +149,33 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
     const fileInputRef = React.useRef<HTMLInputElement | null>(null);
     const [isParsingIfc, setIsParsingIfc] = React.useState<boolean>(false);
     const [customIfcName, setCustomIfcName] = React.useState<string | null>(null);
+    const [isLeftPaneCollapsed, setIsLeftPaneCollapsed] = React.useState<boolean>(false);
+    const [isDraggingFile, setIsDraggingFile] = React.useState<boolean>(false);
+    const [isPromptDismissed, setIsPromptDismissed] = React.useState<boolean>(false);
+
+    const hasActiveModel = Boolean(
+        (project?.ifcFileName && project.ifcFileName.trim().length > 0) ||
+        customIfcName ||
+        (project?.modelCategory === "3d" && project?.modelType !== "empty")
+    );
 
     type DockDrawerId = "models" | "query" | "properties" | "enhance" | "smart-views" | "gis";
     const [activeDrawer, setActiveDrawer] = React.useState<DockDrawerId | null>(null);
     const [isTopBarCollapsed, setIsTopBarCollapsed] = React.useState<boolean>(false);
     const [isFloatingToolbarCollapsed, setIsFloatingToolbarCollapsed] = React.useState<boolean>(false);
     const toggleDrawer = (drawer: DockDrawerId) => {
-        setActiveDrawer((prev) => (prev === drawer ? null : drawer));
+        setActiveDrawer((prev) => {
+            const next = prev === drawer ? null : drawer;
+            if (next === "gis") {
+                requestAnimationFrame(() => {
+                    const gisLayers = componentsRef.current?.get(GISLayers);
+                    if (gisLayers?.layer2d?.viewer && !gisLayers.layer2d.viewer.isDestroyed()) {
+                        gisLayers.layer2d.viewer.resize();
+                    }
+                });
+            }
+            return next;
+        });
     };
     const [engineReadyTick, setEngineReadyTick] = React.useState<number>(0);
 
@@ -215,9 +239,28 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
         if (!wrapper) return;
         const floatingGrid = wrapper.querySelector(".toc-viewport-floating-grid") as HTMLElement | null;
         if (floatingGrid) {
-            floatingGrid.style.display = isFloatingToolbarCollapsed ? "none" : "";
+            floatingGrid.style.display = (!hasActiveModel || isFloatingToolbarCollapsed) ? "none" : "";
         }
-    }, [isFloatingToolbarCollapsed, engineReadyTick]);
+    }, [isFloatingToolbarCollapsed, engineReadyTick, hasActiveModel]);
+
+    // Dynamically resize That Open Engine viewport & camera aspect when Full View is toggled
+    React.useEffect(() => {
+        const timer = setTimeout(() => {
+            const world = worldRef.current;
+            if (world) {
+                try {
+                    if (world.renderer instanceof OBC.SimpleRenderer) {
+                        world.renderer.resize();
+                    }
+                    if (world.camera instanceof OBC.OrthoPerspectiveCamera) {
+                        world.camera.updateAspect();
+                    }
+                } catch {}
+            }
+            window.dispatchEvent(new Event("resize"));
+        }, 180);
+        return () => clearTimeout(timer);
+    }, [isLeftPaneCollapsed]);
     React.useEffect(() => {
         const components = componentsRef.current;
         if (engineReadyTick === 0 || !components) return;
@@ -382,24 +425,101 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
         }
     };
 
+    const toggleSectioning = () => {
+        const components = componentsRef.current;
+        const world = worldRef.current;
+        if (!components || !world) return;
+        try {
+            const clipper = components.get(OBC.Clipper);
+            const next = !isSectioningActive;
+            clipper.enabled = next;
+            clipper.visible = next;
+            setIsSectioningActive(next);
+            setSectionPlanesCount(clipper.list.size);
+        } catch (err) {
+            console.warn("[Clipper] Error toggling section tool:", err);
+        }
+    };
+
+    const createSectionCut = async (axis: "x" | "y" | "z") => {
+        const components = componentsRef.current;
+        const world = worldRef.current;
+        if (!components || !world) return;
+        try {
+            const clipper = components.get(OBC.Clipper);
+            clipper.enabled = true;
+            clipper.visible = true;
+
+            const bbox = await computeSceneBounds();
+            const center = new THREE.Vector3();
+            if (!bbox.isEmpty()) {
+                bbox.getCenter(center);
+            }
+
+            let normal = new THREE.Vector3(0, -1, 0); // Floor/Roof cut
+            if (axis === "x") normal = new THREE.Vector3(-1, 0, 0); // Side cut
+            if (axis === "z") normal = new THREE.Vector3(0, 0, -1); // Front cut
+
+            clipper.createFromNormalAndCoplanarPoint(world, normal, center);
+            setSectionPlanesCount(clipper.list.size);
+            setIsSectioningActive(true);
+        } catch (err) {
+            console.warn("[Clipper] Error creating section plane:", err);
+        }
+    };
+
+    const clearSectionCuts = () => {
+        const components = componentsRef.current;
+        if (!components) return;
+        try {
+            const clipper = components.get(OBC.Clipper);
+            clipper.deleteAll();
+            setSectionPlanesCount(0);
+        } catch (err) {
+            console.warn("[Clipper] Error clearing section planes:", err);
+        }
+    };
+
     const handleOpenIfcFile = () => {
         fileInputRef.current?.click();
     };
 
-    const handleIfcFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
+    const handleProcessUploadedFile = async (file: File) => {
         if (!file || !componentsRef.current || !worldRef.current) return;
         setIsParsingIfc(true);
         try {
             const buffer = await file.arrayBuffer();
             await loadIfcFromBuffer(componentsRef.current, worldRef.current, buffer, file.name);
             setCustomIfcName(file.name);
+
+            // Persist uploaded model name to Firestore so it remains loaded on refresh
+            if (project?.id) {
+                try {
+                    const projectRef = doc(db, "projects", project.id);
+                    await updateDoc(projectRef, {
+                        ifcFileName: file.name,
+                        modelCategory: "ifc",
+                        ifcSchema: file.name.toLowerCase().includes("2x3") ? "IFC2X3" : "IFC4",
+                    });
+                    project.ifcFileName = file.name;
+                    project.modelCategory = "ifc";
+                    project.ifcSchema = file.name.toLowerCase().includes("2x3") ? "IFC2X3" : "IFC4";
+                    forceUpdate();
+                } catch (dbErr) {
+                    console.warn("[ProjectDetailsPage] Firestore update failed:", dbErr);
+                }
+            }
         } catch (err: any) {
-            alert(`Error parsing IFC file "${file.name}": ${err?.message || err}`);
+            alert(`Error parsing model file "${file.name}": ${err?.message || err}`);
         } finally {
             setIsParsingIfc(false);
-            if (e.target) e.target.value = "";
         }
+    };
+
+    const handleIfcFileSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) await handleProcessUploadedFile(file);
+        if (e.target) e.target.value = "";
     };
 
     // Camera Presets + True Perspective <-> Orthographic 2D Plan projection synchronization
@@ -422,6 +542,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
         }
 
         const fragments = components?.get(OBC.FragmentsManager);
+        const isGisLayerActive = Boolean(components?.get(GISLayers)?.layer3d.enabled);
 
         if (preset === "plan") {
             const switchingProj =
@@ -433,15 +554,19 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                     await camera.projection.set("Orthographic");
                 } catch {}
             }
-            await controls.setLookAt(
-                modelCenter.x,
-                modelCenter.y + dist * 1.45,
-                modelCenter.z + 0.01,
-                modelCenter.x,
-                modelCenter.y,
-                modelCenter.z,
-                false
-            );
+            if (bbox.isEmpty() && isGisLayerActive) {
+                await controls.setLookAt(0, 650, 0.01, 0, 0, 0, true);
+            } else {
+                await controls.setLookAt(
+                    modelCenter.x,
+                    modelCenter.y + dist * 1.45,
+                    modelCenter.z + 0.01,
+                    modelCenter.x,
+                    modelCenter.y,
+                    modelCenter.z,
+                    false
+                );
+            }
             if (camera instanceof OBC.SimpleCamera && !bbox.isEmpty()) {
                 try {
                     if (fragments?.initialized && fragments.list.size > 0) {
@@ -464,25 +589,33 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
             }
             const animateTransition = !switchingProj && !wasParametric;
             if (preset === "iso") {
-                await controls.setLookAt(
-                    modelCenter.x + dist * 0.78,
-                    modelCenter.y + dist * 0.62,
-                    modelCenter.z + dist * 0.78,
-                    modelCenter.x,
-                    modelCenter.y,
-                    modelCenter.z,
-                    animateTransition
-                );
+                if (bbox.isEmpty() && isGisLayerActive) {
+                    await controls.setLookAt(280, 260, 320, 0, 10, 0, true);
+                } else {
+                    await controls.setLookAt(
+                        modelCenter.x + dist * 0.78,
+                        modelCenter.y + dist * 0.62,
+                        modelCenter.z + dist * 0.78,
+                        modelCenter.x,
+                        modelCenter.y,
+                        modelCenter.z,
+                        animateTransition
+                    );
+                }
             } else {
-                await controls.setLookAt(
-                    modelCenter.x,
-                    modelCenter.y + dist * 0.25,
-                    modelCenter.z + dist * 1.25,
-                    modelCenter.x,
-                    modelCenter.y,
-                    modelCenter.z,
-                    animateTransition
-                );
+                if (bbox.isEmpty() && isGisLayerActive) {
+                    await controls.setLookAt(0, 120, 480, 0, 20, 0, true);
+                } else {
+                    await controls.setLookAt(
+                        modelCenter.x,
+                        modelCenter.y + dist * 0.25,
+                        modelCenter.z + dist * 1.25,
+                        modelCenter.x,
+                        modelCenter.y,
+                        modelCenter.z,
+                        animateTransition
+                    );
+                }
             }
         }
 
@@ -535,6 +668,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
             }
         } catch {}
 
+        const isGisLayerActive = Boolean(components?.get(GISLayers)?.layer3d.enabled);
         const bbox = await computeSceneBounds();
         if (!bbox.isEmpty()) {
             await controls.fitToBox(bbox, true, {
@@ -543,6 +677,8 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                 paddingTop: 1.25,
                 paddingBottom: 1.25,
             });
+        } else if (isGisLayerActive) {
+            await controls.setLookAt(280, 260, 320, 0, 10, 0, true);
         } else {
             await controls.setLookAt(20, 14, 22, 0, 3, 0, true);
         }
@@ -586,6 +722,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
         let attachedCanvas: HTMLCanvasElement | null = null;
         let pointerMoveHandler: ((evt: MouseEvent) => void) | null = null;
         let pointerClickHandler: ((evt: MouseEvent) => void) | null = null;
+        let pointerDblClickHandler: ((evt: MouseEvent) => void) | null = null;
 
         setSelectedElement(null);
         setActiveDrawer(null);
@@ -837,6 +974,48 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
 
                     canvas.addEventListener("mousemove", pointerMoveHandler);
                     canvas.addEventListener("click", pointerClickHandler);
+
+                    pointerDblClickHandler = async () => {
+                        const highlighter = components.get(OBCF.Highlighter);
+                        const selection = highlighter.selection.select;
+                        const hasSelection = Boolean(selection && !OBC.ModelIdMapUtils.isEmpty(selection));
+                        const selectedMesh = (window as any).__selectedThreeMesh as THREE.Mesh | null;
+                        const fragments = components.get(OBC.FragmentsManager);
+
+                        if (world.camera instanceof OBC.SimpleCamera && fragments.initialized && fragments.list.size > 0 && hasSelection) {
+                            try {
+                                await world.camera.fitToItems(selection);
+                                return;
+                            } catch (err) {
+                                console.warn("[DblClick Focus] fitToItems error:", err);
+                            }
+                        }
+
+                        if (selectedMesh) {
+                            const controls = (world.camera as any)?.controls;
+                            if (controls) {
+                                try {
+                                    const bbox = new THREE.Box3().setFromObject(selectedMesh);
+                                    if (!bbox.isEmpty()) {
+                                        await controls.fitToBox(bbox, true, {
+                                            paddingLeft: 1.3,
+                                            paddingRight: 1.3,
+                                            paddingTop: 1.3,
+                                            paddingBottom: 1.3,
+                                        });
+                                        return;
+                                    }
+                                } catch (err) {
+                                    console.warn("[DblClick Focus] Error fitting to mesh:", err);
+                                }
+                            }
+                        }
+
+                        // Fallback: fit to whole model/scene
+                        fitModelView();
+                    };
+
+                    canvas.addEventListener("dblclick", pointerDblClickHandler);
                 }
 
                 // Continuous Animation Loop for Camera Controls & Dynamic Twin Updates
@@ -871,6 +1050,9 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
             }
             if (attachedCanvas && pointerClickHandler) {
                 attachedCanvas.removeEventListener("click", pointerClickHandler);
+            }
+            if (attachedCanvas && pointerDblClickHandler) {
+                attachedCanvas.removeEventListener("dblclick", pointerDblClickHandler);
             }
             modelsContainerRef.current?.replaceChildren();
             propertiesContainerRef.current?.replaceChildren();
@@ -1025,6 +1207,8 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
 
     const badgeText = customIfcName
         ? `Loaded: ${customIfcName}`
+        : project.modelCategory === "empty" && !hasActiveModel
+        ? "Empty BIM Workspace"
         : project.ifcSchema
         ? `${project.ifcSchema} · OpenBIM`
         : project.modelCategory === "3d"
@@ -1049,7 +1233,32 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                         <p id="details-page-desc" title={project.description}>{project.description}</p>
                     </div>
                 </div>
-                <div className="details-header-right">
+                <div className="details-header-right" style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                    <button
+                        type="button"
+                        onClick={() => setIsLeftPaneCollapsed((prev) => !prev)}
+                        className="btn-toggle-viewer-size"
+                        title={isLeftPaneCollapsed ? "Restore Standard View (Show Project Details & Tasks)" : "Maximize 3D BIM Viewer (Full Screen Width)"}
+                        style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            background: isLeftPaneCollapsed ? "rgba(56, 189, 248, 0.2)" : "rgba(30, 41, 59, 0.75)",
+                            border: isLeftPaneCollapsed ? "1px solid #38bdf8" : "1px solid rgba(148, 163, 184, 0.3)",
+                            borderRadius: "8px",
+                            padding: "6px 14px",
+                            color: isLeftPaneCollapsed ? "#38bdf8" : "#f8fafc",
+                            fontSize: "0.78rem",
+                            fontWeight: 700,
+                            cursor: "pointer",
+                            transition: "all 0.2s ease",
+                        }}
+                    >
+                        <span className="material-icons-round" style={{ fontSize: "16px" }}>
+                            {isLeftPaneCollapsed ? "fullscreen_exit" : "fullscreen"}
+                        </span>
+                        <span>{isLeftPaneCollapsed ? "Restore View" : "Full View"}</span>
+                    </button>
                     <span className="bim-coord-badge">
                         <span className="material-icons-round">view_in_ar</span>
                         <span>{badgeText}</span>
@@ -1057,7 +1266,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                 </div>
             </header>
 
-            <div className="main-page-content">
+            <div className={`main-page-content ${isLeftPaneCollapsed ? "full-viewer-mode" : ""}`}>
                 <div className="details-left-column">
                     <ProjectInfoCard
                         project={project}
@@ -1070,7 +1279,59 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                     />
                 </div>
 
-                <div className="details-viewer-wrapper" ref={viewerWrapperRef}>
+                <div
+                    className={`details-viewer-wrapper ${!hasActiveModel ? "is-empty-workspace" : ""}`}
+                    ref={viewerWrapperRef}
+                    onDragOver={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setIsDraggingFile(true);
+                    }}
+                    onDragLeave={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setIsDraggingFile(false);
+                    }}
+                    onDrop={async (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setIsDraggingFile(false);
+                        const file = e.dataTransfer.files?.[0];
+                        if (file) await handleProcessUploadedFile(file);
+                    }}
+                >
+                    {/* Floating Button to Restore Sidebar when Left Pane is Collapsed */}
+                    {isLeftPaneCollapsed && (
+                        <button
+                            type="button"
+                            onClick={() => setIsLeftPaneCollapsed(false)}
+                            className="floating-restore-sidebar-btn"
+                            title="Restore Project Details & Tasks Sidebar"
+                            style={{
+                                position: "absolute",
+                                top: isTopBarCollapsed ? "12px" : "calc(var(--mode-bar-bottom, 54px) + 12px)",
+                                left: "14px",
+                                zIndex: 32,
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "6px",
+                                background: "rgba(15, 23, 42, 0.94)",
+                                backdropFilter: "blur(14px)",
+                                border: "1px solid rgba(56, 189, 248, 0.45)",
+                                borderRadius: "20px",
+                                padding: "7px 14px",
+                                color: "#38bdf8",
+                                fontSize: "0.78rem",
+                                fontWeight: 700,
+                                cursor: "pointer",
+                                boxShadow: "0 6px 20px rgba(0,0,0,0.55)",
+                                transition: "all 0.2s ease",
+                            }}
+                        >
+                            <span className="material-icons-round" style={{ fontSize: "16px" }}>dock</span>
+                            <span>Show Sidebar</span>
+                        </button>
+                    )}
                     {/* Top Viewport Mode Switcher & Course Tools Bar */}
                     <div
                         className="viewer-mode-switch-bar"
@@ -1090,80 +1351,84 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                             <span>BIM World</span>
                         </button>
 
-                        <button
-                            type="button"
-                            className={`viewer-mode-tab ${viewerMode === "2d-plan" ? "active" : ""}`}
-                            onClick={() => setCameraPreset("plan")}
-                            title="2D Top-Down Orthographic CAD Plan View"
-                        >
-                            <span className="material-icons-round">architecture</span>
-                            <span>2D Plan</span>
-                        </button>
+                        {hasActiveModel && (
+                            <>
+                                <button
+                                    type="button"
+                                    className={`viewer-mode-tab ${viewerMode === "2d-plan" ? "active" : ""}`}
+                                    onClick={() => setCameraPreset("plan")}
+                                    title="2D Top-Down Orthographic CAD Plan View"
+                                >
+                                    <span className="material-icons-round">architecture</span>
+                                    <span>2D Plan</span>
+                                </button>
 
-                        {project.modelCategory === "3d" && !project.ifcFileName && !project.name.toLowerCase().includes("ifc") && (
-                            <button
-                                type="button"
-                                className={`viewer-mode-tab ${viewerMode === "parametric" ? "active" : ""}`}
-                                onClick={() => {
-                                    setActiveDrawer(null);
-                                    setViewerMode("parametric");
-                                }}
-                                title="High-Performance 3D CAD Studio (Three.js)"
-                            >
-                                <span className="material-icons-round">view_in_ar</span>
-                                <span>3D Model</span>
-                            </button>
+                                {project.modelCategory === "3d" && !project.ifcFileName && !project.name.toLowerCase().includes("ifc") && (
+                                    <button
+                                        type="button"
+                                        className={`viewer-mode-tab ${viewerMode === "parametric" ? "active" : ""}`}
+                                        onClick={() => {
+                                            setActiveDrawer(null);
+                                            setViewerMode("parametric");
+                                        }}
+                                        title="High-Performance 3D CAD Studio (Three.js)"
+                                    >
+                                        <span className="material-icons-round">view_in_ar</span>
+                                        <span>3D Model</span>
+                                    </button>
+                                )}
+
+                                <button
+                                    type="button"
+                                    className={`viewer-mode-tab toc-course-pill ${activeDrawer === "models" ? "active" : ""}`}
+                                    onClick={() => toggleDrawer("models")}
+                                    title="Open Federated BIM Models & IFC Tree"
+                                >
+                                    <span className="material-icons-round">folder_open</span>
+                                    <span>Models</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    className={`viewer-mode-tab toc-course-pill ${activeDrawer === "query" ? "active" : ""}`}
+                                    onClick={() => toggleDrawer("query")}
+                                    title="Execute Spatial & Semantic IFC Queries"
+                                >
+                                    <span className="material-icons-round">search</span>
+                                    <span>Query</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    className={`viewer-mode-tab toc-course-pill ${activeDrawer === "properties" ? "active" : ""}`}
+                                    onClick={() => toggleDrawer("properties")}
+                                    title="Inspect IFC Schema Properties & Quantity Sets"
+                                >
+                                    <span className="material-icons-round">table_chart</span>
+                                    <span>Properties</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    className={`viewer-mode-tab toc-course-pill ${activeDrawer === "enhance" ? "active" : ""}`}
+                                    onClick={() => toggleDrawer("enhance")}
+                                    title="Connect External Engineering Specifications & Field QA"
+                                >
+                                    <span className="material-icons-round">storage</span>
+                                    <span>Enhance</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    className={`viewer-mode-tab toc-course-pill ${activeDrawer === "smart-views" ? "active" : ""}`}
+                                    onClick={() => toggleDrawer("smart-views")}
+                                    title="Multi-Disciplinary BIM Coordination Viewpoints"
+                                >
+                                    <span className="material-icons-round">camera</span>
+                                    <span>Smart Views</span>
+                                </button>
+                            </>
                         )}
-
-                        <button
-                            type="button"
-                            className={`viewer-mode-tab toc-course-pill ${activeDrawer === "models" ? "active" : ""}`}
-                            onClick={() => toggleDrawer("models")}
-                            title="Open Federated BIM Models & IFC Tree"
-                        >
-                            <span className="material-icons-round">folder_open</span>
-                            <span>Models</span>
-                        </button>
-
-                        <button
-                            type="button"
-                            className={`viewer-mode-tab toc-course-pill ${activeDrawer === "query" ? "active" : ""}`}
-                            onClick={() => toggleDrawer("query")}
-                            title="Execute Spatial & Semantic IFC Queries"
-                        >
-                            <span className="material-icons-round">search</span>
-                            <span>Query</span>
-                        </button>
-
-                        <button
-                            type="button"
-                            className={`viewer-mode-tab toc-course-pill ${activeDrawer === "properties" ? "active" : ""}`}
-                            onClick={() => toggleDrawer("properties")}
-                            title="Inspect IFC Schema Properties & Quantity Sets"
-                        >
-                            <span className="material-icons-round">table_chart</span>
-                            <span>Properties</span>
-                        </button>
-
-                        <button
-                            type="button"
-                            className={`viewer-mode-tab toc-course-pill ${activeDrawer === "enhance" ? "active" : ""}`}
-                            onClick={() => toggleDrawer("enhance")}
-                            title="Connect External Engineering Specifications & Field QA"
-                        >
-                            <span className="material-icons-round">storage</span>
-                            <span>Enhance</span>
-                        </button>
-
-                        <button
-                            type="button"
-                            className={`viewer-mode-tab toc-course-pill ${activeDrawer === "smart-views" ? "active" : ""}`}
-                            onClick={() => toggleDrawer("smart-views")}
-                            title="Multi-Disciplinary BIM Coordination Viewpoints"
-                        >
-                            <span className="material-icons-round">camera</span>
-                            <span>Smart Views</span>
-                        </button>
 
                         <button
                             type="button"
@@ -1348,7 +1613,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
 
                             {/* Dockable GIS & Geospatial Drawer — Mounted Once */}
                             <div
-                                className="toc-dock-panel toc-dock-left"
+                                className="toc-dock-panel toc-dock-right"
                                 data-drawer="gis"
                                 style={{ display: activeDrawer === "gis" ? "flex" : "none" }}
                             >
@@ -1378,6 +1643,140 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                     display: "block",
                                 }}
                             ></bim-grid>
+
+                            {/* World-Class 3D ViewCube & Architectural Compass Navigator */}
+                            <NavigationCube
+                                world={worldRef.current}
+                                isDrawerOpen={Boolean(activeDrawer)}
+                                onFocusExtents={fitModelView}
+                            />
+
+                            {/* Interactive 3D Sectioning Toolbar Overlay */}
+                            {isSectioningActive && (
+                                <div
+                                    className="sectioning-floating-bar"
+                                    style={{
+                                        position: "absolute",
+                                        bottom: "74px",
+                                        left: "50%",
+                                        transform: "translateX(-50%)",
+                                        zIndex: 30,
+                                        background: "rgba(15, 23, 42, 0.94)",
+                                        border: "1px solid rgba(239, 68, 68, 0.4)",
+                                        borderRadius: "14px",
+                                        padding: "6px 12px",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "8px",
+                                        backdropFilter: "blur(16px)",
+                                        boxShadow: "0 8px 30px rgba(0, 0, 0, 0.6)",
+                                    }}
+                                >
+                                    <span style={{ fontSize: "0.74rem", fontWeight: 700, color: "#f87171", display: "flex", alignItems: "center", gap: "5px" }}>
+                                        <span className="material-icons-round" style={{ fontSize: "16px" }}>content_cut</span>
+                                        <span>Section Cuts ({sectionPlanesCount}):</span>
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() => createSectionCut("z")}
+                                        style={{
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            gap: "4px",
+                                            padding: "4px 8px",
+                                            background: "rgba(30, 41, 59, 0.8)",
+                                            border: "1px solid rgba(148, 163, 184, 0.3)",
+                                            borderRadius: "8px",
+                                            color: "#f8fafc",
+                                            fontSize: "0.72rem",
+                                            fontWeight: 600,
+                                            cursor: "pointer",
+                                        }}
+                                        title="Create Horizontal Floor Plan Cut (Z-Axis)"
+                                    >
+                                        <span>Plan (Z)</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => createSectionCut("x")}
+                                        style={{
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            gap: "4px",
+                                            padding: "4px 8px",
+                                            background: "rgba(30, 41, 59, 0.8)",
+                                            border: "1px solid rgba(148, 163, 184, 0.3)",
+                                            borderRadius: "8px",
+                                            color: "#f8fafc",
+                                            fontSize: "0.72rem",
+                                            fontWeight: 600,
+                                            cursor: "pointer",
+                                        }}
+                                        title="Create Transverse Section Cut (X-Axis)"
+                                    >
+                                        <span>Cross (X)</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => createSectionCut("y")}
+                                        style={{
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            gap: "4px",
+                                            padding: "4px 8px",
+                                            background: "rgba(30, 41, 59, 0.8)",
+                                            border: "1px solid rgba(148, 163, 184, 0.3)",
+                                            borderRadius: "8px",
+                                            color: "#f8fafc",
+                                            fontSize: "0.72rem",
+                                            fontWeight: 600,
+                                            cursor: "pointer",
+                                        }}
+                                        title="Create Longitudinal Elevation Cut (Y-Axis)"
+                                    >
+                                        <span>Long (Y)</span>
+                                    </button>
+                                    {sectionPlanesCount > 0 && (
+                                        <button
+                                            type="button"
+                                            onClick={clearSectionCuts}
+                                            style={{
+                                                display: "inline-flex",
+                                                alignItems: "center",
+                                                gap: "3px",
+                                                padding: "4px 8px",
+                                                background: "rgba(239, 68, 68, 0.2)",
+                                                border: "1px solid rgba(239, 68, 68, 0.45)",
+                                                borderRadius: "8px",
+                                                color: "#f87171",
+                                                fontSize: "0.72rem",
+                                                fontWeight: 700,
+                                                cursor: "pointer",
+                                            }}
+                                            title="Remove All Active Section Cuts"
+                                        >
+                                            <span className="material-icons-round" style={{ fontSize: "14px" }}>delete</span>
+                                            <span>Clear</span>
+                                        </button>
+                                    )}
+                                    <button
+                                        type="button"
+                                        onClick={toggleSectioning}
+                                        style={{
+                                            background: "transparent",
+                                            border: "none",
+                                            color: "#94a3b8",
+                                            cursor: "pointer",
+                                            fontSize: "16px",
+                                            padding: "2px 4px",
+                                            marginLeft: "2px",
+                                        }}
+                                        title="Close Sectioning Bar"
+                                    >
+                                        &times;
+                                    </button>
+                                </div>
+                            )}
 
                             {/* 2D Plan CAD Sheet Banner (right-aligned below toolbar so it never overlaps) */}
                             {viewerMode === "2d-plan" && (
@@ -1410,13 +1809,299 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                 </div>
                             )}
 
+                            {/* Full Drag & Drop Active Overlay */}
+                            {isDraggingFile && (
+                                <div className="toc-drag-active-backdrop">
+                                    <span className="material-icons-round" style={{ fontSize: "56px", color: "#38bdf8" }}>
+                                        cloud_upload
+                                    </span>
+                                    <h3 style={{ margin: 0, color: "#f8fafc", fontSize: "1.4rem", fontWeight: 700 }}>
+                                        Drop IFC Model to Open
+                                    </h3>
+                                    <p style={{ margin: 0, color: "#bae6fd", fontSize: "0.92rem" }}>
+                                        Release file to parse geometry and stream into That Open Engine
+                                    </p>
+                                </div>
+                            )}
+
                             <input
                                 type="file"
                                 ref={fileInputRef}
-                                accept=".ifc"
+                                accept=".ifc,.obj,.gltf,.glb,.frag"
                                 onChange={handleIfcFileSelected}
                                 style={{ display: "none" }}
                             />
+
+                            {/* Empty Project Studio Prompt */}
+                            {!hasActiveModel && !customIfcName && !isParsingIfc && !isPromptDismissed && activeDrawer !== "gis" && (
+                                <div
+                                    className="toc-empty-project-overlay"
+                                    style={{
+                                        position: "absolute",
+                                        top: "50%",
+                                        left: "50%",
+                                        transform: "translate(-50%, -50%)",
+                                        zIndex: 15,
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        alignItems: "center",
+                                        textAlign: "center",
+                                        gap: "14px",
+                                        background: "rgba(15, 23, 42, 0.92)",
+                                        border: isDraggingFile ? "2px solid #38bdf8" : "1.5px dashed rgba(56, 189, 248, 0.45)",
+                                        backdropFilter: "blur(20px)",
+                                        borderRadius: "20px",
+                                        padding: "2.4rem 2.8rem",
+                                        maxWidth: "480px",
+                                        width: "90%",
+                                        boxShadow: isDraggingFile ? "0 0 35px rgba(56, 189, 248, 0.5)" : "0 18px 50px rgba(0, 0, 0, 0.7)",
+                                        transition: "all 0.25s ease",
+                                    }}
+                                >
+                                    {/* Close Button to Dismiss Card & View 3D Scene */}
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsPromptDismissed(true)}
+                                        style={{
+                                            position: "absolute",
+                                            top: "14px",
+                                            right: "14px",
+                                            background: "rgba(30, 41, 59, 0.7)",
+                                            border: "1px solid rgba(148, 163, 184, 0.3)",
+                                            borderRadius: "50%",
+                                            width: "30px",
+                                            height: "30px",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            color: "#94a3b8",
+                                            cursor: "pointer",
+                                            fontSize: "20px",
+                                            lineHeight: 1,
+                                            transition: "all 0.15s ease",
+                                        }}
+                                        title="Close overlay to view 3D workspace"
+                                    >
+                                        &times;
+                                    </button>
+
+                                    <div
+                                        style={{
+                                            width: "68px",
+                                            height: "68px",
+                                            borderRadius: "50%",
+                                            background: "rgba(56, 189, 248, 0.12)",
+                                            border: "1.5px solid rgba(56, 189, 248, 0.4)",
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            boxShadow: "0 0 20px rgba(56, 189, 248, 0.2)",
+                                        }}
+                                    >
+                                        <span
+                                            className="material-icons-round"
+                                            style={{ fontSize: "36px", color: "#38bdf8" }}
+                                        >
+                                            cloud_upload
+                                        </span>
+                                    </div>
+
+                                    <div>
+                                        <div style={{
+                                            display: "inline-block",
+                                            padding: "3px 12px",
+                                            borderRadius: "14px",
+                                            background: "linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(37, 99, 235, 0.2))",
+                                            border: "1px solid rgba(56, 189, 248, 0.4)",
+                                            color: "#38bdf8",
+                                            fontSize: "0.72rem",
+                                            fontWeight: 800,
+                                            letterSpacing: "0.06em",
+                                            marginBottom: "8px",
+                                        }}>
+                                            OPENBIM &amp; CESIUM GEOSPATIAL CAD STUDIO
+                                        </div>
+                                        <h3 style={{ margin: 0, fontSize: "1.32rem", fontWeight: 800, color: "#f8fafc" }}>
+                                            Empty BIM Workspace
+                                        </h3>
+                                    </div>
+
+                                    <p style={{ margin: 0, fontSize: "0.86rem", color: "#94a3b8", lineHeight: 1.6 }}>
+                                        {isDraggingFile
+                                            ? "Drop your IFC model now to immediately parse and view in That Open Engine!"
+                                            : "This workspace is ready for your project. Drag & drop an IFC OpenBIM model anywhere on this canvas, upload from disk, or stream Google Photorealistic 3D Geospatial tiles."}
+                                    </p>
+
+                                    {/* Quick Geospatial City Portals */}
+                                    <div style={{ display: "flex", flexDirection: "column", gap: "6px", width: "100%", margin: "4px 0" }}>
+                                        <span style={{ fontSize: "0.70rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                                            Quick Geospatial Portals
+                                        </span>
+                                        <div style={{ display: "flex", gap: "6px", justifyContent: "center", flexWrap: "wrap" }}>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setIsPromptDismissed(true);
+                                                    const gisLayers = componentsRef.current?.get(GISLayers);
+                                                    if (gisLayers) {
+                                                        gisLayers.layer3d.enabled = true;
+                                                        gisLayers.setLocation(51.5007, -0.1246, 0);
+                                                        gisLayers.layer3d.focusTerrain("iso");
+                                                    }
+                                                    toggleDrawer("gis");
+                                                }}
+                                                style={{
+                                                    padding: "5px 11px",
+                                                    borderRadius: "8px",
+                                                    background: "rgba(30, 41, 59, 0.7)",
+                                                    border: "1px solid rgba(56, 189, 248, 0.3)",
+                                                    color: "#f8fafc",
+                                                    fontSize: "0.76rem",
+                                                    fontWeight: 600,
+                                                    cursor: "pointer",
+                                                }}
+                                            >
+                                                🇬🇧 London Westminster
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setIsPromptDismissed(true);
+                                                    const gisLayers = componentsRef.current?.get(GISLayers);
+                                                    if (gisLayers) {
+                                                        gisLayers.layer3d.enabled = true;
+                                                        gisLayers.setLocation(40.7128, -74.006, 30);
+                                                        gisLayers.layer3d.focusTerrain("iso");
+                                                    }
+                                                    toggleDrawer("gis");
+                                                }}
+                                                style={{
+                                                    padding: "5px 11px",
+                                                    borderRadius: "8px",
+                                                    background: "rgba(30, 41, 59, 0.7)",
+                                                    border: "1px solid rgba(56, 189, 248, 0.3)",
+                                                    color: "#f8fafc",
+                                                    fontSize: "0.76rem",
+                                                    fontWeight: 600,
+                                                    cursor: "pointer",
+                                                }}
+                                            >
+                                                🗽 New York
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setIsPromptDismissed(true);
+                                                    const gisLayers = componentsRef.current?.get(GISLayers);
+                                                    if (gisLayers) {
+                                                        gisLayers.layer3d.enabled = true;
+                                                        gisLayers.setLocation(48.8584, 2.2945, 45);
+                                                        gisLayers.layer3d.focusTerrain("iso");
+                                                    }
+                                                    toggleDrawer("gis");
+                                                }}
+                                                style={{
+                                                    padding: "5px 11px",
+                                                    borderRadius: "8px",
+                                                    background: "rgba(30, 41, 59, 0.7)",
+                                                    border: "1px solid rgba(56, 189, 248, 0.3)",
+                                                    color: "#f8fafc",
+                                                    fontSize: "0.76rem",
+                                                    fontWeight: 600,
+                                                    cursor: "pointer",
+                                                }}
+                                            >
+                                                🗼 Paris
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div style={{ display: "flex", gap: "10px", marginTop: "8px", flexWrap: "wrap", justifyContent: "center" }}>
+                                        <button
+                                            type="button"
+                                            onClick={() => fileInputRef.current?.click()}
+                                            style={{
+                                                display: "inline-flex",
+                                                alignItems: "center",
+                                                gap: "8px",
+                                                background: "linear-gradient(135deg, #0284c7, #0ea5e9)",
+                                                border: "none",
+                                                borderRadius: "12px",
+                                                padding: "11px 22px",
+                                                color: "#ffffff",
+                                                fontSize: "0.88rem",
+                                                fontWeight: 700,
+                                                cursor: "pointer",
+                                                boxShadow: "0 6px 20px rgba(14, 165, 233, 0.45)",
+                                                transition: "all 0.15s ease",
+                                            }}
+                                        >
+                                            <span className="material-icons-round" style={{ fontSize: "20px" }}>file_upload</span>
+                                            <span>Upload IFC Model</span>
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setIsPromptDismissed(true);
+                                                const gisLayers = componentsRef.current?.get(GISLayers);
+                                                if (gisLayers) {
+                                                    gisLayers.layer3d.enabled = true;
+                                                }
+                                                toggleDrawer("gis");
+                                            }}
+                                            style={{
+                                                display: "inline-flex",
+                                                alignItems: "center",
+                                                gap: "7px",
+                                                background: "rgba(30, 41, 59, 0.8)",
+                                                border: "1px solid rgba(56, 189, 248, 0.35)",
+                                                borderRadius: "12px",
+                                                padding: "11px 18px",
+                                                color: "#38bdf8",
+                                                fontSize: "0.88rem",
+                                                fontWeight: 600,
+                                                cursor: "pointer",
+                                                transition: "all 0.15s ease",
+                                            }}
+                                        >
+                                            <span className="material-icons-round" style={{ fontSize: "19px" }}>public</span>
+                                            <span>Launch Cesium GIS</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Restore Upload Studio Prompt Pill when Dismissed */}
+                            {isPromptDismissed && !hasActiveModel && activeDrawer !== "gis" && (
+                                <button
+                                    type="button"
+                                    onClick={() => setIsPromptDismissed(false)}
+                                    style={{
+                                        position: "absolute",
+                                        top: "calc(var(--mode-bar-bottom, 54px) + 12px)",
+                                        right: "16px",
+                                        zIndex: 18,
+                                        background: "rgba(15, 23, 42, 0.90)",
+                                        border: "1px solid rgba(56, 189, 248, 0.4)",
+                                        borderRadius: "20px",
+                                        padding: "6px 14px",
+                                        color: "#38bdf8",
+                                        fontSize: "0.78rem",
+                                        fontWeight: 600,
+                                        cursor: "pointer",
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: "6px",
+                                        boxShadow: "0 4px 16px rgba(0,0,0,0.4)",
+                                        backdropFilter: "blur(12px)",
+                                    }}
+                                    title="Open Upload Model Studio Card"
+                                >
+                                    <span className="material-icons-round" style={{ fontSize: "16px" }}>cloud_upload</span>
+                                    <span>Upload Model Studio</span>
+                                </button>
+                            )}
 
                             {isMeasuring && (
                                 <div className="measurement-banner">
@@ -1525,6 +2210,266 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                     flexWrap: "nowrap",
                                 }}
                             >
+                                {!hasActiveModel ? (
+                                    <>
+                                        <button
+                                            type="button"
+                                            onClick={() => setCameraPreset("iso")}
+                                            style={{
+                                                display: "inline-flex",
+                                                alignItems: "center",
+                                                gap: "4px",
+                                                padding: "5px 9px",
+                                                background: "rgba(30, 41, 59, 0.85)",
+                                                border: "1px solid rgba(148, 163, 184, 0.25)",
+                                                borderRadius: "20px",
+                                                color: "#f8fafc",
+                                                cursor: "pointer",
+                                                fontSize: "0.76rem",
+                                                fontWeight: 600,
+                                                flexShrink: 0,
+                                            }}
+                                            title="Axonometric 3D Perspective View (ISO)"
+                                        >
+                                            <span className="material-icons-round" style={{ fontSize: "15px", color: "#38bdf8" }}>view_in_ar</span>
+                                            <span className="hud-btn-label">3D ISO</span>
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => setCameraPreset("plan")}
+                                            style={{
+                                                display: "inline-flex",
+                                                alignItems: "center",
+                                                gap: "4px",
+                                                padding: "5px 9px",
+                                                background: "rgba(30, 41, 59, 0.85)",
+                                                border: "1px solid rgba(148, 163, 184, 0.25)",
+                                                borderRadius: "20px",
+                                                color: "#f8fafc",
+                                                cursor: "pointer",
+                                                fontSize: "0.76rem",
+                                                fontWeight: 600,
+                                                flexShrink: 0,
+                                            }}
+                                            title="Top Plan View (Orthographic 2D / Satellite)"
+                                        >
+                                            <span className="material-icons-round" style={{ fontSize: "15px", color: "#38bdf8" }}>layers</span>
+                                            <span className="hud-btn-label">Plan</span>
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => setCameraPreset("front")}
+                                            style={{
+                                                display: "inline-flex",
+                                                alignItems: "center",
+                                                gap: "4px",
+                                                padding: "5px 9px",
+                                                background: "rgba(30, 41, 59, 0.85)",
+                                                border: "1px solid rgba(148, 163, 184, 0.25)",
+                                                borderRadius: "20px",
+                                                color: "#f8fafc",
+                                                cursor: "pointer",
+                                                fontSize: "0.76rem",
+                                                fontWeight: 600,
+                                                flexShrink: 0,
+                                            }}
+                                            title="Front Horizon View"
+                                        >
+                                            <span className="material-icons-round" style={{ fontSize: "15px", color: "#38bdf8" }}>crop_portrait</span>
+                                            <span className="hud-btn-label">Front</span>
+                                        </button>
+
+                                        <div style={{ width: "1px", height: "16px", background: "rgba(148, 163, 184, 0.3)", margin: "0 1px", flexShrink: 0 }} />
+
+                                        <button
+                                            type="button"
+                                            onClick={() => handleZoom(true)}
+                                            style={{ padding: "5px 7px", background: "transparent", border: "none", color: "#cbd5e1", cursor: "pointer", display: "inline-flex", alignItems: "center", flexShrink: 0 }}
+                                            title="Smooth Zoom In"
+                                        >
+                                            <span className="material-icons-round" style={{ fontSize: "17px" }}>add</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleZoom(false)}
+                                            style={{ padding: "5px 7px", background: "transparent", border: "none", color: "#cbd5e1", cursor: "pointer", display: "inline-flex", alignItems: "center", flexShrink: 0 }}
+                                            title="Smooth Zoom Out"
+                                        >
+                                            <span className="material-icons-round" style={{ fontSize: "17px" }}>remove</span>
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={fitModelView}
+                                            style={{
+                                                display: "inline-flex",
+                                                alignItems: "center",
+                                                gap: "4px",
+                                                padding: "5px 9px",
+                                                background: "rgba(30, 41, 59, 0.85)",
+                                                border: "1px solid rgba(148, 163, 184, 0.25)",
+                                                borderRadius: "20px",
+                                                color: "#f8fafc",
+                                                cursor: "pointer",
+                                                fontSize: "0.76rem",
+                                                fontWeight: 600,
+                                                flexShrink: 0,
+                                            }}
+                                            title="Focus / Center Terrain or Model"
+                                        >
+                                            <span className="material-icons-round" style={{ fontSize: "15px", color: "#38bdf8" }}>center_focus_strong</span>
+                                            <span className="hud-btn-label">Focus</span>
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={toggleAutoOrbit}
+                                            style={{
+                                                display: "inline-flex",
+                                                alignItems: "center",
+                                                gap: "4px",
+                                                padding: "5px 9px",
+                                                background: isAutoRotating ? "var(--primary-blue)" : "rgba(30, 41, 59, 0.85)",
+                                                border: "1px solid rgba(148, 163, 184, 0.25)",
+                                                borderRadius: "20px",
+                                                color: "#f8fafc",
+                                                cursor: "pointer",
+                                                fontSize: "0.76rem",
+                                                fontWeight: 600,
+                                                flexShrink: 0,
+                                            }}
+                                            title="Toggle Auto-Orbit Turntable"
+                                        >
+                                            <span className="material-icons-round" style={{ fontSize: "15px" }}>sync</span>
+                                            <span className="hud-btn-label">Orbit</span>
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={toggleCadGrid}
+                                            style={{
+                                                display: "inline-flex",
+                                                alignItems: "center",
+                                                gap: "4px",
+                                                padding: "5px 9px",
+                                                background: isGridVisible ? "rgba(30, 41, 59, 0.85)" : "transparent",
+                                                border: "1px solid rgba(148, 163, 184, 0.25)",
+                                                borderRadius: "20px",
+                                                color: isGridVisible ? "#38bdf8" : "#94a3b8",
+                                                cursor: "pointer",
+                                                fontSize: "0.76rem",
+                                                fontWeight: 600,
+                                                flexShrink: 0,
+                                            }}
+                                            title="Toggle That Open Engine Infinite CAD Grid"
+                                        >
+                                            <span className="material-icons-round" style={{ fontSize: "15px" }}>grid_on</span>
+                                            <span className="hud-btn-label">Grid</span>
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={toggleSectioning}
+                                            style={{
+                                                display: "inline-flex",
+                                                alignItems: "center",
+                                                gap: "4px",
+                                                padding: "5px 9px",
+                                                background: isSectioningActive ? "rgba(239, 68, 68, 0.25)" : "rgba(30, 41, 59, 0.85)",
+                                                border: isSectioningActive ? "1px solid #ef4444" : "1px solid rgba(148, 163, 184, 0.25)",
+                                                borderRadius: "20px",
+                                                color: isSectioningActive ? "#f87171" : "#f8fafc",
+                                                cursor: "pointer",
+                                                fontSize: "0.76rem",
+                                                fontWeight: 600,
+                                                flexShrink: 0,
+                                            }}
+                                            title="Toggle Architectural Section Planes (OBC.Clipper)"
+                                        >
+                                            <span className="material-icons-round" style={{ fontSize: "15px", color: isSectioningActive ? "#f87171" : "#ef4444" }}>content_cut</span>
+                                            <span className="hud-btn-label">Section{sectionPlanesCount > 0 ? ` (${sectionPlanesCount})` : ""}</span>
+                                        </button>
+
+                                        <div style={{ width: "1px", height: "16px", background: "rgba(148, 163, 184, 0.3)", margin: "0 1px", flexShrink: 0 }} />
+
+                                        <button
+                                            type="button"
+                                            onClick={() => toggleDrawer("gis")}
+                                            style={{
+                                                display: "inline-flex",
+                                                alignItems: "center",
+                                                gap: "5px",
+                                                padding: "5px 11px",
+                                                background: activeDrawer === "gis" ? "var(--primary-blue)" : "rgba(30, 41, 59, 0.85)",
+                                                border: "1px solid rgba(148, 163, 184, 0.25)",
+                                                borderRadius: "20px",
+                                                color: "#f8fafc",
+                                                cursor: "pointer",
+                                                fontSize: "0.76rem",
+                                                fontWeight: 600,
+                                                flexShrink: 0,
+                                            }}
+                                            title="Open Cesium 3D Geospatial Tiles drawer"
+                                        >
+                                            <span className="material-icons-round" style={{ fontSize: "15px", color: "#38bdf8" }}>public</span>
+                                            <span className="hud-btn-label">GIS</span>
+                                        </button>
+
+                                        <button
+                                            type="button"
+                                            onClick={handleOpenIfcFile}
+                                            style={{
+                                                display: "inline-flex",
+                                                alignItems: "center",
+                                                gap: "5px",
+                                                padding: "5px 12px",
+                                                background: "linear-gradient(135deg, #0284c7, #0ea5e9)",
+                                                border: "none",
+                                                borderRadius: "20px",
+                                                color: "#ffffff",
+                                                cursor: "pointer",
+                                                fontSize: "0.76rem",
+                                                fontWeight: 700,
+                                                boxShadow: "0 4px 14px rgba(14, 165, 233, 0.4)",
+                                                flexShrink: 0,
+                                            }}
+                                            title="Upload an IFC model into this workspace"
+                                        >
+                                            <span className="material-icons-round" style={{ fontSize: "15px" }}>cloud_upload</span>
+                                            <span className="hud-btn-label">Upload</span>
+                                        </button>
+
+                                        <div style={{ width: "1px", height: "16px", background: "rgba(148, 163, 184, 0.3)", margin: "0 1px", flexShrink: 0 }} />
+
+                                        <button
+                                            type="button"
+                                            onClick={() => setIsLeftPaneCollapsed((prev) => !prev)}
+                                            style={{
+                                                display: "inline-flex",
+                                                alignItems: "center",
+                                                gap: "5px",
+                                                padding: "5px 11px",
+                                                background: isLeftPaneCollapsed ? "rgba(56, 189, 248, 0.25)" : "rgba(30, 41, 59, 0.85)",
+                                                border: isLeftPaneCollapsed ? "1px solid #38bdf8" : "1px solid rgba(148, 163, 184, 0.25)",
+                                                borderRadius: "20px",
+                                                color: isLeftPaneCollapsed ? "#38bdf8" : "#f8fafc",
+                                                cursor: "pointer",
+                                                fontSize: "0.76rem",
+                                                fontWeight: 600,
+                                                flexShrink: 0,
+                                            }}
+                                            title={isLeftPaneCollapsed ? "Restore side panels" : "Maximize Viewer (Full Screen Width)"}
+                                        >
+                                            <span className="material-icons-round" style={{ fontSize: "15px" }}>
+                                                {isLeftPaneCollapsed ? "fullscreen_exit" : "fullscreen"}
+                                            </span>
+                                            <span className="hud-btn-label">{isLeftPaneCollapsed ? "Standard" : "Full View"}</span>
+                                        </button>
+                                    </>
+                                ) : (
+                                    <>
                                 <button
                                     type="button"
                                     onClick={() => setCameraPreset("iso")}
@@ -1721,6 +2666,28 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                 )}
                                 <button
                                     type="button"
+                                    onClick={toggleSectioning}
+                                    style={{
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: "4px",
+                                        padding: "5px 9px",
+                                        background: isSectioningActive ? "rgba(239, 68, 68, 0.25)" : "rgba(30, 41, 59, 0.85)",
+                                        border: isSectioningActive ? "1px solid #ef4444" : "1px solid rgba(148, 163, 184, 0.25)",
+                                        borderRadius: "20px",
+                                        color: isSectioningActive ? "#f87171" : "#f8fafc",
+                                        cursor: "pointer",
+                                        fontSize: "0.76rem",
+                                        fontWeight: 600,
+                                        flexShrink: 0,
+                                    }}
+                                    title="Toggle Architectural Section Planes (OBC.Clipper)"
+                                >
+                                    <span className="material-icons-round" style={{ fontSize: "15px", color: isSectioningActive ? "#f87171" : "#ef4444" }}>content_cut</span>
+                                    <span className="hud-btn-label">Section{sectionPlanesCount > 0 ? ` (${sectionPlanesCount})` : ""}</span>
+                                </button>
+                                <button
+                                    type="button"
                                     onClick={handleOpenIfcFile}
                                     style={{
                                         display: "inline-flex",
@@ -1801,6 +2768,34 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                     </span>
                                     <span className="hud-btn-label">{isTopBarCollapsed ? "Dock Bars" : "Fullscreen"}</span>
                                 </button>
+                                <div style={{ width: "1px", height: "16px", background: "rgba(148, 163, 184, 0.3)", margin: "0 1px", flexShrink: 0 }} />
+                                {/* Full View (Maximize 3D BIM Canvas across full width) */}
+                                <button
+                                    type="button"
+                                    onClick={() => setIsLeftPaneCollapsed((prev) => !prev)}
+                                    style={{
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: "4px",
+                                        padding: "5px 9px",
+                                        background: isLeftPaneCollapsed ? "rgba(56, 189, 248, 0.25)" : "rgba(30, 41, 59, 0.85)",
+                                        border: isLeftPaneCollapsed ? "1px solid #38bdf8" : "1px solid rgba(148, 163, 184, 0.25)",
+                                        borderRadius: "20px",
+                                        color: isLeftPaneCollapsed ? "#38bdf8" : "#f8fafc",
+                                        cursor: "pointer",
+                                        fontSize: "0.76rem",
+                                        fontWeight: 600,
+                                        flexShrink: 0,
+                                    }}
+                                    title={isLeftPaneCollapsed ? "Restore side panels" : "Maximize 3D BIM Viewer (Full Screen Width)"}
+                                >
+                                    <span className="material-icons-round" style={{ fontSize: "15px" }}>
+                                        {isLeftPaneCollapsed ? "fullscreen_exit" : "fullscreen"}
+                                    </span>
+                                    <span className="hud-btn-label">{isLeftPaneCollapsed ? "Standard" : "Full View"}</span>
+                                </button>
+                                </>
+                                )}
                             </div>
                         </div>
 
