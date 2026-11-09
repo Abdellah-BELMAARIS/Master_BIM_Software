@@ -402,8 +402,9 @@ export function ProjectForm(props: ProjectFormProps) {
                                 defaultValue={initialDate}
                             />
                         </div>
+                    </div>
 
-                        <div className="form-field full-width" style={{ marginTop: "0.25rem" }}>
+                    <div className="form-field full-width" style={{ marginTop: "0.25rem" }}>
                             <label style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.45rem" }}>
                                 <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
                                     <span className="material-icons-round" style={{ fontSize: "18px", color: "var(--primary-blue)" }}>view_in_ar</span>
@@ -536,7 +537,6 @@ export function ProjectForm(props: ProjectFormProps) {
                                 </button>
                             )}
                         </div>
-                    </div>
                 </div>
 
                 <div className="form-actions">
