@@ -64,7 +64,7 @@ export const modelsTemplate: BUI.StatefullComponent<ModelsState> = (
 
   return BUI.html`
     <bim-panel-section
-      label="Loaded Models"
+      label="Federated Models & IFC Hierarchy"
       icon="tabler:folders"
       fixed
       style="display: flex; flex-direction: column; height: 100%; overflow: hidden; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(56, 189, 248, 0.25);"

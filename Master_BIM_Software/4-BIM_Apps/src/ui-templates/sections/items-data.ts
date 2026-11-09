@@ -169,7 +169,7 @@ export const itemsDataTemplate: BUI.StatefullComponent<ItemsDataState> = (
 
   return BUI.html`
     <bim-panel-section
-      label="Element Data & Properties"
+      label="IFC Schema Attributes & Quantities"
       icon="solar:document-bold"
       fixed
       style="display: flex; flex-direction: column; height: 100%; overflow: hidden; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(56, 189, 248, 0.25);"

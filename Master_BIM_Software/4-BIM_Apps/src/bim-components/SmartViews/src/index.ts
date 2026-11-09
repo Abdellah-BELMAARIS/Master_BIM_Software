@@ -3,6 +3,8 @@ import * as OBC from "@thatopen/components";
 import * as OBCF from "@thatopen/components-front";
 import * as FRAGS from "@thatopen/fragments";
 import { v4 as uuidv4 } from "uuid";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { database } from "../../../core/database";
 import { SmartView, SmartViewCameraState } from "./types";
 
 /**
@@ -532,6 +534,43 @@ export class SmartViews extends OBC.Component implements OBC.Disposable {
     this.list.set(id, cloned);
     this.onViewCreated.trigger(cloned);
     return cloned;
+  }
+
+  /**
+   * Mini Challenge: Saves current smart views to Cloud Firestore as part of the project data document.
+   */
+  async saveToFirestore(projectId: string): Promise<void> {
+    if (!projectId || !database) return;
+    try {
+      const serialized = this.export();
+      const projectRef = doc(database, "projects", projectId);
+      await updateDoc(projectRef, {
+        smartViews: serialized.data,
+      });
+      console.log(`[SmartViews] Successfully synced ${serialized.data.length} views to Firestore project "${projectId}".`);
+    } catch (err) {
+      console.warn(`[SmartViews] Could not sync views to Firestore:`, err);
+    }
+  }
+
+  /**
+   * Mini Challenge: Loads and rehydrates smart views from Cloud Firestore project data document.
+   */
+  async loadFromFirestore(projectId: string): Promise<SmartView[]> {
+    if (!projectId || !database) return [];
+    try {
+      const projectRef = doc(database, "projects", projectId);
+      const snap = await getDoc(projectRef);
+      if (!snap.exists()) return [];
+
+      const data = snap.data();
+      if (data && Array.isArray(data.smartViews) && data.smartViews.length > 0) {
+        return this.import({ data: data.smartViews });
+      }
+    } catch (err) {
+      console.warn(`[SmartViews] Error loading views from Firestore:`, err);
+    }
+    return [];
   }
 
   delete(id: string): void {

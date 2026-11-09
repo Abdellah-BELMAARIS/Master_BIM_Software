@@ -390,18 +390,16 @@ export function ProjectForm(props: ProjectFormProps) {
                         </div>
                     </div>
 
-                    <div className="form-row-2col">
-                        <div className="form-field">
-                            <label>
-                                <span className="material-icons-round">calendar_today</span> Target Finish Date
-                            </label>
-                            <input
-                                name="finishDate"
-                                type="date"
-                                lang="en-US"
-                                defaultValue={initialDate}
-                            />
-                        </div>
+                    <div className="form-field">
+                        <label>
+                            <span className="material-icons-round">calendar_today</span> Target Finish Date
+                        </label>
+                        <input
+                            name="finishDate"
+                            type="date"
+                            lang="en-US"
+                            defaultValue={initialDate}
+                        />
                     </div>
 
                     <div className="form-field full-width" style={{ marginTop: "0.25rem" }}>

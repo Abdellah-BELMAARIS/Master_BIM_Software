@@ -23,7 +23,9 @@ export const queriesTemplate: BUI.StatefullComponent<QueriesSectionState> = (
 
   let queryNameInput: BUI.TextInput | null = null;
   let categoryRegexInput: BUI.TextInput | null = null;
-  let attrValueInput: BUI.TextInput | null = null;
+  let psetNameInput: BUI.TextInput | null = null;
+  let propNameInput: BUI.TextInput | null = null;
+  let propValueInput: BUI.TextInput | null = null;
   let statusBadge: HTMLSpanElement | null = null;
 
   const setStatus = (msg: string, isError = false) => {
@@ -40,34 +42,65 @@ export const queriesTemplate: BUI.StatefullComponent<QueriesSectionState> = (
   const onCreateQuery = async () => {
     const rawName = queryNameInput?.value?.trim() || "";
     const rawCategory = categoryRegexInput?.value?.trim() || "";
-    const rawAttr = attrValueInput?.value?.trim() || "";
+    const rawPset = psetNameInput?.value?.trim() || "";
+    const rawProp = propNameInput?.value?.trim() || "";
+    const rawVal = propValueInput?.value?.trim() || "";
 
-    if (!rawCategory && !rawAttr) {
-      setStatus("Enter a Category regex or Attribute keyword.", true);
+    if (!rawCategory && !rawPset && !rawProp && !rawVal) {
+      setStatus("Specify an IFC Category, Property Set, Property Name, or Value.", true);
       return;
     }
 
     const name =
       rawName ||
-      `${rawCategory || "Items"}${rawAttr ? ` (${rawAttr})` : ""}`.slice(0, 40);
+      `${rawCategory || "Elements"}${rawPset ? ` · ${rawPset}` : ""}${rawProp ? ` (${rawProp}=${rawVal || "*"})` : ""}`.slice(0, 50);
 
     try {
       const categoryRegex = rawCategory
         ? new RegExp(rawCategory.replace(/^\//, "").replace(/\/i?$/, ""), "i")
         : /.+/;
 
-      const queryParams: Parameters<OBC.ItemsFinder["create"]>[1][number] = {
-        categories: [categoryRegex],
-      };
+      // Challenge Part 1: Query that matches a particular property value in a specific property set via IsDefinedBy relation
+      let queryParams: Parameters<OBC.ItemsFinder["create"]>[1][number];
 
-      if (rawAttr) {
-        queryParams.attributes = {
-          queries: [
-            {
-              name: /^(Name|ObjectType|Description|Tag)$/i,
-              value: new RegExp(rawAttr, "i"),
+      if (rawPset || rawProp || rawVal) {
+        // Relational query on IsDefinedBy -> PropertySet
+        const psetQueries: any[] = [];
+        if (rawPset) {
+          psetQueries.push({
+            name: /^Name$/i,
+            value: new RegExp(rawPset, "i"),
+          });
+        }
+        if (rawProp) {
+          psetQueries.push({
+            name: new RegExp(rawProp, "i"),
+            value: rawVal ? new RegExp(rawVal, "i") : /.+/,
+          });
+        } else if (rawVal) {
+          psetQueries.push({
+            name: /.+/,
+            value: new RegExp(rawVal, "i"),
+          });
+        }
+
+        queryParams = {
+          categories: [categoryRegex],
+          relation: {
+            name: "IsDefinedBy",
+            query: {
+              categories: [/PROPERTYSET|ELEMENTQUANTITY/i],
+              attributes: psetQueries.length > 0
+                ? {
+                    queries: psetQueries,
+                  }
+                : undefined,
             },
-          ],
+          },
+        };
+      } else {
+        queryParams = {
+          categories: [categoryRegex],
         };
       }
 
@@ -82,10 +115,13 @@ export const queriesTemplate: BUI.StatefullComponent<QueriesSectionState> = (
         await highlighter.highlightByID("select", found, true, true);
       }
 
-      setStatus(`Saved "${name}" (${count} elements matched).`);
+      setStatus(`Created "${name}" (${count} elements matching criteria).`);
       if (queryNameInput) queryNameInput.value = "";
+      if (psetNameInput) psetNameInput.value = "";
+      if (propNameInput) propNameInput.value = "";
+      if (propValueInput) propValueInput.value = "";
     } catch (err: any) {
-      setStatus(`Invalid regex pattern: ${err?.message || err}`, true);
+      setStatus(`Query creation error: ${err?.message || err}`, true);
     }
   };
 
@@ -141,8 +177,8 @@ export const queriesTemplate: BUI.StatefullComponent<QueriesSectionState> = (
 
   return BUI.html`
     <bim-panel-section
-      label="Data Queries (ItemsFinder)"
-      icon="material-symbols:search"
+      label="IFC Semantic Queries & Spatial Filters"
+      icon="solar:magnifer-bold"
       fixed
       style="display: flex; flex-direction: column; height: 100%; overflow: hidden; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(56, 189, 248, 0.25);"
     >
@@ -175,31 +211,43 @@ export const queriesTemplate: BUI.StatefullComponent<QueriesSectionState> = (
           ></bim-button>
         </div>
 
-        <!-- Inline New Query Creator -->
+        <!-- Challenge Part 1: Property in Specific Property Set Query Builder -->
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.35rem; padding: 0.45rem; background: rgba(30, 41, 59, 0.6); border: 1px solid rgba(148, 163, 184, 0.2); border-radius: 8px;">
           <bim-text-input
             ${BUI.ref((el) => {
               queryNameInput = el as BUI.TextInput;
             })}
-            placeholder="Query Name"
+            placeholder="Query Name (Optional)"
             style="grid-column: 1 / -1;"
           ></bim-text-input>
           <bim-text-input
             ${BUI.ref((el) => {
               categoryRegexInput = el as BUI.TextInput;
             })}
-            placeholder="Category (WALL|SLAB)"
+            placeholder="IFC Category (WALL|SLAB)"
             value="WALL|COLUMN"
           ></bim-text-input>
           <bim-text-input
             ${BUI.ref((el) => {
-              attrValueInput = el as BUI.TextInput;
+              psetNameInput = el as BUI.TextInput;
             })}
-            placeholder="Name/Attr filter (opt.)"
+            placeholder="Property Set (Pset_WallCommon)"
+          ></bim-text-input>
+          <bim-text-input
+            ${BUI.ref((el) => {
+              propNameInput = el as BUI.TextInput;
+            })}
+            placeholder="Property Name (LoadBearing)"
+          ></bim-text-input>
+          <bim-text-input
+            ${BUI.ref((el) => {
+              propValueInput = el as BUI.TextInput;
+            })}
+            placeholder="Target Value (TRUE)"
           ></bim-text-input>
           <bim-button
             @click=${onCreateQuery}
-            label="Add & Run Query"
+            label="Run Property & Pset Query"
             icon="solar:add-circle-bold"
             style="grid-column: 1 / -1; --bim-button-background: #0284c7; color: white; font-weight: 600;"
           ></bim-button>

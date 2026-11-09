@@ -22,6 +22,7 @@ import {
     getCanonicalProjectInfo,
     BimElementInfo,
     DataEnhancer,
+    SmartViews,
     unwrapIfcAttr,
 } from "../bim-components";
 
@@ -269,6 +270,20 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                     templates.SmartViewsSectionState
                 >(templates.smartViewsSectionTemplate, { components });
                 smartViewsContainerRef.current.replaceChildren(smartViewsSection);
+
+                // Auto-hydrate saved coordination viewpoints from Cloud Firestore
+                if (project?.id) {
+                    const smartViews = components.get(SmartViews);
+                    smartViews.loadFromFirestore(project.id).catch((err) => {
+                        console.warn("[SmartViews] Error loading from Firestore:", err);
+                    });
+                    smartViews.onViewCreated.add(() => {
+                        smartViews.saveToFirestore(project.id);
+                    });
+                    smartViews.onViewDeleted.add(() => {
+                        smartViews.saveToFirestore(project.id);
+                    });
+                }
             } catch (err) {
                 console.warn("[SmartViews] Error mounting UI:", err);
             }
@@ -1120,7 +1135,52 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                             <span className="material-icons-round">camera</span>
                             <span>Smart Views</span>
                         </button>
+
+                        <div style={{ width: "1px", height: "16px", background: "rgba(148, 163, 184, 0.25)", margin: "0 2px" }} />
+
+                        {/* Top Bar Minimize Button */}
+                        <button
+                            type="button"
+                            className="viewer-mode-tab"
+                            onClick={() => setIsTopBarCollapsed(true)}
+                            title="Collapse Navigation Bar"
+                            style={{ padding: "5px 7px", color: "#94a3b8" }}
+                        >
+                            <span className="material-icons-round" style={{ fontSize: "16px" }}>expand_less</span>
+                        </button>
                     </div>
+
+                    {/* Floating Pill to Restore Navigation Bar when Collapsed */}
+                    {isTopBarCollapsed && (
+                        <button
+                            type="button"
+                            className="viewer-bar-restore-pill"
+                            onClick={() => setIsTopBarCollapsed(false)}
+                            title="Show BIM Navigation Bar"
+                            style={{
+                                position: "absolute",
+                                top: "12px",
+                                left: "14px",
+                                zIndex: 31,
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "6px",
+                                background: "rgba(15, 23, 42, 0.92)",
+                                backdropFilter: "blur(14px)",
+                                border: "1px solid rgba(56, 189, 248, 0.4)",
+                                borderRadius: "14px",
+                                padding: "6px 12px",
+                                color: "#38bdf8",
+                                fontSize: "0.76rem",
+                                fontWeight: 700,
+                                cursor: "pointer",
+                                boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
+                            }}
+                        >
+                            <span className="material-icons-round" style={{ fontSize: "16px" }}>menu</span>
+                            <span>Show Nav</span>
+                        </button>
+                    )}
 
                     <ViewerErrorBoundary>
                         {/* That Open Engine Viewport Grid (BIM World & 2D Plan View) */}

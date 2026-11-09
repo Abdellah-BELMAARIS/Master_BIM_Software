@@ -150,9 +150,43 @@ export const dataSourcesTemplate: BUI.StatefullComponent<DataSourcesState> = (
     }
   };
 
+  // Mini Challenge: Query all BIM elements sharing the same source property value
+  const onFindSharingData = async (e: Event) => {
+    const btn = e.currentTarget as BUI.Button;
+    const propertyName = propNameInput?.value?.trim() || "";
+    const propertyValue = propValueInput?.value?.trim() || "";
+
+    if (!propertyName || !propertyValue) {
+      setStatus("Enter Param Name and Target Value to find shared items.", true);
+      return;
+    }
+
+    if (btn) btn.loading = true;
+    try {
+      const itemsMap = await enhancer.findItemsSharingData(
+        activeSource,
+        propertyName,
+        propertyValue
+      );
+
+      if (!itemsMap || OBC.ModelIdMapUtils.isEmpty(itemsMap)) {
+        setStatus(`No items found sharing "${propertyName} = ${propertyValue}".`, true);
+        return;
+      }
+
+      const highlighter = components.get(OBCF.Highlighter);
+      await highlighter.highlightByID("select", itemsMap, true, true);
+      setStatus(`Found & highlighted items sharing "${propertyName} = ${propertyValue}".`);
+    } catch (err: any) {
+      setStatus(`Search error: ${err?.message || err}`, true);
+    } finally {
+      if (btn) btn.loading = false;
+    }
+  };
+
   return BUI.html`
     <bim-panel-section
-      label="Data Enhancer · Sources"
+      label="Data Enhancer & Specifications Matrix"
       icon="solar:database-bold"
       fixed
       style="display: flex; flex-direction: column; height: 100%; overflow: hidden; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(56, 189, 248, 0.25);"
@@ -210,9 +244,15 @@ export const dataSourcesTemplate: BUI.StatefullComponent<DataSourcesState> = (
           ></bim-text-input>
           <bim-button
             @click=${onAttachToSelection}
-            label="Save Param to Selection (Firestore)"
+            label="Save to Selection (Firestore)"
             icon="solar:cloud-upload-bold"
-            style="grid-column: 1 / -1; --bim-button-background: #059669; color: white; font-weight: 600;"
+            style="--bim-button-background: #059669; color: white; font-weight: 600;"
+          ></bim-button>
+          <bim-button
+            @click=${onFindSharingData}
+            label="Find Items Sharing Param"
+            icon="solar:magnifer-bold"
+            style="--bim-button-background: #0284c7; color: white; font-weight: 600;"
           ></bim-button>
         </div>
 
