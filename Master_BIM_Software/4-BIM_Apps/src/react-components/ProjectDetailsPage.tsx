@@ -139,6 +139,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
     type DockDrawerId = "models" | "query" | "properties" | "enhance" | "smart-views";
     const [activeDrawer, setActiveDrawer] = React.useState<DockDrawerId | null>(null);
     const [isTopBarCollapsed, setIsTopBarCollapsed] = React.useState<boolean>(false);
+    const [isFloatingToolbarCollapsed, setIsFloatingToolbarCollapsed] = React.useState<boolean>(false);
     const toggleDrawer = (drawer: DockDrawerId) => {
         setActiveDrawer((prev) => (prev === drawer ? null : drawer));
     };
@@ -164,7 +165,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
         const syncLayoutOffsets = () => {
             const wrapperRect = wrapper.getBoundingClientRect();
             const barRect = bar.getBoundingClientRect();
-            const modeBarBottom = Math.max(52, Math.round(barRect.bottom - wrapperRect.top));
+            const modeBarBottom = isTopBarCollapsed ? 12 : Math.max(52, Math.round(barRect.bottom - wrapperRect.top));
             wrapper.style.setProperty("--mode-bar-bottom", `${modeBarBottom}px`);
 
             const toolbarEl = wrapper.querySelector("bim-toolbar");
@@ -195,9 +196,17 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
             ro.disconnect();
             mo.disconnect();
         };
-    }, [project?.id, viewerMode, project?.modelCategory, engineReadyTick]);
+    }, [project?.id, viewerMode, project?.modelCategory, engineReadyTick, isTopBarCollapsed, isFloatingToolbarCollapsed]);
 
-    // Mount all 5 course BUI drawers ONCE per engine initialization (prevents listener leaks on drawer toggle)
+    // Toggle visibility of the floating toolbar overlay (<bim-grid class="toc-viewport-floating-grid">)
+    React.useEffect(() => {
+        const wrapper = viewerWrapperRef.current;
+        if (!wrapper) return;
+        const floatingGrid = wrapper.querySelector(".toc-viewport-floating-grid") as HTMLElement | null;
+        if (floatingGrid) {
+            floatingGrid.style.display = isFloatingToolbarCollapsed ? "none" : "";
+        }
+    }, [isFloatingToolbarCollapsed, engineReadyTick]);
     React.useEffect(() => {
         const components = componentsRef.current;
         if (engineReadyTick === 0 || !components) return;
@@ -1611,10 +1620,44 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                     <span className="hud-btn-label">Load IFC</span>
                                 </button>
                                 <div style={{ width: "1px", height: "16px", background: "rgba(148, 163, 184, 0.3)", margin: "0 1px", flexShrink: 0 }} />
+                                {/* Toggle Floating Toolbar Overlay */}
+                                <button
+                                    type="button"
+                                    onClick={() => setIsFloatingToolbarCollapsed((prev) => !prev)}
+                                    style={{
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: "4px",
+                                        padding: "5px 9px",
+                                        background: isFloatingToolbarCollapsed ? "rgba(245, 158, 11, 0.22)" : "rgba(30, 41, 59, 0.85)",
+                                        border: isFloatingToolbarCollapsed ? "1px solid #f59e0b" : "1px solid rgba(148, 163, 184, 0.25)",
+                                        borderRadius: "20px",
+                                        color: isFloatingToolbarCollapsed ? "#fbbf24" : "#f8fafc",
+                                        cursor: "pointer",
+                                        fontSize: "0.76rem",
+                                        fontWeight: 600,
+                                        flexShrink: 0,
+                                    }}
+                                    title={isFloatingToolbarCollapsed ? "Show Quick-Action BIM Toolbar (Color, Visibility, Ghost, Focus)" : "Hide Quick-Action BIM Toolbar"}
+                                >
+                                    <span className="material-icons-round" style={{ fontSize: "15px" }}>
+                                        {isFloatingToolbarCollapsed ? "visibility" : "visibility_off"}
+                                    </span>
+                                    <span className="hud-btn-label">{isFloatingToolbarCollapsed ? "Show Tools" : "Hide Tools"}</span>
+                                </button>
                                 {/* Fullscreen 100% Canvas Toggle Button */}
                                 <button
                                     type="button"
-                                    onClick={() => setIsTopBarCollapsed((prev) => !prev)}
+                                    onClick={() => {
+                                        const next = !isTopBarCollapsed;
+                                        setIsTopBarCollapsed(next);
+                                        // When entering 100% fullscreen canvas, also hide floating toolbar for complete full bleed
+                                        if (next) {
+                                            setIsFloatingToolbarCollapsed(true);
+                                        } else {
+                                            setIsFloatingToolbarCollapsed(false);
+                                        }
+                                    }}
                                     style={{
                                         display: "inline-flex",
                                         alignItems: "center",
@@ -1629,12 +1672,12 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                         fontWeight: 600,
                                         flexShrink: 0,
                                     }}
-                                    title={isTopBarCollapsed ? "Show Navigation & Tools Bar" : "Hide Top Bar (100% Fullscreen Canvas)"}
+                                    title={isTopBarCollapsed ? "Show Navigation & Tools Bars" : "Hide Both Bars (100% Unobstructed Fullscreen Canvas)"}
                                 >
                                     <span className="material-icons-round" style={{ fontSize: "15px" }}>
-                                        {isTopBarCollapsed ? "expand_more" : "fullscreen"}
+                                        {isTopBarCollapsed ? "close_fullscreen" : "fullscreen"}
                                     </span>
-                                    <span className="hud-btn-label">{isTopBarCollapsed ? "Dock Bar" : "Fullscreen"}</span>
+                                    <span className="hud-btn-label">{isTopBarCollapsed ? "Dock Bars" : "Fullscreen"}</span>
                                 </button>
                             </div>
                         </div>

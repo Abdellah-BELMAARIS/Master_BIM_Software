@@ -1746,6 +1746,20 @@ dialog#error-modal::backdrop {
     pointer-events: none !important;
     align-content: start;
     justify-content: start;
+    transition: padding 0.2s ease, opacity 0.2s ease;
+}
+
+/* Ensure bim-toolbar inside floating grid is responsive and scrolls horizontally on small screens */
+.toc-viewport-floating-grid bim-toolbar {
+    max-width: calc(100vw - 32px) !important;
+    overflow-x: auto !important;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    white-space: nowrap;
+}
+
+.toc-viewport-floating-grid bim-toolbar::-webkit-scrollbar {
+    display: none;
 }
 
 /* Responsive Fluid Support for Phones & Laptops across Viewer Mode Bar & Toolbar */
