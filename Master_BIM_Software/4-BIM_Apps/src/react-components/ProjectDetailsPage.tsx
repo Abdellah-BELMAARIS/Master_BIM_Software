@@ -175,7 +175,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
         const syncLayoutOffsets = () => {
             const wrapperRect = wrapper.getBoundingClientRect();
             const barRect = bar.getBoundingClientRect();
-            const modeBarBottom = isTopBarCollapsed ? 12 : Math.max(52, Math.round(barRect.bottom - wrapperRect.top));
+            const modeBarBottom = isTopBarCollapsed ? 54 : Math.max(52, Math.round(barRect.bottom - wrapperRect.top));
             wrapper.style.setProperty("--mode-bar-bottom", `${modeBarBottom}px`);
 
             const toolbarEl = wrapper.querySelector("bim-toolbar");
@@ -797,6 +797,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                         const validHit = safePickThreeMeshes(x, y);
                         if (validHit && validHit.object instanceof THREE.Mesh) {
                             const mesh = validHit.object;
+                            (window as any).__selectedThreeMesh = mesh;
                             if (selectionBoxRef.current) {
                                 world.scene.three.remove(selectionBoxRef.current);
                                 selectionBoxRef.current.dispose();
@@ -805,9 +806,19 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                             boxHelper.name = "selection-box-helper";
                             world.scene.three.add(boxHelper);
                             selectionBoxRef.current = boxHelper;
+                            (window as any).__selectionBoxHelper = boxHelper;
 
                             const info = resolveBimElementInfo(mesh, validHit.point, project ?? undefined);
                             setSelectedElement(info);
+                        } else if (!validHit) {
+                            (window as any).__selectedThreeMesh = null;
+                            if (selectionBoxRef.current) {
+                                world.scene.three.remove(selectionBoxRef.current);
+                                selectionBoxRef.current.dispose();
+                                selectionBoxRef.current = null;
+                            }
+                            (window as any).__selectionBoxHelper = null;
+                            setSelectedElement(null);
                         }
                     };
 

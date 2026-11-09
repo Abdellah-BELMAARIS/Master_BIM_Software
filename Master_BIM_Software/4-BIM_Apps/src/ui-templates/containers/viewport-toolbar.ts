@@ -54,33 +54,53 @@ export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarStat
   const applyColorDirectly = async (hexColor: string) => {
     const highlighter = components.get(OBCF.Highlighter);
     const selection = highlighter.selection.select;
+    const selectedMesh = (window as any).__selectedThreeMesh as THREE.Mesh | null;
 
-    if (!selection || OBC.ModelIdMapUtils.isEmpty(selection)) {
+    if ((!selection || OBC.ModelIdMapUtils.isEmpty(selection)) && !selectedMesh) {
       console.warn("[Highlighter] Select at least one element before applying color.");
       BUI.ContextMenu.removeMenus();
       return;
     }
 
     try {
-      if (!highlighter.styles.has(hexColor)) {
-        highlighter.styles.set(hexColor, {
-          color: new THREE.Color(hexColor),
-          opacity: 1,
-          transparent: false,
-          renderedFaces: 0,
-        });
+      // 1. Color Fragment IFC items if selected
+      if (selection && !OBC.ModelIdMapUtils.isEmpty(selection)) {
+        if (!highlighter.styles.has(hexColor)) {
+          highlighter.styles.set(hexColor, {
+            color: new THREE.Color(hexColor),
+            opacity: 1,
+            transparent: false,
+            renderedFaces: 0,
+          });
+        }
+
+        const cloned = OBC.ModelIdMapUtils.clone(selection);
+        await Promise.all([
+          highlighter.highlightByID(hexColor, cloned, false, false),
+          highlighter.clear("select"),
+        ]);
+
+        try {
+          const smartViews = components.get(SmartViews);
+          smartViews.addItemsColor(cloned, hexColor);
+        } catch { }
       }
 
-      const cloned = OBC.ModelIdMapUtils.clone(selection);
-      await Promise.all([
-        highlighter.highlightByID(hexColor, cloned, false, false),
-        highlighter.clear("select"),
-      ]);
-
-      try {
-        const smartViews = components.get(SmartViews);
-        smartViews.addItemsColor(cloned, hexColor);
-      } catch { }
+      // 2. Color 3D Parametric Mesh if selected
+      if (selectedMesh) {
+        if (!selectedMesh.userData.__originalMaterial) {
+          selectedMesh.userData.__originalMaterial = selectedMesh.material;
+        }
+        const newMat = (selectedMesh.material as THREE.Material).clone();
+        if ("color" in newMat) {
+          (newMat as any).color = new THREE.Color(hexColor);
+        }
+        selectedMesh.material = newMat;
+        try {
+          const smartViews = components.get(SmartViews);
+          smartViews.currentState.colors.items.set(hexColor, { "3d": new Set([selectedMesh.id]) });
+        } catch { }
+      }
     } catch (error) {
       console.error("[Highlighter] Error applying color:", error);
     } finally {
@@ -107,6 +127,18 @@ export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarStat
     try {
       const highlighter = components.get(OBCF.Highlighter);
       await highlighter.clear();
+
+      // Restore 3D Parametric Meshes original materials
+      const world = resolveWorld();
+      if (world?.scene?.three) {
+        world.scene.three.traverse((obj) => {
+          if (obj instanceof THREE.Mesh && obj.userData.__originalMaterial) {
+            obj.material = obj.userData.__originalMaterial;
+            delete obj.userData.__originalMaterial;
+          }
+        });
+      }
+
       try {
         const smartViews = components.get(SmartViews);
         smartViews.currentState.colors = { queries: new Map(), items: new Map() };
@@ -119,27 +151,37 @@ export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarStat
   };
 
   // =========================================================================
-  // Lesson 3.9: Visibility Operations with Fragments (Hide, Isolate, Show All)
+  // Lesson 3.9: Visibility Operations with Fragments & 3D Meshes (Hide, Isolate, Show All)
   // =========================================================================
   const onHideSelected = async (e: Event) => {
     const button = e.currentTarget as BUI.Button;
     const highlighter = components.get(OBCF.Highlighter);
     const selection = highlighter.selection.select;
+    const selectedMesh = (window as any).__selectedThreeMesh as THREE.Mesh | null;
 
-    if (!selection || OBC.ModelIdMapUtils.isEmpty(selection)) {
+    if ((!selection || OBC.ModelIdMapUtils.isEmpty(selection)) && !selectedMesh) {
       console.warn("[Hider] Select an element first to hide.");
       return;
     }
 
     if (button) button.loading = true;
     try {
-      const hider = components.get(OBC.Hider);
-      const cloned = OBC.ModelIdMapUtils.clone(selection);
-      await Promise.all([hider.set(false, cloned), highlighter.clear("select")]);
-      try {
-        const smartViews = components.get(SmartViews);
-        smartViews.recordVisibility("hide", cloned);
-      } catch { }
+      if (selection && !OBC.ModelIdMapUtils.isEmpty(selection)) {
+        const hider = components.get(OBC.Hider);
+        const cloned = OBC.ModelIdMapUtils.clone(selection);
+        await Promise.all([hider.set(false, cloned), highlighter.clear("select")]);
+        try {
+          const smartViews = components.get(SmartViews);
+          smartViews.recordVisibility("hide", cloned);
+        } catch { }
+      }
+
+      if (selectedMesh) {
+        selectedMesh.visible = false;
+        if ((window as any).__selectionBoxHelper) {
+          (window as any).__selectionBoxHelper.visible = false;
+        }
+      }
     } catch (error) {
       console.error("[Hider] Error hiding selected elements:", error);
     } finally {
@@ -151,21 +193,35 @@ export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarStat
     const button = e.currentTarget as BUI.Button;
     const highlighter = components.get(OBCF.Highlighter);
     const selection = highlighter.selection.select;
+    const selectedMesh = (window as any).__selectedThreeMesh as THREE.Mesh | null;
 
-    if (!selection || OBC.ModelIdMapUtils.isEmpty(selection)) {
+    if ((!selection || OBC.ModelIdMapUtils.isEmpty(selection)) && !selectedMesh) {
       console.warn("[Hider] Select an element first to isolate.");
       return;
     }
 
     if (button) button.loading = true;
     try {
-      const hider = components.get(OBC.Hider);
-      const cloned = OBC.ModelIdMapUtils.clone(selection);
-      await Promise.all([hider.isolate(cloned), highlighter.clear("select")]);
-      try {
-        const smartViews = components.get(SmartViews);
-        smartViews.recordVisibility("isolate", cloned);
-      } catch { }
+      if (selection && !OBC.ModelIdMapUtils.isEmpty(selection)) {
+        const hider = components.get(OBC.Hider);
+        const cloned = OBC.ModelIdMapUtils.clone(selection);
+        await Promise.all([hider.isolate(cloned), highlighter.clear("select")]);
+        try {
+          const smartViews = components.get(SmartViews);
+          smartViews.recordVisibility("isolate", cloned);
+        } catch { }
+      }
+
+      if (selectedMesh) {
+        const world = resolveWorld();
+        if (world?.scene?.three) {
+          world.scene.three.traverse((obj) => {
+            if (obj instanceof THREE.Mesh && !obj.name.includes("grid") && !obj.name.includes("helper")) {
+              obj.visible = obj === selectedMesh;
+            }
+          });
+        }
+      }
     } catch (error) {
       console.error("[Hider] Error isolating selected elements:", error);
     } finally {
@@ -178,7 +234,22 @@ export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarStat
     if (button) button.loading = true;
     try {
       const hider = components.get(OBC.Hider);
-      await hider.set(true);
+      const highlighter = components.get(OBCF.Highlighter);
+      await Promise.all([hider.set(true), highlighter.clear()]);
+
+      // Restore 3D Parametric Meshes visibility
+      const world = resolveWorld();
+      if (world?.scene?.three) {
+        world.scene.three.traverse((obj) => {
+          if (obj instanceof THREE.Mesh && !obj.name.includes("helper")) {
+            obj.visible = true;
+          }
+        });
+      }
+      if ((window as any).__selectionBoxHelper) {
+        (window as any).__selectionBoxHelper.visible = true;
+      }
+
       try {
         const smartViews = components.get(SmartViews);
         smartViews.recordVisibility("showAll");
@@ -350,10 +421,24 @@ export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarStat
     try {
       const hasSelection = Boolean(selection && !OBC.ModelIdMapUtils.isEmpty(selection));
       const fragments = components.get(OBC.FragmentsManager);
+      const selectedMesh = (window as any).__selectedThreeMesh as THREE.Mesh | null;
 
-      if (world.camera instanceof OBC.SimpleCamera && fragments.initialized && fragments.list.size > 0) {
-        await world.camera.fitToItems(hasSelection ? selection : undefined);
+      if (world.camera instanceof OBC.SimpleCamera && fragments.initialized && fragments.list.size > 0 && hasSelection) {
+        await world.camera.fitToItems(selection);
         if (!world.isDisposing) fragments.core.update(true);
+      } else if (selectedMesh) {
+        const controls = (world.camera as any)?.controls;
+        if (controls) {
+          const bbox = new THREE.Box3().setFromObject(selectedMesh);
+          if (!bbox.isEmpty()) {
+            await controls.fitToBox(bbox, true, {
+              paddingLeft: 1.3,
+              paddingRight: 1.3,
+              paddingTop: 1.3,
+              paddingBottom: 1.3,
+            });
+          }
+        }
       } else {
         const controls = (world.camera as any)?.controls;
         if (controls && world.scene?.three) {
