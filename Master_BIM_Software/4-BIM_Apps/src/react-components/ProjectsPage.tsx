@@ -87,8 +87,6 @@ export function ProjectsPage(props: ProjectsPageProps) {
                 const querySnapshot = await getDocs(projectsCollection);
                 projectsManager.list = [];
 
-                const seenKeys = new Set<string>();
-
                 for (const doc of querySnapshot.docs) {
                     const data = doc.data() as any;
                     const rawDate = data.finishDate;
@@ -101,75 +99,13 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         finishDate = new Date();
                     }
 
-                    // Cleanly upgrade placeholder "Default Project" if present in Firestore
-                    let projectName = data.name || "Untitled Project";
-                    let projectDesc = data.description || "";
-                    let projectCost = Number(data.cost || 0);
-                    let projectProgress = Number(data.progress || 0);
-                    let projectModelType: ModelType = data.modelType || "cube";
-                    let projectIcon = data.iconColor;
-
-                    if (projectName.toLowerCase() === "default project" || projectName.toLowerCase() === "untitled project") {
-                        projectName = "BIM Modular Innovation Pavilion";
-                        projectDesc = "Modular architectural exhibition pavilion with exposed rebar grid, polished terrazzo floor, and cantilevered LED canopy.";
-                        projectCost = 120000;
-                        projectProgress = 0.80;
-                        projectModelType = "cube";
-                        projectIcon = "#2563eb";
-                    }
-
-                    const canonical = getCanonicalProjectInfo(projectName, data.ifcFileName);
-                    if (canonical) {
-                        projectName = canonical.canonicalName;
-                        projectModelType = canonical.twinType;
-                    }
-
-                    const ifcMeta = getProjectIfcFile({ name: projectName, ifcFileName: data.ifcFileName });
-
-                    // Deduplication: prevent duplicate project cards from older runs
-                    const dedupeKey = canonical ? canonical.dedupeKey : (ifcMeta ? ifcMeta.fileName.toLowerCase() : projectName.toLowerCase().trim());
-                    if (seenKeys.has(dedupeKey)) {
-                        console.log(`[Deduplicate] Purging duplicate Firestore project: "${data.name}" / "${projectName}" (${doc.id})`);
-                        try {
-                            await deleteDoc(doc.ref);
-                        } catch {}
-                        continue;
-                    }
-                    seenKeys.add(dedupeKey);
-
-                    let modelCategory: "ifc" | "3d" = canonical ? canonical.modelCategory : (data.modelCategory || (data.ifcFileName ? "ifc" : "3d"));
-                    let ifcFileName: string | undefined = canonical?.modelCategory === "3d" ? undefined : (canonical ? canonical.ifcFileName : data.ifcFileName);
-                    let ifcSchema: "IFC4" | "IFC2X3" | "IFC4.3" | undefined = canonical?.modelCategory === "3d" ? undefined : (canonical ? canonical.ifcSchema : data.ifcSchema);
-
-                    if (canonical?.modelCategory === "3d") {
-                        modelCategory = "3d";
-                        ifcFileName = undefined;
-                        ifcSchema = undefined;
-                        projectModelType = canonical.twinType;
-                    } else if (ifcMeta) {
-                        modelCategory = "ifc";
-                        ifcFileName = ifcMeta.fileName;
-                        ifcSchema = ifcMeta.schema;
-                        projectModelType = ifcMeta.twinType;
-                    }
-
-                    // Repair stale Firestore metadata automatically so hard-refreshes stay clean
-                    if (
-                        data.name !== projectName ||
-                        data.modelCategory !== modelCategory ||
-                        data.ifcFileName !== ifcFileName ||
-                        data.modelType !== projectModelType
-                    ) {
-                        try {
-                            await updateDoc(doc.ref, {
-                                name: projectName,
-                                modelCategory,
-                                modelType: projectModelType,
-                                ifcFileName: ifcFileName ?? deleteField(),
-                                ifcSchema: ifcSchema ?? deleteField(),
-                            });
-                        } catch {}
-                    }
+                    const projectName = data.name || "Untitled Project";
+                    const projectDesc = data.description || "";
+                    const projectCost = Number(data.cost || 0);
+                    const projectProgress = Number(data.progress || 0);
+                    const projectModelType: ModelType = data.modelType || "tower";
+                    const projectIcon = data.iconColor;
+                    const modelCategory: "ifc" | "3d" = (data.ifcFileName || projectName.toLowerCase().includes("ifc") || data.modelCategory === "ifc") ? "ifc" : (data.modelCategory || "3d");
 
                     const projectData: IProject = {
                         name: projectName,
@@ -181,19 +117,17 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         progress: projectProgress,
                         modelType: projectModelType,
                         modelCategory,
-                        ifcFileName,
-                        ifcSchema,
+                        ifcFileName: data.ifcFileName,
+                        ifcSchema: data.ifcSchema,
                         iconColor: projectIcon,
-                        todos: data.todos,
+                        todos: Array.isArray(data.todos) ? data.todos : [],
+                        smartViews: Array.isArray(data.smartViews) ? data.smartViews : [],
                     };
 
                     try {
                         projectsManager.newProject(projectData, doc.id);
                     } catch {
-                        // Lesson 4.3 Assignment: If project already exists (e.g. on navigation re-mount), update it!
-                        const existing =
-                            projectsManager.getProject(doc.id) ||
-                            projectsManager.getProjectByName(projectData.name);
+                        const existing = projectsManager.getProject(doc.id);
                         if (existing) {
                             projectsManager.updateProject(existing.id, projectData);
                         }
@@ -470,41 +404,12 @@ export function ProjectsPage(props: ProjectsPageProps) {
                     }
                 ];
 
-                // Ensure all showcase projects are present, synchronizing names to canonical standard
-                for (const showcase of SHOWCASE_PROJECTS) {
-                    const showcaseCanonical = getCanonicalProjectInfo(showcase.name, showcase.ifcFileName);
-                    const existing = projectsManager.list.find((p) => {
-                        const pCanonical = getCanonicalProjectInfo(p.name, p.ifcFileName);
-                        if (showcaseCanonical && pCanonical) {
-                            return pCanonical.dedupeKey === showcaseCanonical.dedupeKey;
-                        }
-                        return p.name.toLowerCase() === showcase.name.toLowerCase() ||
-                            (Boolean(showcase.ifcFileName) && p.ifcFileName === showcase.ifcFileName);
-                    });
-                    if (!existing) {
+                // Initial seeding: ONLY seed showcase projects if Firestore is completely empty (first run)
+                if (querySnapshot.empty) {
+                    for (const showcase of SHOWCASE_PROJECTS) {
                         try {
-                            const p = projectsManager.newProject(showcase);
-                            addDoc(projectsCollection, sanitizeForFirestore(showcase))
-                                .then((docRef) => { p.id = docRef.id; })
-                                .catch(() => {});
-                        } catch {
-                            // ignore duplicate error
-                        }
-                    } else {
-                        existing.name = showcase.name;
-                        existing.description = existing.description || showcase.description;
-                        if (showcase.modelCategory) existing.modelCategory = showcase.modelCategory;
-                        existing.ifcFileName = showcase.ifcFileName;
-                        existing.ifcSchema = showcase.ifcSchema;
-                        if (showcase.modelType) existing.modelType = showcase.modelType;
-                        try {
-                            await updateDoc(fsDoc(db, "projects", existing.id), {
-                                name: existing.name,
-                                modelCategory: existing.modelCategory,
-                                modelType: existing.modelType,
-                                ifcFileName: existing.ifcFileName ?? deleteField(),
-                                ifcSchema: existing.ifcSchema ?? deleteField(),
-                            });
+                            const docRef = await addDoc(projectsCollection, sanitizeForFirestore(showcase));
+                            projectsManager.newProject(showcase, docRef.id);
                         } catch {}
                     }
                 }

@@ -21,6 +21,23 @@ export const queriesTemplate: BUI.StatefullComponent<QueriesSectionState> = (
 
   const [queriesTable] = queriesList({ components });
 
+  const persistQueries = () => {
+    try {
+      const serialized = finder.export();
+      localStorage.setItem("toc_bim_saved_queries", JSON.stringify(serialized));
+    } catch {}
+  };
+
+  try {
+    const saved = localStorage.getItem("toc_bim_saved_queries");
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed?.data && Array.isArray(parsed.data)) {
+        finder.import(parsed);
+      }
+    }
+  } catch {}
+
   let queryNameInput: BUI.TextInput | null = null;
   let categoryRegexInput: BUI.TextInput | null = null;
   let psetNameInput: BUI.TextInput | null = null;
@@ -116,6 +133,7 @@ export const queriesTemplate: BUI.StatefullComponent<QueriesSectionState> = (
       }
 
       setStatus(`Created "${name}" (${count} elements matching criteria).`);
+      persistQueries();
       if (queryNameInput) queryNameInput.value = "";
       if (psetNameInput) psetNameInput.value = "";
       if (propNameInput) propNameInput.value = "";
@@ -155,6 +173,7 @@ export const queriesTemplate: BUI.StatefullComponent<QueriesSectionState> = (
         const text = await file.text();
         const json = JSON.parse(text);
         const imported = finder.import(json);
+        persistQueries();
         setStatus(`Imported ${imported.length} queries successfully.`);
       } catch (err: any) {
         setStatus(`Import failed: ${err?.message || err}`, true);

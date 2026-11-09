@@ -200,6 +200,7 @@ export function ProjectForm(props: ProjectFormProps) {
             ifcSchema,
             iconColor,
             todos: project?.todos ? project.todos : [],
+            smartViews: project?.smartViews ? project.smartViews : [],
         };
 
         const cleanPayload = sanitizeForFirestore(projectPayload);

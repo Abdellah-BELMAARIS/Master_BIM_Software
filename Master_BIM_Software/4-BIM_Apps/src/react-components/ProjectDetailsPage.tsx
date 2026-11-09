@@ -909,39 +909,34 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                         finishDate = new Date();
                     }
 
-                    const rawName = data.name || "Untitled Project";
-                    const canonical = getCanonicalProjectInfo(rawName, data.ifcFileName);
-                    const resolvedName = canonical ? canonical.canonicalName : rawName;
-                    const resolvedCategory = canonical
-                        ? canonical.modelCategory
-                        : (data.modelCategory || (data.ifcFileName ? "ifc" : "3d"));
-                    const ifcMeta = resolvedCategory === "3d"
-                        ? null
-                        : getProjectIfcFile({
-                            name: resolvedName,
-                            ifcFileName: canonical?.ifcFileName || data.ifcFileName,
-                            modelCategory: resolvedCategory,
-                        });
+                    const projectName = data.name || "Untitled Project";
+                    const modelCategory: "ifc" | "3d" = (data.ifcFileName || projectName.toLowerCase().includes("ifc") || data.modelCategory === "ifc") ? "ifc" : (data.modelCategory || "3d");
 
                     const projectData: IProject = {
-                        name: resolvedName,
+                        name: projectName,
                         description: data.description || "",
                         status: data.status || "Active",
                         userRole: data.userRole || "Architect",
                         finishDate,
                         cost: Number(data.cost || 0),
                         progress: Number(data.progress || 0),
-                        modelType: canonical ? canonical.twinType : (ifcMeta ? ifcMeta.twinType : (data.modelType || "cube")),
-                        modelCategory: canonical ? canonical.modelCategory : (ifcMeta ? "ifc" : (data.modelCategory || (data.ifcFileName ? "ifc" : "3d"))),
-                        ifcFileName: canonical?.modelCategory === "3d" ? undefined : (ifcMeta ? ifcMeta.fileName : data.ifcFileName),
-                        ifcSchema: canonical?.modelCategory === "3d" ? undefined : (canonical?.ifcSchema || (ifcMeta ? ifcMeta.schema : data.ifcSchema)),
+                        modelType: data.modelType || "tower",
+                        modelCategory,
+                        ifcFileName: data.ifcFileName,
+                        ifcSchema: data.ifcSchema,
                         iconColor: data.iconColor,
-                        todos: data.todos || [],
+                        todos: Array.isArray(data.todos) ? data.todos : [],
+                        smartViews: Array.isArray(data.smartViews) ? data.smartViews : [],
                     };
 
                     try {
                         projectsManager.newProject(projectData, docSnap.id);
-                    } catch {}
+                    } catch {
+                        const existing = projectsManager.getProject(docSnap.id);
+                        if (existing) {
+                            projectsManager.updateProject(existing.id, projectData);
+                        }
+                    }
                     forceUpdate();
                 }
             } catch (err) {

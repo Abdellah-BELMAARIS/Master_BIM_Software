@@ -51,6 +51,8 @@ export interface IProject {
     modelCategory?: ModelCategory;
     ifcFileName?: string;
     ifcSchema?: "IFC4" | "IFC2X3" | "IFC4.3";
+    smartViews?: any[];
+    smartViews?: any[];
 }
 
 // 3. Project class implementing IProject (UI is now managed by React <ProjectCard /> component)
@@ -66,6 +68,7 @@ export class Project implements IProject {
     modelCategory: ModelCategory = "3d";
     ifcFileName?: string;
     ifcSchema?: "IFC4" | "IFC2X3" | "IFC4.3";
+    smartViews?: any[];
 
     // Unique alphanumeric UUID identifier
     id: string;
