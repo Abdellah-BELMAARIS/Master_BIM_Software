@@ -4,7 +4,7 @@ import * as THREE from "three";
 import * as BUI from "@thatopen/ui";
 import * as OBC from "@thatopen/components";
 import * as OBCF from "@thatopen/components-front";
-import { doc, getDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { db } from "../core/database";
 import { IProject, Project } from "../classes/Project";
 import { ProjectsManager } from "../classes/ProjectsManager";
@@ -116,6 +116,15 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
     const gridRef = React.useRef<templates.ViewerGrid | null>(null);
 
     let project = projectId ? projectsManager.getProject(projectId) : null;
+    if (project && (project.ifcFileName || project.name.toLowerCase().includes("ifc"))) {
+        if (project.modelCategory !== "ifc") {
+            project.modelCategory = "ifc";
+            try {
+                const projectRef = doc(db, "projects", project.id);
+                updateDoc(projectRef, { modelCategory: "ifc" }).catch(() => {});
+            } catch {}
+        }
+    }
 
     const [isLoadingFromCloud, setIsLoadingFromCloud] = React.useState<boolean>(!project);
     const [viewerMode, setViewerMode] = React.useState<"bim-world" | "2d-plan" | "parametric">("bim-world");
@@ -1071,7 +1080,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                             <span>2D Plan</span>
                         </button>
 
-                        {project.modelCategory === "3d" && (
+                        {project.modelCategory === "3d" && !project.ifcFileName && !project.name.toLowerCase().includes("ifc") && (
                             <button
                                 type="button"
                                 className={`viewer-mode-tab ${viewerMode === "parametric" ? "active" : ""}`}

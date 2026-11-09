@@ -195,7 +195,7 @@ export function ProjectForm(props: ProjectFormProps) {
             cost,
             progress: clampedProgress,
             modelType,
-            modelCategory,
+            modelCategory: finalModelCategory,
             ifcFileName,
             ifcSchema,
             iconColor,

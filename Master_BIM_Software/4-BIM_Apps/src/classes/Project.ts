@@ -105,6 +105,11 @@ export class Project implements IProject {
             }
         }
 
+        // Enforce IFC OpenBIM classification whenever an IFC model is assigned
+        if (this.ifcFileName || nameLower.includes(".ifc") || nameLower.includes("ifc4") || nameLower.includes("ifc2x3")) {
+            this.modelCategory = "ifc";
+        }
+
         // Challenge #2: Guarantee persistent vibrant icon color from 6-color palette
         const randomIndex = Math.floor(Math.random() * PROJECT_ICON_COLORS.length);
         this.iconColor = (data.iconColor && data.iconColor.trim())

@@ -256,7 +256,14 @@ export async function loadProjectModel(
   // 1. IFC OPENBIM MODELS (LOAD VIA THAT OPEN ENGINE IFC LOADER)
   // =========================================================================
   const ifcMeta = getProjectIfcFile(project);
-  if ((ifcMeta || project.ifcFileName) && project.modelCategory !== "3d") {
+  const isIfc = Boolean(
+    project.ifcFileName ||
+    project.modelCategory === "ifc" ||
+    ifcMeta ||
+    lowerName.includes("ifc")
+  );
+
+  if (isIfc && (ifcMeta || project.ifcFileName)) {
     const ifcFile = ifcMeta ? ifcMeta.fileName : (project.ifcFileName || "MBSD-TOC-P01-MOD-EST-001.ifc");
     let didFit = false;
     let modelMounted = false;
