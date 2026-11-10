@@ -8,11 +8,29 @@ export interface ProjectFormProps {
     project?: Project | null;
     projectsManager: ProjectsManager;
     isOpen: boolean;
+    defaultCategory?: "ifc" | "3d" | "empty";
     onClose: () => void;
     onSuccess?: (savedProject: Project) => void;
 }
 
 const projectsCollection = getCollection<IProject>("projects");
+
+const READY_IFC_MODELS: {
+    fileName: string;
+    label: string;
+    schema: "IFC4" | "IFC2X3";
+    twinType: ModelType;
+}[] = [
+    { fileName: "aurora_ten_villa_estate_ifc4.ifc", label: "Ready IFC4: 10-Villa Residential Estate", schema: "IFC4", twinType: "villa" },
+    { fileName: "atlas_grand_professional_stadium_ifc4.ifc", label: "Ready IFC4: Atlas Grand Football Stadium", schema: "IFC4", twinType: "tower" },
+    { fileName: "MBSD-TOC-P01-MOD-EST-001.ifc", label: "Ready IFC4: ProVI Civil Overpass & Viaduct", schema: "IFC4", twinType: "bridge" },
+    { fileName: "HNS-CTL-N01-MOD-ARQ.ifc", label: "Ready IFC2X3: Metropolitan Civic Center (Arch)", schema: "IFC2X3", twinType: "villa" },
+    { fileName: "HNS-CTL-ZZZ-MOD-EST.ifc", label: "Ready IFC2X3: Metropolitan Civic Center (Struct)", schema: "IFC2X3", twinType: "tower" },
+    { fileName: "NAV-IPI-ET1_E01-ZZZ-M3D-EST.ifc", label: "Ready IFC4: High-Speed Rail Viaduct Span E01", schema: "IFC4", twinType: "bridge" },
+    { fileName: "NAV-IPI-ET1_E02-ZZZ-M3D-EST.ifc", label: "Ready IFC4: High-Speed Rail Box Girder E02", schema: "IFC4", twinType: "bridge" },
+    { fileName: "NAV-IPI-ET1_E03-ZZZ-M3D-EST.ifc", label: "Ready IFC4: High-Speed Rail Concrete Pier E03", schema: "IFC4", twinType: "bridge" },
+    { fileName: "NAV-IPI-ET1_E07-ZZZ-M3D-EST.ifc", label: "Ready IFC4: High-Speed Rail Abutment E07", schema: "IFC4", twinType: "bridge" },
+];
 
 /**
  * Module 3 Challenge: Reusable Project Form Component
@@ -20,39 +38,57 @@ const projectsCollection = getCollection<IProject>("projects");
  * Handles both project creation and updating locally and in Cloud Firestore.
  */
 export function ProjectForm(props: ProjectFormProps) {
-    const { project, projectsManager, isOpen, onClose, onSuccess } = props;
+    const { project, projectsManager, isOpen, defaultCategory, onClose, onSuccess } = props;
     const isEditing = Boolean(project);
     const dialogRef = React.useRef<HTMLDialogElement | null>(null);
     const [formError, setFormError] = React.useState<string | null>(null);
     const [uploadedFile, setUploadedFile] = React.useState<File | null>(null);
     const [uploadedFileName, setUploadedFileName] = React.useState<string>(project?.ifcFileName || "");
     const [modelCategory, setModelCategory] = React.useState<"ifc" | "3d" | "empty">(
-        project?.modelCategory || (project?.ifcFileName ? "ifc" : "empty")
+        project?.modelCategory || (project?.ifcFileName ? "ifc" : defaultCategory || "empty")
     );
+    const [parametricModelType, setParametricModelType] = React.useState<ModelType>(
+        project?.modelType || "empty"
+    );
+    const [readyIfcPreset, setReadyIfcPreset] = React.useState<string>(project?.ifcFileName || "");
+    const [sourceMode, setSourceMode] = React.useState<"empty" | "preset" | "upload">("empty");
     const [detectedSchema, setDetectedSchema] = React.useState<"IFC4" | "IFC2X3" | "IFC4.3" | undefined>(project?.ifcSchema);
     const fileInputRef = React.useRef<HTMLInputElement | null>(null);
 
     React.useEffect(() => {
         if (project) {
             setUploadedFileName(project.ifcFileName || "");
+            setReadyIfcPreset(project.ifcFileName || "");
             setModelCategory(project.modelCategory || (project.ifcFileName ? "ifc" : "empty"));
+            setParametricModelType(project.modelType || "empty");
             setDetectedSchema(project.ifcSchema);
+            if (project.ifcFileName) {
+                setSourceMode(READY_IFC_MODELS.some((m) => m.fileName === project.ifcFileName) ? "preset" : "upload");
+            } else if (project.modelCategory === "3d" && project.modelType && project.modelType !== "empty") {
+                setSourceMode("preset");
+            } else {
+                setSourceMode("empty");
+            }
         } else {
             setUploadedFile(null);
             setUploadedFileName("");
-            setModelCategory("empty");
+            setReadyIfcPreset("");
+            setModelCategory(defaultCategory || "empty");
+            setParametricModelType("empty");
+            setSourceMode("empty");
             setDetectedSchema(undefined);
         }
-    }, [project, isOpen]);
+    }, [project, isOpen, defaultCategory]);
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
         setUploadedFile(file);
         setUploadedFileName(file.name);
+        setSourceMode("upload");
 
         const ext = file.name.slice(file.name.lastIndexOf(".")).toLowerCase();
-        if (ext === ".ifc") {
+        if (ext === ".ifc" || ext === ".frag") {
             setModelCategory("ifc");
             const schema = file.name.toLowerCase().includes("2x3") ? "IFC2X3" : "IFC4";
             setDetectedSchema(schema);
@@ -68,8 +104,8 @@ export function ProjectForm(props: ProjectFormProps) {
     const handleRemoveFile = () => {
         setUploadedFile(null);
         setUploadedFileName("");
-        setModelCategory("3d");
         setDetectedSchema(undefined);
+        setSourceMode("empty");
         if (fileInputRef.current) fileInputRef.current.value = "";
     };
 
@@ -147,8 +183,21 @@ export function ProjectForm(props: ProjectFormProps) {
         let ifcSchema: "IFC4" | "IFC2X3" | "IFC4.3" | undefined = undefined;
         let modelType: ModelType = "empty";
 
-        if (uploadedFileName) {
-            if (uploadedFileName.toLowerCase().endsWith(".ifc")) {
+        if (uploadedFile && uploadedFileName && modelCategory !== "empty") {
+            const win = window as any;
+            win.__customIfcBuffers = win.__customIfcBuffers || {};
+            if (!win.__customIfcBuffers[uploadedFileName]) {
+                try {
+                    win.__customIfcBuffers[uploadedFileName] = await uploadedFile.arrayBuffer();
+                } catch {}
+            }
+        }
+
+        if (modelCategory === "empty") {
+            finalModelCategory = "empty";
+            modelType = "empty";
+        } else if (sourceMode === "upload" && uploadedFileName) {
+            if (uploadedFileName.toLowerCase().endsWith(".ifc") || uploadedFileName.toLowerCase().endsWith(".frag")) {
                 finalModelCategory = "ifc";
                 ifcFileName = uploadedFileName;
                 ifcSchema = detectedSchema || (uploadedFileName.toLowerCase().includes("2x3") ? "IFC2X3" : "IFC4");
@@ -173,18 +222,21 @@ export function ProjectForm(props: ProjectFormProps) {
                 else if (n.includes("gear")) modelType = "gear";
                 else modelType = "tower";
             }
-        } else if (project?.ifcFileName) {
+        } else if (modelCategory === "ifc") {
             finalModelCategory = "ifc";
-            ifcFileName = project.ifcFileName;
-            ifcSchema = project.ifcSchema;
-            modelType = project.modelType || "bridge";
-        } else if (project?.modelCategory === "3d") {
-            finalModelCategory = "3d";
-            modelType = project.modelType || "tower";
+            const chosenPreset = sourceMode === "preset" ? READY_IFC_MODELS.find((m) => m.fileName === readyIfcPreset) : undefined;
+            if (chosenPreset) {
+                ifcFileName = chosenPreset.fileName;
+                ifcSchema = chosenPreset.schema;
+                modelType = chosenPreset.twinType;
+            } else {
+                ifcFileName = undefined;
+                ifcSchema = undefined;
+                modelType = "empty";
+            }
         } else {
-            // Empty project: no 3D models or IFC attached initially. Can upload now or later!
-            finalModelCategory = "empty";
-            modelType = "empty";
+            finalModelCategory = "3d";
+            modelType = sourceMode === "preset" && parametricModelType !== "empty" ? parametricModelType : "empty";
         }
 
         const randomIndex = Math.floor(Math.random() * PROJECT_ICON_COLORS.length);
@@ -410,30 +462,260 @@ export function ProjectForm(props: ProjectFormProps) {
                     </div>
 
                     <div className="form-field full-width" style={{ marginTop: "0.25rem" }}>
-                            <label style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.45rem" }}>
-                                <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
-                                    <span className="material-icons-round" style={{ fontSize: "18px", color: "var(--primary-blue)" }}>view_in_ar</span>
-                                    <span>3D Model or IFC OpenBIM File</span>
-                                </span>
-                                {uploadedFileName && (
-                                    <span className="badge-model-type" style={{
-                                        fontSize: "0.74rem",
-                                        fontWeight: 600,
-                                        padding: "2px 8px",
-                                        borderRadius: "12px",
-                                        background: modelCategory === "ifc" ? "rgba(16, 185, 129, 0.18)" : "rgba(56, 189, 248, 0.18)",
-                                        color: modelCategory === "ifc" ? "#34d399" : "#38bdf8",
-                                        border: modelCategory === "ifc" ? "1px solid rgba(16, 185, 129, 0.35)" : "1px solid rgba(56, 189, 248, 0.35)",
-                                    }}>
-                                        {modelCategory === "ifc" ? `IFC OpenBIM (${detectedSchema || "IFC4"})` : "3D Model"}
-                                    </span>
-                                )}
-                            </label>
+                        <label style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.45rem" }}>
+                            <span style={{ display: "inline-flex", alignItems: "center", gap: "6px" }}>
+                                <span className="material-icons-round" style={{ fontSize: "18px", color: "var(--primary-blue)" }}>category</span>
+                                <span>Project Workspace Type &amp; Placement</span>
+                            </span>
+                            <span style={{ fontSize: "0.74rem", color: "#94a3b8" }}>
+                                {modelCategory === "ifc"
+                                    ? "Places in: IFC OpenBIM Models"
+                                    : modelCategory === "3d"
+                                    ? "Places in: 3D BIM Models"
+                                    : "Empty Studio (GIS 2D/3D Enabled)"}
+                            </span>
+                        </label>
 
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "8px", marginBottom: "0.75rem" }}>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setModelCategory("ifc");
+                                    if (uploadedFileName && !uploadedFileName.toLowerCase().endsWith(".ifc") && !uploadedFileName.toLowerCase().endsWith(".frag")) {
+                                        setUploadedFile(null);
+                                        setUploadedFileName("");
+                                    }
+                                }}
+                                style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "flex-start",
+                                    gap: "3px",
+                                    padding: "0.55rem 0.7rem",
+                                    borderRadius: "8px",
+                                    cursor: "pointer",
+                                    textAlign: "left",
+                                    background: modelCategory === "ifc" ? "rgba(16, 185, 129, 0.16)" : "rgba(15, 23, 42, 0.65)",
+                                    border: modelCategory === "ifc" ? "1.5px solid #10b981" : "1px solid rgba(148, 163, 184, 0.28)",
+                                    color: modelCategory === "ifc" ? "#34d399" : "#cbd5e1",
+                                }}
+                            >
+                                <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "0.80rem", fontWeight: 700 }}>
+                                    <span className="material-icons-round" style={{ fontSize: "16px" }}>description</span>
+                                    IFC OpenBIM
+                                </span>
+                                <span style={{ fontSize: "0.68rem", color: "#94a3b8" }}>BIM Schema Models</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setModelCategory("3d");
+                                    if (uploadedFileName && (uploadedFileName.toLowerCase().endsWith(".ifc") || uploadedFileName.toLowerCase().endsWith(".frag"))) {
+                                        setUploadedFile(null);
+                                        setUploadedFileName("");
+                                    }
+                                }}
+                                style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "flex-start",
+                                    gap: "3px",
+                                    padding: "0.55rem 0.7rem",
+                                    borderRadius: "8px",
+                                    cursor: "pointer",
+                                    textAlign: "left",
+                                    background: modelCategory === "3d" ? "rgba(56, 189, 248, 0.16)" : "rgba(15, 23, 42, 0.65)",
+                                    border: modelCategory === "3d" ? "1.5px solid #38bdf8" : "1px solid rgba(148, 163, 184, 0.28)",
+                                    color: modelCategory === "3d" ? "#38bdf8" : "#cbd5e1",
+                                }}
+                            >
+                                <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "0.80rem", fontWeight: 700 }}>
+                                    <span className="material-icons-round" style={{ fontSize: "16px" }}>view_in_ar</span>
+                                    3D BIM Model
+                                </span>
+                                <span style={{ fontSize: "0.68rem", color: "#94a3b8" }}>Parametric &amp; Mesh</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    setModelCategory("empty");
+                                    setSourceMode("empty");
+                                    setUploadedFile(null);
+                                    setUploadedFileName("");
+                                }}
+                                style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "flex-start",
+                                    gap: "3px",
+                                    padding: "0.55rem 0.7rem",
+                                    borderRadius: "8px",
+                                    cursor: "pointer",
+                                    textAlign: "left",
+                                    background: modelCategory === "empty" ? "rgba(129, 140, 248, 0.16)" : "rgba(15, 23, 42, 0.65)",
+                                    border: modelCategory === "empty" ? "1.5px solid #818cf8" : "1px solid rgba(148, 163, 184, 0.28)",
+                                    color: modelCategory === "empty" ? "#a5b4fc" : "#cbd5e1",
+                                }}
+                            >
+                                <span style={{ display: "inline-flex", alignItems: "center", gap: "5px", fontSize: "0.80rem", fontWeight: 700 }}>
+                                    <span className="material-icons-round" style={{ fontSize: "16px" }}>public</span>
+                                    Empty / GIS
+                                </span>
+                                <span style={{ fontSize: "0.68rem", color: "#94a3b8" }}>GIS 2D/3D Ready</span>
+                            </button>
+                        </div>
+
+                        {modelCategory !== "empty" && (
+                            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: "6px", marginBottom: "0.65rem" }}>
+                                <button
+                                    type="button"
+                                    onClick={() => setSourceMode("empty")}
+                                    style={{
+                                        padding: "6px 8px",
+                                        borderRadius: "7px",
+                                        fontSize: "0.74rem",
+                                        fontWeight: 700,
+                                        cursor: "pointer",
+                                        background: sourceMode === "empty" ? "rgba(56, 189, 248, 0.18)" : "rgba(15, 23, 42, 0.6)",
+                                        border: sourceMode === "empty" ? "1px solid #38bdf8" : "1px solid rgba(148, 163, 184, 0.22)",
+                                        color: sourceMode === "empty" ? "#38bdf8" : "#94a3b8",
+                                    }}
+                                >
+                                    Start Empty
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setSourceMode("preset");
+                                        if (modelCategory === "ifc" && !readyIfcPreset) {
+                                            setReadyIfcPreset(READY_IFC_MODELS[0].fileName);
+                                        } else if (modelCategory === "3d" && parametricModelType === "empty") {
+                                            setParametricModelType("tower");
+                                        }
+                                    }}
+                                    style={{
+                                        padding: "6px 8px",
+                                        borderRadius: "7px",
+                                        fontSize: "0.74rem",
+                                        fontWeight: 700,
+                                        cursor: "pointer",
+                                        background: sourceMode === "preset" ? "rgba(16, 185, 129, 0.18)" : "rgba(15, 23, 42, 0.6)",
+                                        border: sourceMode === "preset" ? "1px solid #10b981" : "1px solid rgba(148, 163, 184, 0.22)",
+                                        color: sourceMode === "preset" ? "#34d399" : "#94a3b8",
+                                    }}
+                                >
+                                    {modelCategory === "ifc" ? "Ready IFC (9)" : "Ready 3D (6)"}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setSourceMode("upload")}
+                                    style={{
+                                        padding: "6px 8px",
+                                        borderRadius: "7px",
+                                        fontSize: "0.74rem",
+                                        fontWeight: 700,
+                                        cursor: "pointer",
+                                        background: sourceMode === "upload" ? "rgba(168, 85, 247, 0.18)" : "rgba(15, 23, 42, 0.6)",
+                                        border: sourceMode === "upload" ? "1px solid #a855f7" : "1px solid rgba(148, 163, 184, 0.22)",
+                                        color: sourceMode === "upload" ? "#c084fc" : "#94a3b8",
+                                    }}
+                                >
+                                    Upload File
+                                </button>
+                            </div>
+                        )}
+
+                        {modelCategory === "ifc" && sourceMode === "preset" && (
+                            <div style={{ marginBottom: "0.25rem" }}>
+                                <select
+                                    value={readyIfcPreset}
+                                    onChange={(e) => setReadyIfcPreset(e.target.value)}
+                                    style={{ width: "100%" }}
+                                >
+                                    {READY_IFC_MODELS.map((m) => (
+                                        <option key={m.fileName} value={m.fileName}>
+                                            {m.label}
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
+                        {modelCategory === "3d" && sourceMode === "preset" && (
+                            <div style={{ marginBottom: "0.25rem" }}>
+                                <select
+                                    value={parametricModelType}
+                                    onChange={(e) => setParametricModelType(e.target.value as ModelType)}
+                                    style={{ width: "100%" }}
+                                >
+                                    <option value="tower">Commercial High-Rise Tower</option>
+                                    <option value="villa">Luxury Eco-Villa</option>
+                                    <option value="bridge">Cable-Stayed Highway Bridge</option>
+                                    <option value="gear">Industrial MEP Energy Plant</option>
+                                    <option value="car">Autonomous EV Fleet Hub</option>
+                                    <option value="cube">Modular Architectural Pavilion</option>
+                                </select>
+                            </div>
+                        )}
+                    </div>
+
+                    {modelCategory === "empty" ? (
+                        <div className="form-field full-width" style={{ marginTop: "0.15rem" }}>
+                            <div
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "12px",
+                                    padding: "0.85rem 1rem",
+                                    borderRadius: "8px",
+                                    background: "rgba(99, 102, 241, 0.12)",
+                                    border: "1px solid rgba(129, 140, 248, 0.35)",
+                                    color: "#e2e8f0",
+                                }}
+                            >
+                                <span className="material-icons-round" style={{ fontSize: "24px", color: "#818cf8" }}>public</span>
+                                <div style={{ display: "flex", flexDirection: "column", gap: "2px" }}>
+                                    <span style={{ fontSize: "0.83rem", fontWeight: 700, color: "#f8fafc" }}>
+                                        Empty / GIS Geospatial Studio
+                                    </span>
+                                    <span style={{ fontSize: "0.74rem", color: "#94a3b8" }}>
+                                        Opens cleanly with 2D Radar &amp; Cesium 3D Tiles enabled.
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    ) : sourceMode === "empty" ? (
+                        <div className="form-field full-width" style={{ marginTop: "0.15rem" }}>
+                            <div
+                                style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "12px",
+                                    padding: "0.75rem 1rem",
+                                    borderRadius: "8px",
+                                    background: "rgba(30, 41, 59, 0.55)",
+                                    border: "1px solid rgba(56, 189, 248, 0.28)",
+                                    color: "#e2e8f0",
+                                }}
+                            >
+                                <span className="material-icons-round" style={{ fontSize: "22px", color: "#38bdf8" }}>
+                                    {modelCategory === "ifc" ? "description" : "view_in_ar"}
+                                </span>
+                                <span style={{ fontSize: "0.78rem", color: "#94a3b8" }}>
+                                    {modelCategory === "ifc"
+                                        ? "Starts empty under IFC OpenBIM Models — drag & drop an .ifc file inside the viewer anytime."
+                                        : "Starts empty under 3D BIM Models — upload a .obj, .gltf, or .glb model inside the viewer anytime."}
+                                </span>
+                            </div>
+                        </div>
+                    ) : sourceMode === "upload" ? (
+                        <div className="form-field full-width" style={{ marginTop: "0.15rem" }}>
                             <input
                                 ref={fileInputRef}
                                 type="file"
-                                accept=".ifc,.obj,.gltf,.glb"
+                                accept={modelCategory === "ifc" ? ".ifc,.frag" : ".obj,.gltf,.glb"}
                                 style={{ display: "none" }}
                                 onChange={handleFileSelect}
                             />
@@ -534,14 +816,15 @@ export function ProjectForm(props: ProjectFormProps) {
                                         cloud_upload
                                     </span>
                                     <span style={{ fontSize: "0.92rem", fontWeight: 600 }}>
-                                        Upload 3D Model or IFC File
+                                        {modelCategory === "ifc" ? "Upload IFC OpenBIM File (.ifc)" : "Upload 3D Model (.obj, .gltf, .glb)"}
                                     </span>
                                     <span style={{ fontSize: "0.78rem", color: "var(--text-secondary)" }}>
-                                        Click to browse (.ifc, .obj, .gltf, .glb)
+                                        {modelCategory === "ifc" ? "Click to browse (.ifc, .frag)" : "Click to browse (.obj, .gltf, .glb)"}
                                     </span>
                                 </button>
                             )}
                         </div>
+                    ) : null}
                 </div>
 
                 <div className="form-actions">

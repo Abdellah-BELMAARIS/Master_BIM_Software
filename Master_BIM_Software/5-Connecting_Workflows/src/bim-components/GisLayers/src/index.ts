@@ -1,7 +1,15 @@
+import * as THREE from "three";
 import * as OBC from "@thatopen/components";
 import { Ion } from "cesium";
 import { GISLayer3D } from "./gis-layer-3d";
 import { GISLayer2D } from "./gis-layer-2d";
+
+export interface BimSiteAlignment {
+  offsetX: number;
+  offsetY: number;
+  offsetZ: number;
+  headingDeg: number;
+}
 
 /**
  * Module 5 — Lesson 2.3, 2.4 & 2.5: GISLayers BIM Component (Pro Edition)
@@ -17,6 +25,12 @@ export class GISLayers extends OBC.Component implements OBC.Disposable {
 
   layer3d: GISLayer3D;
   layer2d: GISLayer2D;
+  bimAlignment: BimSiteAlignment = {
+    offsetX: 0,
+    offsetY: 0,
+    offsetZ: 0,
+    headingDeg: 0,
+  };
   private _token?: string;
 
   constructor(components: OBC.Components) {
@@ -62,6 +76,70 @@ export class GISLayers extends OBC.Component implements OBC.Disposable {
    */
   toggleOrbit(): boolean {
     return this.layer3d.toggleOrbit();
+  }
+
+  /**
+   * Aligns active IFC/Fragment models & 3D twin groups onto the Cesium terrain site origin
+   */
+  alignBimModels(partial: Partial<BimSiteAlignment>) {
+    this.bimAlignment = { ...this.bimAlignment, ...partial };
+    const { offsetX, offsetY, offsetZ, headingDeg } = this.bimAlignment;
+    const rad = THREE.MathUtils.degToRad(headingDeg);
+
+    const fragments = this.components.get(OBC.FragmentsManager);
+    if (fragments.initialized && fragments.list.size > 0) {
+      for (const [, model] of fragments.list) {
+        if (!model?.object) continue;
+        model.object.position.set(offsetX, offsetY, offsetZ);
+        model.object.rotation.y = rad;
+      }
+      fragments.core.update(true);
+    }
+
+    const worlds = this.components.get(OBC.Worlds);
+    const firstWorld = [...worlds.list.values()][0];
+    if (firstWorld?.scene?.three) {
+      for (const child of firstWorld.scene.three.children) {
+        if (
+          child instanceof THREE.Group &&
+          !child.name.includes("grid") &&
+          !child.name.includes("measurements") &&
+          !child.name.includes("selection") &&
+          child.name !== "fragments" &&
+          !child.children.some((c: any) => c.isTilesGroup)
+        ) {
+          // Only transform non-Cesium architectural project groups
+          if (child.name.includes("twin") || child.name.includes("project") || child.name.includes("env")) {
+            child.position.set(offsetX, offsetY, offsetZ);
+            child.rotation.y = rad;
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Computes Fragment model bounding box and snaps its bottom center to the GIS terrain origin
+   */
+  snapBimToTerrain() {
+    const boxer = this.components.get(OBC.BoundingBoxer);
+    boxer.list.clear();
+    boxer.addFromModels();
+    const box = boxer.get();
+    if (!box.isEmpty()) {
+      const center = new THREE.Vector3();
+      box.getCenter(center);
+      const curr = this.bimAlignment;
+      this.alignBimModels({
+        offsetX: Number((curr.offsetX - center.x).toFixed(2)),
+        offsetY: Number((curr.offsetY - box.min.y).toFixed(2)),
+        offsetZ: Number((curr.offsetZ - center.z).toFixed(2)),
+      });
+    }
+  }
+
+  resetBimAlignment() {
+    this.alignBimModels({ offsetX: 0, offsetY: 0, offsetZ: 0, headingDeg: 0 });
   }
 
   /**

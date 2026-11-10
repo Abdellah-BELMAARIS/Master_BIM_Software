@@ -1,0 +1,23 @@
+{
+  "name": "toc-mcp-bim-server",
+  "version": "1.0.0",
+  "description": "Module 5 Section 4: Model Context Protocol (MCP) Server bridging LLM agents to That Open Engine BIM Viewer",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "npx tsx src/index.ts"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.8.0",
+    "ws": "^8.18.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/ws": "^8.5.12",
+    "typescript": "^5.6.3"
+  }
+}
+

@@ -4,32 +4,122 @@ import * as BUI from "@thatopen/ui";
 import * as THREE from "three";
 import { SmartViews } from "../../bim-components/SmartViews";
 
+export type ProSceneMoodId = "obsidian" | "studio" | "blueprint" | "daylight";
+export type ProRenderLookId = "shaded" | "clay" | "wireframe";
+
 export interface ViewportToolbarState {
   components: OBC.Components;
   world?: OBC.World;
+  openMenu?: "color" | "ghost" | "studio" | null;
+  activeColor?: string;
+  ghostMode?: "off" | "invert" | "selected" | "all";
+  ghostOpacity?: number;
+  sceneMood?: ProSceneMoodId;
+  renderLook?: ProRenderLookId;
+  isDisciplineColored?: boolean;
+  notice?: { text: string; tone: "info" | "warn" } | null;
+  isBusy?: boolean;
 }
 
-/**
- * Module 4 — Lessons 3.8 to 3.13 & 5.4: Comprehensive BIM Viewport Toolbar
- * Provides interactive BIM inspection & presentation tools:
- * 1. Lesson 3.8: Element Colorization via OBCF.Highlighter dynamic styles (+ SmartViews state sync)
- * 2. Lesson 3.9: Visibility Operations (Hide, Isolate, Show All) via OBC.Hider
- * 3. Lesson 3.10: Ghost Model X-Ray Visualization via Fragments native setGhostItems & material opacity fallback
- * 4. Lesson 3.13: Camera Focus / Frame Selection via SimpleCamera.fitToItems & BoundingBoxer
- */
-export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarState> = (
-  state: ViewportToolbarState
-) => {
-  const { components } = state;
-  let colorInput: BUI.ColorInput | null = null;
-  let ghostButton: BUI.Button | null = null;
-  let isGhostActive = false;
-
-  // Stores original Three.js materials for 3D Parametric non-Fragment fallback meshes during Ghost mode
-  const originalThreeMaterials = new Map<
+interface ToolbarRuntime {
+  originalGhostMaterials: Map<
     THREE.Material,
     { opacity: number; transparent: boolean; depthWrite: boolean }
-  >();
+  >;
+  originalWireframes: Map<THREE.Material, boolean>;
+  originalLights: Map<THREE.Light, number>;
+  originalBackground: THREE.Color | THREE.Texture | null | undefined;
+  toastTimer: ReturnType<typeof setTimeout> | null;
+  outsideListenerBound: boolean;
+  shellEl: HTMLElement | null;
+}
+
+const runtimeMap = new WeakMap<OBC.Components, ToolbarRuntime>();
+
+const getRuntime = (components: OBC.Components): ToolbarRuntime => {
+  let rt = runtimeMap.get(components);
+  if (!rt) {
+    rt = {
+      originalGhostMaterials: new Map(),
+      originalWireframes: new Map(),
+      originalLights: new Map(),
+      originalBackground: undefined,
+      toastTimer: null,
+      outsideListenerBound: false,
+      shellEl: null,
+    };
+    runtimeMap.set(components, rt);
+  }
+  return rt;
+};
+
+const PRESET_COLORS = [
+  { label: "Steel Blue", color: "#2563eb" },
+  { label: "Emerald", color: "#10b981" },
+  { label: "Crimson", color: "#ef4444" },
+  { label: "Amber", color: "#f59e0b" },
+  { label: "Orchid", color: "#a855f7" },
+  { label: "Aqua", color: "#06b6d4" },
+  { label: "Slate", color: "#475569" },
+  { label: "Pure White", color: "#ffffff" },
+];
+
+const DISCIPLINE_PALETTE = [
+  { name: "Walls", regex: "IFCWALL|IFCWALLSTANDARDCASE|IFCCURTAINWALL", color: "#38bdf8" },
+  { name: "Slabs & Roofs", regex: "IFCSLAB|IFCROOF|IFCPLATE", color: "#0ea5e9" },
+  { name: "Structure", regex: "IFCCOLUMN|IFCBEAM|IFCMEMBER|IFCFOOTING|IFCPILE", color: "#f59e0b" },
+  { name: "Glazing", regex: "IFCWINDOW", color: "#06b6d4" },
+  { name: "Doors", regex: "IFCDOOR", color: "#10b981" },
+  { name: "Circulation", regex: "IFCSTAIR|IFCSTAIRFLIGHT|IFCRAMP|IFCRAILING", color: "#a855f7" },
+];
+
+const SCENE_MOODS: Array<{
+  id: ProSceneMoodId;
+  label: string;
+  bg: string;
+  lightFactor: number;
+}> = [
+  { id: "obsidian", label: "Obsidian", bg: "#0b1120", lightFactor: 1.0 },
+  { id: "studio", label: "Studio Dark", bg: "#171c26", lightFactor: 1.35 },
+  { id: "blueprint", label: "Blueprint", bg: "#091b34", lightFactor: 1.18 },
+  { id: "daylight", label: "Daylight", bg: "#d9e2ec", lightFactor: 1.55 },
+];
+
+const isHelperOrGrid = (obj: THREE.Object3D): boolean =>
+  obj.name.includes("grid") ||
+  obj.name.includes("helper") ||
+  obj.name.includes("selection-box") ||
+  Boolean((obj as { isGrid?: boolean }).isGrid);
+
+/**
+ * Module 4 & 5: Pro Appearance Studio Floating HUD
+ * Unifies Colorize (Swatches, Discipline IFC Coding, Hex), Visibility (Hide, Isolate, Show All),
+ * Live X-Ray Ghost Engine (opacity slider + focus/select modes), Scene Lighting Moods,
+ * Architectural Clay / Wireframe Looks, and Camera Focus into one calm Autodesk-style HUD.
+ */
+export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarState> = (
+  state: ViewportToolbarState,
+  update
+) => {
+  const { components } = state;
+  const runtime = getRuntime(components);
+
+  const openMenu = state.openMenu ?? null;
+  const activeColor = state.activeColor || "#3b82f6";
+  const ghostMode = state.ghostMode || "off";
+  const ghostOpacity = state.ghostOpacity ?? 0.28;
+  const sceneMood = state.sceneMood || "obsidian";
+  const renderLook = state.renderLook || "shaded";
+  const isDisciplineColored = Boolean(state.isDisciplineColored);
+  const notice = state.notice ?? null;
+
+  const notify = (text: string, tone: "info" | "warn" = "info") => {
+    if (runtime.toastTimer) clearTimeout(runtime.toastTimer);
+    update({ notice: { text, tone } });
+    runtime.toastTimer = setTimeout(() => {
+      update({ notice: null });
+    }, 2600);
+  };
 
   const resolveWorld = (): OBC.World | undefined => {
     if (state.world) return state.world;
@@ -37,33 +127,39 @@ export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarStat
     return [...worlds.list.values()][0];
   };
 
-  // =========================================================================
-  // Lesson 3.8 & Mini Challenge: Colorizing Model Items + Quick Preset Palette
-  // =========================================================================
-  const PRESET_COLORS = [
-    { label: "Steel Blue", color: "#2563eb" },
-    { label: "Emerald Green", color: "#10b981" },
-    { label: "Crimson Red", color: "#ef4444" },
-    { label: "Amber Orange", color: "#f59e0b" },
-    { label: "Purple Orchid", color: "#a855f7" },
-    { label: "Cyan Aqua", color: "#06b6d4" },
-    { label: "Charcoal Slate", color: "#475569" },
-    { label: "Pure White", color: "#ffffff" },
-  ];
+  const bindOutsideClick = (el?: Element) => {
+    if (!el) return;
+    runtime.shellEl = el as HTMLElement;
+    if (runtime.outsideListenerBound) return;
+    runtime.outsideListenerBound = true;
+    document.addEventListener("pointerdown", (ev) => {
+      if (!runtime.shellEl) return;
+      if (!runtime.shellEl.contains(ev.target as Node)) {
+        update({ openMenu: null });
+      }
+    });
+  };
 
+  const toggleMenu = (menu: "color" | "ghost" | "studio") => {
+    update({ openMenu: openMenu === menu ? null : menu });
+  };
+
+  // =========================================================================
+  // 1. Colorize Operations (Direct Swatch, Hex, IFC Discipline Auto-Color)
+  // =========================================================================
   const applyColorDirectly = async (hexColor: string) => {
     const highlighter = components.get(OBCF.Highlighter);
     const selection = highlighter.selection.select;
-    const selectedMesh = (window as any).__selectedThreeMesh as THREE.Mesh | null;
+    const selectedMesh = (window as unknown as { __selectedThreeMesh?: THREE.Mesh | null })
+      .__selectedThreeMesh;
 
     if ((!selection || OBC.ModelIdMapUtils.isEmpty(selection)) && !selectedMesh) {
-      console.warn("[Highlighter] Select at least one element before applying color.");
-      BUI.ContextMenu.removeMenus();
+      update({ activeColor: hexColor });
+      notify("Select a BIM element in 3D first", "warn");
       return;
     }
 
     try {
-      // 1. Color Fragment IFC items if selected
       if (selection && !OBC.ModelIdMapUtils.isEmpty(selection)) {
         if (!highlighter.styles.has(hexColor)) {
           highlighter.styles.set(hexColor, {
@@ -73,62 +169,340 @@ export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarStat
             renderedFaces: 0,
           });
         }
-
         const cloned = OBC.ModelIdMapUtils.clone(selection);
         await Promise.all([
           highlighter.highlightByID(hexColor, cloned, false, false),
           highlighter.clear("select"),
         ]);
-
         try {
-          const smartViews = components.get(SmartViews);
-          smartViews.addItemsColor(cloned, hexColor);
-        } catch { }
+          components.get(SmartViews).addItemsColor(cloned, hexColor);
+        } catch {}
       }
 
-      // 2. Color 3D Parametric Mesh if selected
       if (selectedMesh) {
         if (!selectedMesh.userData.__originalMaterial) {
           selectedMesh.userData.__originalMaterial = selectedMesh.material;
         }
         const newMat = (selectedMesh.material as THREE.Material).clone();
         if ("color" in newMat) {
-          (newMat as any).color = new THREE.Color(hexColor);
+          (newMat as THREE.MeshStandardMaterial).color = new THREE.Color(hexColor);
         }
         selectedMesh.material = newMat;
         try {
-          const smartViews = components.get(SmartViews);
-          smartViews.currentState.colors.items.set(hexColor, { "3d": new Set([selectedMesh.id]) });
-        } catch { }
+          components
+            .get(SmartViews)
+            .currentState.colors.items.set(hexColor, { "3d": new Set([selectedMesh.id]) });
+        } catch {}
       }
+
+      update({ activeColor: hexColor, openMenu: null });
+      notify(`Applied ${hexColor.toUpperCase()} override`);
     } catch (error) {
       console.error("[Highlighter] Error applying color:", error);
-    } finally {
-      BUI.ContextMenu.removeMenus();
     }
   };
 
-  const onApplyColor = async (e: Event) => {
-    const button = e.currentTarget as BUI.Button;
-    if (!button || !colorInput) return;
-
-    const hexColor = colorInput.color || colorInput.value?.color || "#3b82f6";
-    button.loading = true;
+  const onAutoColorDiscipline = async () => {
+    update({ isBusy: true, openMenu: null });
     try {
-      await applyColorDirectly(hexColor);
-    } finally {
-      button.loading = false;
+      const finder = components.get(OBC.ItemsFinder);
+      const highlighter = components.get(OBCF.Highlighter);
+      const smartViews = (() => {
+        try {
+          return components.get(SmartViews);
+        } catch {
+          return null;
+        }
+      })();
+
+      let paintedGroups = 0;
+      for (const group of DISCIPLINE_PALETTE) {
+        const matched = await finder.getItems([{ categories: [new RegExp(group.regex, "i")] }]);
+        if (OBC.ModelIdMapUtils.isEmpty(matched)) continue;
+
+        if (!highlighter.styles.has(group.color)) {
+          highlighter.styles.set(group.color, {
+            color: new THREE.Color(group.color),
+            opacity: 1,
+            transparent: false,
+            renderedFaces: 0,
+          });
+        }
+        await highlighter.highlightByID(group.color, matched, false, false);
+        smartViews?.addItemsColor(matched, group.color);
+        paintedGroups++;
+      }
+
+      update({ isBusy: false, isDisciplineColored: paintedGroups > 0 });
+      notify(
+        paintedGroups > 0
+          ? `Discipline-coded ${paintedGroups} IFC category groups`
+          : "No standard IFC categories found to colorize",
+        paintedGroups > 0 ? "info" : "warn"
+      );
+    } catch (error) {
+      console.error("[Appear] Auto-colorize failed:", error);
+      update({ isBusy: false });
     }
   };
 
-  const onClearColors = async (e: Event) => {
-    const button = e.currentTarget as BUI.Button;
-    if (button) button.loading = true;
+  // =========================================================================
+  // 2. Render Finishes (Shaded, Clay White, Wireframe) & Scene Lighting Mood
+  // =========================================================================
+  const clearRenderFinish = async () => {
+    const world = resolveWorld();
+    const highlighter = components.get(OBCF.Highlighter);
+    try {
+      await highlighter.clear("__pro_clay");
+    } catch {}
+
+    for (const [mat, prevWire] of runtime.originalWireframes) {
+      if ("wireframe" in mat) {
+        (mat as THREE.MeshStandardMaterial).wireframe = prevWire;
+        mat.needsUpdate = true;
+      }
+    }
+    runtime.originalWireframes.clear();
+
+    if (world?.scene?.three) {
+      world.scene.three.traverse((obj) => {
+        if (obj instanceof THREE.Mesh && obj.userData.__originalClayMaterial) {
+          obj.material = obj.userData.__originalClayMaterial;
+          delete obj.userData.__originalClayMaterial;
+        }
+      });
+    }
+  };
+
+  const applyRenderLook = async (look: ProRenderLookId) => {
+    update({ openMenu: null });
+    await clearRenderFinish();
+
+    const world = resolveWorld();
+    if (look === "shaded") {
+      update({ renderLook: "shaded" });
+      notify("Restored shaded PBR appearance");
+      return;
+    }
+
+    if (look === "wireframe") {
+      if (world?.scene?.three) {
+        world.scene.three.traverse((obj) => {
+          if (!(obj instanceof THREE.Mesh) || isHelperOrGrid(obj)) return;
+          const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+          for (const mat of mats) {
+            if (!mat || !("wireframe" in mat)) continue;
+            const std = mat as THREE.MeshStandardMaterial;
+            if (!runtime.originalWireframes.has(mat)) {
+              runtime.originalWireframes.set(mat, Boolean(std.wireframe));
+            }
+            std.wireframe = true;
+            std.needsUpdate = true;
+          }
+        });
+      }
+      update({ renderLook: "wireframe" });
+      notify("CAD Wireframe edges enabled");
+      return;
+    }
+
+    // Clay architectural white finish
+    try {
+      const finder = components.get(OBC.ItemsFinder);
+      const highlighter = components.get(OBCF.Highlighter);
+      const allIfc = await finder.getItems([{ categories: [/^IFC/i] }]);
+      if (!OBC.ModelIdMapUtils.isEmpty(allIfc)) {
+        if (!highlighter.styles.has("__pro_clay")) {
+          highlighter.styles.set("__pro_clay", {
+            color: new THREE.Color("#e2e8f0"),
+            opacity: 1,
+            transparent: false,
+            renderedFaces: 0,
+          });
+        }
+        await highlighter.highlightByID("__pro_clay", allIfc, false, false);
+      }
+
+      if (world?.scene?.three) {
+        const clayMat = new THREE.MeshStandardMaterial({
+          color: 0xe2e8f0,
+          roughness: 0.85,
+          metalness: 0.04,
+        });
+        world.scene.three.traverse((obj) => {
+          if (!(obj instanceof THREE.Mesh) || isHelperOrGrid(obj)) return;
+          if ((obj as { isLODMesh?: boolean }).isLODMesh || obj.parent?.name === "fragments") return;
+          if (!obj.userData.__originalClayMaterial) {
+            obj.userData.__originalClayMaterial = obj.material;
+          }
+          obj.material = clayMat;
+        });
+      }
+
+      update({ renderLook: "clay" });
+      notify("Architectural Clay massing finish applied");
+    } catch (error) {
+      console.error("[Appear] Clay finish error:", error);
+    }
+  };
+
+  const applySceneMood = (moodId: ProSceneMoodId) => {
+    const mood = SCENE_MOODS.find((m) => m.id === moodId) || SCENE_MOODS[0];
+    const world = resolveWorld();
+    if (world?.scene?.three instanceof THREE.Scene) {
+      const scene = world.scene.three;
+      if (runtime.originalBackground === undefined) {
+        runtime.originalBackground = scene.background;
+      }
+
+      if (mood.id === "obsidian" && runtime.originalBackground !== undefined) {
+        scene.background = runtime.originalBackground;
+      } else {
+        scene.background = new THREE.Color(mood.bg);
+      }
+
+      const sceneCfg = (world.scene as unknown as { config?: { backgroundColor?: THREE.Color } })
+        .config;
+      if (sceneCfg) {
+        sceneCfg.backgroundColor = new THREE.Color(mood.bg);
+      }
+
+      scene.traverse((obj) => {
+        if (!(obj instanceof THREE.Light)) return;
+        if (!runtime.originalLights.has(obj)) {
+          runtime.originalLights.set(obj, obj.intensity);
+        }
+        const base = runtime.originalLights.get(obj) ?? obj.intensity;
+        obj.intensity = Number((base * mood.lightFactor).toFixed(2));
+      });
+    }
+
+    update({ sceneMood: mood.id, openMenu: null });
+    notify(`Viewport mood: ${mood.label}`);
+  };
+
+  // =========================================================================
+  // 3. Ghost X-Ray Engine (Live Opacity + Invert / Selected / Full Model)
+  // =========================================================================
+  const clearGhostMode = (silent = false) => {
+    try {
+      const fragments = components.get(OBC.FragmentsManager);
+      if (fragments.initialized) {
+        for (const [, model] of fragments.list) {
+          model?.clearGhost?.();
+        }
+        fragments.core?.update(true);
+      }
+
+      for (const [mat, saved] of runtime.originalGhostMaterials) {
+        mat.opacity = saved.opacity;
+        mat.transparent = saved.transparent;
+        mat.depthWrite = saved.depthWrite;
+        mat.needsUpdate = true;
+      }
+      runtime.originalGhostMaterials.clear();
+
+      update({ ghostMode: "off" });
+      if (!silent) notify("Restored normal shading");
+    } catch (err) {
+      console.error("[Ghost] Error restoring normal shading:", err);
+    }
+  };
+
+  const applyGhostItems = async (
+    mode: "invert" | "selected" | "all",
+    opacityOverride?: number
+  ) => {
+    const nextOpacity = opacityOverride ?? ghostOpacity;
+    try {
+      const fragments = components.get(OBC.FragmentsManager);
+      const highlighter = components.get(OBCF.Highlighter);
+      const world = resolveWorld();
+
+      const selection = highlighter.selection.select;
+      const hasSelection = Boolean(selection && !OBC.ModelIdMapUtils.isEmpty(selection));
+      const effectiveMode: "invert" | "selected" | "all" =
+        mode === "selected" && !hasSelection ? "all" : mode;
+
+      if (fragments.initialized && fragments.list.size > 0) {
+        fragments.core.setGhostOpacity(nextOpacity);
+        for (const [modelId, model] of fragments.list) {
+          if (!model || typeof model.setGhostItems !== "function") continue;
+          const selectedLocalIds = selection?.[modelId] ? [...selection[modelId]] : [];
+          if (effectiveMode === "selected" && selectedLocalIds.length > 0) {
+            await model.setGhostItems(selectedLocalIds, false);
+          } else if (effectiveMode === "invert") {
+            await model.setGhostItems(selectedLocalIds, true);
+          } else {
+            await model.setGhostItems([], true);
+          }
+        }
+        fragments.core.update(true);
+      }
+
+      if (world?.scene?.three) {
+        world.scene.three.traverse((obj) => {
+          if (!(obj instanceof THREE.Mesh) || isHelperOrGrid(obj)) return;
+          if ((obj as { isLODMesh?: boolean }).isLODMesh || obj.parent?.name === "fragments") return;
+          const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
+          for (const mat of mats) {
+            if (!mat) continue;
+            if (!runtime.originalGhostMaterials.has(mat)) {
+              runtime.originalGhostMaterials.set(mat, {
+                opacity: mat.opacity,
+                transparent: mat.transparent,
+                depthWrite: mat.depthWrite,
+              });
+            }
+            mat.transparent = true;
+            mat.opacity = nextOpacity;
+            mat.depthWrite = false;
+            mat.needsUpdate = true;
+          }
+        });
+      }
+
+      update({ ghostMode: effectiveMode, ghostOpacity: nextOpacity, openMenu: null });
+      const label =
+        effectiveMode === "invert"
+          ? "X-Ray Focus (Context ghosted)"
+          : effectiveMode === "selected"
+          ? "X-Ray Selection"
+          : "Full Model X-Ray";
+      notify(`${label} · ${Math.round(nextOpacity * 100)}%`);
+    } catch (err) {
+      console.error("[Ghost] Error applying translucent x-ray:", err);
+    }
+  };
+
+  const onGhostOpacitySlider = (val: number) => {
+    const clamped = Math.min(0.75, Math.max(0.1, val));
+    update({ ghostOpacity: clamped });
+    if (ghostMode === "off") return;
+
+    try {
+      const fragments = components.get(OBC.FragmentsManager);
+      if (fragments.initialized) {
+        fragments.core.setGhostOpacity(clamped);
+        fragments.core.update(true);
+      }
+      for (const [mat] of runtime.originalGhostMaterials) {
+        mat.opacity = clamped;
+        mat.needsUpdate = true;
+      }
+    } catch {}
+  };
+
+  // =========================================================================
+  // 4. Visibility & Reset Operations (Hide, Isolate, Show All, Reset All)
+  // =========================================================================
+  const onClearAllAppear = async () => {
     try {
       const highlighter = components.get(OBCF.Highlighter);
       await highlighter.clear();
+      clearGhostMode(true);
+      await clearRenderFinish();
 
-      // Restore 3D Parametric Meshes original materials
       const world = resolveWorld();
       if (world?.scene?.three) {
         world.scene.three.traverse((obj) => {
@@ -140,294 +514,134 @@ export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarStat
       }
 
       try {
-        const smartViews = components.get(SmartViews);
-        smartViews.currentState.colors = { queries: new Map(), items: new Map() };
-      } catch { }
+        components.get(SmartViews).currentState.colors = { queries: new Map(), items: new Map() };
+      } catch {}
+
+      update({
+        openMenu: null,
+        ghostMode: "off",
+        renderLook: "shaded",
+        isDisciplineColored: false,
+      });
+      notify("Cleared color, X-Ray & finish overrides");
     } catch (error) {
       console.error("[Highlighter] Error clearing colors:", error);
-    } finally {
-      if (button) button.loading = false;
     }
   };
 
-  // =========================================================================
-  // Lesson 3.9: Visibility Operations with Fragments & 3D Meshes (Hide, Isolate, Show All)
-  // =========================================================================
-  const onHideSelected = async (e: Event) => {
-    const button = e.currentTarget as BUI.Button;
+  const onHideSelected = async () => {
     const highlighter = components.get(OBCF.Highlighter);
     const selection = highlighter.selection.select;
-    const selectedMesh = (window as any).__selectedThreeMesh as THREE.Mesh | null;
+    const selectedMesh = (window as unknown as { __selectedThreeMesh?: THREE.Mesh | null })
+      .__selectedThreeMesh;
 
     if ((!selection || OBC.ModelIdMapUtils.isEmpty(selection)) && !selectedMesh) {
-      console.warn("[Hider] Select an element first to hide.");
+      notify("Select an element first to hide", "warn");
       return;
     }
 
-    if (button) button.loading = true;
     try {
       if (selection && !OBC.ModelIdMapUtils.isEmpty(selection)) {
         const hider = components.get(OBC.Hider);
         const cloned = OBC.ModelIdMapUtils.clone(selection);
         await Promise.all([hider.set(false, cloned), highlighter.clear("select")]);
         try {
-          const smartViews = components.get(SmartViews);
-          smartViews.recordVisibility("hide", cloned);
-        } catch { }
+          components.get(SmartViews).recordVisibility("hide", cloned);
+        } catch {}
       }
-
       if (selectedMesh) {
         selectedMesh.visible = false;
-        if ((window as any).__selectionBoxHelper) {
-          (window as any).__selectionBoxHelper.visible = false;
-        }
+        const box = (window as unknown as { __selectionBoxHelper?: THREE.Object3D })
+          .__selectionBoxHelper;
+        if (box) box.visible = false;
       }
+      notify("Hidden selected elements");
     } catch (error) {
-      console.error("[Hider] Error hiding selected elements:", error);
-    } finally {
-      if (button) button.loading = false;
+      console.error("[Hider] Error hiding selected:", error);
     }
   };
 
-  const onIsolateSelected = async (e: Event) => {
-    const button = e.currentTarget as BUI.Button;
+  const onIsolateSelected = async () => {
     const highlighter = components.get(OBCF.Highlighter);
     const selection = highlighter.selection.select;
-    const selectedMesh = (window as any).__selectedThreeMesh as THREE.Mesh | null;
+    const selectedMesh = (window as unknown as { __selectedThreeMesh?: THREE.Mesh | null })
+      .__selectedThreeMesh;
 
     if ((!selection || OBC.ModelIdMapUtils.isEmpty(selection)) && !selectedMesh) {
-      console.warn("[Hider] Select an element first to isolate.");
+      notify("Select an element first to isolate", "warn");
       return;
     }
 
-    if (button) button.loading = true;
     try {
       if (selection && !OBC.ModelIdMapUtils.isEmpty(selection)) {
         const hider = components.get(OBC.Hider);
         const cloned = OBC.ModelIdMapUtils.clone(selection);
         await Promise.all([hider.isolate(cloned), highlighter.clear("select")]);
         try {
-          const smartViews = components.get(SmartViews);
-          smartViews.recordVisibility("isolate", cloned);
-        } catch { }
+          components.get(SmartViews).recordVisibility("isolate", cloned);
+        } catch {}
       }
-
       if (selectedMesh) {
         const world = resolveWorld();
-        if (world?.scene?.three) {
-          world.scene.three.traverse((obj) => {
-            if (obj instanceof THREE.Mesh && !obj.name.includes("grid") && !obj.name.includes("helper")) {
-              obj.visible = obj === selectedMesh;
-            }
-          });
-        }
+        world?.scene?.three.traverse((obj) => {
+          if (obj instanceof THREE.Mesh && !isHelperOrGrid(obj)) {
+            obj.visible = obj === selectedMesh;
+          }
+        });
       }
+      notify("Isolated selected elements");
     } catch (error) {
-      console.error("[Hider] Error isolating selected elements:", error);
-    } finally {
-      if (button) button.loading = false;
+      console.error("[Hider] Error isolating selected:", error);
     }
   };
 
-  const onShowAll = async (e: Event) => {
-    const button = e.currentTarget as BUI.Button;
-    if (button) button.loading = true;
+  const onShowAll = async () => {
     try {
       const hider = components.get(OBC.Hider);
       const highlighter = components.get(OBCF.Highlighter);
       await Promise.all([hider.set(true), highlighter.clear()]);
+      clearGhostMode(true);
+      await clearRenderFinish();
 
-      // Restore 3D Parametric Meshes visibility
       const world = resolveWorld();
-      if (world?.scene?.three) {
-        world.scene.three.traverse((obj) => {
-          if (obj instanceof THREE.Mesh && !obj.name.includes("helper")) {
-            obj.visible = true;
-          }
-        });
-      }
-      if ((window as any).__selectionBoxHelper) {
-        (window as any).__selectionBoxHelper.visible = true;
-      }
+      world?.scene?.three.traverse((obj) => {
+        if (obj instanceof THREE.Mesh && !obj.name.includes("helper")) {
+          obj.visible = true;
+        }
+      });
+      const box = (window as unknown as { __selectionBoxHelper?: THREE.Object3D })
+        .__selectionBoxHelper;
+      if (box) box.visible = true;
 
       try {
-        const smartViews = components.get(SmartViews);
-        smartViews.recordVisibility("showAll");
-      } catch { }
+        components.get(SmartViews).recordVisibility("showAll");
+      } catch {}
+
+      update({ renderLook: "shaded", isDisciplineColored: false });
+      notify("Restored full model visibility");
     } catch (error) {
-      console.error("[Hider] Error restoring all hidden elements:", error);
-    } finally {
-      if (button) button.loading = false;
+      console.error("[Hider] Error restoring visibility:", error);
     }
   };
 
-  // =========================================================================
-  // Architectural X-Ray Translucency & Visual Focus Engine
-  // - If elements are selected:
-  //   * "Ghost Selected Only" applies translucent shader exclusively to the selection.
-  //   * "Ghost Unselected (Focus)" makes background context translucent while focal items stay opaque.
-  // - If no elements selected:
-  //   * "Toggle Translucent X-Ray" renders the full model structure in translucent engineering glass.
-  // - "Restore Normal Shading" resets GPU ghost textures and Three.js materials.
-  // =========================================================================
-  const applyGhostItems = async (mode: "invert" | "selected" | "all") => {
-    try {
-      const fragments = components.get(OBC.FragmentsManager);
-      const highlighter = components.get(OBCF.Highlighter);
-      const world = resolveWorld();
-
-      const selection = highlighter.selection.select;
-      const hasSelection = selection && !OBC.ModelIdMapUtils.isEmpty(selection);
-
-      // If user asks for "selected" but nothing is selected, gracefully switch to full model x-ray
-      const effectiveMode: "invert" | "selected" | "all" =
-        mode === "selected" && !hasSelection ? "all" : mode;
-
-      isGhostActive = true;
-
-      // 1. Native @thatopen/fragments GPU X-Ray Ghost Mode
-      if (fragments.initialized && fragments.list.size > 0) {
-        fragments.core.setGhostOpacity(0.28);
-        for (const [modelId, model] of fragments.list) {
-          if (!model) continue;
-          const selectedLocalIds = selection?.[modelId] ? [...selection[modelId]] : [];
-
-          if (effectiveMode === "selected") {
-            // Ghost ONLY selected items (invert = false)
-            if (selectedLocalIds.length > 0 && typeof model.setGhostItems === "function") {
-              await model.setGhostItems(selectedLocalIds, false);
-            }
-          } else if (effectiveMode === "invert") {
-            // Ghost everything EXCEPT selected items (invert = true)
-            if (typeof model.setGhostItems === "function") {
-              await model.setGhostItems(selectedLocalIds, true);
-            }
-          } else {
-            // Ghost whole model (empty array with invert = true ghosts all)
-            if (typeof model.setGhostItems === "function") {
-              await model.setGhostItems([], true);
-            }
-          }
-        }
-        fragments.core.update(true);
-      }
-
-      // 2. Also support non-Fragment 3D Parametric meshes cleanly
-      if (world?.scene?.three) {
-        world.scene.three.traverse((obj) => {
-          if (!(obj instanceof THREE.Mesh)) return;
-          if (obj.name.includes("grid") || (obj as any).isGrid) return;
-          if ((obj as any).isLODMesh || obj.parent?.name === "fragments") return;
-
-          const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-          for (const mat of mats) {
-            if (!mat || originalThreeMaterials.has(mat)) continue;
-            originalThreeMaterials.set(mat, {
-              opacity: mat.opacity,
-              transparent: mat.transparent,
-              depthWrite: mat.depthWrite,
-            });
-            mat.transparent = true;
-            mat.opacity = 0.25;
-            mat.depthWrite = false;
-            mat.needsUpdate = true;
-          }
-        });
-      }
-
-      if (ghostButton) {
-        ghostButton.active = true;
-        ghostButton.style.background = "rgba(56, 189, 248, 0.25)";
-      }
-    } catch (err) {
-      console.error("[Ghost] Error applying translucent x-ray mode:", err);
-    }
-  };
-
-  const clearGhostMode = () => {
-    try {
-      const fragments = components.get(OBC.FragmentsManager);
-      const world = resolveWorld();
-
-      isGhostActive = false;
-
-      if (fragments.initialized) {
-        for (const [, model] of fragments.list) {
-          model?.clearGhost?.();
-        }
-        fragments.core?.update(true);
-      }
-
-      for (const [mat, saved] of originalThreeMaterials) {
-        mat.opacity = saved.opacity;
-        mat.transparent = saved.transparent;
-        mat.depthWrite = saved.depthWrite;
-        mat.needsUpdate = true;
-      }
-      originalThreeMaterials.clear();
-
-      if (ghostButton) {
-        ghostButton.active = false;
-        ghostButton.style.background = "";
-      }
-    } catch (err) {
-      console.error("[Ghost] Error restoring normal shading:", err);
-    }
-  };
-
-  const onToggleGhostMode = async (e: Event) => {
-    const button = e.currentTarget as BUI.Button;
-    if (button) button.loading = true;
-    try {
-      if (isGhostActive) {
-        clearGhostMode();
-      } else {
-        const highlighter = components.get(OBCF.Highlighter);
-        const selection = highlighter.selection.select;
-        const hasSelection = selection && !OBC.ModelIdMapUtils.isEmpty(selection);
-        await applyGhostItems(hasSelection ? "invert" : "all");
-      }
-    } finally {
-      if (button) button.loading = false;
-    }
-  };
-
-  const onGhostSelectedOnly = async () => {
-    BUI.ContextMenu.removeMenus();
-    await applyGhostItems("selected");
-  };
-
-  const onGhostAllExceptSelected = async () => {
-    BUI.ContextMenu.removeMenus();
-    await applyGhostItems("invert");
-  };
-
-  const onClearGhostAction = () => {
-    BUI.ContextMenu.removeMenus();
-    clearGhostMode();
-  };
-
-  // =========================================================================
-  // Lesson 3.13: Camera Focus & Fit to Selection / Full Model
-  // =========================================================================
-  const onFocusSelection = async (e: Event) => {
-    const button = e.currentTarget as BUI.Button;
+  const onFocusSelection = async () => {
     const highlighter = components.get(OBCF.Highlighter);
     const selection = highlighter.selection.select;
     const world = resolveWorld();
     if (!world) return;
 
-    if (button) button.loading = true;
     try {
       const hasSelection = Boolean(selection && !OBC.ModelIdMapUtils.isEmpty(selection));
       const fragments = components.get(OBC.FragmentsManager);
-      const selectedMesh = (window as any).__selectedThreeMesh as THREE.Mesh | null;
+      const selectedMesh = (window as unknown as { __selectedThreeMesh?: THREE.Mesh | null })
+        .__selectedThreeMesh;
 
       if (world.camera instanceof OBC.SimpleCamera && fragments.initialized && fragments.list.size > 0 && hasSelection) {
         await world.camera.fitToItems(selection);
         if (!world.isDisposing) fragments.core.update(true);
+        notify("Framed selected elements");
       } else if (selectedMesh) {
-        const controls = (world.camera as any)?.controls;
+        const controls = (world.camera as { controls?: { fitToBox: Function } })?.controls;
         if (controls) {
           const bbox = new THREE.Box3().setFromObject(selectedMesh);
           if (!bbox.isEmpty()) {
@@ -437,14 +651,15 @@ export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarStat
               paddingTop: 1.3,
               paddingBottom: 1.3,
             });
+            notify("Framed selected mesh");
           }
         }
       } else {
-        const controls = (world.camera as any)?.controls;
+        const controls = (world.camera as { controls?: { fitToBox: Function } })?.controls;
         if (controls && world.scene?.three) {
           const bbox = new THREE.Box3();
-          world.scene.three.traverse((child: any) => {
-            if (child.isMesh && !child.name?.includes("grid") && !child.name?.includes("selection-box")) {
+          world.scene.three.traverse((child) => {
+            if (child instanceof THREE.Mesh && !isHelperOrGrid(child)) {
               bbox.expandByObject(child);
             }
           });
@@ -455,139 +670,324 @@ export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarStat
               paddingTop: 1.25,
               paddingBottom: 1.25,
             });
+            notify("Framed full model");
           }
         }
       }
     } catch (error) {
       console.error("[Focus] Error fitting camera:", error);
-    } finally {
-      if (button) button.loading = false;
     }
   };
 
+  const studioBadge =
+    renderLook !== "shaded"
+      ? renderLook === "clay"
+        ? "Clay"
+        : "Wire"
+      : sceneMood !== "obsidian"
+      ? SCENE_MOODS.find((m) => m.id === sceneMood)?.label || ""
+      : "";
+
   return BUI.html`
-    <bim-toolbar style="background: rgba(15, 23, 42, 0.90); backdrop-filter: blur(16px); border: 1px solid rgba(56, 189, 248, 0.28); border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); padding: 3px 5px; pointer-events: auto; --bim-button--fz: 0.72rem; max-width: 100%; overflow-x: auto;">
-      <!-- Section 1: Colorizing -->
-      <bim-toolbar-section label="Colorize">
-        <bim-button
-          icon="flowbite:palette-outline"
-          tooltip="Apply Discipline Color Overrides to Selection"
-          label="Color"
-        >
-          <bim-context-menu>
-            <div style="display: flex; flex-direction: column; gap: 0.6rem; padding: 0.75rem; min-width: 15rem; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; backdrop-filter: blur(16px);">
-              <!-- Mini Challenge: Preset Colors Palette -->
-              <span style="font-size: 0.70rem; color: #94a3b8; font-weight: 600; text-transform: uppercase;">AEC Discipline Palette</span>
-              <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">
-                ${PRESET_COLORS.map(
-    (p) => BUI.html`
-                    <button
-                      type="button"
-                      @click=${() => applyColorDirectly(p.color)}
-                      style="width: 100%; height: 26px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: ${p.color}; cursor: pointer; transition: transform 0.15s ease;"
-                      title="${p.label}"
-                    ></button>
-                  `
-  )}
-              </div>
-
-              <!-- Custom Color Picker -->
-              <div style="border-top: 1px solid rgba(148, 163, 184, 0.2); padding-top: 0.4rem;">
-                <bim-color-input
-                  ${BUI.ref((element) => {
-    colorInput = element as BUI.ColorInput;
-  })}
-                  label="Hex Color Override"
-                  color="#3b82f6"
-                ></bim-color-input>
-              </div>
-              <bim-button
-                @click=${onApplyColor}
-                label="Apply Color Override"
-                icon="flowbite:check-outline"
-                style="--bim-button-background: #0284c7; color: white; font-weight: 600;"
-              ></bim-button>
+    <bim-toolbar class="toc-pro-appear-toolbar">
+      <div class="toc-pro-shell" ${BUI.ref(bindOutsideClick)}>
+        <div class="toc-pro-bar">
+          <!-- Group 1: Colorize -->
+          <div class="toc-pro-group">
+            <span class="toc-pro-group-label">Colorize</span>
+            <div class="toc-pro-group-row">
+              <button
+                type="button"
+                class="toc-pro-btn ${openMenu === "color" || isDisciplineColored ? "active" : ""}"
+                @click=${() => toggleMenu("color")}
+                title="AEC Palette, Hex Override & Discipline Coding"
+              >
+                <span class="toc-pro-swatch-dot" style="background: ${activeColor};"></span>
+                <span>Color</span>
+                <span class="material-icons-round toc-pro-caret">expand_more</span>
+              </button>
+              <button
+                type="button"
+                class="toc-pro-btn warn"
+                @click=${onClearAllAppear}
+                title="Clear Color, Clay, Wireframe & X-Ray Overrides"
+              >
+                <span class="material-icons-round">format_color_reset</span>
+                <span>Reset</span>
+              </button>
             </div>
-          </bim-context-menu>
-        </bim-button>
+          </div>
 
-        <bim-button
-          @click=${onClearColors}
-          icon="flowbite:trash-bin-outline"
-          label="Reset"
-          tooltip="Restore Original Materials & Clear Overrides"
-        ></bim-button>
-      </bim-toolbar-section>
+          <div class="toc-pro-sep"></div>
 
-      <!-- Section 2: Visibility Operations -->
-      <bim-toolbar-section label="Visibility">
-        <bim-button
-          @click=${onHideSelected}
-          icon="flowbite:eye-slash-outline"
-          label="Hide"
-          tooltip="Hide Selected Elements from Scene"
-        ></bim-button>
-        <bim-button
-          @click=${onIsolateSelected}
-          icon="flowbite:expand-outline"
-          label="Isolate"
-          tooltip="Isolate Selected Engineering Elements"
-        ></bim-button>
-        <bim-button
-          @click=${onShowAll}
-          icon="flowbite:eye-outline"
-          label="Show All"
-          tooltip="Restore Full Federated Model Visibility"
-        ></bim-button>
-      </bim-toolbar-section>
-
-      <!-- Section 3: Visual Modes & Navigation -->
-      <bim-toolbar-section label="View">
-        <bim-button
-          ${BUI.ref((element) => {
-    ghostButton = element as BUI.Button;
-  })}
-          icon="flowbite:lightbulb-outline"
-          label="Ghost"
-          tooltip="Translucent Architectural X-Ray Shading"
-        >
-          <bim-context-menu>
-            <div style="display: flex; flex-direction: column; gap: 0.45rem; padding: 0.65rem; min-width: 14rem; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px; backdrop-filter: blur(16px);">
-              <span style="font-size: 0.72rem; color: #94a3b8; font-weight: 600; text-transform: uppercase;">X-Ray & Focus Shading</span>
-              <bim-button
-                @click=${onToggleGhostMode}
-                label="Toggle Translucent X-Ray"
-                icon="flowbite:lightbulb-outline"
-                style="--bim-button-background: rgba(30, 41, 59, 0.85); color: #f8fafc;"
-              ></bim-button>
-              <bim-button
-                @click=${onGhostSelectedOnly}
-                label="X-Ray Selected Elements"
-                icon="flowbite:eye-slash-outline"
-                style="--bim-button-background: rgba(30, 41, 59, 0.85); color: #f8fafc;"
-              ></bim-button>
-              <bim-button
-                @click=${onGhostAllExceptSelected}
-                label="Isolate Focal Elements (X-Ray Context)"
-                icon="flowbite:expand-outline"
-                style="--bim-button-background: rgba(30, 41, 59, 0.85); color: #f8fafc;"
-              ></bim-button>
-              <bim-button
-                @click=${onClearGhostAction}
-                label="Restore Normal Shading"
-                icon="flowbite:trash-bin-outline"
-                style="--bim-button-background: rgba(239, 68, 68, 0.2); color: #ef4444;"
-              ></bim-button>
+          <!-- Group 2: Visibility -->
+          <div class="toc-pro-group">
+            <span class="toc-pro-group-label">Visibility</span>
+            <div class="toc-pro-group-row">
+              <button
+                type="button"
+                class="toc-pro-btn"
+                @click=${onHideSelected}
+                title="Hide Selected Elements (H)"
+              >
+                <span class="material-icons-round">visibility_off</span>
+                <span>Hide</span>
+                <span class="toc-pro-kbd">H</span>
+              </button>
+              <button
+                type="button"
+                class="toc-pro-btn"
+                @click=${onIsolateSelected}
+                title="Isolate Selected Elements"
+              >
+                <span class="material-icons-round">filter_center_focus</span>
+                <span>Isolate</span>
+              </button>
+              <button
+                type="button"
+                class="toc-pro-btn"
+                @click=${onShowAll}
+                title="Restore Full Model Visibility"
+              >
+                <span class="material-icons-round">visibility</span>
+                <span>Show All</span>
+              </button>
             </div>
-          </bim-context-menu>
-        </bim-button>
-        <bim-button
-          @click=${onFocusSelection}
-          icon="solar:camera-bold"
-          label="Focus"
-          tooltip="Fit & Frame Camera to Selected Elements"
-        ></bim-button>
-      </bim-toolbar-section>
+          </div>
+
+          <div class="toc-pro-sep"></div>
+
+          <!-- Group 3: X-Ray & Ghost -->
+          <div class="toc-pro-group">
+            <span class="toc-pro-group-label">X-Ray</span>
+            <div class="toc-pro-group-row">
+              <button
+                type="button"
+                class="toc-pro-btn ${ghostMode !== "off" || openMenu === "ghost" ? "active" : ""}"
+                @click=${() => toggleMenu("ghost")}
+                title="Translucent X-Ray Focus & Live Opacity"
+              >
+                <span class="material-icons-round">blur_on</span>
+                <span>Ghost</span>
+                ${ghostMode !== "off"
+                  ? BUI.html`<span class="toc-pro-chip">${Math.round(ghostOpacity * 100)}%</span>`
+                  : ""}
+                <span class="material-icons-round toc-pro-caret">expand_more</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="toc-pro-sep"></div>
+
+          <!-- Group 4: Render Studio & Camera -->
+          <div class="toc-pro-group">
+            <span class="toc-pro-group-label">Appearance</span>
+            <div class="toc-pro-group-row">
+              <button
+                type="button"
+                class="toc-pro-btn ${openMenu === "studio" || studioBadge ? "active" : ""}"
+                @click=${() => toggleMenu("studio")}
+                title="Scene Lighting Mood & Render Finish (Clay / Wireframe)"
+              >
+                <span class="material-icons-round">auto_awesome</span>
+                <span>Studio</span>
+                ${studioBadge ? BUI.html`<span class="toc-pro-chip">${studioBadge}</span>` : ""}
+                <span class="material-icons-round toc-pro-caret">expand_more</span>
+              </button>
+              <button
+                type="button"
+                class="toc-pro-btn"
+                @click=${onFocusSelection}
+                title="Frame Selection or Full Model (F)"
+              >
+                <span class="material-icons-round">center_focus_strong</span>
+                <span>Focus</span>
+                <span class="toc-pro-kbd">F</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Popover 1: Pro Colorize Studio -->
+        ${openMenu === "color"
+          ? BUI.html`
+              <div class="toc-pro-popover">
+                <div class="toc-pro-pop-title">
+                  <span>AEC Discipline Swatches</span>
+                  <span style="color: #7dd3fc;">${activeColor.toUpperCase()}</span>
+                </div>
+                <div class="toc-pro-swatch-grid">
+                  ${PRESET_COLORS.map(
+                    (p) => BUI.html`
+                      <button
+                        type="button"
+                        class="toc-pro-swatch-tile ${activeColor.toLowerCase() === p.color ? "selected" : ""}"
+                        style="background: ${p.color};"
+                        title="${p.label}"
+                        @click=${() => applyColorDirectly(p.color)}
+                      ></button>
+                    `
+                  )}
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 8px; padding-top: 4px; border-top: 1px solid rgba(148,163,184,0.16);">
+                  <input
+                    type="color"
+                    .value=${activeColor}
+                    @input=${(e: Event) => {
+                      const val = (e.target as HTMLInputElement).value;
+                      update({ activeColor: val });
+                    }}
+                    style="width: 34px; height: 28px; border-radius: 6px; border: 1px solid rgba(148,163,184,0.3); background: transparent; cursor: pointer; padding: 0;"
+                  />
+                  <span style="font-size: 0.74rem; font-family: monospace; color: #cbd5e1; flex: 1;">
+                    ${activeColor.toUpperCase()}
+                  </span>
+                  <button
+                    type="button"
+                    class="toc-pro-pop-btn active"
+                    style="width: auto; padding: 5px 11px;"
+                    @click=${() => applyColorDirectly(activeColor)}
+                  >
+                    Apply
+                  </button>
+                </div>
+
+                <button
+                  type="button"
+                  class="toc-pro-pop-btn ${isDisciplineColored ? "active" : ""}"
+                  @click=${onAutoColorDiscipline}
+                >
+                  <span class="material-icons-round" style="color: #38bdf8;">layers</span>
+                  <span>Auto-Colorize by IFC Category</span>
+                </button>
+              </div>
+            `
+          : ""}
+
+        <!-- Popover 2: X-Ray & Live Ghost Slider -->
+        ${openMenu === "ghost"
+          ? BUI.html`
+              <div class="toc-pro-popover">
+                <div class="toc-pro-pop-title">
+                  <span>Translucent X-Ray Engine</span>
+                  <span style="color: #7dd3fc;">${Math.round(ghostOpacity * 100)}% Opacity</span>
+                </div>
+                <input
+                  type="range"
+                  min="0.1"
+                  max="0.75"
+                  step="0.02"
+                  .value=${String(ghostOpacity)}
+                  @input=${(e: Event) =>
+                    onGhostOpacitySlider(parseFloat((e.target as HTMLInputElement).value))}
+                  style="width: 100%; accent-color: #38bdf8; cursor: pointer;"
+                />
+                <button
+                  type="button"
+                  class="toc-pro-pop-btn ${ghostMode === "invert" ? "active" : ""}"
+                  @click=${() => applyGhostItems("invert")}
+                >
+                  <span class="material-icons-round">center_focus_weak</span>
+                  <span>Isolate Focus (X-Ray Unselected)</span>
+                </button>
+                <button
+                  type="button"
+                  class="toc-pro-pop-btn ${ghostMode === "selected" ? "active" : ""}"
+                  @click=${() => applyGhostItems("selected")}
+                >
+                  <span class="material-icons-round">visibility_off</span>
+                  <span>X-Ray Selected Only</span>
+                </button>
+                <button
+                  type="button"
+                  class="toc-pro-pop-btn ${ghostMode === "all" ? "active" : ""}"
+                  @click=${() => applyGhostItems("all")}
+                >
+                  <span class="material-icons-round">blur_on</span>
+                  <span>Full Model Glass X-Ray</span>
+                </button>
+                <button
+                  type="button"
+                  class="toc-pro-pop-btn danger"
+                  @click=${() => {
+                    clearGhostMode();
+                    update({ openMenu: null });
+                  }}
+                >
+                  <span class="material-icons-round">highlight_off</span>
+                  <span>Restore Normal Shading</span>
+                </button>
+              </div>
+            `
+          : ""}
+
+        <!-- Popover 3: Pro Scene Studio & Finish -->
+        ${openMenu === "studio"
+          ? BUI.html`
+              <div class="toc-pro-popover">
+                <div class="toc-pro-pop-title">
+                  <span>Viewport Lighting & Backdrop</span>
+                </div>
+                <div class="toc-pro-mood-grid">
+                  ${SCENE_MOODS.map(
+                    (mood) => BUI.html`
+                      <button
+                        type="button"
+                        class="toc-pro-mood-tile ${sceneMood === mood.id ? "active" : ""}"
+                        @click=${() => applySceneMood(mood.id)}
+                      >
+                        <span class="toc-pro-mood-preview" style="background: ${mood.bg};"></span>
+                        <span>${mood.label}</span>
+                      </button>
+                    `
+                  )}
+                </div>
+
+                <div class="toc-pro-pop-title" style="margin-top: 2px;">
+                  <span>Render Finish</span>
+                </div>
+                <div class="toc-pro-seg">
+                  <button
+                    type="button"
+                    class="toc-pro-seg-btn ${renderLook === "shaded" ? "active" : ""}"
+                    @click=${() => applyRenderLook("shaded")}
+                  >
+                    <span class="material-icons-round" style="font-size: 14px;">tonality</span>
+                    <span>Shaded</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="toc-pro-seg-btn ${renderLook === "clay" ? "active" : ""}"
+                    @click=${() => applyRenderLook("clay")}
+                  >
+                    <span class="material-icons-round" style="font-size: 14px;">contrast</span>
+                    <span>Clay</span>
+                  </button>
+                  <button
+                    type="button"
+                    class="toc-pro-seg-btn ${renderLook === "wireframe" ? "active" : ""}"
+                    @click=${() => applyRenderLook("wireframe")}
+                  >
+                    <span class="material-icons-round" style="font-size: 14px;">grid_4x4</span>
+                    <span>Wire</span>
+                  </button>
+                </div>
+              </div>
+            `
+          : ""}
+
+        ${notice
+          ? BUI.html`
+              <div class="toc-pro-toast ${notice.tone === "warn" ? "warn" : ""}">
+                <span class="material-icons-round" style="font-size: 14px;">
+                  ${notice.tone === "warn" ? "info" : "check_circle"}
+                </span>
+                <span>${notice.text}</span>
+              </div>
+            `
+          : ""}
+      </div>
     </bim-toolbar>
   `;
 };

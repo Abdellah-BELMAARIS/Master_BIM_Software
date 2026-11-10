@@ -11,13 +11,13 @@ export interface ISidebarProps {
  * Precision BIM Platform Brand Vector Logo
  * Rendered inline to guarantee 100% reliable SVG bundling across all deployment targets
  */
-function CompanyLogo() {
+function CompanyLogo({ compact = false }: { compact?: boolean }) {
     return (
         <svg
             xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 245 54"
-            width="225"
-            height="50"
+            viewBox={compact ? "0 0 54 54" : "0 0 245 54"}
+            width={compact ? "36" : "200"}
+            height={compact ? "36" : "46"}
             preserveAspectRatio="xMinYMid meet"
             id="company-logo"
             aria-label="Construction Company — BIM Platform"
@@ -62,12 +62,16 @@ function CompanyLogo() {
             <circle cx="26" cy="43" r="1.5" fill="#93c5fd" />
 
             {/* Brand Typography */}
-            <text x="60" y="25" fill="#f8fafc" style={{ fontFamily: "'Inter', sans-serif", fontSize: "18px", fontWeight: 800, letterSpacing: "0.05em" }}>
-                CONSTRUCTION
-            </text>
-            <text x="60" y="44" fill="#38bdf8" style={{ fontFamily: "'Inter', sans-serif", fontSize: "15px", fontWeight: 800, letterSpacing: "0.14em" }}>
-                COMPANY
-            </text>
+            {!compact && (
+                <>
+                    <text x="60" y="25" fill="#f8fafc" style={{ fontFamily: "'Inter', sans-serif", fontSize: "18px", fontWeight: 800, letterSpacing: "0.05em" }}>
+                        CONSTRUCTION
+                    </text>
+                    <text x="60" y="44" fill="#38bdf8" style={{ fontFamily: "'Inter', sans-serif", fontSize: "15px", fontWeight: 800, letterSpacing: "0.14em" }}>
+                        COMPANY
+                    </text>
+                </>
+            )}
         </svg>
     );
 }
@@ -78,6 +82,22 @@ export function Sidebar(props: ISidebarProps) {
     const [activeTab, setActiveTab] = React.useState<"projects" | "users">(
         props.activeTab || "projects"
     );
+    const [isCollapsed, setIsCollapsed] = React.useState<boolean>(() => {
+        try {
+            return localStorage.getItem("toc_sidebar_collapsed") === "true";
+        } catch {
+            return false;
+        }
+    });
+
+    React.useEffect(() => {
+        document.body.classList.toggle("sidebar-collapsed", isCollapsed);
+        try {
+            localStorage.setItem("toc_sidebar_collapsed", String(isCollapsed));
+        } catch {}
+        const t = setTimeout(() => window.dispatchEvent(new Event("resize")), 240);
+        return () => clearTimeout(t);
+    }, [isCollapsed]);
 
     React.useEffect(() => {
         if (location.pathname === "/" || location.pathname.startsWith("/project")) {
@@ -100,39 +120,54 @@ export function Sidebar(props: ISidebarProps) {
     const isAllProjects = activeTab === "projects" && !isIfcProjects && !is3dProjects;
 
     return (
-        <aside id="sidebar">
-            <div className="sidebar-header" style={{ padding: "1.25rem 1rem", display: "flex", alignItems: "center" }}>
-                <CompanyLogo />
+        <aside id="sidebar" className={isCollapsed ? "is-collapsed" : ""}>
+            <div
+                className="sidebar-header"
+                style={{ padding: "1.1rem 0.9rem", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}
+            >
+                <CompanyLogo compact={isCollapsed} />
+                <button
+                    type="button"
+                    className="sidebar-collapse-btn"
+                    onClick={() => setIsCollapsed((prev) => !prev)}
+                    title={isCollapsed ? "Expand Sidebar" : "Hide Sidebar (Icons Only)"}
+                    aria-label={isCollapsed ? "Expand Sidebar" : "Hide Sidebar (Icons Only)"}
+                >
+                    <span className="material-icons-round" style={{ fontSize: "18px" }}>
+                        {isCollapsed ? "chevron_right" : "menu_open"}
+                    </span>
+                </button>
             </div>
 
             <div className="sidebar-nav-section">
                 <span className="sidebar-section-label">WORKSPACE</span>
                 <div id="nav-buttons" style={{ display: "flex", flexDirection: "column", gap: "6px", flex: "none", width: "100%" }}>
-                    <Router.Link to="/" style={{ textDecoration: "none", display: "block", width: "100%" }}>
+                    <Router.Link to="/" style={{ textDecoration: "none", display: "block", width: "100%" }} title="BIM Projects">
                         <bim-button
-                            label="BIM Projects"
+                            label={isCollapsed ? "" : "BIM Projects"}
                             icon={appIcons.projects}
                             active={isAllProjects}
                             onclick={() => handleNavClick("projects")}
-                            style={{ width: "100%", height: "42px", minHeight: "42px", maxHeight: "42px", flex: "none", justifyContent: "flex-start" }}
+                            style={{ width: "100%", height: "42px", minHeight: "42px", maxHeight: "42px", flex: "none", justifyContent: isCollapsed ? "center" : "flex-start" }}
                         ></bim-button>
                     </Router.Link>
                     <bim-button
-                        label="AEC Team"
+                        label={isCollapsed ? "" : "AEC Team"}
                         icon={appIcons.users}
                         active={activeTab === "users"}
+                        title="AEC Team"
                         onclick={() => handleNavClick("users")}
-                        style={{ width: "100%", height: "42px", minHeight: "42px", maxHeight: "42px", flex: "none", justifyContent: "flex-start" }}
+                        style={{ width: "100%", height: "42px", minHeight: "42px", maxHeight: "42px", flex: "none", justifyContent: isCollapsed ? "center" : "flex-start" }}
                     ></bim-button>
                 </div>
 
-                <span className="sidebar-section-label" style={{ marginTop: "1.35rem" }}>CDE DATA & TOOLS</span>
+                <span className="sidebar-section-label" style={{ marginTop: "1.35rem" }}>CDE DATA &amp; TOOLS</span>
                 <ul className="sidebar-secondary-nav">
                     <Router.Link to="/?category=ifc" style={{ textDecoration: "none", color: "inherit", display: "block" }}>
                         <li
                             className={`nav-sub-item ${isIfcProjects ? "active" : ""}`}
                             onClick={() => handleNavClick("projects")}
-                            title="Filter to IFC OpenBIM Models"
+                            title="IFC OpenBIM Models"
                         >
                             <span className="material-icons-round" style={{ color: "#38bdf8" }}>description</span>
                             <span>IFC OpenBIM Models</span>
@@ -142,7 +177,7 @@ export function Sidebar(props: ISidebarProps) {
                         <li
                             className={`nav-sub-item ${is3dProjects ? "active" : ""}`}
                             onClick={() => handleNavClick("projects")}
-                            title="Filter to 3D Parametric Digital Twins"
+                            title="3D BIM Models"
                         >
                             <span className="material-icons-round" style={{ color: "#a855f7" }}>view_in_ar</span>
                             <span>3D BIM Models</span>

@@ -23,14 +23,14 @@ a[href*="thatopen.com"][style*="position: absolute"] {
     --bg-card-hover: #262c3e;
     --border-color: #2b3347;
     --border-hairline: #3b4661;
-    
+
     /* Authentic CYPE / Structural Cobalt Blue */
     --primary-blue: #2563eb;
     --primary-blue-hover: #1d4ed8;
     --accent-green: #15803d;
     --accent-amber: #b45309;
     --accent-red: #b91c1c;
-    
+
     --text-primary: #f8fafc;
     --text-secondary: #94a3b8;
     --text-muted: #64748b;
@@ -71,13 +71,16 @@ a[href*="thatopen.com"][style*="position: absolute"] {
     width: 6px;
     height: 6px;
 }
+
 ::-webkit-scrollbar-track {
     background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
     background: rgba(148, 163, 184, 0.25);
     border-radius: var(--radius-sharp);
 }
+
 ::-webkit-scrollbar-thumb:hover {
     background: var(--primary-blue);
 }
@@ -90,6 +93,17 @@ body {
     background-color: var(--bg-main);
     color: var(--text-primary);
     overflow: hidden;
+    transition: grid-template-columns 0.22s ease;
+}
+
+body.sidebar-collapsed {
+    grid-template-columns: 72px 1fr;
+}
+
+@media (max-width: 768px) {
+    body.sidebar-collapsed {
+        grid-template-columns: 1fr;
+    }
 }
 
 #app {
@@ -114,6 +128,81 @@ a {
     padding: 0;
     box-sizing: border-box;
     z-index: 10;
+    min-width: 0;
+}
+
+.sidebar-collapse-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: rgba(30, 41, 59, 0.72);
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    color: #94a3b8;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.16s ease;
+}
+
+.sidebar-collapse-btn:hover {
+    color: #38bdf8;
+    border-color: rgba(56, 189, 248, 0.55);
+    background: rgba(56, 189, 248, 0.14);
+}
+
+#sidebar.is-collapsed .sidebar-header {
+    padding: 0.9rem 0.5rem !important;
+    justify-content: center !important;
+    gap: 4px;
+    flex-direction: column;
+    height: auto;
+    min-height: 86px;
+}
+
+#sidebar.is-collapsed .sidebar-nav-section {
+    padding: 0.95rem 0.55rem;
+    align-items: center;
+}
+
+#sidebar.is-collapsed .sidebar-section-label {
+    display: none !important;
+}
+
+#sidebar.is-collapsed .sidebar-secondary-nav {
+    width: 100%;
+    align-items: center;
+}
+
+#sidebar.is-collapsed .nav-sub-item {
+    justify-content: center;
+    padding: 0.6rem 0 !important;
+    width: 44px;
+    height: 44px;
+    margin: 0 auto;
+}
+
+#sidebar.is-collapsed .nav-sub-item span:not(.material-icons-round) {
+    display: none;
+}
+
+#sidebar.is-collapsed .sidebar-footer {
+    padding: 0.85rem 0.45rem;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+}
+
+#sidebar.is-collapsed .user-meta,
+#sidebar.is-collapsed .system-status .status-text {
+    display: none;
+}
+
+#sidebar.is-collapsed .system-status {
+    padding: 3px;
+    border: none;
+    background: transparent;
 }
 
 .sidebar-header {
@@ -390,6 +479,7 @@ a {
     line-height: 1;
     padding: 2px 6px;
 }
+
 .btn-close-inspector:hover {
     color: #f8fafc;
 }
@@ -589,8 +679,8 @@ a {
     pointer-events: none;
 }
 
-#content > .page,
-#content > dialog,
+#content>.page,
+#content>dialog,
 dialog {
     pointer-events: auto;
 }
@@ -896,7 +986,7 @@ dialog {
     align-content: start;
 }
 
-#projects-list > a,
+#projects-list>a,
 #projects-list a {
     display: flex;
     flex-direction: column;
@@ -925,8 +1015,15 @@ dialog {
 }
 
 @keyframes fadeInEmpty {
-    from { opacity: 0; transform: translateY(6px); }
-    to { opacity: 1; transform: translateY(0); }
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 .empty-state-icon-box {
@@ -1039,11 +1136,25 @@ dialog {
     border: 1px solid rgba(255, 255, 255, 0.14);
 }
 
-.badge-orange { background-color: var(--badge-orange); }
-.badge-green { background-color: var(--badge-green); }
-.badge-purple { background-color: var(--badge-purple); }
-.badge-magenta { background-color: var(--badge-magenta); }
-.badge-blue { background-color: var(--badge-blue); }
+.badge-orange {
+    background-color: var(--badge-orange);
+}
+
+.badge-green {
+    background-color: var(--badge-green);
+}
+
+.badge-purple {
+    background-color: var(--badge-purple);
+}
+
+.badge-magenta {
+    background-color: var(--badge-magenta);
+}
+
+.badge-blue {
+    background-color: var(--badge-blue);
+}
 
 .card-title-group h3 {
     font-size: 1.24rem;
@@ -1262,6 +1373,7 @@ dialog#error-modal::backdrop {
         opacity: 0;
         transform: scale(0.94) translateY(8px);
     }
+
     to {
         opacity: 1;
         transform: scale(1) translateY(0);
@@ -1499,12 +1611,12 @@ dialog#error-modal::backdrop {
 }
 
 #details-header {
-    min-height: 72px;
+    min-height: 60px;
     height: auto !important;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0.75rem 2rem;
+    padding: 0.55rem 1.25rem;
     background: rgba(14, 19, 29, 0.94);
     backdrop-filter: blur(14px);
     border-bottom: 1px solid var(--border-color);
@@ -1591,6 +1703,7 @@ dialog#error-modal::backdrop {
         max-width: 100%;
         width: 100%;
     }
+
     .details-header-right {
         width: 100%;
         justify-content: space-between;
@@ -1648,20 +1761,22 @@ dialog#error-modal::backdrop {
         padding: 4px 8px !important;
         gap: 4px !important;
     }
+
     .viewer-hud-overlay button {
         padding: 4px 8px !important;
         font-size: 0.74rem !important;
     }
+
     .hud-btn-label {
         display: none !important;
     }
 }
 
-#project-details > .main-page-content {
+#project-details>.main-page-content {
     display: grid;
-    grid-template-columns: minmax(360px, 420px) minmax(460px, 1fr);
-    gap: 1.65rem;
-    padding: 1.6rem 2.5rem 2rem 2.5rem;
+    grid-template-columns: minmax(305px, 355px) minmax(560px, 1fr);
+    gap: 0.9rem;
+    padding: 0.7rem 0.95rem 0.9rem 0.95rem;
     flex: 1;
     overflow-y: hidden;
     overflow-x: auto;
@@ -1693,35 +1808,43 @@ dialog#error-modal::backdrop {
 
 .viewer-mode-switch-bar {
     position: absolute;
-    top: 12px;
+    top: 10px;
     left: 14px;
     z-index: 30;
     display: inline-flex;
     align-items: center;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
     max-width: calc(100% - 28px);
-    background: rgba(15, 23, 42, 0.92);
+    background: rgba(15, 23, 42, 0.94);
     backdrop-filter: blur(14px);
     border: 1px solid rgba(56, 189, 248, 0.32);
-    border-radius: 14px;
-    padding: 4px;
+    border-radius: 12px;
+    padding: 3px 5px;
     box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
     gap: 3px;
+}
+
+.viewer-mode-switch-bar::-webkit-scrollbar {
+    display: none;
 }
 
 .viewer-mode-tab {
     display: inline-flex;
     align-items: center;
-    gap: 5px;
-    padding: 5px 9px;
+    gap: 4px;
+    padding: 4px 8px;
     border: none;
-    border-radius: 10px;
+    border-radius: 8px;
     background: transparent;
     color: var(--text-secondary);
     cursor: pointer;
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     font-weight: 600;
     white-space: nowrap;
+    flex-shrink: 0;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -1737,7 +1860,18 @@ dialog#error-modal::backdrop {
 }
 
 .viewer-mode-tab .material-icons-round {
-    font-size: 16px;
+    font-size: 14px;
+}
+
+/* Keep bottom navigation HUD crisp and prevent right-edge pill clipping */
+.viewer-hud-overlay button {
+    padding: 4px 7px !important;
+    font-size: 0.71rem !important;
+    gap: 3px !important;
+}
+
+.viewer-hud-overlay .material-icons-round {
+    font-size: 14px !important;
 }
 
 .toc-viewport-floating-grid {
@@ -1762,13 +1896,13 @@ dialog#error-modal::backdrop {
 }
 
 /* Full View Mode: Maximize the 3D BIM Viewer across entire window width like Autodesk / Cesium */
-#project-details > .main-page-content.full-viewer-mode {
+#project-details>.main-page-content.full-viewer-mode {
     grid-template-columns: 1fr !important;
-    padding: 0.75rem 1.25rem 1.25rem 1.25rem !important;
+    padding: 0.55rem 0.85rem 0.8rem 0.85rem !important;
     gap: 0 !important;
 }
 
-#project-details > .main-page-content.full-viewer-mode .details-left-column {
+#project-details>.main-page-content.full-viewer-mode .details-left-column {
     display: none !important;
 }
 
@@ -1792,21 +1926,24 @@ dialog#error-modal::backdrop {
 }
 
 @keyframes tocPulseDrop {
-    0%, 100% { border-color: #38bdf8; background: rgba(2, 132, 199, 0.20); }
-    50% { border-color: #7dd3fc; background: rgba(2, 132, 199, 0.32); }
+
+    0%,
+    100% {
+        border-color: #38bdf8;
+        background: rgba(2, 132, 199, 0.20);
+    }
+
+    50% {
+        border-color: #7dd3fc;
+        background: rgba(2, 132, 199, 0.32);
+    }
 }
 
 /* Ensure bim-toolbar inside floating grid is responsive and scrolls horizontally on small screens */
 .toc-viewport-floating-grid bim-toolbar {
     max-width: calc(100vw - 32px) !important;
-    overflow-x: auto !important;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    white-space: nowrap;
-}
-
-.toc-viewport-floating-grid bim-toolbar::-webkit-scrollbar {
-    display: none;
+    overflow: visible !important;
+    flex-wrap: wrap;
 }
 
 /* Responsive Fluid Support for Phones & Laptops across Viewer Mode Bar & Toolbar */
@@ -1822,16 +1959,20 @@ dialog#error-modal::backdrop {
         flex-wrap: nowrap;
         scrollbar-width: none;
     }
+
     .viewer-mode-tab {
         padding: 4px 7px;
         font-size: 0.70rem;
     }
+
     .viewer-mode-tab .material-icons-round {
         font-size: 14px;
     }
+
     .toc-viewport-floating-grid {
         padding: calc(var(--mode-bar-bottom, 48px) + 6px) 8px 8px 8px !important;
     }
+
     .plan-mode-banner {
         top: calc(var(--toolbar-bottom, 120px) + 6px) !important;
         right: 8px !important;
@@ -1850,16 +1991,19 @@ dialog#error-modal::backdrop {
 }
 
 @container (max-width: 1050px) {
+
     .viewer-hud-overlay .hud-btn-label,
     .viewer-pro-hud .hud-label {
         display: none !important;
     }
+
     .viewer-hud-overlay,
     .viewer-pro-hud {
         gap: 4px !important;
         padding: 5px 8px !important;
         bottom: 12px !important;
     }
+
     .viewer-hud-overlay button,
     .viewer-pro-hud .hud-btn {
         padding: 6px 9px !important;
@@ -1869,10 +2013,12 @@ dialog#error-modal::backdrop {
 }
 
 @media (max-width: 1400px) {
+
     .viewer-hud-overlay .hud-btn-label,
     .viewer-pro-hud .hud-label {
         display: none !important;
     }
+
     .viewer-hud-overlay button,
     .viewer-pro-hud .hud-btn {
         padding: 6px 9px !important;
@@ -2366,14 +2512,15 @@ dialog#error-modal::backdrop {
 /* CAD Engineering Viewport Canvas (CYPECAD / Tekla / AutoCAD grid) */
 #viewer-container {
     background-color: #10131a;
-    background-image: 
+    background-image:
         linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
         linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
     background-size: 24px 24px;
     border-radius: var(--radius-straight);
     height: 100%;
     width: 100%;
-    min-width: 0; /* Lesson 2.5: Allows flex/grid container to shrink responsive without clipping */
+    min-width: 0;
+    /* Lesson 2.5: Allows flex/grid container to shrink responsive without clipping */
     min-height: 0;
     border: 1px solid var(--border-color);
     position: relative;
@@ -2395,7 +2542,7 @@ dialog#error-modal::backdrop {
 }
 
 /* Pro BIM Viewport Floating Controls HUD */
-#viewer-container > .lil-gui,
+#viewer-container>.lil-gui,
 #viewer-container .lil-gui.root {
     position: absolute !important;
     top: calc(var(--mode-bar-bottom, 96px) + 10px) !important;
@@ -2443,7 +2590,7 @@ dialog#error-modal::backdrop {
     box-shadow: none !important;
 }
 
-#viewer-container .lil-gui > .title {
+#viewer-container .lil-gui>.title {
     background-color: rgba(37, 99, 235, 0.22) !important;
     border-bottom: 1px solid rgba(59, 130, 246, 0.35) !important;
     color: #ffffff !important;
@@ -2457,7 +2604,7 @@ dialog#error-modal::backdrop {
     user-select: none;
 }
 
-#viewer-container .lil-gui .lil-gui > .title {
+#viewer-container .lil-gui .lil-gui>.title {
     font-weight: 600;
     font-size: 0.8rem;
     letter-spacing: 0.03em;
@@ -2832,7 +2979,7 @@ dialog#error-modal::backdrop {
         gap: 1.35rem;
     }
 
-    #project-details > .main-page-content {
+    #project-details>.main-page-content {
         grid-template-columns: minmax(340px, 380px) minmax(440px, 1fr);
         overflow-x: auto;
         padding: 1.25rem 1.75rem 1.75rem 1.75rem;
@@ -2914,7 +3061,7 @@ dialog#error-modal::backdrop {
         gap: 1.25rem;
     }
 
-    #project-details > .main-page-content {
+    #project-details>.main-page-content {
         grid-template-columns: 1fr;
         overflow-y: auto;
         overflow-x: hidden;
@@ -2951,7 +3098,7 @@ dialog#error-modal::backdrop {
 
 /* Tablets Portrait & Medium Screens (max-width: 900px) */
 @media (max-width: 900px) {
-    #project-details > .main-page-content {
+    #project-details>.main-page-content {
         grid-template-columns: 1fr;
         overflow-y: auto;
         padding: 1.25rem 1.25rem 2rem 1.25rem;
@@ -3187,7 +3334,7 @@ dialog#error-modal::backdrop {
     }
 
     /* Project Details Page on Phones */
-    #project-details > .main-page-content {
+    #project-details>.main-page-content {
         grid-template-columns: 1fr;
         padding: 1rem 1rem 5.5rem 1rem;
         overflow-y: auto;
@@ -3290,7 +3437,7 @@ dialog#error-modal::backdrop {
         display: none;
     }
 
-    #viewer-container > .lil-gui,
+    #viewer-container>.lil-gui,
     #viewer-container .lil-gui.root {
         top: calc(var(--mode-bar-bottom, 58px) + 8px) !important;
         right: 0.6rem !important;
@@ -3550,7 +3697,7 @@ bim-viewport {
     position: absolute;
     top: calc(var(--toolbar-bottom, 166px) + 8px);
     bottom: 68px;
-    width: clamp(310px, 56%, 390px);
+    width: clamp(360px, 40vw, 480px);
     max-width: calc(100% - 28px);
     background: rgba(15, 23, 42, 0.96);
     border: 1px solid rgba(56, 189, 248, 0.35);
@@ -3562,23 +3709,52 @@ bim-viewport {
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    transition: width 0.2s ease, top 0.2s ease;
     animation: fadeIn 0.2s ease;
 }
 
 .toc-dock-left {
-    left: 16px;
+    left: 14px;
 }
 
 .toc-dock-right {
-    right: 16px;
+    right: 14px;
+    top: calc(var(--mode-bar-bottom, 50px) + 10px) !important;
+    bottom: 74px !important;
 }
 
 .toc-dock-panel[data-drawer="properties"] {
-    width: clamp(340px, 64%, 440px);
+    width: clamp(390px, 42vw, 540px);
 }
 
-.toc-dock-panel[data-drawer="gis"] {
-    width: clamp(360px, 34vw, 440px);
+.toc-dock-panel[data-drawer="gis"],
+.toc-dock-panel[data-drawer="sheets"],
+.toc-dock-panel[data-drawer="mcp"],
+.toc-dock-panel[data-drawer="pro-studio"],
+.toc-dock-panel[data-drawer="floor-plans"],
+.toc-dock-panel[data-drawer="enhance"],
+.toc-dock-panel[data-drawer="query"],
+.toc-dock-panel[data-drawer="smart-views"] {
+    width: clamp(430px, 44vw, 600px);
+}
+
+.toc-dock-panel.is-expanded {
+    width: min(1020px, calc(100% - 28px)) !important;
+    max-width: calc(100% - 28px) !important;
+    top: calc(var(--mode-bar-bottom, 50px) + 8px) !important;
+    bottom: 74px !important;
+    z-index: 34;
+}
+
+.toc-dock-body * {
+    box-sizing: border-box;
+}
+
+.toc-dock-body input,
+.toc-dock-body select,
+.toc-dock-body label {
+    min-width: 0;
+    max-width: 100%;
 }
 
 .toc-dock-panel[data-drawer="gis"] bim-text-input,
@@ -3597,6 +3773,35 @@ bim-viewport {
     padding: 10px 14px;
     border-bottom: 1px solid rgba(148, 163, 184, 0.2);
     background: rgba(30, 41, 59, 0.6);
+}
+
+.toc-dock-header-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.btn-expand-dock {
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.32);
+    color: #7dd3fc;
+    cursor: pointer;
+    padding: 3px 7px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    transition: all 0.15s ease;
+}
+
+.btn-expand-dock:hover,
+.btn-expand-dock.active {
+    background: rgba(56, 189, 248, 0.24);
+    border-color: #38bdf8;
+    color: #ffffff;
 }
 
 .btn-close-dock {
@@ -3654,9 +3859,20 @@ bim-viewport {
    ========================================================================== */
 
 @keyframes pulse {
-    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-    70% { transform: scale(1); box-shadow: 0 0 0 8px rgba(16, 185, 129, 0); }
-    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    }
+
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+    }
+
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    }
 }
 
 bim-button.disabled,
@@ -3760,8 +3976,8 @@ button.disabled {
 
 .toc-viewcube-deck {
     position: absolute;
-    top: calc(var(--toolbar-bottom, 166px) + 12px);
-    right: 20px;
+    top: calc(var(--mode-bar-bottom, 50px) + 12px);
+    right: 18px;
     z-index: 25;
     display: flex;
     flex-direction: column;
@@ -3769,6 +3985,37 @@ button.disabled {
     gap: 8px;
     pointer-events: none;
     user-select: none;
+}
+
+.toc-viewcube-mini-actions {
+    width: 82px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: -4px;
+    pointer-events: auto;
+}
+
+.toc-viewcube-icon-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    color: #cbd5e1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    transition: all 0.15s ease;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.45);
+}
+
+.toc-viewcube-icon-btn:hover {
+    background: rgba(14, 165, 233, 0.35);
+    border-color: #38bdf8;
+    color: #ffffff;
 }
 
 .toc-viewcube-controls-row {
@@ -3860,19 +4107,24 @@ button.disabled {
     transform: rotateX(90deg) translateZ(26px);
     background: rgba(14, 165, 233, 0.2);
 }
+
 .cube-face.bottom {
     transform: rotateX(-90deg) translateZ(26px);
 }
+
 .cube-face.front {
     transform: translateZ(26px);
     background: rgba(2, 132, 199, 0.25);
 }
+
 .cube-face.back {
     transform: rotateY(180deg) translateZ(26px);
 }
+
 .cube-face.right {
     transform: rotateY(90deg) translateZ(26px);
 }
+
 .cube-face.left {
     transform: rotateY(-90deg) translateZ(26px);
 }
@@ -3897,16 +4149,19 @@ button.disabled {
     right: -5px;
     transform: translateZ(26px);
 }
+
 .cube-corner.corner-nw {
     top: -5px;
     left: -5px;
     transform: translateZ(26px);
 }
+
 .cube-corner.corner-se {
     bottom: -5px;
     right: -5px;
     transform: translateZ(26px);
 }
+
 .cube-corner.corner-sw {
     bottom: -5px;
     left: -5px;
@@ -3947,12 +4202,15 @@ button.disabled {
     color: #ef4444;
     font-weight: 900;
 }
+
 .compass-mark.south {
     bottom: 2px;
 }
+
 .compass-mark.east {
     right: 3px;
 }
+
 .compass-mark.west {
     left: 3px;
 }
@@ -4029,4 +4287,1150 @@ button.disabled {
     font-weight: 500;
 }
 
+/* ==========================================================================
+   Autodesk-Inspired Organized 3D Viewer HUD & Contextual Toolbars
+   ========================================================================== */
 
+.viewer-top-header {
+    position: absolute;
+    top: 10px;
+    left: 14px;
+    right: 14px;
+    z-index: 32;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 5px 10px;
+    background: rgba(11, 17, 30, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    border-radius: 12px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+    box-sizing: border-box;
+}
+
+.viewer-top-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.viewer-top-divider {
+    width: 1px;
+    height: 18px;
+    background: rgba(148, 163, 184, 0.22);
+    margin: 0 3px;
+}
+
+.viewer-header-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 9px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #cbd5e1;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+}
+
+.viewer-header-btn:hover {
+    background: rgba(255, 255, 255, 0.07);
+    color: #ffffff;
+}
+
+.viewer-header-btn.active {
+    background: rgba(56, 189, 248, 0.2);
+    border-color: rgba(56, 189, 248, 0.55);
+    color: #38bdf8;
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.2);
+}
+
+.viewer-header-btn.accent {
+    background: rgba(14, 165, 233, 0.2);
+    border-color: rgba(56, 189, 248, 0.4);
+    color: #38bdf8;
+}
+
+.viewer-header-btn .material-icons-round {
+    font-size: 16px;
+}
+
+.viewer-menu-wrap {
+    position: relative;
+    display: inline-flex;
+}
+
+.viewer-menu-popover {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    min-width: 210px;
+    background: rgba(11, 17, 30, 0.98);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    border-radius: 11px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(18px);
+    z-index: 50;
+    animation: fadeIn 0.14s ease;
+}
+
+.viewer-menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: #e2e8f0;
+    font-size: 0.76rem;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.12s ease;
+}
+
+.viewer-menu-item:hover {
+    background: rgba(56, 189, 248, 0.16);
+    color: #38bdf8;
+}
+
+.viewer-menu-item.active {
+    background: rgba(56, 189, 248, 0.22);
+    color: #38bdf8;
+}
+
+.viewer-menu-item-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.viewer-menu-item .material-icons-round {
+    font-size: 16px;
+    color: #38bdf8;
+}
+
+/* Autodesk-style Contextual Sub-Bar floating cleanly centered above bottom dock */
+.viewer-ctx-subbar {
+    position: absolute;
+    bottom: 74px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 28;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: rgba(11, 17, 30, 0.95);
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    border-radius: 14px;
+    backdrop-filter: blur(16px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65);
+    max-width: calc(100% - 32px);
+    overflow-x: auto;
+    scrollbar-width: none;
+    animation: fadeInUp 0.15s ease;
+}
+
+.viewer-ctx-btn {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-width: 56px;
+    padding: 5px 9px;
+    border-radius: 9px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #cbd5e1;
+    font-size: 0.68rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.14s ease;
+    white-space: nowrap;
+}
+
+.viewer-ctx-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+
+.viewer-ctx-btn.active {
+    background: rgba(56, 189, 248, 0.22);
+    border-color: #38bdf8;
+    color: #38bdf8;
+}
+
+.viewer-ctx-btn .material-icons-round {
+    font-size: 17px;
+}
+
+/* Autodesk-style Calm Centered Bottom Dock */
+.viewer-bottom-dock {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 27;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 5px 10px;
+    background: rgba(11, 17, 30, 0.94);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(56, 189, 248, 0.28);
+    border-radius: 16px;
+    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.7);
+    max-width: calc(100% - 24px);
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.viewer-bottom-dock::-webkit-scrollbar {
+    display: none;
+}
+
+.viewer-dock-item {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-width: 50px;
+    padding: 5px 8px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #cbd5e1;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+}
+
+.viewer-dock-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+
+.viewer-dock-item.active {
+    background: rgba(56, 189, 248, 0.2);
+    border-color: rgba(56, 189, 248, 0.55);
+    color: #38bdf8;
+}
+
+.viewer-dock-item .material-icons-round {
+    font-size: 18px;
+}
+
+.viewer-dock-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+}
+
+.viewer-dock-sep {
+    width: 1px;
+    height: 28px;
+    background: rgba(148, 163, 184, 0.2);
+    margin: 0 3px;
+    flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+    .viewer-dock-item {
+        min-width: 42px;
+        padding: 4px 6px;
+    }
+
+    .viewer-header-btn span:not(.material-icons-round) {
+        display: none;
+    }
+}
+
+/* =========================================================================
+   Pro Appearance Studio Floating HUD (.toc-pro-appear-toolbar)
+   ========================================================================= */
+bim-toolbar.toc-pro-appear-toolbar {
+    display: block !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    pointer-events: auto;
+    max-width: calc(100vw - 28px);
+}
+
+.toc-pro-shell {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 7px;
+    pointer-events: none;
+}
+
+.toc-pro-bar {
+    position: relative;
+    pointer-events: auto;
+    display: inline-flex;
+    align-items: stretch;
+    gap: 2px;
+    padding: 5px 8px;
+    background: linear-gradient(180deg, rgba(17, 24, 39, 0.96) 0%, rgba(9, 14, 26, 0.96) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(56, 189, 248, 0.32);
+    border-radius: 14px;
+    box-shadow:
+        0 14px 34px rgba(0, 0, 0, 0.65),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    max-width: calc(100vw - 30px);
+    overflow-x: auto;
+    overflow-y: visible;
+    scrollbar-width: none;
+}
+
+.toc-pro-bar::-webkit-scrollbar {
+    display: none;
+}
+
+.toc-pro-group {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 0 4px;
+}
+
+.toc-pro-group-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #64748b;
+    padding-left: 5px;
+    line-height: 1;
+    user-select: none;
+}
+
+.toc-pro-group-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.toc-pro-sep {
+    width: 1px;
+    align-self: stretch;
+    margin: 4px 3px;
+    background: linear-gradient(180deg, transparent, rgba(148, 163, 184, 0.25), transparent);
+    flex-shrink: 0;
+}
+
+.toc-pro-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 30px;
+    padding: 0 9px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: rgba(255, 255, 255, 0.03);
+    color: #e2e8f0;
+    font-size: 0.73rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease, transform 0.1s ease;
+}
+
+.toc-pro-btn:hover {
+    background: rgba(56, 189, 248, 0.12);
+    border-color: rgba(56, 189, 248, 0.28);
+    color: #ffffff;
+}
+
+.toc-pro-btn:active {
+    transform: translateY(1px);
+}
+
+.toc-pro-btn.active {
+    background: rgba(56, 189, 248, 0.2);
+    border-color: rgba(56, 189, 248, 0.6);
+    color: #7dd3fc;
+    box-shadow: 0 0 14px rgba(56, 189, 248, 0.18);
+}
+
+.toc-pro-btn.warn:hover {
+    background: rgba(239, 68, 68, 0.16);
+    border-color: rgba(248, 113, 113, 0.45);
+    color: #fecaca;
+}
+
+.toc-pro-btn .material-icons-round {
+    font-size: 16px;
+    line-height: 1;
+}
+
+.toc-pro-caret {
+    font-size: 14px !important;
+    opacity: 0.72;
+    margin-left: -2px;
+}
+
+.toc-pro-swatch-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    flex-shrink: 0;
+}
+
+.toc-pro-kbd {
+    font-size: 9.5px;
+    font-weight: 700;
+    padding: 1px 4px;
+    border-radius: 4px;
+    background: rgba(148, 163, 184, 0.14);
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    color: #94a3b8;
+    line-height: 1.15;
+}
+
+.toc-pro-chip {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 999px;
+    background: rgba(56, 189, 248, 0.22);
+    color: #7dd3fc;
+    line-height: 1.2;
+}
+
+.toc-pro-popover {
+    pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 268px;
+    max-width: min(320px, calc(100vw - 28px));
+    padding: 12px;
+    background: rgba(11, 17, 30, 0.97);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+    border: 1px solid rgba(56, 189, 248, 0.38);
+    border-radius: 12px;
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.72), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    color: #e2e8f0;
+    animation: fadeInUp 0.12s ease;
+}
+
+.toc-pro-pop-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: #94a3b8;
+}
+
+.toc-pro-swatch-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+}
+
+.toc-pro-swatch-tile {
+    height: 26px;
+    border-radius: 7px;
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.toc-pro-swatch-tile:hover {
+    transform: scale(1.06);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35);
+}
+
+.toc-pro-swatch-tile.selected {
+    box-shadow: 0 0 0 2px #0f172a, 0 0 0 3.5px #38bdf8;
+}
+
+.toc-pro-pop-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 7px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    background: rgba(30, 41, 59, 0.75);
+    color: #e2e8f0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.12s ease;
+}
+
+.toc-pro-pop-btn:hover {
+    background: rgba(56, 189, 248, 0.16);
+    border-color: rgba(56, 189, 248, 0.45);
+    color: #ffffff;
+}
+
+.toc-pro-pop-btn.active {
+    background: rgba(56, 189, 248, 0.22);
+    border-color: #38bdf8;
+    color: #bae6fd;
+}
+
+.toc-pro-pop-btn.danger {
+    background: rgba(239, 68, 68, 0.14);
+    border-color: rgba(248, 113, 113, 0.3);
+    color: #fca5a5;
+}
+
+.toc-pro-pop-btn.danger:hover {
+    background: rgba(239, 68, 68, 0.24);
+    border-color: rgba(248, 113, 113, 0.55);
+}
+
+.toc-pro-pop-btn .material-icons-round {
+    font-size: 16px;
+}
+
+.toc-pro-mood-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+}
+
+.toc-pro-mood-tile {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 9px;
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    background: rgba(30, 41, 59, 0.7);
+    color: #cbd5e1;
+    font-size: 0.73rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.12s ease;
+}
+
+.toc-pro-mood-tile:hover {
+    border-color: rgba(56, 189, 248, 0.45);
+    color: #ffffff;
+}
+
+.toc-pro-mood-tile.active {
+    background: rgba(56, 189, 248, 0.2);
+    border-color: #38bdf8;
+    color: #7dd3fc;
+}
+
+.toc-pro-mood-preview {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    flex-shrink: 0;
+}
+
+.toc-pro-seg {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    padding: 3px;
+    border-radius: 9px;
+    background: rgba(15, 23, 42, 0.9);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.toc-pro-seg-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 6px 4px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #94a3b8;
+    font-size: 0.71rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.12s ease;
+}
+
+.toc-pro-seg-btn:hover {
+    color: #ffffff;
+}
+
+.toc-pro-seg-btn.active {
+    background: rgba(56, 189, 248, 0.22);
+    border-color: rgba(56, 189, 248, 0.55);
+    color: #7dd3fc;
+}
+
+.toc-pro-toast {
+    pointer-events: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 11px;
+    border-radius: 9px;
+    background: rgba(11, 17, 30, 0.95);
+    border: 1px solid rgba(56, 189, 248, 0.45);
+    color: #bae6fd;
+    font-size: 0.72rem;
+    font-weight: 600;
+    backdrop-filter: blur(14px);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.55);
+}
+
+.toc-pro-toast.warn {
+    border-color: rgba(245, 158, 11, 0.55);
+    color: #fde68a;
+}
+
+@media (max-width: 768px) {
+    .toc-pro-group-label {
+        display: none;
+    }
+
+    .toc-pro-kbd {
+        display: none;
+    }
+
+    .toc-pro-btn {
+        padding: 0 7px;
+        height: 28px;
+        font-size: 0.69rem;
+    }
+}
+
+/* =========================================================================
+   Pro Full Projects Studio View (Matches Viewer Autodesk-Style Glass UI)
+   ========================================================================= */
+#main-header.pro-projects-header {
+    padding: 0.8rem 1.4rem;
+    gap: 1rem;
+    background: rgba(11, 17, 30, 0.94);
+    border-bottom: 1px solid rgba(56, 189, 248, 0.22);
+    backdrop-filter: blur(18px);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+.pro-live-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: rgba(16, 185, 129, 0.14);
+    border: 1px solid rgba(16, 185, 129, 0.38);
+    color: #34d399;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+}
+
+.pro-live-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 8px #10b981;
+}
+
+.pro-header-center {
+    flex: 1 1 280px;
+    max-width: 440px;
+    min-width: 200px;
+}
+
+.pro-header-center .projects-search-box {
+    width: 100%;
+}
+
+.pro-header-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.pro-action-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 3px;
+    border-radius: 10px;
+    background: rgba(15, 23, 42, 0.82);
+    border: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.pro-head-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 32px;
+    padding: 0 11px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #cbd5e1;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.14s ease;
+    white-space: nowrap;
+}
+
+.pro-head-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+
+.pro-head-btn.primary {
+    height: 36px;
+    padding: 0 14px;
+    background: linear-gradient(135deg, #0284c7, #2563eb);
+    border-color: rgba(56, 189, 248, 0.5);
+    color: #ffffff;
+    font-weight: 700;
+    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
+}
+
+.pro-head-btn.primary:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+}
+
+.pro-head-btn .material-icons-round {
+    font-size: 17px;
+}
+
+.pro-kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.85rem;
+    padding: 0.9rem 1.4rem 0 1.4rem;
+    flex-shrink: 0;
+}
+
+.pro-kpi-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 0.78rem 1rem;
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgba(22, 31, 48, 0.92) 0%, rgba(13, 19, 32, 0.94) 100%);
+    border: 1px solid rgba(56, 189, 248, 0.22);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.pro-kpi-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.pro-kpi-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #94a3b8;
+}
+
+.pro-kpi-icon {
+    font-size: 18px !important;
+    opacity: 0.9;
+}
+
+.pro-kpi-value {
+    font-size: 1.42rem;
+    font-weight: 800;
+    color: #f8fafc;
+    line-height: 1.15;
+}
+
+.pro-kpi-sub {
+    font-size: 0.72rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.pro-kpi-bar-track {
+    flex: 1;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.16);
+    overflow: hidden;
+}
+
+.pro-kpi-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #0ea5e9, #34d399);
+    transition: width 0.3s ease;
+}
+
+.projects-toolbar.pro-projects-rail {
+    padding: 0.9rem 1.4rem 0 1.4rem;
+    gap: 0.75rem;
+}
+
+.pro-rail-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.pro-view-switcher {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 3px;
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+}
+
+.pro-view-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #94a3b8;
+    font-size: 0.74rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.14s ease;
+}
+
+.pro-view-btn:hover {
+    color: #f8fafc;
+}
+
+.pro-view-btn.active {
+    background: rgba(56, 189, 248, 0.2);
+    border-color: rgba(56, 189, 248, 0.5);
+    color: #7dd3fc;
+}
+
+.pro-view-btn .material-icons-round {
+    font-size: 16px;
+}
+
+#projects-list.pro-projects-grid {
+    padding: 1rem 1.4rem 2.2rem 1.4rem;
+    grid-template-columns: repeat(auto-fill, minmax(335px, 1fr));
+    grid-auto-rows: 1fr;
+    align-items: stretch;
+    gap: 1.15rem;
+}
+
+#projects-list.pro-projects-grid > a {
+    height: 100%;
+    display: flex;
+}
+
+#projects-list.pro-projects-grid .project-card {
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.35rem;
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgba(22, 30, 46, 0.94) 0%, rgba(14, 19, 31, 0.96) 100%);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+#projects-list.pro-projects-grid .project-card .card-header {
+    flex: 1 1 auto;
+    align-items: flex-start;
+    padding-bottom: 0.9rem;
+}
+
+#projects-list.pro-projects-grid .project-card .card-title-group h3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 1.12rem;
+    min-height: 2.8rem;
+}
+
+#projects-list.pro-projects-grid .project-card .card-title-group bim-label {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 0.86rem;
+    min-height: 3.6rem;
+}
+
+#projects-list.pro-projects-grid .project-card .card-details {
+    flex-shrink: 0;
+    gap: 0.62rem;
+}
+
+#projects-list.pro-projects-grid .project-card .detail-row {
+    gap: 8px;
+    font-size: 0.88rem;
+}
+
+#projects-list.pro-projects-grid .project-card .detail-label {
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+#projects-list.pro-projects-grid .project-card .detail-value {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#projects-list.pro-projects-grid .project-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(56, 189, 248, 0.55);
+    box-shadow: 0 14px 34px rgba(2, 132, 199, 0.22);
+}
+
+.pro-schedule-wrap {
+    flex: 1;
+    padding: 1rem 1.4rem 2rem 1.4rem;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.pro-schedule-card {
+    flex: 1;
+    overflow: auto;
+    border-radius: 12px;
+    background: rgba(11, 17, 30, 0.92);
+    border: 1px solid rgba(56, 189, 248, 0.28);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
+}
+
+.pro-schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    text-align: left;
+}
+
+.pro-schedule-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    padding: 11px 14px;
+    background: rgba(20, 29, 46, 0.98);
+    border-bottom: 1px solid rgba(56, 189, 248, 0.25);
+    color: #94a3b8;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+}
+
+.pro-schedule-table tbody tr {
+    border-top: 1px solid rgba(148, 163, 184, 0.1);
+    cursor: pointer;
+    transition: background 0.12s ease;
+}
+
+.pro-schedule-table tbody tr:hover {
+    background: rgba(56, 189, 248, 0.09);
+}
+
+.pro-schedule-table tbody td {
+    padding: 10px 14px;
+    vertical-align: middle;
+}
+
+.pro-row-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.pro-row-title {
+    font-weight: 700;
+    color: #f8fafc;
+    font-size: 0.83rem;
+}
+
+.pro-row-desc {
+    font-size: 0.71rem;
+    color: #64748b;
+    max-width: 280px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pro-type-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.pro-type-badge.ifc {
+    background: rgba(16, 185, 129, 0.16);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    color: #34d399;
+}
+
+.pro-type-badge.twin {
+    background: rgba(56, 189, 248, 0.16);
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    color: #7dd3fc;
+}
+
+.pro-status-pill {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: capitalize;
+    background: rgba(148, 163, 184, 0.16);
+    color: #cbd5e1;
+}
+
+.pro-status-pill.active {
+    background: rgba(16, 185, 129, 0.18);
+    color: #34d399;
+}
+
+.pro-status-pill.pending {
+    background: rgba(245, 158, 11, 0.18);
+    color: #fbbf24;
+}
+
+.pro-status-pill.finished {
+    background: rgba(56, 189, 248, 0.18);
+    color: #7dd3fc;
+}
+
+.pro-row-bar-track {
+    flex: 1;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.18);
+    overflow: hidden;
+}
+
+.pro-row-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #0284c7, #38bdf8);
+}
+
+.pro-row-open-btn {
+    padding: 5px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(56, 189, 248, 0.45);
+    background: rgba(56, 189, 248, 0.16);
+    color: #7dd3fc;
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    margin-right: 6px;
+}
+
+.pro-row-open-btn:hover {
+    background: rgba(56, 189, 248, 0.3);
+    color: #ffffff;
+}
+
+.pro-row-del-btn {
+    padding: 5px 7px;
+    border-radius: 6px;
+    border: 1px solid rgba(248, 113, 113, 0.3);
+    background: rgba(239, 68, 68, 0.12);
+    color: #fca5a5;
+    cursor: pointer;
+    vertical-align: middle;
+}
+
+.pro-row-del-btn:hover {
+    background: rgba(239, 68, 68, 0.28);
+    color: #ffffff;
+}
+
+@media (max-width: 1100px) {
+    .pro-kpi-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    .pro-kpi-strip {
+        grid-template-columns: 1fr;
+        padding: 0.75rem 0.9rem 0 0.9rem;
+    }
+
+    .projects-toolbar.pro-projects-rail,
+    #projects-list.pro-projects-grid,
+    .pro-schedule-wrap {
+        padding-left: 0.9rem;
+        padding-right: 0.9rem;
+    }
+}

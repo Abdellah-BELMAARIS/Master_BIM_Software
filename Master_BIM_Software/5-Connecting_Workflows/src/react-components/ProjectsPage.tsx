@@ -36,6 +36,7 @@ export function ProjectsPage(props: ProjectsPageProps) {
         urlCategory === "ifc" || urlCategory === "3d" ? urlCategory : "all"
     );
     const [sortBy, setSortBy] = React.useState<string>("name-asc");
+    const [viewMode, setViewMode] = React.useState<"grid" | "list">("grid");
     const [isNewProjectModalOpen, setIsNewProjectModalOpen] = React.useState<boolean>(false);
 
     // Background Hyper-Speed Cache Pre-Warmer for IFC Models
@@ -105,7 +106,12 @@ export function ProjectsPage(props: ProjectsPageProps) {
                     const projectProgress = Number(data.progress || 0);
                     const projectModelType: ModelType = data.modelType || "tower";
                     const projectIcon = data.iconColor;
-                    const modelCategory: "ifc" | "3d" = (data.ifcFileName || projectName.toLowerCase().includes("ifc") || data.modelCategory === "ifc") ? "ifc" : (data.modelCategory || "3d");
+                    const modelCategory: "ifc" | "3d" | "empty" =
+                        data.modelCategory === "empty" && !data.ifcFileName
+                            ? "empty"
+                            : data.ifcFileName || projectName.toLowerCase().includes("ifc") || data.modelCategory === "ifc"
+                            ? "ifc"
+                            : "3d";
 
                     const projectData: IProject = {
                         name: projectName,
@@ -476,16 +482,15 @@ export function ProjectsPage(props: ProjectsPageProps) {
                 (project.ifcFileName && project.ifcFileName.toLowerCase().includes(q));
             const matchesStatus =
                 statusFilter === "all" || project.status.toLowerCase() === statusFilter;
-            const nameLow = project.name.toLowerCase();
-            const fileLow = (project.ifcFileName || "").toLowerCase();
             const isIfc = Boolean(
                 project.modelCategory === "ifc" ||
                 Boolean(project.ifcFileName)
             );
+            const is3d = !isIfc;
             const matchesCategory =
                 categoryFilter === "all" ||
                 (categoryFilter === "ifc" && isIfc) ||
-                (categoryFilter === "3d" && !isIfc);
+                (categoryFilter === "3d" && is3d);
             return matchesSearch && matchesStatus && matchesCategory;
         })
         .sort((a, b) => {
@@ -511,7 +516,9 @@ export function ProjectsPage(props: ProjectsPageProps) {
     const finishedCount = projects.filter((p) => p.status.toLowerCase() === "finished").length;
 
     const ifcCount = projects.filter((p) => p.modelCategory === "ifc" || Boolean(p.ifcFileName)).length;
-    const parametricCount = projects.filter((p) => p.modelCategory !== "ifc" && !p.ifcFileName).length;
+    const parametricCount = projects.filter(
+        (p) => p.modelCategory !== "ifc" && !p.ifcFileName
+    ).length;
 
     const onDeleteProjectCard = async (proj: Project) => {
         const confirmed = window.confirm(`Are you sure you want to delete "${proj.name}" from Cloud Firestore and workspace?`);
@@ -554,41 +561,75 @@ export function ProjectsPage(props: ProjectsPageProps) {
             <ProjectForm
                 isOpen={isNewProjectModalOpen}
                 projectsManager={projectsManager}
+                defaultCategory={categoryFilter === "3d" ? "3d" : "ifc"}
                 onClose={() => setIsNewProjectModalOpen(false)}
-                onSuccess={() => setProjects([...projectsManager.list])}
+                onSuccess={(saved) => {
+                    setProjects([...projectsManager.list]);
+                    if (
+                        categoryFilter !== "all" &&
+                        saved?.modelCategory &&
+                        (saved.modelCategory === "ifc" || saved.modelCategory === "3d") &&
+                        saved.modelCategory !== categoryFilter
+                    ) {
+                        handleCategoryChange(saved.modelCategory);
+                    }
+                }}
             />
 
-            {/* Top Action Header (Lesson 3.11 & Module 4 Lesson 2.2: bim-label & bim-button) */}
-            <header id="main-header">
+            {/* Pro Organized Header Bar (Matches Viewer Command Strip) */}
+            <header id="main-header" className="pro-projects-header">
                 <div className="header-title-box">
-                    <span className="header-eyebrow">CDE WORKSPACE / MODELS</span>
-                    <bim-label style={{ fontSize: "1.45rem", fontWeight: 700, color: "var(--text-primary)" }}>
-                        BIM Projects
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <span className="header-eyebrow">CDE WORKSPACE / MODELS</span>
+                        <span className="pro-live-chip">
+                            <span className="pro-live-dot" />
+                            <span>LIVE SYNC · {totalCount}</span>
+                        </span>
+                    </div>
+                    <bim-label style={{ fontSize: "1.4rem", fontWeight: 800, color: "var(--text-primary)" }}>
+                        BIM Projects Studio
                     </bim-label>
                 </div>
-                <SearchBox onChange={onSearchProjects} />
-                <div className="header-actions" style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                    <bim-button
-                        label="Import JSON"
-                        icon={appIcons.upload}
-                        onclick={onImportProject}
-                    ></bim-button>
-                    <bim-button
-                        label="Export JSON"
-                        icon={appIcons.download}
-                        onclick={onExportProject}
-                    ></bim-button>
-                    <bim-button
-                        label="New Project"
-                        icon={appIcons.add}
-                        onclick={onNewProjectClick}
-                        style={{ "--bim-ui_bg-base": "var(--primary-blue)" } as any}
-                    ></bim-button>
+
+                <div className="pro-header-center">
+                    <SearchBox onChange={onSearchProjects} />
+                </div>
+
+                <div className="pro-header-actions">
+                    <div className="pro-action-group">
+                        <button
+                            type="button"
+                            className="pro-head-btn"
+                            onClick={onImportProject}
+                            title="Import Projects JSON"
+                        >
+                            <span className="material-icons-round">upload_file</span>
+                            <span>Import</span>
+                        </button>
+                        <button
+                            type="button"
+                            className="pro-head-btn"
+                            onClick={onExportProject}
+                            title="Export Projects JSON"
+                        >
+                            <span className="material-icons-round">download</span>
+                            <span>Export</span>
+                        </button>
+                    </div>
+                    <button
+                        type="button"
+                        className="pro-head-btn primary"
+                        onClick={onNewProjectClick}
+                        title="Create New BIM Project"
+                    >
+                        <span className="material-icons-round">add</span>
+                        <span>New Project</span>
+                    </button>
                 </div>
             </header>
 
-            {/* Category (IFC vs 3D) & Status Filter Toolbar */}
-            <div className="projects-toolbar" style={{ flexWrap: "wrap", gap: "10px" }}>
+            {/* Organized Contextual Filter, Sort & View Rail */}
+            <div className="projects-toolbar pro-projects-rail">
                 <div className="projects-category-filter-group" id="project-category-filter-group">
                     <button
                         type="button"
@@ -612,110 +653,215 @@ export function ProjectsPage(props: ProjectsPageProps) {
                         onClick={() => handleCategoryChange("3d")}
                     >
                         <span className="material-icons-round" style={{ fontSize: "16px" }}>view_in_ar</span>
-                        3D Parametric <span className="filter-count">{parametricCount}</span>
+                        3D Models <span className="filter-count">{parametricCount}</span>
                     </button>
                 </div>
 
-                <div className="projects-filter-group" id="project-filter-group">
-                    <button
-                        type="button"
-                        className={`filter-pill ${statusFilter === "all" ? "active" : ""}`}
-                        data-status-filter="all"
-                        onClick={() => setStatusFilter("all")}
-                    >
-                        All <span className="filter-count">{totalCount}</span>
-                    </button>
-                    <button
-                        type="button"
-                        className={`filter-pill ${statusFilter === "active" ? "active" : ""}`}
-                        data-status-filter="active"
-                        onClick={() => setStatusFilter("active")}
-                    >
-                        Active <span className="filter-count">{activeCount}</span>
-                    </button>
-                    <button
-                        type="button"
-                        className={`filter-pill ${statusFilter === "pending" ? "active" : ""}`}
-                        data-status-filter="pending"
-                        onClick={() => setStatusFilter("pending")}
-                    >
-                        Pending <span className="filter-count">{pendingCount}</span>
-                    </button>
-                    <button
-                        type="button"
-                        className={`filter-pill ${statusFilter === "finished" ? "active" : ""}`}
-                        data-status-filter="finished"
-                        onClick={() => setStatusFilter("finished")}
-                    >
-                        Finished <span className="filter-count">{finishedCount}</span>
-                    </button>
-                </div>
-                <div className="projects-sort-group">
-                    <label htmlFor="project-sort-select" className="sort-label">
-                        <span className="material-icons-round">sort</span>
-                        <span>Sort:</span>
-                    </label>
-                    <select
-                        id="project-sort-select"
-                        className="sort-select"
-                        value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value)}
-                    >
-                        <option value="name-asc">Name (A → Z)</option>
-                        <option value="name-desc">Name (Z → A)</option>
-                        <option value="cost-desc">Cost (High → Low)</option>
-                        <option value="progress-desc">Progress (High → Low)</option>
-                        <option value="date-asc">Finish Date (Earliest)</option>
-                    </select>
+                <div className="pro-rail-controls">
+                    <div className="projects-sort-group" id="project-filter-group">
+                        <label htmlFor="project-status-select" className="sort-label">
+                            <span className="material-icons-round">filter_list</span>
+                            <span>Status</span>
+                        </label>
+                        <select
+                            id="project-status-select"
+                            className="sort-select"
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value)}
+                        >
+                            <option value="all">All ({totalCount})</option>
+                            <option value="active">Active ({activeCount})</option>
+                            <option value="pending">Pending ({pendingCount})</option>
+                            <option value="finished">Finished ({finishedCount})</option>
+                        </select>
+                    </div>
+
+                    <div className="projects-sort-group">
+                        <label htmlFor="project-sort-select" className="sort-label">
+                            <span className="material-icons-round">sort</span>
+                            <span>Sort</span>
+                        </label>
+                        <select
+                            id="project-sort-select"
+                            className="sort-select"
+                            value={sortBy}
+                            onChange={(e) => setSortBy(e.target.value)}
+                        >
+                            <option value="name-asc">Name (A → Z)</option>
+                            <option value="name-desc">Name (Z → A)</option>
+                            <option value="cost-desc">Cost (High → Low)</option>
+                            <option value="progress-desc">Progress (High → Low)</option>
+                            <option value="date-asc">Finish Date (Earliest)</option>
+                        </select>
+                    </div>
+
+                    <div className="pro-view-switcher" role="group" aria-label="View Mode">
+                        <button
+                            type="button"
+                            className={`pro-view-btn ${viewMode === "grid" ? "active" : ""}`}
+                            onClick={() => setViewMode("grid")}
+                            title="Card Grid View"
+                        >
+                            <span className="material-icons-round">grid_view</span>
+                            <span>Cards</span>
+                        </button>
+                        <button
+                            type="button"
+                            className={`pro-view-btn ${viewMode === "list" ? "active" : ""}`}
+                            onClick={() => setViewMode("list")}
+                            title="Enterprise Schedule Table View"
+                        >
+                            <span className="material-icons-round">table_rows</span>
+                            <span>Schedule</span>
+                        </button>
+                    </div>
                 </div>
             </div>
 
-            {/* Projects Grid (Declaratively rendered by React <ProjectCard /> components) */}
-            <section id="projects-list">
-                {projectCards.length > 0 ? (
-                    projectCards
-                ) : (
-                    <div id="projects-empty-state" className="projects-empty-state">
-                        <div className="empty-state-icon-box">
-                            <span className="material-icons-round">search_off</span>
-                        </div>
-                        <div className="empty-state-text">
-                            <h3>No Projects Found</h3>
-                            <p>There are no projects matching your current filter in the CDE workspace.</p>
-                        </div>
-                        <div className="empty-state-actions">
-                            {(q || statusFilter !== "all") && (
-                                <button
-                                    type="button"
-                                    className="btn-clear-filters"
-                                    onClick={() => {
-                                        setSearchQuery("");
-                                        setStatusFilter("all");
-                                        setProjects([...projectsManager.list]);
-                                    }}
-                                >
-                                    <span className="material-icons-round">filter_alt_off</span>
-                                    <span>Clear Filters & Show All</span>
+            {/* Projects Workspace (Full-Width Card Grid or Enterprise Schedule Table) */}
+            {viewMode === "grid" ? (
+                <section id="projects-list" className="pro-projects-grid">
+                    {projectCards.length > 0 ? (
+                        projectCards
+                    ) : (
+                        <div id="projects-empty-state" className="projects-empty-state">
+                            <div className="empty-state-icon-box">
+                                <span className="material-icons-round">search_off</span>
+                            </div>
+                            <div className="empty-state-text">
+                                <h3>No Projects Found</h3>
+                                <p>There are no projects matching your current filter in the CDE workspace.</p>
+                            </div>
+                            <div className="empty-state-actions">
+                                {(q || statusFilter !== "all" || categoryFilter !== "all") && (
+                                    <button
+                                        type="button"
+                                        className="btn-clear-filters"
+                                        onClick={() => {
+                                            setSearchQuery("");
+                                            setStatusFilter("all");
+                                            handleCategoryChange("all");
+                                            setProjects([...projectsManager.list]);
+                                        }}
+                                    >
+                                        <span className="material-icons-round">filter_alt_off</span>
+                                        <span>Clear Filters &amp; Show All</span>
+                                    </button>
+                                )}
+                                <button type="button" className="btn-primary" onClick={onNewProjectClick}>
+                                    <span className="material-icons-round">add</span>
+                                    <span>New Project</span>
                                 </button>
-                            )}
-                            <button type="button" className="btn-primary" onClick={onNewProjectClick}>
-                                <span className="material-icons-round">add</span>
-                                <span>New Project</span>
-                            </button>
+                            </div>
                         </div>
+                    )}
+                </section>
+            ) : (
+                <section className="pro-schedule-wrap">
+                    <div className="pro-schedule-card">
+                        <table className="pro-schedule-table">
+                            <thead>
+                                <tr>
+                                    <th>Project</th>
+                                    <th>Model Type</th>
+                                    <th>Lead Role</th>
+                                    <th>Status</th>
+                                    <th>Target Date</th>
+                                    <th>Progress</th>
+                                    <th>Budget</th>
+                                    <th style={{ textAlign: "right" }}>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {visibleProjects.length === 0 ? (
+                                    <tr>
+                                        <td colSpan={8} style={{ textAlign: "center", padding: "32px", color: "#64748b" }}>
+                                            No matching BIM projects. Adjust search/filters or click New Project.
+                                        </td>
+                                    </tr>
+                                ) : (
+                                    visibleProjects.map((proj) => {
+                                        const isIfc = proj.modelCategory === "ifc" || Boolean(proj.ifcFileName);
+                                        const pct = Math.round((proj.progress || 0) * 100);
+                                        const dt = proj.finishDate instanceof Date ? proj.finishDate : new Date(proj.finishDate);
+                                        const dtStr = !isNaN(dt.getTime())
+                                            ? dt.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })
+                                            : "N/A";
+                                        return (
+                                            <tr
+                                                key={proj.id}
+                                                onClick={() => {
+                                                    projectsManager.activeProject = proj;
+                                                    navigate(`/project/${proj.id}`);
+                                                }}
+                                            >
+                                                <td>
+                                                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                                                        <span className="pro-row-avatar" style={{ background: proj.iconColor || "#2563eb" }}>
+                                                            {proj.name.trim().substring(0, 2).toUpperCase()}
+                                                        </span>
+                                                        <div style={{ minWidth: 0 }}>
+                                                            <div className="pro-row-title">{proj.name}</div>
+                                                            <div className="pro-row-desc">{proj.description}</div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span className={`pro-type-badge ${isIfc ? "ifc" : "twin"}`}>
+                                                        {isIfc ? `IFC · ${proj.ifcSchema || "IFC4"}` : "3D Twin"}
+                                                    </span>
+                                                </td>
+                                                <td style={{ color: "#cbd5e1", textTransform: "capitalize" }}>{proj.userRole}</td>
+                                                <td>
+                                                    <span className={`pro-status-pill ${proj.status.toLowerCase()}`}>
+                                                        {proj.status}
+                                                    </span>
+                                                </td>
+                                                <td style={{ color: "#94a3b8", whiteSpace: "nowrap" }}>{dtStr}</td>
+                                                <td style={{ minWidth: "120px" }}>
+                                                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                                        <div className="pro-row-bar-track">
+                                                            <div className="pro-row-bar-fill" style={{ width: `${pct}%` }} />
+                                                        </div>
+                                                        <span style={{ fontSize: "0.74rem", fontWeight: 700, color: "#7dd3fc" }}>{pct}%</span>
+                                                    </div>
+                                                </td>
+                                                <td style={{ fontWeight: 700, color: "#34d399", whiteSpace: "nowrap" }}>
+                                                    ${(proj.cost || 0).toLocaleString()}
+                                                </td>
+                                                <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
+                                                    <button
+                                                        type="button"
+                                                        className="pro-row-open-btn"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            projectsManager.activeProject = proj;
+                                                            navigate(`/project/${proj.id}`);
+                                                        }}
+                                                    >
+                                                        Open →
+                                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="pro-row-del-btn"
+                                                        title="Delete Project"
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            onDeleteProjectCard(proj);
+                                                        }}
+                                                    >
+                                                        <span className="material-icons-round" style={{ fontSize: "15px" }}>delete</span>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        );
+                                    })
+                                )}
+                            </tbody>
+                        </table>
                     </div>
-                )}
-            </section>
-
-            {/* Floating Export Button */}
-            <button
-                onClick={onExportProject}
-                id="floating-export-btn"
-                className="fab-btn"
-                title="Export Projects"
-            >
-                <span className="material-icons-round">download</span>
-            </button>
+                </section>
+            )}
         </div>
     );
 }

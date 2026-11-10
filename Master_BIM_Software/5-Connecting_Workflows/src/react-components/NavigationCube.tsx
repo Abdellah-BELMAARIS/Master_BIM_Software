@@ -38,8 +38,6 @@ export const NavigationCube: React.FC<NavigationCubeProps> = ({
   const [rotX, setRotX] = useState<number>(0);
   const [rotY, setRotY] = useState<number>(0);
   const [compassAngle, setCompassAngle] = useState<number>(0);
-  const [projection, setProjection] = useState<"Perspective" | "Orthographic">("Perspective");
-  const [navMode, setNavMode] = useState<"Orbit" | "FirstPerson">("Orbit");
   const [isHelpOpen, setIsHelpOpen] = useState<boolean>(false);
 
   const reqRef = useRef<number | null>(null);
@@ -53,11 +51,6 @@ export const NavigationCube: React.FC<NavigationCubeProps> = ({
 
       const controls = (camera as any).controls;
       if (!controls) return null;
-
-      // Read initial projection
-      if (camera instanceof OBC.OrthoPerspectiveCamera) {
-        setProjection(camera.projection.current);
-      }
 
       const updateOrientation = () => {
         const threeCamera = camera.three;
@@ -199,64 +192,29 @@ export const NavigationCube: React.FC<NavigationCubeProps> = ({
     await controls.setLookAt(newPos.x, newPos.y, newPos.z, target.x, target.y, target.z, true);
   };
 
-  const toggleProjectionMode = () => {
-    const cam = getSafeCamera(world);
-    if (!cam || !(cam instanceof OBC.OrthoPerspectiveCamera)) return;
-    const next = projection === "Perspective" ? "Orthographic" : "Perspective";
-    cam.projection.set(next);
-    setProjection(next);
-  };
-
-  const toggleNavigationMode = () => {
-    const cam = getSafeCamera(world);
-    if (!cam || !(cam instanceof OBC.OrthoPerspectiveCamera)) return;
-    const next = navMode === "Orbit" ? "FirstPerson" : "Orbit";
-    try {
-      cam.set(next);
-      setNavMode(next);
-    } catch (err) {
-      console.warn("Failed to toggle navigation mode:", err);
-    }
-  };
-
   return (
     <div
       className="toc-viewcube-deck"
       style={{
-        right: isDrawerOpen ? "calc(clamp(360px, 34vw, 440px) + 24px)" : "20px",
+        right: isDrawerOpen ? "calc(clamp(355px, 34vw, 440px) + 22px)" : "18px",
         transition: "right 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
       }}
     >
-      {/* Top Mode Controls (Projection, Walk Mode, Key Help) */}
-      <div className="toc-viewcube-controls-row">
+      {/* Subtle Autodesk-style Home + Shortcuts Mini Strip */}
+      <div className="toc-viewcube-mini-actions">
         <button
           type="button"
-          onClick={toggleProjectionMode}
-          className={`toc-viewcube-btn ${projection === "Orthographic" ? "active" : ""}`}
-          title={`Switch Camera Projection (Currently ${projection}). Press O to toggle.`}
+          onClick={() => (onFocusExtents ? onFocusExtents() : setViewDirection("iso-ne"))}
+          className="toc-viewcube-icon-btn"
+          title="Home View (Fit Model Extents)"
         >
-          <span className="material-icons-round" style={{ fontSize: "14px" }}>
-            {projection === "Orthographic" ? "view_agenda" : "view_in_ar"}
-          </span>
-          <span>{projection === "Orthographic" ? "2D Ortho" : "3D Persp"}</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={toggleNavigationMode}
-          className={`toc-viewcube-btn ${navMode === "FirstPerson" ? "active" : ""}`}
-          title={`Switch Mode: Turntable Orbit vs First-Person Walk (WASD)`}
-        >
-          <span className="material-icons-round" style={{ fontSize: "14px" }}>
-            {navMode === "FirstPerson" ? "directions_walk" : "rotate_right"}
-          </span>
-          <span>{navMode === "FirstPerson" ? "Walk" : "Orbit"}</span>
+          <span className="material-icons-round" style={{ fontSize: "15px" }}>home</span>
         </button>
 
         <button
           type="button"
           onClick={() => setIsHelpOpen((prev) => !prev)}
-          className="toc-viewcube-btn icon-only"
+          className="toc-viewcube-icon-btn"
           title="Viewer Navigation & Keyboard Shortcuts"
         >
           <span className="material-icons-round" style={{ fontSize: "15px" }}>help_outline</span>
@@ -306,10 +264,10 @@ export const NavigationCube: React.FC<NavigationCubeProps> = ({
         onClick={alignToNorth}
         title="Click to Align Camera to True North"
       >
-        <span className="compass-mark north">N</span>
-        <span className="compass-mark east">E</span>
-        <span className="compass-mark south">S</span>
-        <span className="compass-mark west">W</span>
+        <span className="compass-mark north" style={{ transform: `rotate(${-compassAngle}deg)` }}>N</span>
+        <span className="compass-mark east" style={{ transform: `rotate(${-compassAngle}deg)` }}>E</span>
+        <span className="compass-mark south" style={{ transform: `rotate(${-compassAngle}deg)` }}>S</span>
+        <span className="compass-mark west" style={{ transform: `rotate(${-compassAngle}deg)` }}>W</span>
         <div className="compass-needle" />
       </div>
 

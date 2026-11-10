@@ -333,9 +333,8 @@ export const gisTemplate: BUI.StatefullComponent<GISState> = (
   });
 
   return BUI.html`
-    <bim-panel-section
-      fixed
-      style="display: flex; flex-direction: column; gap: 14px; height: 100%; overflow-y: auto; background: transparent; padding: 14px 16px; box-sizing: border-box;"
+    <div
+      style="display: flex; flex-direction: column; gap: 12px; width: 100%; background: transparent; padding: 12px 14px; box-sizing: border-box;"
     >
       <!-- Telemetry Master Power Card -->
       <div
@@ -591,6 +590,74 @@ export const gisTemplate: BUI.StatefullComponent<GISState> = (
         </div>
       </div>
 
+      <!-- IFC / BIM Site Matrix Alignment -->
+      <div style="display: flex; flex-direction: column; gap: 7px; padding: 10px 12px; border-radius: 10px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(56, 189, 248, 0.25);">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+          <span style="font-size: 0.70rem; color: #38bdf8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">
+            BIM Site Georeference Matrix
+          </span>
+          <div style="display: flex; gap: 5px;">
+            <button
+              type="button"
+              @click=${() => { gisLayers.snapBimToTerrain(); update(); }}
+              style="padding: 3px 8px; border-radius: 5px; border: 1px solid rgba(16, 185, 129, 0.45); background: rgba(16, 185, 129, 0.18); color: #34d399; font-size: 0.66rem; font-weight: 700; cursor: pointer;"
+              title="Snap active BIM/IFC model base center onto GIS ground origin"
+            >
+              Snap to Site
+            </button>
+            <button
+              type="button"
+              @click=${() => { gisLayers.resetBimAlignment(); update(); }}
+              style="padding: 3px 7px; border-radius: 5px; border: 1px solid rgba(148, 163, 184, 0.3); background: transparent; color: #94a3b8; font-size: 0.66rem; cursor: pointer;"
+            >
+              Reset
+            </button>
+          </div>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;">
+          <label style="display: flex; flex-direction: column; gap: 2px; font-size: 0.62rem; color: #94a3b8;">
+            <span>Offset X (m)</span>
+            <input
+              type="number"
+              step="1"
+              .value=${String(gisLayers.bimAlignment.offsetX)}
+              @change=${(e: Event) => { gisLayers.alignBimModels({ offsetX: Number((e.target as HTMLInputElement).value) || 0 }); }}
+              style="padding: 4px 6px; border-radius: 5px; background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(148, 163, 184, 0.25); color: #f8fafc; font-size: 0.70rem; width: 100%; box-sizing: border-box;"
+            />
+          </label>
+          <label style="display: flex; flex-direction: column; gap: 2px; font-size: 0.62rem; color: #94a3b8;">
+            <span>Elev Y (m)</span>
+            <input
+              type="number"
+              step="0.5"
+              .value=${String(gisLayers.bimAlignment.offsetY)}
+              @change=${(e: Event) => { gisLayers.alignBimModels({ offsetY: Number((e.target as HTMLInputElement).value) || 0 }); }}
+              style="padding: 4px 6px; border-radius: 5px; background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(148, 163, 184, 0.25); color: #f8fafc; font-size: 0.70rem; width: 100%; box-sizing: border-box;"
+            />
+          </label>
+          <label style="display: flex; flex-direction: column; gap: 2px; font-size: 0.62rem; color: #94a3b8;">
+            <span>Offset Z (m)</span>
+            <input
+              type="number"
+              step="1"
+              .value=${String(gisLayers.bimAlignment.offsetZ)}
+              @change=${(e: Event) => { gisLayers.alignBimModels({ offsetZ: Number((e.target as HTMLInputElement).value) || 0 }); }}
+              style="padding: 4px 6px; border-radius: 5px; background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(148, 163, 184, 0.25); color: #f8fafc; font-size: 0.70rem; width: 100%; box-sizing: border-box;"
+            />
+          </label>
+          <label style="display: flex; flex-direction: column; gap: 2px; font-size: 0.62rem; color: #94a3b8;">
+            <span>True N (°)</span>
+            <input
+              type="number"
+              step="5"
+              .value=${String(gisLayers.bimAlignment.headingDeg)}
+              @change=${(e: Event) => { gisLayers.alignBimModels({ headingDeg: Number((e.target as HTMLInputElement).value) || 0 }); }}
+              style="padding: 4px 6px; border-radius: 5px; background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(148, 163, 184, 0.25); color: #f8fafc; font-size: 0.70rem; width: 100%; box-sizing: border-box;"
+            />
+          </label>
+        </div>
+      </div>
+
       <!-- Cesium Ion Token Vault -->
       <div style="display: flex; flex-direction: column; gap: 4px; width: 100%;">
         <div style="display: flex; align-items: center; justify-content: space-between;">
@@ -630,6 +697,6 @@ export const gisTemplate: BUI.StatefullComponent<GISState> = (
             : "Cesium OSM untextured polygonal 3D buildings mesh with architectural massing."}
         </span>
       </div>
-    </bim-panel-section>
+    </div>
   `;
 };

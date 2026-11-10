@@ -1,5 +1,8 @@
 import * as OBC from "@thatopen/components";
 import { Project } from "../../classes/Project";
+import { SheetsSync } from "../SheetsSync";
+import { McpAgent } from "../McpAgent";
+import { BimProSuite } from "../BimProSuite";
 import {
   createWorld,
   setupIfcLoader,
@@ -37,6 +40,12 @@ export const setupComponents = async (project?: Project) => {
 
   // Section 5 (Lessons 5.1 – 5.5): Configure SmartViews presets & current state tracking
   setupSmartViews(components);
+
+  // Module 5 (Sections 3 & 4): Initialize Workflow Connectors & BIM Pro Suite
+  components.get(SheetsSync);
+  const mcpAgent = components.get(McpAgent);
+  mcpAgent.connectBridge();
+  components.get(BimProSuite);
 
   let loadedModel: LoadedWorldModel | null = null;
   if (project) {

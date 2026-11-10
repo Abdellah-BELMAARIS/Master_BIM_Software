@@ -1,0 +1,19 @@
+{
+  "mcpServers": {
+    "that-open-bim": {
+      "command": "node",
+      "args": [
+        "d:/Coding/MyLearning/ThatOpenCompany/Master_BIM_Software/5-Connecting_Workflows/mcp-bim-server/dist/index.js"
+      ]
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "d:/Coding/MyLearning/ThatOpenCompany/Master_BIM_Software/5-Connecting_Workflows/public/models",
+        "d:/Coding/MyLearning/ThatOpenCompany/Master_BIM_Software/5-Connecting_Workflows"
+      ]
+    }
+  }
+}

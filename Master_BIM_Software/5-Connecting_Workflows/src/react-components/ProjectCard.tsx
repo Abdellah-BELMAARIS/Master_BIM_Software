@@ -29,11 +29,14 @@ export function ProjectCard(props: Props) {
         const fileLow = (proj.ifcFileName || "").toLowerCase();
 
         if (proj.modelCategory === "empty" && !proj.ifcFileName) {
-            return { name: "No Model · Upload Later", icon: "cloud_upload", category: "empty" };
+            return { name: "GIS & Empty Studio", icon: "public", category: "empty" };
         }
 
         if (proj.modelCategory === "ifc" || proj.ifcFileName || nameLow.includes("ifc")) {
             const schema = proj.ifcSchema || (nameLow.includes("ifc4") || fileLow.includes("ifc4") ? "IFC4" : "IFC2X3");
+            if (!proj.ifcFileName && !nameLow.includes("stadium") && !nameLow.includes("aurora") && !nameLow.includes("villa") && !nameLow.includes("office") && !nameLow.includes("civic") && !nameLow.includes("viaduct") && !nameLow.includes("provi")) {
+                return { name: `IFC OpenBIM · ${schema}`, icon: "description", category: "ifc", schema };
+            }
 
             if (nameLow.includes("stadium") || fileLow.includes("stadium")) {
                 return { name: `65k Football Stadium · ${schema}`, icon: "sports_soccer", category: "ifc", schema };
@@ -70,6 +73,10 @@ export function ProjectCard(props: Props) {
                 category: "ifc",
                 schema,
             };
+        }
+
+        if (proj.modelCategory === "3d" && proj.modelType === "empty") {
+            return { name: "3D BIM · Empty / Ready", icon: "view_in_ar", category: "3d" };
         }
 
         let type = proj.modelType;

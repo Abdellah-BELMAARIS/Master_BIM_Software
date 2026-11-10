@@ -25,6 +25,9 @@ import {
     SmartViews,
     unwrapIfcAttr,
     GISLayers,
+    SheetsSync,
+    McpAgent,
+    BimProSuite,
 } from "../bim-components";
 import { NavigationCube } from "./NavigationCube";
 
@@ -139,6 +142,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
 
     const measurementSystemRef = React.useRef<BimMeasurementSystem | null>(null);
     const [isMeasuring, setIsMeasuring] = React.useState<boolean>(false);
+    const [measureMode, setMeasureMode] = React.useState<"length" | "area">("length");
     const [measurementsCount, setMeasurementsCount] = React.useState<number>(0);
     const [isSectioningActive, setIsSectioningActive] = React.useState<boolean>(false);
     const [sectionPlanesCount, setSectionPlanesCount] = React.useState<number>(0);
@@ -158,12 +162,174 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
         customIfcName ||
         (project?.modelCategory === "3d" && project?.modelType !== "empty")
     );
+    const isEmptyProject = Boolean(project && !hasActiveModel && project.modelCategory === "empty");
 
-    type DockDrawerId = "models" | "query" | "properties" | "enhance" | "smart-views" | "gis";
+    type DockDrawerId =
+        | "models"
+        | "query"
+        | "properties"
+        | "enhance"
+        | "smart-views"
+        | "floor-plans"
+        | "gis"
+        | "sheets"
+        | "mcp"
+        | "pro-studio";
     const [activeDrawer, setActiveDrawer] = React.useState<DockDrawerId | null>(null);
+    const [isDrawerExpanded, setIsDrawerExpanded] = React.useState<boolean>(false);
     const [isTopBarCollapsed, setIsTopBarCollapsed] = React.useState<boolean>(false);
-    const [isFloatingToolbarCollapsed, setIsFloatingToolbarCollapsed] = React.useState<boolean>(false);
+    const [isFloatingToolbarCollapsed, setIsFloatingToolbarCollapsed] = React.useState<boolean>(true);
+    const [openHeaderMenu, setOpenHeaderMenu] = React.useState<"views" | "inspect" | null>(null);
+    const [activeBottomSubbar, setActiveBottomSubbar] = React.useState<"camera" | "measure" | "section" | null>(null);
+    const [cameraProjection, setCameraProjection] = React.useState<"Perspective" | "Orthographic">("Perspective");
+    const [navControlMode, setNavControlMode] = React.useState<"Orbit" | "FirstPerson">("Orbit");
+    const pressedKeysRef = React.useRef<Set<string>>(new Set());
+
+    React.useEffect(() => {
+        const isTypingTarget = (e: Event): boolean => {
+            const path = typeof e.composedPath === "function" ? e.composedPath() : [e.target];
+            return path.some((el: any) => {
+                if (!el || !el.tagName) return false;
+                const tag = String(el.tagName).toUpperCase();
+                return (
+                    tag === "INPUT" ||
+                    tag === "TEXTAREA" ||
+                    tag === "SELECT" ||
+                    tag === "BIM-TEXT-INPUT" ||
+                    tag === "BIM-NUMBER-INPUT" ||
+                    Boolean(el.isContentEditable)
+                );
+            });
+        };
+
+        const handleOutsidePointerDown = (e: PointerEvent) => {
+            if (!openHeaderMenu) return;
+            const target = e.target as HTMLElement | null;
+            if (!target?.closest(".viewer-menu-wrap")) {
+                setOpenHeaderMenu(null);
+            }
+        };
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === "Escape") {
+                setOpenHeaderMenu(null);
+                setActiveBottomSubbar(null);
+                try {
+                    componentsRef.current?.get(OBC.Hider).set(true);
+                } catch {}
+                return;
+            }
+            if (isTypingTarget(e) || e.ctrlKey || e.metaKey || e.altKey) return;
+
+            const code = e.code;
+            if (code === "KeyO" && !e.repeat) {
+                e.preventDefault();
+                const cam = worldRef.current?.camera;
+                if (cam instanceof OBC.OrthoPerspectiveCamera) {
+                    const nextProj = cam.projection.current === "Perspective" ? "Orthographic" : "Perspective";
+                    cam.projection.set(nextProj).then(() => setCameraProjection(nextProj)).catch(() => {});
+                }
+                return;
+            }
+            if (code === "KeyF" && !e.repeat) {
+                e.preventDefault();
+                setIsLeftPaneCollapsed((prev) => !prev);
+                return;
+            }
+            if ((code === "KeyH" || code === "Home") && !e.repeat) {
+                e.preventDefault();
+                const controls = (worldRef.current?.camera as any)?.controls;
+                if (controls) {
+                    controls.setLookAt(28, 22, 28, 0, 2, 0, true);
+                }
+                return;
+            }
+            if (
+                code === "KeyW" ||
+                code === "KeyA" ||
+                code === "KeyS" ||
+                code === "KeyD" ||
+                code === "ArrowUp" ||
+                code === "ArrowDown" ||
+                code === "ArrowLeft" ||
+                code === "ArrowRight" ||
+                code === "Space" ||
+                code === "ShiftLeft" ||
+                code === "ShiftRight" ||
+                code === "KeyQ" ||
+                code === "KeyE" ||
+                code === "KeyC"
+            ) {
+                if (code === "Space" || code.startsWith("Arrow")) e.preventDefault();
+                pressedKeysRef.current.add(code);
+            }
+        };
+
+        const handleKeyUp = (e: KeyboardEvent) => {
+            pressedKeysRef.current.delete(e.code);
+        };
+        const handleWindowBlur = () => {
+            pressedKeysRef.current.clear();
+        };
+
+        window.addEventListener("pointerdown", handleOutsidePointerDown);
+        window.addEventListener("keydown", handleKeyDown);
+        window.addEventListener("keyup", handleKeyUp);
+        window.addEventListener("blur", handleWindowBlur);
+        return () => {
+            window.removeEventListener("pointerdown", handleOutsidePointerDown);
+            window.removeEventListener("keydown", handleKeyDown);
+            window.removeEventListener("keyup", handleKeyUp);
+            window.removeEventListener("blur", handleWindowBlur);
+        };
+    }, [openHeaderMenu, activeBottomSubbar]);
+
+    const [engineReadyTick, setEngineReadyTick] = React.useState<number>(0);
+
+    React.useEffect(() => {
+        const components = componentsRef.current;
+        if (!components) return;
+        try {
+            const mcp = components.get(McpAgent);
+            mcp.isGisAllowed = isEmptyProject;
+        } catch {}
+        if (!isEmptyProject) {
+            try {
+                const gisLayers = components.get(GISLayers);
+                if (gisLayers) {
+                    gisLayers.layer3d.enabled = false;
+                }
+            } catch {}
+            setActiveDrawer((prev) => (prev === "gis" ? null : prev));
+        }
+    }, [isEmptyProject, engineReadyTick]);
+    const renderDockHeaderActions = (closeTitle: string) => (
+        <div className="toc-dock-header-actions">
+            <button
+                type="button"
+                onClick={() => setIsDrawerExpanded((prev) => !prev)}
+                className={`btn-expand-dock ${isDrawerExpanded ? "active" : ""}`}
+                title={isDrawerExpanded ? "Restore Standard Panel Width" : "Expand Advanced Feature Full Width"}
+            >
+                <span className="material-icons-round" style={{ fontSize: "14px" }}>
+                    {isDrawerExpanded ? "close_fullscreen" : "open_in_full"}
+                </span>
+                <span>{isDrawerExpanded ? "Compact" : "Wide"}</span>
+            </button>
+            <button
+                type="button"
+                onClick={() => setActiveDrawer(null)}
+                className="btn-close-dock"
+                title={closeTitle}
+            >
+                &times;
+            </button>
+        </div>
+    );
+
     const toggleDrawer = (drawer: DockDrawerId) => {
+        if (drawer === "gis" && !isEmptyProject) return;
+        setOpenHeaderMenu(null);
         setActiveDrawer((prev) => {
             const next = prev === drawer ? null : drawer;
             if (next === "gis") {
@@ -177,7 +343,6 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
             return next;
         });
     };
-    const [engineReadyTick, setEngineReadyTick] = React.useState<number>(0);
 
     const viewerWrapperRef = React.useRef<HTMLDivElement | null>(null);
     const modeBarRef = React.useRef<HTMLDivElement | null>(null);
@@ -186,7 +351,11 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
     const queryContainerRef = React.useRef<HTMLDivElement | null>(null);
     const dataEnhancerContainerRef = React.useRef<HTMLDivElement | null>(null);
     const smartViewsContainerRef = React.useRef<HTMLDivElement | null>(null);
+    const floorPlansContainerRef = React.useRef<HTMLDivElement | null>(null);
     const gisContainerRef = React.useRef<HTMLDivElement | null>(null);
+    const sheetsContainerRef = React.useRef<HTMLDivElement | null>(null);
+    const mcpContainerRef = React.useRef<HTMLDivElement | null>(null);
+    const proStudioContainerRef = React.useRef<HTMLDivElement | null>(null);
 
     // Measure .viewer-mode-switch-bar and floating <bim-toolbar> dynamically -> --mode-bar-bottom & --toolbar-bottom
     // Guarantees zero overlap between top bar, floating toolbar, dockable drawers, and banners at all breakpoints
@@ -209,10 +378,10 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                 ro.observe(toolbarEl);
             }
             const tr = toolbarEl?.getBoundingClientRect();
-            const toolbarBottom =
-                tr && tr.height > 10
-                    ? Math.round(tr.bottom - wrapperRect.top)
-                    : modeBarBottom + 92;
+            const toolbarVisible = Boolean(hasActiveModel && !isFloatingToolbarCollapsed && tr && tr.height > 10);
+            const toolbarBottom = toolbarVisible
+                ? Math.round(tr!.bottom - wrapperRect.top)
+                : modeBarBottom;
             wrapper.style.setProperty("--toolbar-bottom", `${toolbarBottom}px`);
         };
 
@@ -342,6 +511,18 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
             }
         }
 
+        if (floorPlansContainerRef.current) {
+            try {
+                const [plansSection] = BUI.Component.create<
+                    BUI.PanelSection,
+                    templates.FloorPlansSectionState
+                >(templates.floorPlansTemplate, { components });
+                floorPlansContainerRef.current.replaceChildren(plansSection);
+            } catch (err) {
+                console.warn("[FloorPlans] Error mounting UI:", err);
+            }
+        }
+
         if (gisContainerRef.current) {
             try {
                 const [gisSection] = BUI.Component.create<
@@ -351,6 +532,75 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                 gisContainerRef.current.replaceChildren(gisSection);
             } catch (err) {
                 console.warn("[GIS] Error mounting UI:", err);
+            }
+        }
+
+        if (sheetsContainerRef.current) {
+            try {
+                const [sheetsSection, updateSheets] = BUI.Component.create<
+                    BUI.PanelSection,
+                    templates.SheetsSectionState
+                >(templates.sheetsTemplate, { components });
+                sheetsContainerRef.current.replaceChildren(sheetsSection);
+                const sheetsSync = components.get(SheetsSync);
+                sheetsSync.onRowsExtracted.add(() => updateSheets());
+                sheetsSync.onSyncCompleted.add(() => updateSheets());
+            } catch (err) {
+                console.warn("[Sheets] Error mounting UI:", err);
+            }
+        }
+
+        if (mcpContainerRef.current) {
+            try {
+                const [mcpSection, updateMcp] = BUI.Component.create<
+                    BUI.PanelSection,
+                    templates.McpAgentSectionState
+                >(templates.mcpAgentTemplate, { components });
+                mcpContainerRef.current.replaceChildren(mcpSection);
+                const mcp = components.get(McpAgent);
+                mcp.onLogAdded.add(() => updateMcp());
+                mcp.onChatUpdated.add(() => updateMcp());
+                mcp.onModelLoaded.add((fileName) => {
+                    setCustomIfcName(fileName);
+                    setIsPromptDismissed(true);
+                });
+                mcp.onBridgeStatusChanged.add(() => updateMcp());
+            } catch (err) {
+                console.warn("[MCP] Error mounting UI:", err);
+            }
+        }
+
+        if (proStudioContainerRef.current) {
+            try {
+                const [proSection, updatePro] = BUI.Component.create<
+                    BUI.PanelSection,
+                    templates.ProStudioSectionState
+                >(templates.proStudioTemplate, { components });
+                proStudioContainerRef.current.replaceChildren(proSection);
+                const pro = components.get(BimProSuite);
+                pro.onStateChanged.add(() => updatePro());
+                pro.onClashLogRequested.add(async (clashes) => {
+                    if (!project) return;
+                    const createdTodos = clashes.slice(0, 15).map((c, idx) => ({
+                        id: Date.now() + idx,
+                        text: `[Clash ${c.id}] ${c.aName} × ${c.bName} (${c.overlapVolumeM3} m³)`,
+                        date: new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10),
+                        status: "pending" as const,
+                        priority: c.severity,
+                        completed: false,
+                    }));
+                    project.todos = [...createdTodos, ...(project.todos || [])];
+                    forceUpdate();
+                    try {
+                        await updateDoc(doc(db, "projects", project.id), {
+                            todos: project.todos,
+                        });
+                    } catch {}
+                    pro.statusMessage = `Logged ${createdTodos.length} clash(es) into Project Tasks.`;
+                    updatePro();
+                });
+            } catch (err) {
+                console.warn("[ProStudio] Error mounting UI:", err);
             }
         }
     }, [engineReadyTick, project?.id]);
@@ -422,6 +672,42 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
         if (measurementSystemRef.current) {
             measurementSystemRef.current.clearAll();
             setMeasurementsCount(0);
+        }
+    };
+
+    const toggleCameraProjection = async () => {
+        const cam = worldRef.current?.camera;
+        if (!cam || !(cam instanceof OBC.OrthoPerspectiveCamera)) return;
+        const next = cameraProjection === "Perspective" ? "Orthographic" : "Perspective";
+        try {
+            await cam.projection.set(next);
+            setCameraProjection(next);
+        } catch {}
+    };
+
+    const toggleNavControlMode = () => {
+        const cam = worldRef.current?.camera;
+        if (!cam || !(cam instanceof OBC.OrthoPerspectiveCamera)) return;
+        const next = navControlMode === "Orbit" ? "FirstPerson" : "Orbit";
+        try {
+            cam.set(next);
+            setNavControlMode(next);
+        } catch {}
+    };
+
+    const handleTakeScreenshot = () => {
+        const world = worldRef.current;
+        if (!world?.renderer || !world.scene || !world.camera) return;
+        try {
+            const renderer = world.renderer.three as THREE.WebGLRenderer;
+            renderer.render(world.scene.three, world.camera.three);
+            const url = renderer.domElement.toDataURL("image/png");
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `${(project?.name || "bim-view").replace(/[^a-z0-9-_]/gi, "_")}-${Date.now()}.png`;
+            a.click();
+        } catch (err) {
+            console.warn("[Screenshot] Failed capturing viewport:", err);
         }
     };
 
@@ -977,6 +1263,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
 
                     pointerDblClickHandler = async () => {
                         const highlighter = components.get(OBCF.Highlighter);
+                        const hider = components.get(OBC.Hider);
                         const selection = highlighter.selection.select;
                         const hasSelection = Boolean(selection && !OBC.ModelIdMapUtils.isEmpty(selection));
                         const selectedMesh = (window as any).__selectedThreeMesh as THREE.Mesh | null;
@@ -984,10 +1271,11 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
 
                         if (world.camera instanceof OBC.SimpleCamera && fragments.initialized && fragments.list.size > 0 && hasSelection) {
                             try {
+                                await hider.isolate(selection);
                                 await world.camera.fitToItems(selection);
                                 return;
                             } catch (err) {
-                                console.warn("[DblClick Focus] fitToItems error:", err);
+                                console.warn("[DblClick Isolate & Fit] error:", err);
                             }
                         }
 
@@ -1011,23 +1299,67 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                             }
                         }
 
-                        // Fallback: fit to whole model/scene
+                        // Fallback: restore all hidden elements and fit whole model
+                        try {
+                            await hider.set(true);
+                        } catch {}
                         fitModelView();
                     };
 
                     canvas.addEventListener("dblclick", pointerDblClickHandler);
                 }
 
-                // Continuous Animation Loop for Camera Controls & Dynamic Twin Updates
+                // Continuous Animation Loop for Camera Controls, WASD Walk & Dynamic Twin Updates
                 const startTime = performance.now();
                 let lastTime = startTime;
+                const walkPos = new THREE.Vector3();
+                const walkTarget = new THREE.Vector3();
+                const walkFwd = new THREE.Vector3();
+                const walkRight = new THREE.Vector3();
+                const walkDelta = new THREE.Vector3();
+                const worldUp = new THREE.Vector3(0, 1, 0);
+
                 const loop = (time: number) => {
                     if (disposed || world.isDisposing) return;
                     const delta = Math.min((time - lastTime) / 1000, 0.1);
                     const elapsedSeconds = (time - startTime) / 1000;
                     lastTime = time;
-                    if ((world?.camera as any)?.controls) {
-                        (world.camera as any).controls.update(delta);
+
+                    const controls = (world?.camera as any)?.controls;
+                    if (controls) {
+                        const keys = pressedKeysRef.current;
+                        if (keys.size > 0 && typeof controls.getPosition === "function" && typeof controls.getTarget === "function") {
+                            const sprint = keys.has("ShiftLeft") || keys.has("ShiftRight") ? 2.6 : 1.0;
+                            const moveStep = 14 * sprint * delta;
+                            controls.getPosition(walkPos);
+                            controls.getTarget(walkTarget);
+
+                            walkFwd.subVectors(walkTarget, walkPos);
+                            walkFwd.y = 0;
+                            if (walkFwd.lengthSq() < 1e-6) walkFwd.set(0, 0, -1);
+                            walkFwd.normalize();
+
+                            walkRight.crossVectors(walkFwd, worldUp).normalize();
+                            walkDelta.set(0, 0, 0);
+
+                            if (keys.has("KeyW") || keys.has("ArrowUp")) walkDelta.addScaledVector(walkFwd, moveStep);
+                            if (keys.has("KeyS") || keys.has("ArrowDown")) walkDelta.addScaledVector(walkFwd, -moveStep);
+                            if (keys.has("KeyD") || keys.has("ArrowRight")) walkDelta.addScaledVector(walkRight, moveStep);
+                            if (keys.has("KeyA") || keys.has("ArrowLeft")) walkDelta.addScaledVector(walkRight, -moveStep);
+                            if (keys.has("Space") || keys.has("KeyE")) walkDelta.y += moveStep;
+                            if (keys.has("KeyC") || keys.has("KeyQ")) walkDelta.y -= moveStep;
+
+                            if (walkDelta.lengthSq() > 0) {
+                                walkPos.add(walkDelta);
+                                walkTarget.add(walkDelta);
+                                controls.setLookAt(
+                                    walkPos.x, walkPos.y, walkPos.z,
+                                    walkTarget.x, walkTarget.y, walkTarget.z,
+                                    false
+                                );
+                            }
+                        }
+                        controls.update(delta);
                     }
                     if (loadedModel?.update) {
                         loadedModel.update(elapsedSeconds);
@@ -1059,7 +1391,11 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
             queryContainerRef.current?.replaceChildren();
             dataEnhancerContainerRef.current?.replaceChildren();
             smartViewsContainerRef.current?.replaceChildren();
+            floorPlansContainerRef.current?.replaceChildren();
             gisContainerRef.current?.replaceChildren();
+            sheetsContainerRef.current?.replaceChildren();
+            mcpContainerRef.current?.replaceChildren();
+            proStudioContainerRef.current?.replaceChildren();
 
             if (selectionBoxRef.current && worldRef.current) {
                 try {
@@ -1117,7 +1453,12 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                     }
 
                     const projectName = data.name || "Untitled Project";
-                    const modelCategory: "ifc" | "3d" = (data.ifcFileName || projectName.toLowerCase().includes("ifc") || data.modelCategory === "ifc") ? "ifc" : (data.modelCategory || "3d");
+                    const modelCategory: "ifc" | "3d" | "empty" =
+                        data.modelCategory === "empty" && !data.ifcFileName
+                            ? "empty"
+                            : data.ifcFileName || projectName.toLowerCase().includes("ifc") || data.modelCategory === "ifc"
+                            ? "ifc"
+                            : "3d";
 
                     const projectData: IProject = {
                         name: projectName,
@@ -1300,190 +1641,330 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                         if (file) await handleProcessUploadedFile(file);
                     }}
                 >
-                    {/* Floating Button to Restore Sidebar when Left Pane is Collapsed */}
-                    {isLeftPaneCollapsed && (
-                        <button
-                            type="button"
-                            onClick={() => setIsLeftPaneCollapsed(false)}
-                            className="floating-restore-sidebar-btn"
-                            title="Restore Project Details & Tasks Sidebar"
-                            style={{
-                                position: "absolute",
-                                top: isTopBarCollapsed ? "12px" : "calc(var(--mode-bar-bottom, 54px) + 12px)",
-                                left: "14px",
-                                zIndex: 32,
-                                display: "inline-flex",
-                                alignItems: "center",
-                                gap: "6px",
-                                background: "rgba(15, 23, 42, 0.94)",
-                                backdropFilter: "blur(14px)",
-                                border: "1px solid rgba(56, 189, 248, 0.45)",
-                                borderRadius: "20px",
-                                padding: "7px 14px",
-                                color: "#38bdf8",
-                                fontSize: "0.78rem",
-                                fontWeight: 700,
-                                cursor: "pointer",
-                                boxShadow: "0 6px 20px rgba(0,0,0,0.55)",
-                                transition: "all 0.2s ease",
-                            }}
-                        >
-                            <span className="material-icons-round" style={{ fontSize: "16px" }}>dock</span>
-                            <span>Show Sidebar</span>
-                        </button>
-                    )}
-                    {/* Top Viewport Mode Switcher & Course Tools Bar */}
-                    <div
-                        className="viewer-mode-switch-bar"
-                        ref={modeBarRef}
-                        style={{
-                            display: isTopBarCollapsed ? "none" : "flex",
-                            transition: "all 0.2s ease",
-                        }}
-                    >
-                        <button
-                            type="button"
-                            className={`viewer-mode-tab ${viewerMode === "bim-world" ? "active" : ""}`}
-                            onClick={() => setCameraPreset("iso")}
-                            title="That Open Engine BIM World (3D Perspective View)"
-                        >
-                            <span className="material-icons-round">public</span>
-                            <span>BIM World</span>
-                        </button>
-
-                        {hasActiveModel && (
-                            <>
-                                <button
-                                    type="button"
-                                    className={`viewer-mode-tab ${viewerMode === "2d-plan" ? "active" : ""}`}
-                                    onClick={() => setCameraPreset("plan")}
-                                    title="2D Top-Down Orthographic CAD Plan View"
-                                >
-                                    <span className="material-icons-round">architecture</span>
-                                    <span>2D Plan</span>
-                                </button>
-
-                                {project.modelCategory === "3d" && !project.ifcFileName && !project.name.toLowerCase().includes("ifc") && (
+                    {/* Autodesk-Inspired Organized Slim Top Header Strip */}
+                    {!isTopBarCollapsed && (
+                        <div className="viewer-top-header" ref={modeBarRef}>
+                            {/* LEFT GROUP: Model Browser, Views, Properties, Upload */}
+                            <div className="viewer-top-group">
+                                {isLeftPaneCollapsed && (
                                     <button
                                         type="button"
-                                        className={`viewer-mode-tab ${viewerMode === "parametric" ? "active" : ""}`}
-                                        onClick={() => {
-                                            setActiveDrawer(null);
-                                            setViewerMode("parametric");
-                                        }}
-                                        title="High-Performance 3D CAD Studio (Three.js)"
+                                        className="viewer-header-btn accent"
+                                        onClick={() => setIsLeftPaneCollapsed(false)}
+                                        title="Restore Project Details & Tasks Sidebar"
                                     >
-                                        <span className="material-icons-round">view_in_ar</span>
-                                        <span>3D Model</span>
+                                        <span className="material-icons-round">dock</span>
+                                        <span>Sidebar</span>
                                     </button>
                                 )}
 
                                 <button
                                     type="button"
-                                    className={`viewer-mode-tab toc-course-pill ${activeDrawer === "models" ? "active" : ""}`}
+                                    className={`viewer-header-btn ${activeDrawer === "models" ? "active" : ""}`}
                                     onClick={() => toggleDrawer("models")}
-                                    title="Open Federated BIM Models & IFC Tree"
+                                    title="Model Browser & Federated IFC Tree"
                                 >
-                                    <span className="material-icons-round">folder_open</span>
+                                    <span className="material-icons-round">account_tree</span>
                                     <span>Models</span>
                                 </button>
 
+                                {/* Views Dropdown Menu */}
+                                <div className="viewer-menu-wrap">
+                                    <button
+                                        type="button"
+                                        className={`viewer-header-btn ${
+                                            openHeaderMenu === "views" ||
+                                            activeDrawer === "smart-views" ||
+                                            activeDrawer === "floor-plans" ||
+                                            viewerMode !== "bim-world"
+                                                ? "active"
+                                                : ""
+                                        }`}
+                                        onClick={() =>
+                                            setOpenHeaderMenu((prev) => (prev === "views" ? null : "views"))
+                                        }
+                                        title="Camera Modes, Storey Floor Plans & Coordination Viewpoints"
+                                    >
+                                        <span className="material-icons-round">layers</span>
+                                        <span>Views</span>
+                                        <span className="material-icons-round" style={{ fontSize: "14px", opacity: 0.7 }}>
+                                            expand_more
+                                        </span>
+                                    </button>
+
+                                    {openHeaderMenu === "views" && (
+                                        <div className="viewer-menu-popover">
+                                            <button
+                                                type="button"
+                                                className={`viewer-menu-item ${viewerMode === "bim-world" && !activeDrawer ? "active" : ""}`}
+                                                onClick={() => {
+                                                    setOpenHeaderMenu(null);
+                                                    setCameraPreset("iso");
+                                                }}
+                                            >
+                                                <span className="viewer-menu-item-left">
+                                                    <span className="material-icons-round">view_in_ar</span>
+                                                    <span>3D BIM World</span>
+                                                </span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className={`viewer-menu-item ${viewerMode === "2d-plan" ? "active" : ""}`}
+                                                onClick={() => {
+                                                    setOpenHeaderMenu(null);
+                                                    setCameraPreset("plan");
+                                                }}
+                                            >
+                                                <span className="viewer-menu-item-left">
+                                                    <span className="material-icons-round">architecture</span>
+                                                    <span>2D Ortho Plan</span>
+                                                </span>
+                                            </button>
+                                            {project.modelCategory === "3d" && !project.ifcFileName && !project.name.toLowerCase().includes("ifc") && (
+                                                <button
+                                                    type="button"
+                                                    className={`viewer-menu-item ${viewerMode === "parametric" ? "active" : ""}`}
+                                                    onClick={() => {
+                                                        setOpenHeaderMenu(null);
+                                                        setActiveDrawer(null);
+                                                        setViewerMode("parametric");
+                                                    }}
+                                                >
+                                                    <span className="viewer-menu-item-left">
+                                                        <span className="material-icons-round">3d_rotation</span>
+                                                        <span>3D Twin Studio</span>
+                                                    </span>
+                                                </button>
+                                            )}
+                                            <button
+                                                type="button"
+                                                className={`viewer-menu-item ${activeDrawer === "floor-plans" ? "active" : ""}`}
+                                                onClick={() => toggleDrawer("floor-plans")}
+                                            >
+                                                <span className="viewer-menu-item-left">
+                                                    <span className="material-icons-round">grid_view</span>
+                                                    <span>Storey Floor Plans</span>
+                                                </span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className={`viewer-menu-item ${activeDrawer === "smart-views" ? "active" : ""}`}
+                                                onClick={() => toggleDrawer("smart-views")}
+                                            >
+                                                <span className="viewer-menu-item-left">
+                                                    <span className="material-icons-round">photo_camera</span>
+                                                    <span>Smart Viewpoints</span>
+                                                </span>
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Properties & Data Dropdown Menu */}
+                                <div className="viewer-menu-wrap">
+                                    <button
+                                        type="button"
+                                        className={`viewer-header-btn ${
+                                            openHeaderMenu === "inspect" ||
+                                            activeDrawer === "properties" ||
+                                            activeDrawer === "query" ||
+                                            activeDrawer === "enhance"
+                                                ? "active"
+                                                : ""
+                                        }`}
+                                        onClick={() =>
+                                            setOpenHeaderMenu((prev) => (prev === "inspect" ? null : "inspect"))
+                                        }
+                                        title="IFC Properties, Queries & External Data Enhancer"
+                                    >
+                                        <span className="material-icons-round">list_alt</span>
+                                        <span>Properties</span>
+                                        <span className="material-icons-round" style={{ fontSize: "14px", opacity: 0.7 }}>
+                                            expand_more
+                                        </span>
+                                    </button>
+
+                                    {openHeaderMenu === "inspect" && (
+                                        <div className="viewer-menu-popover">
+                                            <button
+                                                type="button"
+                                                className={`viewer-menu-item ${activeDrawer === "properties" ? "active" : ""}`}
+                                                onClick={() => toggleDrawer("properties")}
+                                            >
+                                                <span className="viewer-menu-item-left">
+                                                    <span className="material-icons-round">table_chart</span>
+                                                    <span>IFC Property Sets</span>
+                                                </span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className={`viewer-menu-item ${activeDrawer === "query" ? "active" : ""}`}
+                                                onClick={() => toggleDrawer("query")}
+                                            >
+                                                <span className="viewer-menu-item-left">
+                                                    <span className="material-icons-round">search</span>
+                                                    <span>BIM Semantic Query</span>
+                                                </span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className={`viewer-menu-item ${activeDrawer === "enhance" ? "active" : ""}`}
+                                                onClick={() => toggleDrawer("enhance")}
+                                            >
+                                                <span className="viewer-menu-item-left">
+                                                    <span className="material-icons-round">storage</span>
+                                                    <span>Data Enhancer</span>
+                                                </span>
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="viewer-top-divider" />
+
                                 <button
                                     type="button"
-                                    className={`viewer-mode-tab toc-course-pill ${activeDrawer === "query" ? "active" : ""}`}
-                                    onClick={() => toggleDrawer("query")}
-                                    title="Execute Spatial & Semantic IFC Queries"
+                                    className="viewer-header-btn"
+                                    onClick={handleOpenIfcFile}
+                                    title="Open / Load Local IFC or Frag File"
+                                    style={{ color: "#34d399" }}
                                 >
-                                    <span className="material-icons-round">search</span>
-                                    <span>Query</span>
+                                    <span className="material-icons-round">upload_file</span>
+                                    <span>Load IFC</span>
+                                </button>
+                            </div>
+
+                            {/* RIGHT GROUP: Connected Cloud Workflows (Module 5) & Utilities */}
+                            <div className="viewer-top-group">
+                                {isEmptyProject && (
+                                    <button
+                                        type="button"
+                                        className={`viewer-header-btn ${activeDrawer === "gis" ? "active" : ""}`}
+                                        onClick={() => toggleDrawer("gis")}
+                                        title="Cesium 3D Tiles & 2D GIS Map (Empty Project Studio)"
+                                    >
+                                        <span className="material-icons-round">public</span>
+                                        <span>GIS</span>
+                                    </button>
+                                )}
+
+                                <button
+                                    type="button"
+                                    className={`viewer-header-btn ${activeDrawer === "sheets" ? "active" : ""}`}
+                                    onClick={() => toggleDrawer("sheets")}
+                                    title="Google Drive & Sheets BIM Takeoff Sync"
+                                >
+                                    <span className="material-icons-round">table_view</span>
+                                    <span>Sheets</span>
                                 </button>
 
                                 <button
                                     type="button"
-                                    className={`viewer-mode-tab toc-course-pill ${activeDrawer === "properties" ? "active" : ""}`}
-                                    onClick={() => toggleDrawer("properties")}
-                                    title="Inspect IFC Schema Properties & Quantity Sets"
+                                    className={`viewer-header-btn ${activeDrawer === "mcp" ? "active" : ""}`}
+                                    onClick={() => toggleDrawer("mcp")}
+                                    title="AI MCP–LLM Copilot Assistant"
                                 >
-                                    <span className="material-icons-round">table_chart</span>
-                                    <span>Properties</span>
+                                    <span className="material-icons-round">smart_toy</span>
+                                    <span>AI MCP</span>
                                 </button>
 
                                 <button
                                     type="button"
-                                    className={`viewer-mode-tab toc-course-pill ${activeDrawer === "enhance" ? "active" : ""}`}
-                                    onClick={() => toggleDrawer("enhance")}
-                                    title="Connect External Engineering Specifications & Field QA"
+                                    className={`viewer-header-btn ${activeDrawer === "pro-studio" ? "active" : ""}`}
+                                    onClick={() => toggleDrawer("pro-studio")}
+                                    title="3D Clash QA, 4D Phasing S-Curve, Property Editor & .FRAG Export"
                                 >
-                                    <span className="material-icons-round">storage</span>
-                                    <span>Enhance</span>
+                                    <span className="material-icons-round">auto_fix_high</span>
+                                    <span>Pro Studio</span>
+                                </button>
+
+                                <div className="viewer-top-divider" />
+
+                                <button
+                                    type="button"
+                                    className="viewer-header-btn"
+                                    onClick={handleTakeScreenshot}
+                                    title="Download Viewport PNG Screenshot"
+                                    style={{ padding: "5px 7px" }}
+                                >
+                                    <span className="material-icons-round">photo_camera</span>
                                 </button>
 
                                 <button
                                     type="button"
-                                    className={`viewer-mode-tab toc-course-pill ${activeDrawer === "smart-views" ? "active" : ""}`}
-                                    onClick={() => toggleDrawer("smart-views")}
-                                    title="Multi-Disciplinary BIM Coordination Viewpoints"
+                                    className="viewer-header-btn"
+                                    onClick={() => setIsTopBarCollapsed(true)}
+                                    title="Hide Header Bar (Full Canvas Focus)"
+                                    style={{ padding: "5px 6px", color: "#94a3b8" }}
                                 >
-                                    <span className="material-icons-round">camera</span>
-                                    <span>Smart Views</span>
+                                    <span className="material-icons-round">expand_less</span>
                                 </button>
-                            </>
-                        )}
+                            </div>
+                        </div>
+                    )}
 
-                        <button
-                            type="button"
-                            className={`viewer-mode-tab toc-course-pill ${activeDrawer === "gis" ? "active" : ""}`}
-                            onClick={() => toggleDrawer("gis")}
-                            title="Cesium GIS & Geospatial Environment"
-                        >
-                            <span className="material-icons-round">public</span>
-                            <span>GIS</span>
-                        </button>
-
-                        <div style={{ width: "1px", height: "16px", background: "rgba(148, 163, 184, 0.25)", margin: "0 2px" }} />
-
-                        {/* Top Bar Minimize Button */}
-                        <button
-                            type="button"
-                            className="viewer-mode-tab"
-                            onClick={() => setIsTopBarCollapsed(true)}
-                            title="Collapse Navigation Bar"
-                            style={{ padding: "5px 7px", color: "#94a3b8" }}
-                        >
-                            <span className="material-icons-round" style={{ fontSize: "16px" }}>expand_less</span>
-                        </button>
-                    </div>
-
-                    {/* Floating Pill to Restore Navigation Bar when Collapsed */}
+                    {/* Floating Pill to Restore Header Bar when Collapsed */}
                     {isTopBarCollapsed && (
-                        <button
-                            type="button"
-                            className="viewer-bar-restore-pill"
-                            onClick={() => setIsTopBarCollapsed(false)}
-                            title="Show BIM Navigation Bar"
+                        <div
                             style={{
                                 position: "absolute",
                                 top: "12px",
                                 left: "14px",
                                 zIndex: 31,
                                 display: "inline-flex",
-                                alignItems: "center",
                                 gap: "6px",
-                                background: "rgba(15, 23, 42, 0.92)",
-                                backdropFilter: "blur(14px)",
-                                border: "1px solid rgba(56, 189, 248, 0.4)",
-                                borderRadius: "14px",
-                                padding: "6px 12px",
-                                color: "#38bdf8",
-                                fontSize: "0.76rem",
-                                fontWeight: 700,
-                                cursor: "pointer",
-                                boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
                             }}
                         >
-                            <span className="material-icons-round" style={{ fontSize: "16px" }}>menu</span>
-                            <span>Show Nav</span>
-                        </button>
+                            <button
+                                type="button"
+                                className="viewer-bar-restore-pill"
+                                onClick={() => setIsTopBarCollapsed(false)}
+                                title="Show Viewer Header Bar"
+                                style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: "6px",
+                                    background: "rgba(11, 17, 30, 0.92)",
+                                    backdropFilter: "blur(14px)",
+                                    border: "1px solid rgba(56, 189, 248, 0.4)",
+                                    borderRadius: "12px",
+                                    padding: "6px 12px",
+                                    color: "#38bdf8",
+                                    fontSize: "0.75rem",
+                                    fontWeight: 700,
+                                    cursor: "pointer",
+                                    boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
+                                }}
+                            >
+                                <span className="material-icons-round" style={{ fontSize: "16px" }}>menu</span>
+                                <span>Toolbar</span>
+                            </button>
+                            {isLeftPaneCollapsed && (
+                                <button
+                                    type="button"
+                                    onClick={() => setIsLeftPaneCollapsed(false)}
+                                    title="Restore Project Details Sidebar"
+                                    style={{
+                                        display: "inline-flex",
+                                        alignItems: "center",
+                                        gap: "6px",
+                                        background: "rgba(11, 17, 30, 0.92)",
+                                        backdropFilter: "blur(14px)",
+                                        border: "1px solid rgba(56, 189, 248, 0.4)",
+                                        borderRadius: "12px",
+                                        padding: "6px 12px",
+                                        color: "#38bdf8",
+                                        fontSize: "0.75rem",
+                                        fontWeight: 700,
+                                        cursor: "pointer",
+                                        boxShadow: "0 4px 16px rgba(0,0,0,0.5)",
+                                    }}
+                                >
+                                    <span className="material-icons-round" style={{ fontSize: "16px" }}>dock</span>
+                                    <span>Sidebar</span>
+                                </button>
+                            )}
+                        </div>
                     )}
 
                     <ViewerErrorBoundary>
@@ -1498,7 +1979,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                         >
                             {/* Dockable Models Manager Drawer — Mounted Once */}
                             <div
-                                className="toc-dock-panel toc-dock-left"
+                                className={`toc-dock-panel toc-dock-left ${isDrawerExpanded ? "is-expanded" : ""}`}
                                 data-drawer="models"
                                 style={{ display: activeDrawer === "models" ? "flex" : "none" }}
                             >
@@ -1507,21 +1988,14 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                         <span className="material-icons-round" style={{ color: "#38bdf8", fontSize: "18px" }}>folder_open</span>
                                         <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f8fafc" }}>Federated Model Inventory & IFC Tree</span>
                                     </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => setActiveDrawer(null)}
-                                        className="btn-close-dock"
-                                        title="Close Models Inventory"
-                                    >
-                                        &times;
-                                    </button>
+                                    {renderDockHeaderActions("Close Models Inventory")}
                                 </div>
                                 <div ref={modelsContainerRef} className="toc-dock-body"></div>
                             </div>
 
                             {/* Dockable Query & ItemsFinder Drawer — Mounted Once */}
                             <div
-                                className="toc-dock-panel toc-dock-right"
+                                className={`toc-dock-panel toc-dock-right ${isDrawerExpanded ? "is-expanded" : ""}`}
                                 data-drawer="query"
                                 style={{ display: activeDrawer === "query" ? "flex" : "none" }}
                             >
@@ -1530,21 +2004,14 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                         <span className="material-icons-round" style={{ color: "#38bdf8", fontSize: "18px" }}>search</span>
                                         <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f8fafc" }}>IFC Spatial Query & Relational Engine</span>
                                     </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => setActiveDrawer(null)}
-                                        className="btn-close-dock"
-                                        title="Close Query Engine"
-                                    >
-                                        &times;
-                                    </button>
+                                    {renderDockHeaderActions("Close Query Engine")}
                                 </div>
                                 <div ref={queryContainerRef} className="toc-dock-body"></div>
                             </div>
 
                             {/* Dockable Element Properties Drawer — Mounted Once */}
                             <div
-                                className="toc-dock-panel toc-dock-right"
+                                className={`toc-dock-panel toc-dock-right ${isDrawerExpanded ? "is-expanded" : ""}`}
                                 data-drawer="properties"
                                 style={{ display: activeDrawer === "properties" ? "flex" : "none" }}
                             >
@@ -1553,21 +2020,14 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                         <span className="material-icons-round" style={{ color: "#38bdf8", fontSize: "18px" }}>table_chart</span>
                                         <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f8fafc" }}>IFC Schema Property Set Inspector</span>
                                     </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => setActiveDrawer(null)}
-                                        className="btn-close-dock"
-                                        title="Close Property Inspector"
-                                    >
-                                        &times;
-                                    </button>
+                                    {renderDockHeaderActions("Close Property Inspector")}
                                 </div>
                                 <div ref={propertiesContainerRef} className="toc-dock-body"></div>
                             </div>
 
                             {/* Dockable Data Enhancer Drawer — Mounted Once */}
                             <div
-                                className="toc-dock-panel toc-dock-right"
+                                className={`toc-dock-panel toc-dock-right ${isDrawerExpanded ? "is-expanded" : ""}`}
                                 data-drawer="enhance"
                                 style={{ display: activeDrawer === "enhance" ? "flex" : "none" }}
                             >
@@ -1576,21 +2036,14 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                         <span className="material-icons-round" style={{ color: "#38bdf8", fontSize: "18px" }}>storage</span>
                                         <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f8fafc" }}>Engineering Specifications & QA Matrix</span>
                                     </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => setActiveDrawer(null)}
-                                        className="btn-close-dock"
-                                        title="Close Specifications Panel"
-                                    >
-                                        &times;
-                                    </button>
+                                    {renderDockHeaderActions("Close Specifications Panel")}
                                 </div>
                                 <div ref={dataEnhancerContainerRef} className="toc-dock-body"></div>
                             </div>
 
                             {/* Dockable Smart Views Drawer — Mounted Once */}
                             <div
-                                className="toc-dock-panel toc-dock-left"
+                                className={`toc-dock-panel toc-dock-left ${isDrawerExpanded ? "is-expanded" : ""}`}
                                 data-drawer="smart-views"
                                 style={{ display: activeDrawer === "smart-views" ? "flex" : "none" }}
                             >
@@ -1599,21 +2052,30 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                         <span className="material-icons-round" style={{ color: "#38bdf8", fontSize: "18px" }}>camera</span>
                                         <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f8fafc" }}>BIM Coordination Viewpoints & Overrides</span>
                                     </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => setActiveDrawer(null)}
-                                        className="btn-close-dock"
-                                        title="Close Coordination Viewpoints"
-                                    >
-                                        &times;
-                                    </button>
+                                    {renderDockHeaderActions("Close Coordination Viewpoints")}
                                 </div>
                                 <div ref={smartViewsContainerRef} className="toc-dock-body"></div>
                             </div>
 
+                            {/* Dockable Floor Plans & Elevations Drawer — OBC.Views */}
+                            <div
+                                className={`toc-dock-panel toc-dock-right ${isDrawerExpanded ? "is-expanded" : ""}`}
+                                data-drawer="floor-plans"
+                                style={{ display: activeDrawer === "floor-plans" ? "flex" : "none" }}
+                            >
+                                <div className="toc-dock-header">
+                                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                        <span className="material-icons-round" style={{ color: "#38bdf8", fontSize: "18px" }}>layers</span>
+                                        <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f8fafc" }}>2D Storey Floor Plans &amp; Elevations</span>
+                                    </div>
+                                    {renderDockHeaderActions("Close Storey Plans Panel")}
+                                </div>
+                                <div ref={floorPlansContainerRef} className="toc-dock-body"></div>
+                            </div>
+
                             {/* Dockable GIS & Geospatial Drawer — Mounted Once */}
                             <div
-                                className="toc-dock-panel toc-dock-right"
+                                className={`toc-dock-panel toc-dock-right ${isDrawerExpanded ? "is-expanded" : ""}`}
                                 data-drawer="gis"
                                 style={{ display: activeDrawer === "gis" ? "flex" : "none" }}
                             >
@@ -1622,16 +2084,57 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                         <span className="material-icons-round" style={{ color: "#38bdf8", fontSize: "18px" }}>public</span>
                                         <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f8fafc" }}>Cesium GIS & Geospatial Environment</span>
                                     </div>
-                                    <button
-                                        type="button"
-                                        onClick={() => setActiveDrawer(null)}
-                                        className="btn-close-dock"
-                                        title="Close GIS Panel"
-                                    >
-                                        &times;
-                                    </button>
+                                    {renderDockHeaderActions("Close GIS Panel")}
                                 </div>
                                 <div ref={gisContainerRef} className="toc-dock-body"></div>
+                            </div>
+
+                            {/* Dockable Google Sheets Sync Drawer — Module 5 Sec 3 */}
+                            <div
+                                className={`toc-dock-panel toc-dock-right ${isDrawerExpanded ? "is-expanded" : ""}`}
+                                data-drawer="sheets"
+                                style={{ display: activeDrawer === "sheets" ? "flex" : "none" }}
+                            >
+                                <div className="toc-dock-header">
+                                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                        <span className="material-icons-round" style={{ color: "#34d399", fontSize: "18px" }}>table_view</span>
+                                        <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f8fafc" }}>Google Sheets BIM Takeoff Sync</span>
+                                    </div>
+                                    {renderDockHeaderActions("Close Sheets Panel")}
+                                </div>
+                                <div ref={sheetsContainerRef} className="toc-dock-body"></div>
+                            </div>
+
+                            {/* Dockable MCP-LLM AI Copilot Drawer — Module 5 Sec 4 */}
+                            <div
+                                className={`toc-dock-panel toc-dock-right ${isDrawerExpanded ? "is-expanded" : ""}`}
+                                data-drawer="mcp"
+                                style={{ display: activeDrawer === "mcp" ? "flex" : "none" }}
+                            >
+                                <div className="toc-dock-header">
+                                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                        <span className="material-icons-round" style={{ color: "#c084fc", fontSize: "18px" }}>smart_toy</span>
+                                        <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f8fafc" }}>MCP–LLM BIM Assistant</span>
+                                    </div>
+                                    {renderDockHeaderActions("Close AI MCP Panel")}
+                                </div>
+                                <div ref={mcpContainerRef} className="toc-dock-body"></div>
+                            </div>
+
+                            {/* Dockable BIM Pro Studio Drawer (Clash QA, 4D Phasing, Property Edit & .FRAG Export) */}
+                            <div
+                                className={`toc-dock-panel toc-dock-right ${isDrawerExpanded ? "is-expanded" : ""}`}
+                                data-drawer="pro-studio"
+                                style={{ display: activeDrawer === "pro-studio" ? "flex" : "none" }}
+                            >
+                                <div className="toc-dock-header">
+                                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                        <span className="material-icons-round" style={{ color: "#d8b4fe", fontSize: "18px" }}>auto_fix_high</span>
+                                        <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f8fafc" }}>BIM Pro Studio (Clash QA · 4D · Export)</span>
+                                    </div>
+                                    {renderDockHeaderActions("Close Pro Studio")}
+                                </div>
+                                <div ref={proStudioContainerRef} className="toc-dock-body"></div>
                             </div>
 
                             <bim-grid
@@ -1647,145 +2150,26 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                             {/* World-Class 3D ViewCube & Architectural Compass Navigator */}
                             <NavigationCube
                                 world={worldRef.current}
-                                isDrawerOpen={Boolean(activeDrawer)}
+                                isDrawerOpen={
+                                    activeDrawer === "properties" ||
+                                    activeDrawer === "enhance" ||
+                                    activeDrawer === "floor-plans" ||
+                                    activeDrawer === "gis" ||
+                                    activeDrawer === "sheets" ||
+                                    activeDrawer === "mcp" ||
+                                    activeDrawer === "pro-studio"
+                                }
                                 onFocusExtents={fitModelView}
                             />
 
-                            {/* Interactive 3D Sectioning Toolbar Overlay */}
-                            {isSectioningActive && (
-                                <div
-                                    className="sectioning-floating-bar"
-                                    style={{
-                                        position: "absolute",
-                                        bottom: "74px",
-                                        left: "50%",
-                                        transform: "translateX(-50%)",
-                                        zIndex: 30,
-                                        background: "rgba(15, 23, 42, 0.94)",
-                                        border: "1px solid rgba(239, 68, 68, 0.4)",
-                                        borderRadius: "14px",
-                                        padding: "6px 12px",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: "8px",
-                                        backdropFilter: "blur(16px)",
-                                        boxShadow: "0 8px 30px rgba(0, 0, 0, 0.6)",
-                                    }}
-                                >
-                                    <span style={{ fontSize: "0.74rem", fontWeight: 700, color: "#f87171", display: "flex", alignItems: "center", gap: "5px" }}>
-                                        <span className="material-icons-round" style={{ fontSize: "16px" }}>content_cut</span>
-                                        <span>Section Cuts ({sectionPlanesCount}):</span>
-                                    </span>
-                                    <button
-                                        type="button"
-                                        onClick={() => createSectionCut("z")}
-                                        style={{
-                                            display: "inline-flex",
-                                            alignItems: "center",
-                                            gap: "4px",
-                                            padding: "4px 8px",
-                                            background: "rgba(30, 41, 59, 0.8)",
-                                            border: "1px solid rgba(148, 163, 184, 0.3)",
-                                            borderRadius: "8px",
-                                            color: "#f8fafc",
-                                            fontSize: "0.72rem",
-                                            fontWeight: 600,
-                                            cursor: "pointer",
-                                        }}
-                                        title="Create Horizontal Floor Plan Cut (Z-Axis)"
-                                    >
-                                        <span>Plan (Z)</span>
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => createSectionCut("x")}
-                                        style={{
-                                            display: "inline-flex",
-                                            alignItems: "center",
-                                            gap: "4px",
-                                            padding: "4px 8px",
-                                            background: "rgba(30, 41, 59, 0.8)",
-                                            border: "1px solid rgba(148, 163, 184, 0.3)",
-                                            borderRadius: "8px",
-                                            color: "#f8fafc",
-                                            fontSize: "0.72rem",
-                                            fontWeight: 600,
-                                            cursor: "pointer",
-                                        }}
-                                        title="Create Transverse Section Cut (X-Axis)"
-                                    >
-                                        <span>Cross (X)</span>
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => createSectionCut("y")}
-                                        style={{
-                                            display: "inline-flex",
-                                            alignItems: "center",
-                                            gap: "4px",
-                                            padding: "4px 8px",
-                                            background: "rgba(30, 41, 59, 0.8)",
-                                            border: "1px solid rgba(148, 163, 184, 0.3)",
-                                            borderRadius: "8px",
-                                            color: "#f8fafc",
-                                            fontSize: "0.72rem",
-                                            fontWeight: 600,
-                                            cursor: "pointer",
-                                        }}
-                                        title="Create Longitudinal Elevation Cut (Y-Axis)"
-                                    >
-                                        <span>Long (Y)</span>
-                                    </button>
-                                    {sectionPlanesCount > 0 && (
-                                        <button
-                                            type="button"
-                                            onClick={clearSectionCuts}
-                                            style={{
-                                                display: "inline-flex",
-                                                alignItems: "center",
-                                                gap: "3px",
-                                                padding: "4px 8px",
-                                                background: "rgba(239, 68, 68, 0.2)",
-                                                border: "1px solid rgba(239, 68, 68, 0.45)",
-                                                borderRadius: "8px",
-                                                color: "#f87171",
-                                                fontSize: "0.72rem",
-                                                fontWeight: 700,
-                                                cursor: "pointer",
-                                            }}
-                                            title="Remove All Active Section Cuts"
-                                        >
-                                            <span className="material-icons-round" style={{ fontSize: "14px" }}>delete</span>
-                                            <span>Clear</span>
-                                        </button>
-                                    )}
-                                    <button
-                                        type="button"
-                                        onClick={toggleSectioning}
-                                        style={{
-                                            background: "transparent",
-                                            border: "none",
-                                            color: "#94a3b8",
-                                            cursor: "pointer",
-                                            fontSize: "16px",
-                                            padding: "2px 4px",
-                                            marginLeft: "2px",
-                                        }}
-                                        title="Close Sectioning Bar"
-                                    >
-                                        &times;
-                                    </button>
-                                </div>
-                            )}
-
-                            {/* 2D Plan CAD Sheet Banner (right-aligned below toolbar so it never overlaps) */}
+                            {/* 2D Plan CAD Sheet Banner (right-aligned below ViewCube or top bar) */}
                             {viewerMode === "2d-plan" && (
                                 <div
                                     className="plan-mode-banner"
                                     style={{
                                         position: "absolute",
-                                        top: "calc(var(--toolbar-bottom, 166px) + 8px)",
-                                        right: "16px",
+                                        top: "calc(var(--toolbar-bottom, 54px) + 10px)",
+                                        left: "16px",
                                         zIndex: 18,
                                         background: "rgba(15, 23, 42, 0.94)",
                                         border: "1px solid rgba(56, 189, 248, 0.45)",
@@ -1919,25 +2303,38 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                             letterSpacing: "0.06em",
                                             marginBottom: "8px",
                                         }}>
-                                            OPENBIM &amp; CESIUM GEOSPATIAL CAD STUDIO
+                                            {isEmptyProject
+                                                ? "EMPTY & CESIUM GIS GEOSPATIAL STUDIO"
+                                                : project?.modelCategory === "ifc"
+                                                ? "OPENBIM IFC WORKSPACE"
+                                                : "3D BIM WORKSPACE"}
                                         </div>
                                         <h3 style={{ margin: 0, fontSize: "1.32rem", fontWeight: 800, color: "#f8fafc" }}>
-                                            Empty BIM Workspace
+                                            {isEmptyProject
+                                                ? "Empty GIS / BIM Workspace"
+                                                : project?.modelCategory === "ifc"
+                                                ? "Empty IFC Project"
+                                                : "Empty 3D BIM Project"}
                                         </h3>
                                     </div>
 
                                     <p style={{ margin: 0, fontSize: "0.86rem", color: "#94a3b8", lineHeight: 1.6 }}>
                                         {isDraggingFile
-                                            ? "Drop your IFC model now to immediately parse and view in That Open Engine!"
-                                            : "This workspace is ready for your project. Drag & drop an IFC OpenBIM model anywhere on this canvas, upload from disk, or stream Google Photorealistic 3D Geospatial tiles."}
+                                            ? "Drop your BIM model now to parse and view in That Open Engine!"
+                                            : isEmptyProject
+                                            ? "This empty studio supports Google Photorealistic 3D Cesium Tiles & 2D GIS Radar, or drag & drop an IFC model later."
+                                            : project?.modelCategory === "ifc"
+                                            ? "Ready for OpenBIM. Drag & drop or upload an .ifc / .frag model from disk to open it in That Open Engine."
+                                            : "Ready for 3D BIM. Drag & drop or upload a .glb, .gltf, or .obj 3D model from disk to inspect it in That Open Engine."}
                                     </p>
 
-                                    {/* Quick Geospatial City Portals */}
-                                    <div style={{ display: "flex", flexDirection: "column", gap: "6px", width: "100%", margin: "4px 0" }}>
-                                        <span style={{ fontSize: "0.70rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                                            Quick Geospatial Portals
-                                        </span>
-                                        <div style={{ display: "flex", gap: "6px", justifyContent: "center", flexWrap: "wrap" }}>
+                                    {/* Quick Geospatial City Portals (Empty / GIS Studio only) */}
+                                    {isEmptyProject && (
+                                        <div style={{ display: "flex", flexDirection: "column", gap: "6px", width: "100%", margin: "4px 0" }}>
+                                            <span style={{ fontSize: "0.70rem", color: "#64748b", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                                                Quick Geospatial Portals
+                                            </span>
+                                            <div style={{ display: "flex", gap: "6px", justifyContent: "center", flexWrap: "wrap" }}>
                                             <button
                                                 type="button"
                                                 onClick={() => {
@@ -2014,7 +2411,8 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                                 🗼 Paris
                                             </button>
                                         </div>
-                                    </div>
+                                        </div>
+                                    )}
 
                                     <div style={{ display: "flex", gap: "10px", marginTop: "8px", flexWrap: "wrap", justifyContent: "center" }}>
                                         <button
@@ -2079,8 +2477,8 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                     onClick={() => setIsPromptDismissed(false)}
                                     style={{
                                         position: "absolute",
-                                        top: "calc(var(--mode-bar-bottom, 54px) + 12px)",
-                                        right: "16px",
+                                        top: "calc(var(--toolbar-bottom, 54px) + 10px)",
+                                        left: "16px",
                                         zIndex: 18,
                                         background: "rgba(15, 23, 42, 0.90)",
                                         border: "1px solid rgba(56, 189, 248, 0.4)",
@@ -2184,618 +2582,323 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                 </div>
                             )}
 
-                            {/* Floating CAD Navigation HUD Toolbar */}
-                            <div
-                                className="viewer-hud-overlay"
-                                style={{
-                                    position: "absolute",
-                                    bottom: "16px",
-                                    left: "50%",
-                                    transform: "translateX(-50%)",
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "flex-start",
-                                    gap: "4px",
-                                    padding: "5px 8px",
-                                    background: "rgba(15, 23, 42, 0.94)",
-                                    backdropFilter: "blur(14px)",
-                                    border: "1px solid rgba(56, 189, 248, 0.35)",
-                                    borderRadius: "30px",
-                                    zIndex: 20,
-                                    boxShadow: "0 8px 32px rgba(0, 0, 0, 0.65)",
-                                    maxWidth: "calc(100% - 24px)",
-                                    overflowX: "auto",
-                                    scrollbarWidth: "none",
-                                    boxSizing: "border-box",
-                                    flexWrap: "nowrap",
-                                }}
-                            >
-                                {!hasActiveModel ? (
-                                    <>
-                                        <button
-                                            type="button"
-                                            onClick={() => setCameraPreset("iso")}
-                                            style={{
-                                                display: "inline-flex",
-                                                alignItems: "center",
-                                                gap: "4px",
-                                                padding: "5px 9px",
-                                                background: "rgba(30, 41, 59, 0.85)",
-                                                border: "1px solid rgba(148, 163, 184, 0.25)",
-                                                borderRadius: "20px",
-                                                color: "#f8fafc",
-                                                cursor: "pointer",
-                                                fontSize: "0.76rem",
-                                                fontWeight: 600,
-                                                flexShrink: 0,
-                                            }}
-                                            title="Axonometric 3D Perspective View (ISO)"
-                                        >
-                                            <span className="material-icons-round" style={{ fontSize: "15px", color: "#38bdf8" }}>view_in_ar</span>
-                                            <span className="hud-btn-label">3D ISO</span>
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            onClick={() => setCameraPreset("plan")}
-                                            style={{
-                                                display: "inline-flex",
-                                                alignItems: "center",
-                                                gap: "4px",
-                                                padding: "5px 9px",
-                                                background: "rgba(30, 41, 59, 0.85)",
-                                                border: "1px solid rgba(148, 163, 184, 0.25)",
-                                                borderRadius: "20px",
-                                                color: "#f8fafc",
-                                                cursor: "pointer",
-                                                fontSize: "0.76rem",
-                                                fontWeight: 600,
-                                                flexShrink: 0,
-                                            }}
-                                            title="Top Plan View (Orthographic 2D / Satellite)"
-                                        >
-                                            <span className="material-icons-round" style={{ fontSize: "15px", color: "#38bdf8" }}>layers</span>
-                                            <span className="hud-btn-label">Plan</span>
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            onClick={() => setCameraPreset("front")}
-                                            style={{
-                                                display: "inline-flex",
-                                                alignItems: "center",
-                                                gap: "4px",
-                                                padding: "5px 9px",
-                                                background: "rgba(30, 41, 59, 0.85)",
-                                                border: "1px solid rgba(148, 163, 184, 0.25)",
-                                                borderRadius: "20px",
-                                                color: "#f8fafc",
-                                                cursor: "pointer",
-                                                fontSize: "0.76rem",
-                                                fontWeight: 600,
-                                                flexShrink: 0,
-                                            }}
-                                            title="Front Horizon View"
-                                        >
-                                            <span className="material-icons-round" style={{ fontSize: "15px", color: "#38bdf8" }}>crop_portrait</span>
-                                            <span className="hud-btn-label">Front</span>
-                                        </button>
-
-                                        <div style={{ width: "1px", height: "16px", background: "rgba(148, 163, 184, 0.3)", margin: "0 1px", flexShrink: 0 }} />
-
-                                        <button
-                                            type="button"
-                                            onClick={() => handleZoom(true)}
-                                            style={{ padding: "5px 7px", background: "transparent", border: "none", color: "#cbd5e1", cursor: "pointer", display: "inline-flex", alignItems: "center", flexShrink: 0 }}
-                                            title="Smooth Zoom In"
-                                        >
-                                            <span className="material-icons-round" style={{ fontSize: "17px" }}>add</span>
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleZoom(false)}
-                                            style={{ padding: "5px 7px", background: "transparent", border: "none", color: "#cbd5e1", cursor: "pointer", display: "inline-flex", alignItems: "center", flexShrink: 0 }}
-                                            title="Smooth Zoom Out"
-                                        >
-                                            <span className="material-icons-round" style={{ fontSize: "17px" }}>remove</span>
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            onClick={fitModelView}
-                                            style={{
-                                                display: "inline-flex",
-                                                alignItems: "center",
-                                                gap: "4px",
-                                                padding: "5px 9px",
-                                                background: "rgba(30, 41, 59, 0.85)",
-                                                border: "1px solid rgba(148, 163, 184, 0.25)",
-                                                borderRadius: "20px",
-                                                color: "#f8fafc",
-                                                cursor: "pointer",
-                                                fontSize: "0.76rem",
-                                                fontWeight: 600,
-                                                flexShrink: 0,
-                                            }}
-                                            title="Focus / Center Terrain or Model"
-                                        >
-                                            <span className="material-icons-round" style={{ fontSize: "15px", color: "#38bdf8" }}>center_focus_strong</span>
-                                            <span className="hud-btn-label">Focus</span>
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            onClick={toggleAutoOrbit}
-                                            style={{
-                                                display: "inline-flex",
-                                                alignItems: "center",
-                                                gap: "4px",
-                                                padding: "5px 9px",
-                                                background: isAutoRotating ? "var(--primary-blue)" : "rgba(30, 41, 59, 0.85)",
-                                                border: "1px solid rgba(148, 163, 184, 0.25)",
-                                                borderRadius: "20px",
-                                                color: "#f8fafc",
-                                                cursor: "pointer",
-                                                fontSize: "0.76rem",
-                                                fontWeight: 600,
-                                                flexShrink: 0,
-                                            }}
-                                            title="Toggle Auto-Orbit Turntable"
-                                        >
-                                            <span className="material-icons-round" style={{ fontSize: "15px" }}>sync</span>
-                                            <span className="hud-btn-label">Orbit</span>
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            onClick={toggleCadGrid}
-                                            style={{
-                                                display: "inline-flex",
-                                                alignItems: "center",
-                                                gap: "4px",
-                                                padding: "5px 9px",
-                                                background: isGridVisible ? "rgba(30, 41, 59, 0.85)" : "transparent",
-                                                border: "1px solid rgba(148, 163, 184, 0.25)",
-                                                borderRadius: "20px",
-                                                color: isGridVisible ? "#38bdf8" : "#94a3b8",
-                                                cursor: "pointer",
-                                                fontSize: "0.76rem",
-                                                fontWeight: 600,
-                                                flexShrink: 0,
-                                            }}
-                                            title="Toggle That Open Engine Infinite CAD Grid"
-                                        >
-                                            <span className="material-icons-round" style={{ fontSize: "15px" }}>grid_on</span>
-                                            <span className="hud-btn-label">Grid</span>
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            onClick={toggleSectioning}
-                                            style={{
-                                                display: "inline-flex",
-                                                alignItems: "center",
-                                                gap: "4px",
-                                                padding: "5px 9px",
-                                                background: isSectioningActive ? "rgba(239, 68, 68, 0.25)" : "rgba(30, 41, 59, 0.85)",
-                                                border: isSectioningActive ? "1px solid #ef4444" : "1px solid rgba(148, 163, 184, 0.25)",
-                                                borderRadius: "20px",
-                                                color: isSectioningActive ? "#f87171" : "#f8fafc",
-                                                cursor: "pointer",
-                                                fontSize: "0.76rem",
-                                                fontWeight: 600,
-                                                flexShrink: 0,
-                                            }}
-                                            title="Toggle Architectural Section Planes (OBC.Clipper)"
-                                        >
-                                            <span className="material-icons-round" style={{ fontSize: "15px", color: isSectioningActive ? "#f87171" : "#ef4444" }}>content_cut</span>
-                                            <span className="hud-btn-label">Section{sectionPlanesCount > 0 ? ` (${sectionPlanesCount})` : ""}</span>
-                                        </button>
-
-                                        <div style={{ width: "1px", height: "16px", background: "rgba(148, 163, 184, 0.3)", margin: "0 1px", flexShrink: 0 }} />
-
-                                        <button
-                                            type="button"
-                                            onClick={() => toggleDrawer("gis")}
-                                            style={{
-                                                display: "inline-flex",
-                                                alignItems: "center",
-                                                gap: "5px",
-                                                padding: "5px 11px",
-                                                background: activeDrawer === "gis" ? "var(--primary-blue)" : "rgba(30, 41, 59, 0.85)",
-                                                border: "1px solid rgba(148, 163, 184, 0.25)",
-                                                borderRadius: "20px",
-                                                color: "#f8fafc",
-                                                cursor: "pointer",
-                                                fontSize: "0.76rem",
-                                                fontWeight: 600,
-                                                flexShrink: 0,
-                                            }}
-                                            title="Open Cesium 3D Geospatial Tiles drawer"
-                                        >
-                                            <span className="material-icons-round" style={{ fontSize: "15px", color: "#38bdf8" }}>public</span>
-                                            <span className="hud-btn-label">GIS</span>
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            onClick={handleOpenIfcFile}
-                                            style={{
-                                                display: "inline-flex",
-                                                alignItems: "center",
-                                                gap: "5px",
-                                                padding: "5px 12px",
-                                                background: "linear-gradient(135deg, #0284c7, #0ea5e9)",
-                                                border: "none",
-                                                borderRadius: "20px",
-                                                color: "#ffffff",
-                                                cursor: "pointer",
-                                                fontSize: "0.76rem",
-                                                fontWeight: 700,
-                                                boxShadow: "0 4px 14px rgba(14, 165, 233, 0.4)",
-                                                flexShrink: 0,
-                                            }}
-                                            title="Upload an IFC model into this workspace"
-                                        >
-                                            <span className="material-icons-round" style={{ fontSize: "15px" }}>cloud_upload</span>
-                                            <span className="hud-btn-label">Upload</span>
-                                        </button>
-
-                                        <div style={{ width: "1px", height: "16px", background: "rgba(148, 163, 184, 0.3)", margin: "0 1px", flexShrink: 0 }} />
-
-                                        <button
-                                            type="button"
-                                            onClick={() => setIsLeftPaneCollapsed((prev) => !prev)}
-                                            style={{
-                                                display: "inline-flex",
-                                                alignItems: "center",
-                                                gap: "5px",
-                                                padding: "5px 11px",
-                                                background: isLeftPaneCollapsed ? "rgba(56, 189, 248, 0.25)" : "rgba(30, 41, 59, 0.85)",
-                                                border: isLeftPaneCollapsed ? "1px solid #38bdf8" : "1px solid rgba(148, 163, 184, 0.25)",
-                                                borderRadius: "20px",
-                                                color: isLeftPaneCollapsed ? "#38bdf8" : "#f8fafc",
-                                                cursor: "pointer",
-                                                fontSize: "0.76rem",
-                                                fontWeight: 600,
-                                                flexShrink: 0,
-                                            }}
-                                            title={isLeftPaneCollapsed ? "Restore side panels" : "Maximize Viewer (Full Screen Width)"}
-                                        >
-                                            <span className="material-icons-round" style={{ fontSize: "15px" }}>
-                                                {isLeftPaneCollapsed ? "fullscreen_exit" : "fullscreen"}
-                                            </span>
-                                            <span className="hud-btn-label">{isLeftPaneCollapsed ? "Standard" : "Full View"}</span>
-                                        </button>
-                                    </>
-                                ) : (
-                                    <>
-                                <button
-                                    type="button"
-                                    onClick={() => setCameraPreset("iso")}
-                                    style={{
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        gap: "4px",
-                                        padding: "5px 9px",
-                                        background: "rgba(30, 41, 59, 0.85)",
-                                        border: "1px solid rgba(148, 163, 184, 0.25)",
-                                        borderRadius: "20px",
-                                        color: "#f8fafc",
-                                        cursor: "pointer",
-                                        fontSize: "0.76rem",
-                                        fontWeight: 600,
-                                        flexShrink: 0,
-                                    }}
-                                    title="Axonometric 3D Perspective View (ISO)"
-                                >
-                                    <span className="material-icons-round" style={{ fontSize: "15px", color: "#38bdf8" }}>view_in_ar</span>
-                                    <span className="hud-btn-label">3D ISO</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setCameraPreset("plan")}
-                                    style={{
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        gap: "4px",
-                                        padding: "5px 9px",
-                                        background: "rgba(30, 41, 59, 0.85)",
-                                        border: "1px solid rgba(148, 163, 184, 0.25)",
-                                        borderRadius: "20px",
-                                        color: "#f8fafc",
-                                        cursor: "pointer",
-                                        fontSize: "0.76rem",
-                                        fontWeight: 600,
-                                        flexShrink: 0,
-                                    }}
-                                    title="Top Plan View (Orthographic 2D)"
-                                >
-                                    <span className="material-icons-round" style={{ fontSize: "15px", color: "#38bdf8" }}>layers</span>
-                                    <span className="hud-btn-label">Plan</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setCameraPreset("front")}
-                                    style={{
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        gap: "4px",
-                                        padding: "5px 9px",
-                                        background: "rgba(30, 41, 59, 0.85)",
-                                        border: "1px solid rgba(148, 163, 184, 0.25)",
-                                        borderRadius: "20px",
-                                        color: "#f8fafc",
-                                        cursor: "pointer",
-                                        fontSize: "0.76rem",
-                                        fontWeight: 600,
-                                        flexShrink: 0,
-                                    }}
-                                    title="Front Elevation View"
-                                >
-                                    <span className="material-icons-round" style={{ fontSize: "15px", color: "#38bdf8" }}>crop_portrait</span>
-                                    <span className="hud-btn-label">Front</span>
-                                </button>
-                                <div style={{ width: "1px", height: "16px", background: "rgba(148, 163, 184, 0.3)", margin: "0 1px", flexShrink: 0 }} />
-                                <button
-                                    type="button"
-                                    onClick={() => handleZoom(true)}
-                                    style={{ padding: "5px 7px", background: "transparent", border: "none", color: "#cbd5e1", cursor: "pointer", display: "inline-flex", alignItems: "center", flexShrink: 0 }}
-                                    title="Smooth Zoom In (Dolly +)"
-                                >
-                                    <span className="material-icons-round" style={{ fontSize: "17px" }}>add</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => handleZoom(false)}
-                                    style={{ padding: "5px 7px", background: "transparent", border: "none", color: "#cbd5e1", cursor: "pointer", display: "inline-flex", alignItems: "center", flexShrink: 0 }}
-                                    title="Smooth Zoom Out (Dolly -)"
-                                >
-                                    <span className="material-icons-round" style={{ fontSize: "17px" }}>remove</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={fitModelView}
-                                    style={{
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        gap: "4px",
-                                        padding: "5px 9px",
-                                        background: "rgba(30, 41, 59, 0.85)",
-                                        border: "1px solid rgba(148, 163, 184, 0.25)",
-                                        borderRadius: "20px",
-                                        color: "#f8fafc",
-                                        cursor: "pointer",
-                                        fontSize: "0.76rem",
-                                        fontWeight: 600,
-                                        flexShrink: 0,
-                                    }}
-                                    title="Fit Model to Viewport (Center & Focus)"
-                                >
-                                    <span className="material-icons-round" style={{ fontSize: "15px", color: "#38bdf8" }}>center_focus_strong</span>
-                                    <span className="hud-btn-label">Fit</span>
-                                </button>
-                                <div style={{ width: "1px", height: "16px", background: "rgba(148, 163, 184, 0.3)", margin: "0 1px", flexShrink: 0 }} />
-                                <button
-                                    type="button"
-                                    onClick={toggleAutoOrbit}
-                                    style={{
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        gap: "4px",
-                                        padding: "5px 9px",
-                                        background: isAutoRotating ? "var(--primary-blue)" : "rgba(30, 41, 59, 0.85)",
-                                        border: "1px solid rgba(148, 163, 184, 0.25)",
-                                        borderRadius: "20px",
-                                        color: "#f8fafc",
-                                        cursor: "pointer",
-                                        fontSize: "0.76rem",
-                                        fontWeight: 600,
-                                        flexShrink: 0,
-                                    }}
-                                    title="Toggle Auto-Orbit Turntable"
-                                >
-                                    <span className="material-icons-round" style={{ fontSize: "15px" }}>sync</span>
-                                    <span className="hud-btn-label">Orbit</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={toggleCadGrid}
-                                    style={{
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        gap: "4px",
-                                        padding: "5px 9px",
-                                        background: isGridVisible ? "rgba(30, 41, 59, 0.85)" : "transparent",
-                                        border: "1px solid rgba(148, 163, 184, 0.25)",
-                                        borderRadius: "20px",
-                                        color: isGridVisible ? "#38bdf8" : "#94a3b8",
-                                        cursor: "pointer",
-                                        fontSize: "0.76rem",
-                                        fontWeight: 600,
-                                        flexShrink: 0,
-                                    }}
-                                    title="Toggle That Open Engine Infinite CAD Grid"
-                                >
-                                    <span className="material-icons-round" style={{ fontSize: "15px" }}>grid_on</span>
-                                    <span className="hud-btn-label">Grid</span>
-                                </button>
-                                <div style={{ width: "1px", height: "16px", background: "rgba(148, 163, 184, 0.3)", margin: "0 1px", flexShrink: 0 }} />
-                                <button
-                                    type="button"
-                                    onClick={toggleMeasuring}
-                                    style={{
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        gap: "4px",
-                                        padding: "5px 9px",
-                                        background: isMeasuring ? "#d97706" : "rgba(30, 41, 59, 0.85)",
-                                        border: isMeasuring ? "1px solid #f59e0b" : "1px solid rgba(148, 163, 184, 0.25)",
-                                        borderRadius: "20px",
-                                        color: isMeasuring ? "#ffffff" : "#f8fafc",
-                                        cursor: "pointer",
-                                        fontSize: "0.76rem",
-                                        fontWeight: 600,
-                                        flexShrink: 0,
-                                    }}
-                                    title="Toggle Interactive 3D Measurement & Dimension Tool"
-                                >
-                                    <span className="material-icons-round" style={{ fontSize: "15px", color: isMeasuring ? "#ffffff" : "#f59e0b" }}>straighten</span>
-                                    <span className="hud-btn-label">Measure{measurementsCount > 0 ? ` (${measurementsCount})` : ""}</span>
-                                </button>
-                                {measurementsCount > 0 && (
+                            {/* Autodesk-Inspired Centered Contextual Tool Sub-Bar */}
+                            {activeBottomSubbar === "camera" && (
+                                <div className="viewer-ctx-subbar">
                                     <button
                                         type="button"
-                                        onClick={clearMeasurements}
-                                        style={{
-                                            display: "inline-flex",
-                                            alignItems: "center",
-                                            padding: "5px 7px",
-                                            background: "rgba(239, 68, 68, 0.15)",
-                                            border: "1px solid rgba(239, 68, 68, 0.35)",
-                                            borderRadius: "20px",
-                                            color: "#ef4444",
-                                            cursor: "pointer",
-                                            fontSize: "0.76rem",
-                                            flexShrink: 0,
-                                        }}
-                                        title="Clear All 3D Dimensions"
+                                        className={`viewer-ctx-btn ${cameraProjection === "Perspective" ? "active" : ""}`}
+                                        onClick={() => cameraProjection !== "Perspective" && toggleCameraProjection()}
+                                        title="3D Perspective Projection"
                                     >
-                                        <span className="material-icons-round" style={{ fontSize: "15px" }}>clear</span>
+                                        <span className="material-icons-round">view_in_ar</span>
+                                        <span>3D Persp</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={`viewer-ctx-btn ${cameraProjection === "Orthographic" ? "active" : ""}`}
+                                        onClick={() => cameraProjection !== "Orthographic" && toggleCameraProjection()}
+                                        title="2D Orthographic Projection"
+                                    >
+                                        <span className="material-icons-round">view_agenda</span>
+                                        <span>2D Ortho</span>
+                                    </button>
+                                    <div style={{ width: "1px", height: "24px", background: "rgba(148,163,184,0.22)" }} />
+                                    <button
+                                        type="button"
+                                        className={`viewer-ctx-btn ${viewerMode === "2d-plan" ? "active" : ""}`}
+                                        onClick={() => setCameraPreset("plan")}
+                                        title="Top-Down Plan View"
+                                    >
+                                        <span className="material-icons-round">layers</span>
+                                        <span>Top Plan</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="viewer-ctx-btn"
+                                        onClick={() => setCameraPreset("front")}
+                                        title="Front Elevation View"
+                                    >
+                                        <span className="material-icons-round">crop_portrait</span>
+                                        <span>Front</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="viewer-ctx-btn"
+                                        onClick={() => handleZoom(true)}
+                                        title="Zoom In"
+                                    >
+                                        <span className="material-icons-round">zoom_in</span>
+                                        <span>Zoom +</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="viewer-ctx-btn"
+                                        onClick={() => handleZoom(false)}
+                                        title="Zoom Out"
+                                    >
+                                        <span className="material-icons-round">zoom_out</span>
+                                        <span>Zoom −</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={`viewer-ctx-btn ${isAutoRotating ? "active" : ""}`}
+                                        onClick={toggleAutoOrbit}
+                                        title="Toggle Continuous Auto-Orbit Turntable"
+                                    >
+                                        <span className="material-icons-round">sync</span>
+                                        <span>Turntable</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveBottomSubbar(null)}
+                                        style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: "16px", padding: "2px 6px" }}
+                                        title="Close Camera Bar"
+                                    >
+                                        &times;
+                                    </button>
+                                </div>
+                            )}
+
+                            {activeBottomSubbar === "measure" && isMeasuring && (
+                                <div className="viewer-ctx-subbar">
+                                    <button
+                                        type="button"
+                                        className={`viewer-ctx-btn ${measureMode === "length" ? "active" : ""}`}
+                                        onClick={() => {
+                                            setMeasureMode("length");
+                                            measurementSystemRef.current?.setMode("length");
+                                        }}
+                                        title="Point-to-Point Distance Measurement"
+                                    >
+                                        <span className="material-icons-round">straighten</span>
+                                        <span>Length</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className={`viewer-ctx-btn ${measureMode === "area" ? "active" : ""}`}
+                                        onClick={() => {
+                                            setMeasureMode("area");
+                                            measurementSystemRef.current?.setMode("area");
+                                        }}
+                                        title="3D Polygon Area Takeoff"
+                                    >
+                                        <span className="material-icons-round">square_foot</span>
+                                        <span>Area m²</span>
+                                    </button>
+                                    {measureMode === "area" && (
+                                        <button
+                                            type="button"
+                                            className="viewer-ctx-btn active"
+                                            onClick={() => measurementSystemRef.current?.commitAreaPolygon()}
+                                            title="Complete 3D Area Polygon"
+                                        >
+                                            <span className="material-icons-round">check_circle</span>
+                                            <span>Finish</span>
+                                        </button>
+                                    )}
+                                    {measurementsCount > 0 && (
+                                        <button
+                                            type="button"
+                                            className="viewer-ctx-btn"
+                                            onClick={clearMeasurements}
+                                            style={{ color: "#f87171" }}
+                                            title="Clear All Dimensions"
+                                        >
+                                            <span className="material-icons-round">delete_outline</span>
+                                            <span>Clear ({measurementsCount})</span>
+                                        </button>
+                                    )}
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            toggleMeasuring();
+                                            setActiveBottomSubbar(null);
+                                        }}
+                                        style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: "16px", padding: "2px 6px" }}
+                                        title="Exit Measure Mode"
+                                    >
+                                        &times;
+                                    </button>
+                                </div>
+                            )}
+
+                            {activeBottomSubbar === "section" && isSectioningActive && (
+                                <div className="viewer-ctx-subbar">
+                                    <button
+                                        type="button"
+                                        className="viewer-ctx-btn"
+                                        onClick={() => createSectionCut("x")}
+                                        title="Create X-Axis Section Cut"
+                                    >
+                                        <span className="material-icons-round">border_vertical</span>
+                                        <span>X Plane</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="viewer-ctx-btn"
+                                        onClick={() => createSectionCut("y")}
+                                        title="Create Y-Axis Section Cut"
+                                    >
+                                        <span className="material-icons-round">border_horizontal</span>
+                                        <span>Y Plane</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="viewer-ctx-btn"
+                                        onClick={() => createSectionCut("z")}
+                                        title="Create Z-Axis Plan Cut"
+                                    >
+                                        <span className="material-icons-round">layers</span>
+                                        <span>Z Plane</span>
+                                    </button>
+                                    {sectionPlanesCount > 0 && (
+                                        <button
+                                            type="button"
+                                            className="viewer-ctx-btn"
+                                            onClick={clearSectionCuts}
+                                            style={{ color: "#f87171" }}
+                                            title="Clear All Active Section Planes"
+                                        >
+                                            <span className="material-icons-round">delete_outline</span>
+                                            <span>Clear ({sectionPlanesCount})</span>
+                                        </button>
+                                    )}
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            toggleSectioning();
+                                            setActiveBottomSubbar(null);
+                                        }}
+                                        style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: "16px", padding: "2px 6px" }}
+                                        title="Exit Sectioning"
+                                    >
+                                        &times;
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Autodesk-Inspired Minimal Calm Bottom Dock */}
+                            <div className="viewer-bottom-dock">
+                                <button
+                                    type="button"
+                                    className="viewer-dock-item"
+                                    onClick={() => setCameraPreset("iso")}
+                                    title="Home 3D Isometric View"
+                                >
+                                    <span className="material-icons-round">home</span>
+                                    <span className="viewer-dock-label">Home</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    className="viewer-dock-item"
+                                    onClick={fitModelView}
+                                    title="Fit Whole Model to Screen"
+                                >
+                                    <span className="material-icons-round">center_focus_strong</span>
+                                    <span className="viewer-dock-label">Fit</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    className={`viewer-dock-item ${navControlMode === "FirstPerson" ? "active" : ""}`}
+                                    onClick={toggleNavControlMode}
+                                    title={`Navigation Mode: ${navControlMode} (Click to switch Orbit ↔ First-Person Walk)`}
+                                >
+                                    <span className="material-icons-round">
+                                        {navControlMode === "FirstPerson" ? "directions_walk" : "360"}
+                                    </span>
+                                    <span className="viewer-dock-label">
+                                        {navControlMode === "FirstPerson" ? "Walk" : "Orbit"}
+                                    </span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    className={`viewer-dock-item ${activeBottomSubbar === "camera" ? "active" : ""}`}
+                                    onClick={() =>
+                                        setActiveBottomSubbar((prev) => (prev === "camera" ? null : "camera"))
+                                    }
+                                    title="Projection (3D/2D), Plan/Front, Zoom & Auto-Orbit"
+                                >
+                                    <span className="material-icons-round">videocam</span>
+                                    <span className="viewer-dock-label">Camera</span>
+                                </button>
+
+                                <div className="viewer-dock-sep" />
+
+                                {hasActiveModel && (
+                                    <button
+                                        type="button"
+                                        className={`viewer-dock-item ${isMeasuring ? "active" : ""}`}
+                                        onClick={() => {
+                                            const next = !isMeasuring;
+                                            toggleMeasuring();
+                                            setActiveBottomSubbar(next ? "measure" : null);
+                                        }}
+                                        title="Measure Distance & Polygon Area"
+                                    >
+                                        <span className="material-icons-round">straighten</span>
+                                        <span className="viewer-dock-label">
+                                            Measure{measurementsCount > 0 ? ` (${measurementsCount})` : ""}
+                                        </span>
                                     </button>
                                 )}
+
                                 <button
                                     type="button"
-                                    onClick={toggleSectioning}
-                                    style={{
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        gap: "4px",
-                                        padding: "5px 9px",
-                                        background: isSectioningActive ? "rgba(239, 68, 68, 0.25)" : "rgba(30, 41, 59, 0.85)",
-                                        border: isSectioningActive ? "1px solid #ef4444" : "1px solid rgba(148, 163, 184, 0.25)",
-                                        borderRadius: "20px",
-                                        color: isSectioningActive ? "#f87171" : "#f8fafc",
-                                        cursor: "pointer",
-                                        fontSize: "0.76rem",
-                                        fontWeight: 600,
-                                        flexShrink: 0,
-                                    }}
-                                    title="Toggle Architectural Section Planes (OBC.Clipper)"
-                                >
-                                    <span className="material-icons-round" style={{ fontSize: "15px", color: isSectioningActive ? "#f87171" : "#ef4444" }}>content_cut</span>
-                                    <span className="hud-btn-label">Section{sectionPlanesCount > 0 ? ` (${sectionPlanesCount})` : ""}</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={handleOpenIfcFile}
-                                    style={{
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        gap: "4px",
-                                        padding: "5px 9px",
-                                        background: "rgba(16, 185, 129, 0.18)",
-                                        border: "1px solid rgba(16, 185, 129, 0.45)",
-                                        borderRadius: "20px",
-                                        color: "#34d399",
-                                        cursor: "pointer",
-                                        fontSize: "0.76rem",
-                                        fontWeight: 600,
-                                        flexShrink: 0,
-                                    }}
-                                    title="Open and load an IFC model from your local computer"
-                                >
-                                    <span className="material-icons-round" style={{ fontSize: "15px" }}>file_upload</span>
-                                    <span className="hud-btn-label">Load IFC</span>
-                                </button>
-                                <div style={{ width: "1px", height: "16px", background: "rgba(148, 163, 184, 0.3)", margin: "0 1px", flexShrink: 0 }} />
-                                {/* Toggle Floating Toolbar Overlay */}
-                                <button
-                                    type="button"
-                                    onClick={() => setIsFloatingToolbarCollapsed((prev) => !prev)}
-                                    style={{
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        gap: "4px",
-                                        padding: "5px 9px",
-                                        background: isFloatingToolbarCollapsed ? "rgba(245, 158, 11, 0.22)" : "rgba(30, 41, 59, 0.85)",
-                                        border: isFloatingToolbarCollapsed ? "1px solid #f59e0b" : "1px solid rgba(148, 163, 184, 0.25)",
-                                        borderRadius: "20px",
-                                        color: isFloatingToolbarCollapsed ? "#fbbf24" : "#f8fafc",
-                                        cursor: "pointer",
-                                        fontSize: "0.76rem",
-                                        fontWeight: 600,
-                                        flexShrink: 0,
-                                    }}
-                                    title={isFloatingToolbarCollapsed ? "Show Quick-Action BIM Toolbar (Color, Visibility, Ghost, Focus)" : "Hide Quick-Action BIM Toolbar"}
-                                >
-                                    <span className="material-icons-round" style={{ fontSize: "15px" }}>
-                                        {isFloatingToolbarCollapsed ? "visibility" : "visibility_off"}
-                                    </span>
-                                    <span className="hud-btn-label">{isFloatingToolbarCollapsed ? "Show Tools" : "Hide Tools"}</span>
-                                </button>
-                                {/* Fullscreen 100% Canvas Toggle Button */}
-                                <button
-                                    type="button"
+                                    className={`viewer-dock-item ${isSectioningActive ? "active" : ""}`}
                                     onClick={() => {
-                                        const next = !isTopBarCollapsed;
-                                        setIsTopBarCollapsed(next);
-                                        // When entering 100% fullscreen canvas, also hide floating toolbar for complete full bleed
-                                        if (next) {
-                                            setIsFloatingToolbarCollapsed(true);
-                                        } else {
-                                            setIsFloatingToolbarCollapsed(false);
-                                        }
+                                        const next = !isSectioningActive;
+                                        toggleSectioning();
+                                        setActiveBottomSubbar(next ? "section" : null);
                                     }}
-                                    style={{
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        gap: "4px",
-                                        padding: "5px 9px",
-                                        background: isTopBarCollapsed ? "rgba(56, 189, 248, 0.25)" : "rgba(30, 41, 59, 0.85)",
-                                        border: isTopBarCollapsed ? "1px solid #38bdf8" : "1px solid rgba(148, 163, 184, 0.25)",
-                                        borderRadius: "20px",
-                                        color: isTopBarCollapsed ? "#38bdf8" : "#f8fafc",
-                                        cursor: "pointer",
-                                        fontSize: "0.76rem",
-                                        fontWeight: 600,
-                                        flexShrink: 0,
-                                    }}
-                                    title={isTopBarCollapsed ? "Show Navigation & Tools Bars" : "Hide Both Bars (100% Unobstructed Fullscreen Canvas)"}
+                                    title="Architectural Section Cuts (X / Y / Z)"
                                 >
-                                    <span className="material-icons-round" style={{ fontSize: "15px" }}>
-                                        {isTopBarCollapsed ? "close_fullscreen" : "fullscreen"}
+                                    <span className="material-icons-round">content_cut</span>
+                                    <span className="viewer-dock-label">
+                                        Section{sectionPlanesCount > 0 ? ` (${sectionPlanesCount})` : ""}
                                     </span>
-                                    <span className="hud-btn-label">{isTopBarCollapsed ? "Dock Bars" : "Fullscreen"}</span>
                                 </button>
-                                <div style={{ width: "1px", height: "16px", background: "rgba(148, 163, 184, 0.3)", margin: "0 1px", flexShrink: 0 }} />
-                                {/* Full View (Maximize 3D BIM Canvas across full width) */}
+
+                                {hasActiveModel && (
+                                    <button
+                                        type="button"
+                                        className={`viewer-dock-item ${!isFloatingToolbarCollapsed ? "active" : ""}`}
+                                        onClick={() => setIsFloatingToolbarCollapsed((prev) => !prev)}
+                                        title="Pro Appearance Studio — Colorize, Visibility, X-Ray & Lighting"
+                                    >
+                                        <span className="material-icons-round">tune</span>
+                                        <span className="viewer-dock-label">Appear</span>
+                                    </button>
+                                )}
+
+                                <div className="viewer-dock-sep" />
+
                                 <button
                                     type="button"
-                                    onClick={() => setIsLeftPaneCollapsed((prev) => !prev)}
-                                    style={{
-                                        display: "inline-flex",
-                                        alignItems: "center",
-                                        gap: "4px",
-                                        padding: "5px 9px",
-                                        background: isLeftPaneCollapsed ? "rgba(56, 189, 248, 0.25)" : "rgba(30, 41, 59, 0.85)",
-                                        border: isLeftPaneCollapsed ? "1px solid #38bdf8" : "1px solid rgba(148, 163, 184, 0.25)",
-                                        borderRadius: "20px",
-                                        color: isLeftPaneCollapsed ? "#38bdf8" : "#f8fafc",
-                                        cursor: "pointer",
-                                        fontSize: "0.76rem",
-                                        fontWeight: 600,
-                                        flexShrink: 0,
-                                    }}
-                                    title={isLeftPaneCollapsed ? "Restore side panels" : "Maximize 3D BIM Viewer (Full Screen Width)"}
+                                    className={`viewer-dock-item ${isGridVisible ? "active" : ""}`}
+                                    onClick={toggleCadGrid}
+                                    title="Toggle Infinite 3D CAD Reference Grid"
                                 >
-                                    <span className="material-icons-round" style={{ fontSize: "15px" }}>
+                                    <span className="material-icons-round">grid_on</span>
+                                    <span className="viewer-dock-label">Grid</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    className={`viewer-dock-item ${isLeftPaneCollapsed ? "active" : ""}`}
+                                    onClick={() => setIsLeftPaneCollapsed((prev) => !prev)}
+                                    title={isLeftPaneCollapsed ? "Restore Left Project Panel" : "Expand Viewer Full Width"}
+                                >
+                                    <span className="material-icons-round">
                                         {isLeftPaneCollapsed ? "fullscreen_exit" : "fullscreen"}
                                     </span>
-                                    <span className="hud-btn-label">{isLeftPaneCollapsed ? "Standard" : "Full View"}</span>
+                                    <span className="viewer-dock-label">
+                                        {isLeftPaneCollapsed ? "Standard" : "Full View"}
+                                    </span>
                                 </button>
-                                </>
-                                )}
                             </div>
                         </div>
 
