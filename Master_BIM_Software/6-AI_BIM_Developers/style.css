@@ -1,0 +1,5436 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* Hide That Open Company watermark logo permanently */
+[data-thatopen-logo],
+.thatopen-logo,
+img[src*="thatopen"],
+a[href*="thatopen.com"][style*="position: absolute"] {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+/* ==========================================================================
+   Projects Dashboard Stylesheet — That Open Company Module 1 Target
+   ========================================================================== */
+
+:root {
+    /* CYPECAD & Structural BIM Desktop Engineering Theme (Clean, Sober, Industrial) */
+    --bg-main: #131722;
+    --bg-sidebar: #181c28;
+    --bg-card: #1e2333;
+    --bg-card-hover: #262c3e;
+    --border-color: #2b3347;
+    --border-hairline: #3b4661;
+
+    /* Authentic CYPE / Structural Cobalt Blue */
+    --primary-blue: #2563eb;
+    --primary-blue-hover: #1d4ed8;
+    --accent-green: #15803d;
+    --accent-amber: #b45309;
+    --accent-red: #b91c1c;
+
+    --text-primary: #f8fafc;
+    --text-secondary: #94a3b8;
+    --text-muted: #64748b;
+
+    /* Architectural Straight Geometry Tokens */
+    --radius-sharp: 2px;
+    --radius-straight: 4px;
+    --radius-box: 6px;
+
+    /* Typography Scale Variables (High-Clarity Pro BIM Scale) */
+    --font-sm: 0.9rem;
+    --font-base: 1.05rem;
+    --font-lg: 1.28rem;
+    --font-xl: 1.72rem;
+
+    /* Engineering Discipline Badge Colors */
+    --badge-orange: #c2410c;
+    --badge-green: #15803d;
+    --badge-purple: #1e40af;
+    --badge-magenta: #b45309;
+    --badge-blue: #2563eb;
+
+    /* That Open Engine UI Theming Variables */
+    --bim-ui_main-base: var(--primary-blue);
+    --bim-ui_accent-base: #38bdf8;
+    --bim-ui_bg-base: var(--bg-card);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* Custom Architectural Precision Scrollbars */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.25);
+    border-radius: var(--radius-sharp);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-blue);
+}
+
+body {
+    display: grid;
+    grid-template-columns: 295px 1fr;
+    height: 100vh;
+    height: 100dvh;
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    overflow: hidden;
+    transition: grid-template-columns 0.22s ease;
+}
+
+body.sidebar-collapsed {
+    grid-template-columns: 72px 1fr;
+}
+
+@media (max-width: 768px) {
+    body.sidebar-collapsed {
+        grid-template-columns: 1fr;
+    }
+}
+
+#app {
+    display: contents;
+}
+
+/* Lesson 3.8: Prevent React Router <Link> (<a>) from applying default browser blue hyperlink underline */
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+/* ==========================================================================
+   CYPECAD / Structural BIM Sidebar Styling
+   ========================================================================== */
+#sidebar {
+    background-color: var(--bg-sidebar);
+    border-right: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: 0;
+    box-sizing: border-box;
+    z-index: 10;
+    min-width: 0;
+}
+
+.sidebar-collapse-btn {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background: rgba(30, 41, 59, 0.72);
+    border: 1px solid rgba(148, 163, 184, 0.28);
+    color: #94a3b8;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.16s ease;
+}
+
+.sidebar-collapse-btn:hover {
+    color: #38bdf8;
+    border-color: rgba(56, 189, 248, 0.55);
+    background: rgba(56, 189, 248, 0.14);
+}
+
+#sidebar.is-collapsed .sidebar-header {
+    padding: 0.9rem 0.5rem !important;
+    justify-content: center !important;
+    gap: 4px;
+    flex-direction: column;
+    height: auto;
+    min-height: 86px;
+}
+
+#sidebar.is-collapsed .sidebar-nav-section {
+    padding: 0.95rem 0.55rem;
+    align-items: center;
+}
+
+#sidebar.is-collapsed .sidebar-section-label {
+    display: none !important;
+}
+
+#sidebar.is-collapsed .sidebar-secondary-nav {
+    width: 100%;
+    align-items: center;
+}
+
+#sidebar.is-collapsed .nav-sub-item {
+    justify-content: center;
+    padding: 0.6rem 0 !important;
+    width: 44px;
+    height: 44px;
+    margin: 0 auto;
+}
+
+#sidebar.is-collapsed .nav-sub-item span:not(.material-icons-round) {
+    display: none;
+}
+
+#sidebar.is-collapsed .sidebar-footer {
+    padding: 0.85rem 0.45rem;
+    flex-direction: column;
+    gap: 8px;
+    align-items: center;
+}
+
+#sidebar.is-collapsed .user-meta,
+#sidebar.is-collapsed .system-status .status-text {
+    display: none;
+}
+
+#sidebar.is-collapsed .system-status {
+    padding: 3px;
+    border: none;
+    background: transparent;
+}
+
+.sidebar-header {
+    height: 86px;
+    min-height: 86px;
+    padding: 0 1.25rem;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    border-bottom: 1px solid var(--border-color);
+    background: linear-gradient(180deg, rgba(30, 41, 59, 0.45) 0%, rgba(19, 24, 34, 0) 100%);
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+#company-logo {
+    width: 100%;
+    max-width: 245px;
+    height: auto;
+    max-height: 54px;
+    object-fit: contain;
+    object-position: left center;
+    display: block;
+    user-select: none;
+    margin: 0;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
+    transition: transform 0.2s ease;
+}
+
+#company-logo:hover {
+    transform: translateX(2px);
+}
+
+.sidebar-nav-section {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    width: 100%;
+    padding: 1.15rem 0.9rem;
+    box-sizing: border-box;
+    overflow-y: auto;
+}
+
+.sidebar-section-label {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    padding: 0 0.75rem 0.55rem 0.75rem;
+    user-select: none;
+    display: block;
+}
+
+#nav-buttons {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    row-gap: 6px;
+    width: 100%;
+    flex: none;
+    box-sizing: border-box;
+}
+
+#sidebar bim-button {
+    --bim-ui_bg-base: transparent;
+    --bim-ui_main-base: var(--primary-blue);
+    width: 100%;
+    height: 42px !important;
+    min-height: 42px !important;
+    max-height: 42px !important;
+    flex: none !important;
+    cursor: pointer;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    padding: 0 1rem;
+    height: 44px;
+    min-height: 44px;
+    max-height: 44px;
+    border-radius: var(--radius-straight);
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    box-sizing: border-box;
+    border: 1px solid transparent;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+
+.nav-item .material-icons-round {
+    font-size: 1.35rem;
+    flex-shrink: 0;
+}
+
+.nav-item .nav-label {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.nav-badge {
+    background: rgba(37, 99, 235, 0.25);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 10px;
+    line-height: 1;
+}
+
+.nav-pill-role {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #22c55e;
+    background: rgba(34, 197, 94, 0.12);
+    border: 1px solid rgba(34, 197, 94, 0.25);
+    padding: 2px 6px;
+    border-radius: 4px;
+    line-height: 1;
+}
+
+.nav-item:hover {
+    background-color: #1e293b;
+    border-color: rgba(56, 189, 248, 0.2);
+    color: var(--text-primary);
+}
+
+.nav-item.active {
+    background: rgba(37, 99, 235, 0.18);
+    color: #ffffff;
+    border-left: 3px solid var(--primary-blue);
+    border-top: 1px solid rgba(59, 130, 246, 0.25);
+    border-bottom: 1px solid rgba(59, 130, 246, 0.25);
+    border-right: 1px solid rgba(59, 130, 246, 0.25);
+}
+
+.nav-item.active .material-icons-round {
+    color: #60a5fa;
+}
+
+/* Secondary Navigation & CDE Tools */
+.sidebar-secondary-nav {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 100%;
+}
+
+.nav-sub-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.55rem 0.85rem;
+    border-radius: 6px;
+    color: var(--text-muted);
+    font-size: 0.86rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.nav-sub-item .material-icons-round {
+    font-size: 1.15rem;
+    color: #64748b;
+    transition: color 0.15s ease;
+}
+
+.nav-sub-item:hover {
+    background: rgba(30, 41, 59, 0.6);
+    color: var(--text-primary);
+}
+
+.nav-sub-item:hover .material-icons-round {
+    color: #38bdf8;
+}
+
+.nav-sub-item.active {
+    background: rgba(37, 99, 235, 0.22);
+    color: #ffffff;
+    border-left: 3px solid var(--primary-blue);
+    font-weight: 600;
+}
+
+.nav-sub-item.active .material-icons-round {
+    color: #38bdf8;
+}
+
+/* CAD & BIM Measurement HUD Banner */
+.measurement-banner {
+    position: absolute;
+    top: calc(var(--toolbar-bottom, 166px) + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(15, 23, 42, 0.92);
+    border: 1px solid #f59e0b;
+    border-radius: 24px;
+    padding: 6px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #fef3c7;
+    font-size: 0.82rem;
+    font-weight: 600;
+    z-index: 25;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+    pointer-events: none;
+    max-width: calc(100% - 28px);
+    animation: fadeInDown 0.2s ease;
+}
+
+.measurement-banner .material-icons-round {
+    color: #f59e0b;
+    font-size: 1.15rem;
+}
+
+/* Floating BIM Element Inspector Card */
+.element-inspector-card {
+    position: absolute;
+    bottom: 74px;
+    right: 18px;
+    width: 340px;
+    max-width: calc(100% - 36px);
+    background: rgba(15, 23, 42, 0.96);
+    border: 1px solid rgba(56, 189, 248, 0.45);
+    border-radius: 12px;
+    padding: 12px 14px;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    z-index: 26;
+    animation: fadeInUp 0.2s ease;
+}
+
+.inspector-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+    gap: 8px;
+}
+
+.inspector-header h4 {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #f8fafc;
+    margin: 0;
+    white-space: normal;
+    line-height: 1.35;
+    word-break: break-word;
+    flex: 1;
+}
+
+.btn-close-inspector {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 1.2rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: 2px 6px;
+}
+
+.btn-close-inspector:hover {
+    color: #f8fafc;
+}
+
+.inspector-body {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.inspector-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.76rem;
+}
+
+.inspector-row .label {
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+.inspector-row .value {
+    color: #38bdf8;
+    font-weight: 600;
+    font-family: monospace;
+}
+
+/* Local IFC Parser Loading Modal */
+.ifc-loading-overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(8px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    z-index: 50;
+}
+
+.ifc-loading-spinner {
+    width: 44px;
+    height: 44px;
+    border: 3px solid rgba(56, 189, 248, 0.2);
+    border-top-color: #38bdf8;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+.ifc-loading-overlay p {
+    color: #f8fafc;
+    font-size: 0.92rem;
+    font-weight: 600;
+}
+
+/* CDE Cloud Storage Card in Sidebar */
+.cde-storage-card {
+    margin-top: auto;
+    padding: 0.85rem;
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.75);
+    border: 1px solid rgba(51, 65, 85, 0.6);
+    box-sizing: border-box;
+}
+
+.storage-card-header {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+}
+
+.storage-bar {
+    width: 100%;
+    height: 5px;
+    background: #1e293b;
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 0.45rem;
+}
+
+.storage-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #38bdf8, #2563eb);
+    border-radius: 4px;
+}
+
+.storage-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    font-family: monospace;
+}
+
+/* User Profile in Sidebar Footer */
+.user-profile-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+}
+
+.user-avatar-badge {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    color: #ffffff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
+}
+
+.user-meta {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.15;
+}
+
+.user-name {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.user-role-badge {
+    font-size: 0.68rem;
+    color: #38bdf8;
+    font-weight: 500;
+}
+
+.sidebar-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    border-top: 1px solid var(--border-color);
+    box-sizing: border-box;
+    gap: 0.5rem;
+}
+
+.system-status {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: var(--radius-sharp);
+    background-color: #22c55e;
+    box-shadow: 0 0 6px rgba(34, 197, 94, 0.5);
+    flex-shrink: 0;
+}
+
+.status-text {
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: var(--text-secondary);
+    letter-spacing: 0.04em;
+    font-family: monospace;
+    white-space: nowrap;
+}
+
+.status-version {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    font-family: monospace;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* ==========================================================================
+   Main Content Area
+   ========================================================================== */
+#content {
+    grid-column: 2;
+    grid-row: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: 100dvh;
+    position: relative;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+#content>.page,
+#content>dialog,
+dialog {
+    pointer-events: auto;
+}
+
+/* Structural BIM Top Header — Fluid & 100% Responsive for All Devices & Split-Screen */
+#main-header {
+    height: auto;
+    min-height: 80px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 2rem;
+    background: var(--bg-sidebar);
+    border-bottom: 1px solid var(--border-color);
+    box-sizing: border-box;
+    z-index: 5;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.header-title-box {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.2rem;
+    flex-shrink: 0;
+}
+
+.header-eyebrow {
+    font-size: 0.74rem;
+    font-weight: 700;
+    color: #60a5fa;
+    letter-spacing: 0.08em;
+    font-family: monospace;
+    text-transform: uppercase;
+}
+
+#main-header h2 {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+    margin: 0;
+    line-height: 1.2;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    flex-shrink: 0;
+}
+
+.projects-search-box {
+    flex: 1 1 200px;
+    min-width: 140px;
+    max-width: 380px;
+    position: relative;
+}
+
+.btn-action-tool {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0.65rem 1.05rem;
+    border-radius: var(--radius-straight);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    transition: all 0.15s ease;
+}
+
+.btn-action-tool:hover {
+    color: #ffffff;
+    background-color: var(--bg-card-hover);
+    border-color: #3b4661;
+    transform: translateY(-1px);
+}
+
+.btn-action-tool .material-icons-round {
+    font-size: 1.25rem;
+}
+
+.btn-icon {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0.65rem;
+    border-radius: var(--radius-straight);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+.btn-icon:hover {
+    color: #ffffff;
+    background-color: var(--bg-card-hover);
+    border-color: #3b4661;
+    transform: translateY(-1px);
+}
+
+.btn-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: var(--primary-blue);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    padding: 0.68rem 1.35rem;
+    border-radius: var(--radius-straight);
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.25);
+    transition: all 0.15s ease;
+}
+
+.btn-primary:hover {
+    background-color: var(--primary-blue-hover);
+    transform: translateY(-1px);
+}
+
+.btn-primary .material-icons-round {
+    font-size: 1.25rem;
+}
+
+/* ==========================================================================
+   Projects Toolbar & Grid
+   ========================================================================== */
+.projects-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.35rem 2.5rem 0 2.5rem;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+}
+
+.projects-search-box {
+    width: 350px;
+    max-width: 100%;
+    position: relative;
+}
+
+.projects-search-box input {
+    width: 100%;
+}
+
+.btn-clear-search {
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    border-radius: 50%;
+    margin-left: 0.25rem;
+    transition: color 0.15s ease;
+}
+
+.btn-clear-search:hover {
+    color: #ffffff;
+}
+
+.btn-clear-search .material-icons-round {
+    font-size: 1.1rem;
+}
+
+.projects-filter-group {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+/* Model Category Filter Group (IFC vs 3D Parametric) */
+.projects-category-filter-group {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    flex-wrap: wrap;
+    background: rgba(15, 23, 42, 0.65);
+    padding: 3px;
+    border-radius: 8px;
+    border: 1px solid rgba(51, 65, 85, 0.6);
+}
+
+.category-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.45rem 0.85rem;
+    border-radius: 6px;
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    background: transparent;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+
+.category-pill:hover {
+    color: var(--text-primary);
+    background: rgba(30, 41, 59, 0.7);
+}
+
+.category-pill.active {
+    color: #ffffff;
+    background: #1e293b;
+    border-color: rgba(56, 189, 248, 0.35);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.category-pill.active.ifc-pill {
+    border-color: rgba(16, 185, 129, 0.5);
+    background: rgba(16, 185, 129, 0.18);
+    color: #34d399;
+}
+
+.category-pill.active.parametric-pill {
+    border-color: rgba(56, 189, 248, 0.5);
+    background: rgba(56, 189, 248, 0.18);
+    color: #38bdf8;
+}
+
+.filter-count {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.1);
+    color: inherit;
+    font-size: 0.72rem;
+    font-weight: 700;
+    font-family: monospace;
+    padding: 0.1rem 0.42rem;
+    border-radius: 10px;
+    margin-left: 0.35rem;
+    line-height: 1.2;
+}
+
+.filter-pill.active .filter-count {
+    background: rgba(37, 99, 235, 0.45);
+    color: #ffffff;
+}
+
+.projects-sort-group {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-straight);
+    padding: 0.45rem 0.85rem;
+}
+
+.sort-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    font-family: monospace;
+}
+
+.sort-label .material-icons-round {
+    font-size: 1.1rem;
+    color: #60a5fa;
+}
+
+.sort-select {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.sort-select option {
+    background-color: #171a24;
+    color: var(--text-primary);
+}
+
+#projects-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem 2.5rem 4.5rem 2.5rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(370px, 1fr));
+    gap: 1.65rem;
+    align-content: start;
+}
+
+#projects-list>a,
+#projects-list a {
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    color: inherit;
+    height: 100%;
+    width: 100%;
+    cursor: pointer;
+}
+
+/* Enhanced Empty State Display for Search / Filter */
+.projects-empty-state {
+    grid-column: 1 / -1;
+    background: radial-gradient(circle at center, rgba(37, 99, 235, 0.08) 0%, rgba(19, 23, 34, 0.75) 100%);
+    border: 1px dashed rgba(96, 165, 250, 0.35);
+    border-radius: var(--radius-straight);
+    padding: 3.5rem 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 1.35rem;
+    text-align: center;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+    animation: fadeInEmpty 0.25s ease-out;
+}
+
+@keyframes fadeInEmpty {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.empty-state-icon-box {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    background: rgba(37, 99, 235, 0.16);
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #60a5fa;
+    box-shadow: 0 0 20px rgba(37, 99, 235, 0.25);
+}
+
+.empty-state-icon-box .material-icons-round {
+    font-size: 2.2rem;
+}
+
+.empty-state-text h3 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0 0 0.45rem 0;
+}
+
+.empty-state-text p {
+    font-size: 0.94rem;
+    color: var(--text-secondary);
+    max-width: 460px;
+    margin: 0;
+    line-height: 1.45;
+}
+
+.empty-state-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    margin-top: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.btn-clear-filters {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 0.65rem 1.15rem;
+    border-radius: var(--radius-straight);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.btn-clear-filters:hover {
+    background: rgba(37, 99, 235, 0.18);
+    border-color: var(--primary-blue);
+    color: #ffffff;
+}
+
+/* CYPECAD / Structural BIM Project Card */
+.project-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-straight);
+    padding: 1.6rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.35rem;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.project-card:hover {
+    background-color: var(--bg-card-hover);
+    border-color: var(--primary-blue);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, 0.35);
+}
+
+/* Card Header */
+.card-header {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.card-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: var(--radius-straight);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.12rem;
+    font-weight: 700;
+    color: #ffffff;
+    flex-shrink: 0;
+    user-select: none;
+    text-transform: uppercase;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.badge-orange {
+    background-color: var(--badge-orange);
+}
+
+.badge-green {
+    background-color: var(--badge-green);
+}
+
+.badge-purple {
+    background-color: var(--badge-purple);
+}
+
+.badge-magenta {
+    background-color: var(--badge-magenta);
+}
+
+.badge-blue {
+    background-color: var(--badge-blue);
+}
+
+.card-title-group h3 {
+    font-size: 1.24rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.3rem;
+    line-height: 1.25;
+}
+
+.card-title-group p,
+.card-title-group bim-label {
+    font-size: 0.94rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+    display: block;
+}
+
+/* That Open Engine UI: ensure bim-label wraps text inside project cards */
+.project-card bim-label {
+    white-space: normal;
+}
+
+.detail-row bim-label.detail-label,
+.detail-row bim-label {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+/* Card Details (2x2 key-value table) */
+.card-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.96rem;
+}
+
+.detail-label {
+    color: var(--text-secondary);
+    font-weight: 500;
+}
+
+.detail-value {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+/* Technical Straight Badges */
+.status-tag {
+    padding: 0.25rem 0.65rem;
+    border-radius: var(--radius-sharp);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    display: inline-block;
+    text-transform: uppercase;
+    font-family: monospace;
+}
+
+.status-tag.active {
+    background: rgba(21, 128, 61, 0.16);
+    color: #4ade80;
+    border: 1px solid rgba(34, 197, 94, 0.4);
+}
+
+.status-tag.pending {
+    background: rgba(180, 83, 9, 0.16);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.4);
+}
+
+.status-tag.finished {
+    background: rgba(37, 99, 235, 0.16);
+    color: #93c5fd;
+    border: 1px solid rgba(59, 130, 246, 0.4);
+}
+
+.card-progress-bar {
+    width: 100%;
+    height: 6px;
+    background-color: #131722;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: var(--radius-sharp);
+    overflow: hidden;
+    margin-top: 0.35rem;
+}
+
+.card-progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-blue), #10b981);
+    border-radius: var(--radius-sharp);
+    transition: width 0.3s ease;
+}
+
+/* ==========================================================================
+   Floating Action Button (Bottom Right Export)
+   ========================================================================== */
+.fab-btn {
+    position: absolute;
+    bottom: 2rem;
+    right: 2.5rem;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-straight);
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+    transition: all 0.15s ease;
+}
+
+.fab-btn:hover {
+    background-color: var(--primary-blue);
+    color: #ffffff;
+    border-color: var(--primary-blue);
+    transform: translateY(-2px);
+}
+
+.fab-btn .material-icons-round {
+    font-size: 1.35rem;
+}
+
+/* ==========================================================================
+   Modal Dialog & New Project Form (Pixel-Perfect from 2.png)
+   ========================================================================== */
+dialog#new-project-modal,
+dialog#edit-project-details-modal,
+dialog#project-form-modal,
+dialog#todo-form-modal,
+dialog#new-user-modal,
+dialog#todo-modal,
+dialog#details-todo-modal,
+dialog#error-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    max-height: 90vh;
+    max-height: 90dvh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border: none;
+    border-radius: var(--radius-straight);
+    background: transparent;
+    padding: 0;
+    margin: 0;
+    z-index: 99999;
+}
+
+dialog#new-project-modal::backdrop,
+dialog#edit-project-details-modal::backdrop,
+dialog#project-form-modal::backdrop,
+dialog#todo-form-modal::backdrop,
+dialog#new-user-modal::backdrop,
+dialog#todo-modal::backdrop,
+dialog#details-todo-modal::backdrop,
+dialog#error-modal::backdrop {
+    background-color: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+}
+
+#new-project-form,
+#reusable-project-form,
+#new-user-form,
+#todo-form,
+#details-todo-form {
+    background-color: #121420;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-straight);
+    padding: 1.5rem 1.85rem;
+    width: 480px;
+    max-width: 92vw;
+    max-height: 90vh;
+    max-height: 90dvh;
+    overflow-y: auto;
+    box-sizing: border-box;
+    color: var(--text-primary);
+    display: flex;
+    flex-direction: column;
+    gap: 1.15rem;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.85);
+}
+
+.form-row-2col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.85rem;
+}
+
+.error-modal-card {
+    background: #181c28;
+    border: 1px solid var(--accent-red);
+    border-radius: var(--radius-straight);
+    padding: 1.75rem 2rem;
+    width: 440px;
+    max-width: 90vw;
+    color: var(--text-primary);
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.8);
+    animation: errorPopIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes errorPopIn {
+    from {
+        opacity: 0;
+        transform: scale(0.94) translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.error-modal-header {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+}
+
+.error-icon-box {
+    width: 42px;
+    height: 42px;
+    border-radius: var(--radius-straight);
+    background-color: rgba(185, 28, 28, 0.15);
+    border: 1px solid rgba(185, 28, 28, 0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #ef4444;
+    flex-shrink: 0;
+}
+
+.error-icon-box .material-icons-round {
+    font-size: 1.5rem;
+}
+
+.error-title-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.error-title-group h3 {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: #ffffff;
+    letter-spacing: -0.01em;
+}
+
+.error-title-group span {
+    font-size: 0.72rem;
+    color: #ef4444;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    font-weight: 700;
+    font-family: monospace;
+}
+
+.error-modal-body {
+    background-color: rgba(0, 0, 0, 0.35);
+    border-left: 3px solid var(--accent-red);
+    border-radius: var(--radius-sharp);
+    padding: 0.85rem 1rem;
+}
+
+.error-modal-body p {
+    margin: 0;
+    color: #e2e8f0;
+    font-size: 0.88rem;
+    line-height: 1.5;
+}
+
+.error-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 0.25rem;
+}
+
+.btn-error-close {
+    background-color: var(--accent-red);
+    border: none;
+    color: #ffffff;
+    padding: 0.55rem 1.4rem;
+    border-radius: var(--radius-straight);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s ease, transform 0.1s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.btn-error-close:hover {
+    background-color: #e11d48;
+    transform: translateY(-1px);
+}
+
+#new-project-form h2,
+#new-user-form h2,
+#todo-form h2,
+#details-todo-form h2 {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 0;
+    letter-spacing: -0.01em;
+}
+
+.input-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.form-field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.form-field label {
+    font-size: 0.825rem;
+    font-weight: 500;
+    color: #cbd5e1;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.form-field label .material-icons-round {
+    font-size: 1.05rem;
+    color: #94a3b8;
+}
+
+.form-field input,
+.form-field textarea,
+.form-field select {
+    background-color: #171a29;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-straight);
+    padding: 0.65rem 0.85rem;
+    color: #ffffff;
+    font-family: inherit;
+    font-size: 0.85rem;
+    outline: none;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.form-field input::placeholder,
+.form-field textarea::placeholder {
+    color: #64748b;
+}
+
+.form-field input:focus,
+.form-field textarea:focus,
+.form-field select:focus {
+    border-color: var(--primary-blue);
+    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
+}
+
+.form-field textarea {
+    resize: none;
+    min-height: 85px;
+    line-height: 1.4;
+}
+
+.form-field select {
+    cursor: pointer;
+}
+
+.form-field select option {
+    background-color: var(--bg-card);
+    color: #ffffff;
+}
+
+.input-tip {
+    font-size: 0.72rem;
+    font-style: italic;
+    color: #64748b;
+    margin-top: 0.15rem;
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.85rem;
+    margin-top: 0.5rem;
+}
+
+.btn-cancel {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    padding: 0.55rem 1.15rem;
+    border-radius: var(--radius-straight);
+    transition: all 0.15s ease;
+}
+
+.btn-cancel:hover {
+    color: var(--text-primary);
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.btn-accept {
+    background-color: var(--accent-green);
+    border: none;
+    color: #ffffff;
+    padding: 0.55rem 1.4rem;
+    border-radius: var(--radius-straight);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    transition: all 0.15s ease;
+}
+
+.btn-accept:hover {
+    background-color: #16a34a;
+    transform: translateY(-1px);
+}
+
+/* ==========================================================================
+   Project Details Page & To-Do Card (Pixel-Perfect from 4.png)
+   ========================================================================== */
+.page {
+    grid-column: 2;
+    grid-row: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+    overflow: hidden;
+    position: relative;
+}
+
+#details-header {
+    min-height: 60px;
+    height: auto !important;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.55rem 1.25rem;
+    background: rgba(14, 19, 29, 0.94);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border-color);
+    box-sizing: border-box;
+    gap: 0.85rem 1.25rem;
+    z-index: 10;
+    flex-wrap: wrap;
+}
+
+.details-header-left {
+    display: flex;
+    align-items: center;
+    gap: 0.85rem;
+    min-width: 0;
+    flex: 1 1 280px;
+    max-width: calc(100% - 330px);
+    overflow: hidden;
+}
+
+.btn-back-projects {
+    width: 40px;
+    height: 40px;
+    border-radius: var(--radius-straight);
+    border: 1px solid var(--border-color);
+    background: rgba(255, 255, 255, 0.03);
+    color: var(--text-secondary);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+}
+
+.btn-back-projects:hover {
+    color: #ffffff;
+    border-color: var(--primary-blue);
+    background: rgba(37, 99, 235, 0.12);
+}
+
+.details-header-left .header-title-box {
+    min-width: 0;
+    flex: 1 1 auto;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+#details-header h2 {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    line-height: 1.2;
+    margin: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+#details-page-desc {
+    color: var(--text-secondary);
+    font-size: 0.84rem;
+    line-height: 1.3;
+    margin: 2px 0 0 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.details-header-right {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    margin-left: auto;
+}
+
+@media (max-width: 960px) {
+    .details-header-left {
+        max-width: 100%;
+        width: 100%;
+    }
+
+    .details-header-right {
+        width: 100%;
+        justify-content: space-between;
+        margin-top: 4px;
+    }
+}
+
+.bim-coord-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.42rem 0.8rem;
+    border-radius: var(--radius-straight);
+    background: rgba(37, 99, 235, 0.12);
+    border: 1px solid rgba(37, 99, 235, 0.32);
+    color: #60a5fa;
+    font-size: 0.78rem;
+    font-weight: 700;
+    font-family: monospace;
+    letter-spacing: 0.05em;
+}
+
+.bim-coord-badge .material-icons-round {
+    font-size: 1.1rem;
+}
+
+.viewer-hud-overlay {
+    max-width: calc(100% - 24px) !important;
+    width: max-content;
+    box-sizing: border-box !important;
+    white-space: nowrap;
+    overflow-x: auto !important;
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+    padding: 5px 8px !important;
+    gap: 4px !important;
+}
+
+.viewer-hud-overlay::-webkit-scrollbar {
+    display: none !important;
+}
+
+.viewer-hud-overlay button {
+    flex-shrink: 0 !important;
+}
+
+.hud-btn-label {
+    display: inline-block;
+    transition: opacity 0.15s ease;
+}
+
+@media (max-width: 900px) {
+    .viewer-hud-overlay {
+        bottom: 10px !important;
+        padding: 4px 8px !important;
+        gap: 4px !important;
+    }
+
+    .viewer-hud-overlay button {
+        padding: 4px 8px !important;
+        font-size: 0.74rem !important;
+    }
+
+    .hud-btn-label {
+        display: none !important;
+    }
+}
+
+#project-details>.main-page-content {
+    display: grid;
+    grid-template-columns: minmax(305px, 355px) minmax(560px, 1fr);
+    gap: 0.9rem;
+    padding: 0.7rem 0.95rem 0.9rem 0.95rem;
+    flex: 1;
+    overflow-y: hidden;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+}
+
+.details-left-column {
+    display: flex;
+    flex-direction: column;
+    gap: 1.35rem;
+    overflow-y: auto;
+    min-width: 0;
+    height: 100%;
+    padding-right: 2px;
+}
+
+.details-viewer-wrapper {
+    container-type: inline-size;
+    position: relative;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    flex: 1;
+    overflow: hidden;
+    border-radius: var(--radius-straight);
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+}
+
+.viewer-mode-switch-bar {
+    position: absolute;
+    top: 10px;
+    left: 14px;
+    z-index: 30;
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    max-width: calc(100% - 28px);
+    background: rgba(15, 23, 42, 0.94);
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(56, 189, 248, 0.32);
+    border-radius: 12px;
+    padding: 3px 5px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+    gap: 3px;
+}
+
+.viewer-mode-switch-bar::-webkit-scrollbar {
+    display: none;
+}
+
+.viewer-mode-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border: none;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 0.72rem;
+    font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.viewer-mode-tab:hover {
+    color: #f8fafc;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.viewer-mode-tab.active {
+    background: var(--primary-blue);
+    color: #ffffff;
+    box-shadow: 0 2px 10px rgba(37, 99, 235, 0.45);
+}
+
+.viewer-mode-tab .material-icons-round {
+    font-size: 14px;
+}
+
+/* Keep bottom navigation HUD crisp and prevent right-edge pill clipping */
+.viewer-hud-overlay button {
+    padding: 4px 7px !important;
+    font-size: 0.71rem !important;
+    gap: 3px !important;
+}
+
+.viewer-hud-overlay .material-icons-round {
+    font-size: 14px !important;
+}
+
+.toc-viewport-floating-grid {
+    padding: calc(var(--mode-bar-bottom, 54px) + 8px) 14px 14px 14px !important;
+    z-index: 22;
+    pointer-events: none !important;
+    align-content: start;
+    justify-content: start;
+    transition: padding 0.2s ease, opacity 0.2s ease;
+}
+
+/* Hide floating toolbar completely when workspace is empty (no model yet) */
+.details-viewer-wrapper.is-empty-workspace .toc-viewport-floating-grid,
+.details-viewer-wrapper.is-empty-workspace bim-grid.toc-viewport-floating-grid,
+.details-viewer-wrapper.is-empty-workspace bim-toolbar {
+    display: none !important;
+}
+
+/* Adjust dock drawer top position when empty */
+.details-viewer-wrapper.is-empty-workspace .toc-dock-panel {
+    top: calc(var(--mode-bar-bottom, 54px) + 8px) !important;
+}
+
+/* Full View Mode: Maximize the 3D BIM Viewer across entire window width like Autodesk / Cesium */
+#project-details>.main-page-content.full-viewer-mode {
+    grid-template-columns: 1fr !important;
+    padding: 0.55rem 0.85rem 0.8rem 0.85rem !important;
+    gap: 0 !important;
+}
+
+#project-details>.main-page-content.full-viewer-mode .details-left-column {
+    display: none !important;
+}
+
+/* Drag & Drop Overlays */
+.toc-drag-active-backdrop {
+    position: absolute;
+    inset: 0;
+    z-index: 50;
+    background: rgba(2, 132, 199, 0.22);
+    border: 3px dashed #38bdf8;
+    backdrop-filter: blur(8px);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    color: #ffffff;
+    pointer-events: none;
+    box-shadow: inset 0 0 60px rgba(56, 189, 248, 0.35);
+    animation: tocPulseDrop 1.8s infinite ease-in-out;
+}
+
+@keyframes tocPulseDrop {
+
+    0%,
+    100% {
+        border-color: #38bdf8;
+        background: rgba(2, 132, 199, 0.20);
+    }
+
+    50% {
+        border-color: #7dd3fc;
+        background: rgba(2, 132, 199, 0.32);
+    }
+}
+
+/* Ensure bim-toolbar inside floating grid is responsive and scrolls horizontally on small screens */
+.toc-viewport-floating-grid bim-toolbar {
+    max-width: calc(100vw - 32px) !important;
+    overflow: visible !important;
+    flex-wrap: wrap;
+}
+
+/* Responsive Fluid Support for Phones & Laptops across Viewer Mode Bar & Toolbar */
+@media (max-width: 768px) {
+    .viewer-mode-switch-bar {
+        top: 8px;
+        left: 8px;
+        max-width: calc(100% - 16px);
+        padding: 3px 4px;
+        border-radius: 10px;
+        gap: 2px;
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        scrollbar-width: none;
+    }
+
+    .viewer-mode-tab {
+        padding: 4px 7px;
+        font-size: 0.70rem;
+    }
+
+    .viewer-mode-tab .material-icons-round {
+        font-size: 14px;
+    }
+
+    .toc-viewport-floating-grid {
+        padding: calc(var(--mode-bar-bottom, 48px) + 6px) 8px 8px 8px !important;
+    }
+
+    .plan-mode-banner {
+        top: calc(var(--toolbar-bottom, 120px) + 6px) !important;
+        right: 8px !important;
+        font-size: 0.72rem !important;
+        padding: 4px 10px !important;
+    }
+}
+
+@container (max-width: 860px) {
+    [data-thatopen-logo] {
+        bottom: 58px !important;
+        left: 14px !important;
+        width: 4.4rem !important;
+        opacity: 0.72 !important;
+    }
+}
+
+@container (max-width: 1050px) {
+
+    .viewer-hud-overlay .hud-btn-label,
+    .viewer-pro-hud .hud-label {
+        display: none !important;
+    }
+
+    .viewer-hud-overlay,
+    .viewer-pro-hud {
+        gap: 4px !important;
+        padding: 5px 8px !important;
+        bottom: 12px !important;
+    }
+
+    .viewer-hud-overlay button,
+    .viewer-pro-hud .hud-btn {
+        padding: 6px 9px !important;
+        font-size: 0.74rem !important;
+        border-radius: 8px !important;
+    }
+}
+
+@media (max-width: 1400px) {
+
+    .viewer-hud-overlay .hud-btn-label,
+    .viewer-pro-hud .hud-label {
+        display: none !important;
+    }
+
+    .viewer-hud-overlay button,
+    .viewer-pro-hud .hud-btn {
+        padding: 6px 9px !important;
+        border-radius: 8px !important;
+    }
+}
+
+.viewer-hud-overlay button,
+.viewer-pro-hud .hud-btn {
+    flex-shrink: 0 !important;
+}
+
+/* Project Details Card - Prevents flexbox vertical clipping */
+.details-card {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-straight);
+    padding: 1.55rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    cursor: default;
+    flex-shrink: 0;
+    overflow: visible;
+}
+
+.details-card:hover {
+    transform: none;
+}
+
+.details-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-avatar-circle {
+    width: 50px;
+    height: 50px;
+    border-radius: var(--radius-straight);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #ffffff;
+    user-select: none;
+    text-transform: uppercase;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.btn-edit {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    border-radius: var(--radius-straight);
+    padding: 0.5rem 1.05rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 0.15s ease;
+}
+
+.btn-edit:hover {
+    background-color: rgba(37, 99, 235, 0.15);
+    border-color: var(--primary-blue);
+    color: #ffffff;
+}
+
+.btn-delete {
+    background: transparent;
+    border: 1px solid rgba(220, 38, 38, 0.38);
+    color: var(--accent-red);
+    border-radius: var(--radius-straight);
+    padding: 0.48rem 0.75rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+.btn-delete:hover {
+    background-color: rgba(220, 38, 38, 0.15);
+    border-color: var(--accent-red);
+}
+
+.details-title-group {
+    margin-top: 1.35rem;
+}
+
+.details-title-group h3 {
+    font-size: 1.32rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.3rem;
+}
+
+.details-title-group p {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.details-properties-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.85rem 1rem;
+    margin-top: 1.35rem;
+    padding-top: 1.15rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.prop-col {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    background: rgba(19, 23, 34, 0.65);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: var(--radius-sharp);
+    padding: 0.65rem 0.85rem;
+}
+
+.prop-label {
+    font-size: 0.76rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-family: monospace;
+}
+
+.prop-val {
+    font-size: 0.98rem;
+    color: var(--text-primary);
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.progress-bar-container {
+    background-color: #131722;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: var(--radius-sharp);
+    height: 20px;
+    width: 100%;
+    margin-top: 1.25rem;
+    overflow: hidden;
+}
+
+.progress-bar-fill {
+    background: linear-gradient(90deg, var(--primary-blue), #10b981);
+    height: 100%;
+    border-radius: var(--radius-sharp);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.76rem;
+    font-weight: 700;
+    color: #ffffff;
+    letter-spacing: 0.5px;
+    transition: width 0.3s ease;
+    min-width: 40px;
+}
+
+/* To-Do Container */
+.todos-container {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-straight);
+    padding: 1.4rem 1.4rem 1.6rem 1.4rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    flex-grow: 1;
+}
+
+.todos-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.todos-title-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    flex-shrink: 0;
+}
+
+.todos-header-row h4 {
+    font-size: 1.18rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    white-space: nowrap;
+    margin: 0;
+}
+
+.todo-count-badge {
+    font-size: 0.78rem;
+    font-weight: 700;
+    font-family: monospace;
+    color: #60a5fa;
+    background: rgba(37, 99, 235, 0.16);
+    border: 1px solid rgba(37, 99, 235, 0.38);
+    border-radius: var(--radius-sharp);
+    padding: 0.14rem 0.5rem;
+}
+
+.todos-actions-group {
+    display: flex;
+    gap: 0.55rem;
+    align-items: center;
+    flex: 1;
+    justify-content: flex-end;
+    min-width: 0;
+}
+
+.search-input-pill {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background-color: #171a29;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-straight);
+    padding: 0.5rem 0.85rem;
+    min-width: 0;
+}
+
+.search-input-pill:focus-within {
+    border-color: var(--primary-blue);
+}
+
+.search-input-pill .material-icons-round {
+    font-size: 1.15rem;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+.search-input-pill input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-size: 0.88rem;
+    width: 155px;
+    min-width: 0;
+    font-family: inherit;
+}
+
+.search-input-pill input::placeholder {
+    color: #64748b;
+}
+
+.btn-icon-box {
+    background: rgba(37, 99, 235, 0.16);
+    border: 1px solid rgba(37, 99, 235, 0.38);
+    color: #60a5fa;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.45rem;
+    border-radius: var(--radius-straight);
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+}
+
+.btn-icon-box:hover {
+    color: #ffffff;
+    background-color: var(--primary-blue);
+    border-color: var(--primary-blue);
+}
+
+.btn-icon-box .material-icons-round {
+    font-size: 1.25rem;
+}
+
+.todos-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.todo-empty-state {
+    background: rgba(19, 23, 34, 0.55);
+    border: 1px dashed var(--border-color);
+    border-radius: var(--radius-straight);
+    padding: 1.5rem 1rem;
+    text-align: center;
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+}
+
+.todo-card-item {
+    background-color: #171b26;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-straight);
+    padding: 1rem 1.15rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* Challenge #9: Change background color of To-Do card based on its current status */
+.todo-card-item.status-pending {
+    background-color: rgba(180, 83, 9, 0.14);
+    border-color: rgba(245, 158, 11, 0.35);
+    border-left: 3px solid #f59e0b;
+}
+
+.todo-card-item.status-in-progress {
+    background-color: rgba(37, 99, 235, 0.15);
+    border-color: rgba(59, 130, 246, 0.38);
+    border-left: 3px solid #3b82f6;
+}
+
+.todo-card-item.status-completed {
+    background-color: rgba(21, 128, 61, 0.16);
+    border-color: rgba(34, 197, 94, 0.38);
+    border-left: 3px solid #22c55e;
+}
+
+.todo-card-item:hover {
+    filter: brightness(1.12);
+    border-color: var(--primary-blue);
+}
+
+.todo-card-item.completed .todo-desc {
+    text-decoration: line-through;
+    color: var(--text-secondary);
+}
+
+.todo-card-item.status-pending .todo-icon-box {
+    background-color: rgba(180, 83, 9, 0.25);
+    border-color: rgba(245, 158, 11, 0.45);
+    color: #fbbf24;
+}
+
+.todo-card-item.status-in-progress .todo-icon-box {
+    background-color: rgba(37, 99, 235, 0.25);
+    border-color: rgba(59, 130, 246, 0.45);
+    color: #60a5fa;
+}
+
+.todo-card-item.status-completed .todo-icon-box {
+    background-color: rgba(21, 128, 61, 0.25);
+    border-color: rgba(34, 197, 94, 0.45);
+    color: #4ade80;
+}
+
+.todo-card-left {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.85rem;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.todo-icon-box {
+    width: 34px;
+    height: 34px;
+    background-color: #1e2433;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sharp);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.todo-icon-box .material-icons-round {
+    font-size: 1.15rem;
+}
+
+.todo-text-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    flex: 1 1 auto;
+    min-width: 0;
+    width: 100%;
+}
+
+.todo-desc {
+    font-size: 0.92rem;
+    font-weight: 500;
+    color: var(--text-primary);
+    line-height: 1.45;
+    white-space: normal;
+    overflow-wrap: break-word;
+    word-break: normal;
+    margin: 0;
+    width: 100%;
+}
+
+.todo-status-pill {
+    font-size: 0.7rem;
+    font-weight: 700;
+    font-family: monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    width: fit-content;
+    padding: 0.14rem 0.48rem;
+    border-radius: var(--radius-sharp);
+}
+
+.todo-status-pill.status-pending {
+    background: rgba(180, 83, 9, 0.22);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.todo-status-pill.status-in-progress {
+    background: rgba(37, 99, 235, 0.22);
+    color: #93c5fd;
+    border: 1px solid rgba(59, 130, 246, 0.35);
+}
+
+.todo-status-pill.status-completed {
+    background: rgba(21, 128, 61, 0.22);
+    color: #4ade80;
+    border: 1px solid rgba(34, 197, 94, 0.35);
+}
+
+.todo-card-right {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding-top: 0.6rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    box-sizing: border-box;
+}
+
+.todo-date-tag {
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    font-family: monospace;
+    white-space: nowrap;
+}
+
+.todo-item-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.todo-action-btn {
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-secondary);
+    width: 30px;
+    height: 30px;
+    border-radius: var(--radius-sharp);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.todo-action-btn .material-icons-round {
+    font-size: 1.05rem;
+}
+
+.todo-action-btn:hover {
+    background: rgba(37, 99, 235, 0.15);
+    border-color: rgba(37, 99, 235, 0.35);
+    color: #ffffff;
+}
+
+.todo-delete-btn:hover {
+    background: rgba(220, 38, 38, 0.15);
+    border-color: rgba(220, 38, 38, 0.4);
+    color: #ef4444;
+}
+
+/* CAD Engineering Viewport Canvas (CYPECAD / Tekla / AutoCAD grid) */
+#viewer-container {
+    background-color: #10131a;
+    background-image:
+        linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    background-size: 24px 24px;
+    border-radius: var(--radius-straight);
+    height: 100%;
+    width: 100%;
+    min-width: 0;
+    /* Lesson 2.5: Allows flex/grid container to shrink responsive without clipping */
+    min-height: 0;
+    border: 1px solid var(--border-color);
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#viewer-container canvas {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100% !important;
+    display: block;
+    outline: none;
+    border-radius: inherit;
+}
+
+/* Pro BIM Viewport Floating Controls HUD */
+#viewer-container>.lil-gui,
+#viewer-container .lil-gui.root {
+    position: absolute !important;
+    top: calc(var(--mode-bar-bottom, 96px) + 10px) !important;
+    right: 16px !important;
+    z-index: 50 !important;
+    width: 280px !important;
+    max-width: calc(100% - 2rem) !important;
+    max-height: calc(100% - var(--mode-bar-bottom, 96px) - 82px) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    pointer-events: auto !important;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    --background-color: #161b28;
+    --text-color: #e2e8f0;
+    --title-background-color: #1e2638;
+    --widget-color: #242d42;
+    --hover-color: #2f3b56;
+    --focus-color: #2563eb;
+    --number-color: #60a5fa;
+    --string-color: #38bdf8;
+    --name-width: 44%;
+    border: 1px solid var(--border-color) !important;
+    border-radius: var(--radius-straight) !important;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55) !important;
+}
+
+#viewer-container .lil-gui::-webkit-scrollbar,
+#viewer-container .lil-gui .children::-webkit-scrollbar {
+    width: 0px !important;
+    height: 0px !important;
+    display: none !important;
+}
+
+#viewer-container .lil-gui .children {
+    border-right: none !important;
+    box-shadow: none !important;
+}
+
+#viewer-container .lil-gui:not(.root) {
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+#viewer-container .lil-gui>.title {
+    background-color: rgba(37, 99, 235, 0.22) !important;
+    border-bottom: 1px solid rgba(59, 130, 246, 0.35) !important;
+    color: #ffffff !important;
+    font-weight: 700;
+    font-size: 0.84rem;
+    letter-spacing: 0.04em;
+    padding: 0 0.65rem;
+    height: 32px;
+    line-height: 32px;
+    cursor: pointer;
+    user-select: none;
+}
+
+#viewer-container .lil-gui .lil-gui>.title {
+    font-weight: 600;
+    font-size: 0.8rem;
+    letter-spacing: 0.03em;
+    background-color: #1c2232 !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    cursor: pointer;
+    user-select: none;
+}
+
+#viewer-container .lil-gui button {
+    background-color: rgba(37, 99, 235, 0.18) !important;
+    border: 1px solid rgba(59, 130, 246, 0.4) !important;
+    color: #f8fafc !important;
+    font-weight: 600 !important;
+    border-radius: var(--radius-sharp) !important;
+    height: 26px !important;
+    cursor: pointer !important;
+    transition: all 0.15s ease;
+}
+
+#viewer-container .lil-gui button:hover {
+    background-color: var(--primary-blue) !important;
+    border-color: #60a5fa !important;
+    color: #ffffff !important;
+}
+
+#users-page {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+#users-header {
+    height: 86px;
+    min-height: 86px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 2.5rem;
+    background: rgba(14, 19, 29, 0.92);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border-color);
+    box-sizing: border-box;
+    flex-shrink: 0;
+    z-index: 5;
+}
+
+#users-header h2 {
+    font-size: 1.72rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+    line-height: 1.2;
+}
+
+.users-content-area {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1.75rem 2.5rem 2.5rem 2.5rem;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.users-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.users-filter-group {
+    display: flex;
+    gap: 0.6rem;
+}
+
+.filter-pill {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    padding: 0.5rem 1.05rem;
+    border-radius: var(--radius-straight);
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.15s ease;
+    user-select: none;
+}
+
+.filter-pill:hover,
+.filter-pill.active {
+    background-color: rgba(37, 99, 235, 0.18);
+    color: #ffffff;
+    border-color: var(--primary-blue);
+}
+
+.users-table-container {
+    background-color: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-straight);
+    overflow-x: auto;
+    overflow-y: hidden;
+    -webkit-overflow-scrolling: touch;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.users-table-container::-webkit-scrollbar {
+    height: 8px;
+}
+
+.users-table-container::-webkit-scrollbar-track {
+    background: #171b26;
+    border-radius: var(--radius-sharp);
+}
+
+.users-table-container::-webkit-scrollbar-thumb {
+    background: #2b3347;
+    border-radius: var(--radius-sharp);
+}
+
+.users-table-container::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-accent);
+}
+
+.users-table {
+    width: 100%;
+    min-width: 680px;
+    border-collapse: collapse;
+    text-align: left;
+    font-size: 0.95rem;
+}
+
+.users-table th {
+    background-color: #27292d;
+    color: var(--text-secondary);
+    font-weight: 600;
+    padding: 1rem 1.35rem;
+    text-transform: uppercase;
+    font-size: 0.78rem;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.users-table td {
+    padding: 1.05rem 1.35rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
+    vertical-align: middle;
+}
+
+.users-table tbody tr {
+    transition: background-color 0.15s ease;
+}
+
+.users-table tbody tr:hover {
+    background-color: rgba(255, 255, 255, 0.03);
+}
+
+.users-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.user-cell {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.user-avatar-circle {
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-straight);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 0.96rem;
+    color: #ffffff;
+    flex-shrink: 0;
+    user-select: none;
+}
+
+.user-name {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.user-email {
+    font-size: 0.84rem;
+    color: var(--text-secondary);
+    margin-top: 2px;
+}
+
+.role-badge {
+    padding: 0.32rem 0.75rem;
+    border-radius: var(--radius-sharp);
+    font-size: 0.78rem;
+    font-weight: 700;
+    font-family: monospace;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    display: inline-block;
+}
+
+.role-dev {
+    background-color: rgba(59, 130, 246, 0.15);
+    color: #60a5fa;
+    border: 1px solid rgba(59, 130, 246, 0.35);
+}
+
+.role-arch {
+    background-color: rgba(249, 115, 22, 0.15);
+    color: #fb923c;
+    border: 1px solid rgba(249, 115, 22, 0.35);
+}
+
+.role-eng {
+    background-color: rgba(34, 197, 94, 0.15);
+    color: #4ade80;
+    border: 1px solid rgba(34, 197, 94, 0.35);
+}
+
+.role-bim {
+    background-color: rgba(168, 85, 247, 0.15);
+    color: #c084fc;
+    border: 1px solid rgba(168, 85, 247, 0.35);
+}
+
+.status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+.status-indicator::before {
+    content: "";
+    width: 7px;
+    height: 7px;
+    border-radius: var(--radius-sharp);
+    display: inline-block;
+}
+
+.status-online::before {
+    background-color: #22c55e;
+    box-shadow: 0 0 6px rgba(34, 197, 94, 0.6);
+}
+
+.status-offline::before {
+    background-color: #9ca3af;
+}
+
+/* ==========================================================================
+   Action Dropdown Menu (User 3-dots Context Menu)
+   ========================================================================== */
+.user-options-btn {
+    cursor: pointer;
+    background: transparent;
+    border: 1px solid transparent;
+    color: var(--text-secondary);
+    border-radius: var(--radius-straight);
+    padding: 5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+}
+
+.user-options-btn:hover {
+    background-color: rgba(37, 99, 235, 0.15);
+    border-color: rgba(37, 99, 235, 0.35);
+    color: #ffffff;
+}
+
+.dropdown-menu {
+    position: fixed;
+    background-color: #181c28;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-straight);
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.75);
+    padding: 0.35rem 0;
+    z-index: 999999;
+    min-width: 175px;
+    display: flex;
+    flex-direction: column;
+}
+
+.dropdown-item {
+    background: transparent;
+    border: none;
+    padding: 0.6rem 1rem;
+    font-size: 0.8rem;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+    font-family: inherit;
+    transition: background 0.15s ease, color 0.15s ease;
+}
+
+.dropdown-item:hover {
+    background-color: rgba(255, 255, 255, 0.08);
+}
+
+.dropdown-item.text-danger {
+    color: #ef4444;
+}
+
+.dropdown-item.text-danger:hover {
+    background-color: rgba(239, 68, 68, 0.15);
+}
+
+.dropdown-item .material-icons-round {
+    font-size: 1.15rem;
+}
+
+/* ==========================================================================
+   Responsive Breakpoints: Laptops, Tablets, and Mobile Phones
+   ========================================================================== */
+
+/* Standard & Compact Laptops (max-width: 1280px) */
+@media (max-width: 1280px) {
+    body {
+        grid-template-columns: 265px 1fr;
+    }
+
+    .sidebar-header,
+    #main-header,
+    #users-header {
+        height: 86px;
+        min-height: 86px;
+    }
+
+    #details-header {
+        min-height: 86px;
+        height: auto;
+    }
+
+    #company-logo {
+        height: 44px;
+    }
+
+    #main-header,
+    #details-header,
+    #users-header {
+        padding: 0 1.75rem;
+    }
+
+    #main-header h2,
+    #users-header h2 {
+        font-size: 1.55rem;
+    }
+
+    .projects-toolbar {
+        padding: 1.15rem 1.75rem 0 1.75rem;
+    }
+
+    #projects-list {
+        padding: 1.25rem 1.75rem 3.5rem 1.75rem;
+        grid-template-columns: repeat(auto-fill, minmax(330px, 1fr));
+        gap: 1.35rem;
+    }
+
+    #project-details>.main-page-content {
+        grid-template-columns: minmax(340px, 380px) minmax(440px, 1fr);
+        overflow-x: auto;
+        padding: 1.25rem 1.75rem 1.75rem 1.75rem;
+        gap: 1.35rem;
+    }
+
+    .users-content-area {
+        padding: 1.5rem 1.75rem 2.5rem 1.75rem;
+    }
+}
+
+/* Tablets Landscape & Compact Laptops (max-width: 1024px) */
+@media (max-width: 1024px) {
+    body {
+        grid-template-columns: 235px 1fr;
+    }
+
+    #sidebar {
+        padding: 0;
+    }
+
+    .sidebar-header {
+        height: 82px;
+        min-height: 82px;
+        padding: 0 1rem;
+    }
+
+    #company-logo {
+        width: 100%;
+        max-width: 205px;
+        height: auto;
+        max-height: 44px;
+    }
+
+    .nav-item {
+        font-size: 0.98rem;
+        padding: 0.8rem 0.95rem;
+    }
+
+    #main-header,
+    #users-header {
+        height: 82px;
+        min-height: 82px;
+        padding: 0 1.5rem;
+    }
+
+    #details-header {
+        height: auto;
+        min-height: 68px;
+        padding: 0.65rem 1.5rem;
+        flex-wrap: wrap;
+        gap: 0.75rem 1rem;
+    }
+
+    #main-header h2,
+    #users-header h2 {
+        font-size: 1.42rem;
+    }
+
+    #details-header h2 {
+        font-size: 1.25rem;
+    }
+
+    .btn-action-tool .btn-tool-label {
+        display: none;
+    }
+
+    .btn-action-tool {
+        padding: 0.58rem;
+    }
+
+    .projects-toolbar {
+        padding: 1rem 1.5rem 0 1.5rem;
+    }
+
+    #projects-list {
+        padding: 1.25rem 1.5rem 3rem 1.5rem;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.25rem;
+    }
+
+    #project-details>.main-page-content {
+        grid-template-columns: 1fr;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 1.25rem 1.5rem 2.5rem 1.5rem;
+        gap: 1.5rem;
+        scroll-behavior: smooth;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .details-left-column {
+        overflow-y: visible;
+        height: auto;
+        min-width: 0;
+        width: 100%;
+    }
+
+    .details-viewer-wrapper {
+        min-height: 520px !important;
+        height: 560px !important;
+        width: 100%;
+        flex: none !important;
+    }
+
+    #viewer-container {
+        min-height: 520px !important;
+        height: 100% !important;
+        width: 100%;
+    }
+
+    .users-content-area {
+        padding: 1.25rem 1.5rem 2rem 1.5rem;
+    }
+}
+
+/* Tablets Portrait & Medium Screens (max-width: 900px) */
+@media (max-width: 900px) {
+    #project-details>.main-page-content {
+        grid-template-columns: 1fr;
+        overflow-y: auto;
+        padding: 1.25rem 1.25rem 2rem 1.25rem;
+        gap: 1.25rem;
+    }
+
+    .details-left-column {
+        overflow-y: visible;
+        height: auto;
+    }
+
+    .todos-header-row {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .todos-actions-group {
+        flex: 1;
+        min-width: 220px;
+        justify-content: flex-end;
+    }
+
+    .todos-actions-group .search-input-pill {
+        flex: 1;
+        min-width: 150px;
+    }
+
+    .todo-card-item {
+        padding: 0.95rem 1rem;
+    }
+
+    .details-viewer-wrapper {
+        min-height: 480px !important;
+        height: 520px !important;
+        width: 100%;
+        flex: none !important;
+    }
+
+    #viewer-container {
+        min-height: 480px !important;
+        height: 100% !important;
+    }
+}
+
+/* Mobile Phones & Small Tablets (max-width: 767px) */
+@media (max-width: 767px) {
+    body {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        height: 100dvh;
+        overflow: hidden;
+    }
+
+    /* Transform Sidebar into an App-Style Bottom Navigation Bar on Phones */
+    #sidebar {
+        order: 2;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+        height: 64px;
+        padding: 0 0.75rem;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-around;
+        border-right: none;
+        border-top: 1px solid var(--border-color);
+        background-color: var(--bg-sidebar);
+        z-index: 1000;
+        box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.45);
+    }
+
+    .sidebar-header,
+    .sidebar-footer,
+    .sidebar-section-label,
+    #company-logo {
+        display: none;
+    }
+
+    .sidebar-nav-section {
+        padding: 0;
+        flex-direction: row;
+        align-items: center;
+    }
+
+    #nav-buttons {
+        flex-direction: row;
+        justify-content: space-around;
+        width: 100%;
+        gap: 0.5rem;
+        margin: 0;
+        padding: 0;
+    }
+
+    .nav-item {
+        flex-direction: column;
+        justify-content: center;
+        gap: 0.2rem;
+        padding: 0.4rem 0.85rem;
+        font-size: 0.78rem;
+        font-weight: 600;
+        border-radius: var(--radius-straight);
+        border: none;
+    }
+
+    .nav-item.active {
+        border-left: none;
+        border-top: none;
+        border-right: none;
+        border-bottom: 2px solid var(--primary-blue);
+    }
+
+    .nav-item .material-icons-round {
+        font-size: 1.35rem;
+    }
+
+    /* Main Content Area adjustments on Phones */
+    #content,
+    #projects-page {
+        order: 1;
+        flex: 1;
+        height: calc(100vh - 64px);
+        height: calc(100dvh - 64px);
+        width: 100%;
+    }
+
+    /* Responsive Header Layout on Phones */
+    #main-header,
+    #details-header,
+    #users-header {
+        height: auto;
+        min-height: 64px;
+        padding: 0.65rem 1rem;
+        flex-wrap: wrap;
+        gap: 0.65rem;
+        align-items: center;
+    }
+
+    #main-header .header-title-box {
+        order: 1;
+    }
+
+    #main-header .header-actions {
+        order: 2;
+        gap: 0.4rem;
+        flex-shrink: 0;
+    }
+
+    #main-header .projects-search-box {
+        order: 3;
+        width: 100%;
+        max-width: 100%;
+        flex: 1 1 100%;
+    }
+
+    #main-header h2,
+    #details-header h2,
+    #users-header h2 {
+        font-size: 1.28rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .header-eyebrow {
+        font-size: 0.64rem;
+    }
+
+    #details-page-desc {
+        display: none;
+    }
+
+    .bim-coord-badge {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.65rem;
+    }
+
+    .header-actions {
+        gap: 0.4rem;
+        flex-shrink: 0;
+    }
+
+    .btn-action-tool .btn-tool-label {
+        display: none;
+    }
+
+    .btn-action-tool {
+        padding: 0.48rem;
+    }
+
+    .btn-primary {
+        padding: 0.48rem 0.75rem;
+        font-size: 0.78rem;
+        white-space: nowrap;
+    }
+
+    /* Projects Toolbar & Grid on Phones */
+    .projects-toolbar {
+        padding: 0.85rem 1rem 0 1rem;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.65rem;
+    }
+
+    .projects-search-box {
+        width: 100%;
+    }
+
+    .projects-filter-group {
+        overflow-x: auto;
+        flex-wrap: nowrap;
+        padding-bottom: 4px;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .filter-pill {
+        white-space: nowrap;
+    }
+
+    #projects-list {
+        grid-template-columns: 1fr;
+        padding: 0.85rem 1rem 5.5rem 1rem;
+        gap: 1rem;
+    }
+
+    .fab-btn {
+        bottom: 74px;
+        right: 16px;
+        width: 44px;
+        height: 44px;
+    }
+
+    /* Project Details Page on Phones */
+    #project-details>.main-page-content {
+        grid-template-columns: 1fr;
+        padding: 1rem 1rem 5.5rem 1rem;
+        overflow-y: auto;
+        gap: 1rem;
+    }
+
+    .details-card {
+        padding: 1.15rem;
+    }
+
+    .details-properties-row {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.85rem 1rem;
+    }
+
+    .todos-container {
+        padding: 1rem;
+    }
+
+    .todos-header-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.75rem;
+    }
+
+    .todos-actions-group {
+        width: 100%;
+        display: flex;
+        gap: 0.5rem;
+        justify-content: space-between;
+    }
+
+    .todos-actions-group .search-input-pill {
+        flex: 1;
+        width: auto;
+    }
+
+    .todos-actions-group .search-input-pill input {
+        width: 100%;
+    }
+
+    /* Mobile Responsive To-Do Task Item */
+    .todo-card-item {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+        padding: 0.95rem 1rem;
+    }
+
+    .todo-card-left {
+        width: 100%;
+    }
+
+    .todo-card-right {
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-top: 0.55rem;
+        border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .todo-item-actions {
+        display: flex;
+        gap: 0.35rem;
+    }
+
+    .todo-action-btn {
+        width: 32px;
+        height: 32px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .details-viewer-wrapper {
+        min-height: 420px !important;
+        height: 460px !important;
+        width: 100%;
+        flex: none !important;
+    }
+
+    #viewer-container {
+        min-height: 420px !important;
+        height: 100% !important;
+        border-radius: var(--radius-straight);
+    }
+
+    .viewer-hud-top-left {
+        top: 0.6rem;
+        left: 0.6rem;
+        gap: 0.35rem;
+    }
+
+    .viewer-hud-pill {
+        font-size: 0.66rem;
+        padding: 0.25rem 0.48rem;
+    }
+
+    .viewer-cam-pill {
+        display: none;
+    }
+
+    #viewer-container>.lil-gui,
+    #viewer-container .lil-gui.root {
+        top: calc(var(--mode-bar-bottom, 58px) + 8px) !important;
+        right: 0.6rem !important;
+        width: 220px !important;
+        max-height: calc(100% - 4.5rem);
+    }
+
+    .viewer-hud-telemetry {
+        display: none;
+    }
+
+    .viewer-hud-dock {
+        bottom: 0.6rem;
+        padding: 0.25rem 0.35rem;
+        gap: 0.2rem;
+        max-width: calc(100% - 1.2rem);
+        overflow-x: auto;
+    }
+
+    .dock-btn {
+        width: 30px;
+        height: 30px;
+    }
+
+    /* Users Page on Phones */
+    .users-content-area {
+        padding: 1rem 1rem 5.5rem 1rem;
+        gap: 1rem;
+    }
+
+    .users-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+
+    .users-toolbar .search-input-pill {
+        width: 100% !important;
+    }
+
+    .users-filter-group {
+        overflow-x: auto;
+        padding-bottom: 4px;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .users-table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .users-table th,
+    .users-table td {
+        padding: 0.75rem 0.85rem;
+        font-size: 0.78rem;
+    }
+
+    /* Dialog Modals on Phones */
+    #new-project-form,
+    #new-user-form,
+    #todo-form {
+        width: 94vw;
+        max-width: 94vw;
+        padding: 1.25rem 1rem;
+    }
+
+    .form-row-2col {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+
+    .form-actions {
+        gap: 0.5rem;
+    }
+}
+
+/* Compact Mobile Phones (max-width: 420px) */
+@media (max-width: 420px) {
+    .bim-coord-badge span:last-child {
+        display: none;
+    }
+
+    .btn-primary span:last-child {
+        font-size: 0.74rem;
+    }
+
+    .card-properties {
+        font-size: 0.8rem;
+    }
+}
+
+/* ==========================================================================
+   Professional 3D CAD Viewer Navigation HUD (Glassmorphism Overlay)
+   ========================================================================== */
+.viewer-pro-hud {
+    position: absolute;
+    bottom: 16px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: rgba(15, 23, 42, 0.94);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    padding: 6px 12px;
+    border-radius: 30px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.65);
+    pointer-events: auto;
+    user-select: none;
+    max-width: calc(100% - 24px);
+    box-sizing: border-box;
+    overflow-x: auto;
+    scrollbar-width: none;
+    white-space: nowrap;
+    transition: all 0.25s ease;
+}
+
+.viewer-pro-hud::-webkit-scrollbar {
+    display: none;
+}
+
+.viewer-pro-hud:hover {
+    border-color: rgba(56, 189, 248, 0.5);
+    box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.7), 0 0 20px rgba(56, 189, 248, 0.3);
+}
+
+.hud-pill-group {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.hud-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: transparent;
+    border: 1px solid transparent;
+    color: #cbd5e1;
+    padding: 0.4rem 0.65rem;
+    border-radius: 9999px;
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-weight: 600;
+    font-family: inherit;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    white-space: nowrap;
+}
+
+.hud-btn .material-icons-round {
+    font-size: 1.15rem;
+}
+
+.hud-btn:hover {
+    background: rgba(56, 189, 248, 0.18);
+    color: #38bdf8;
+    border-color: rgba(56, 189, 248, 0.35);
+    transform: translateY(-1px);
+}
+
+.hud-btn.active {
+    background: #0284c7;
+    color: #ffffff;
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.6);
+}
+
+.hud-divider {
+    width: 1px;
+    height: 18px;
+    background: rgba(148, 163, 184, 0.25);
+    margin: 0 0.2rem;
+}
+
+@media (max-width: 768px) {
+    .viewer-pro-hud {
+        bottom: 0.75rem;
+        padding: 0.25rem 0.4rem;
+        gap: 0.3rem;
+        max-width: 95%;
+        overflow-x: auto;
+    }
+
+    .hud-btn span.hud-label {
+        display: none;
+    }
+}
+
+/* Lesson 2.3 & 3.3: That Open Engine UI Base Viewer Grid & BIM Viewport */
+.viewer-grid {
+    display: grid;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+bim-viewport {
+    width: 100%;
+    height: 100%;
+    display: block;
+    position: relative;
+    overflow: hidden;
+}
+
+.viewport-container {
+    width: 100%;
+    height: 100%;
+    display: block;
+    position: relative;
+    overflow: hidden;
+}
+
+/* ==========================================================================
+   Project Form 3D / IFC Model Upload Dropzone
+   ========================================================================== */
+.btn-upload-model-dropzone:hover {
+    background: rgba(30, 41, 59, 0.8) !important;
+    border-color: var(--primary-blue) !important;
+    box-shadow: 0 0 16px rgba(37, 99, 235, 0.25);
+}
+
+.model-file-attached {
+    transition: all 0.2s ease;
+}
+
+.model-file-attached:hover {
+    border-color: rgba(56, 189, 248, 0.6) !important;
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.2);
+}
+
+/* ==========================================================================
+   That Open Company Course Tools — Dockable Glassmorphism Panels (Lessons 3.5 & 3.6)
+   ========================================================================== */
+.toc-course-pill {
+    background: rgba(30, 41, 59, 0.65) !important;
+    border: 1px solid rgba(148, 163, 184, 0.25) !important;
+    color: #94a3b8 !important;
+    font-size: 0.75rem !important;
+}
+
+.toc-course-pill:hover {
+    background: rgba(56, 189, 248, 0.15) !important;
+    border-color: rgba(56, 189, 248, 0.45) !important;
+    color: #38bdf8 !important;
+}
+
+.toc-course-pill.active {
+    background: rgba(56, 189, 248, 0.25) !important;
+    border-color: #38bdf8 !important;
+    color: #38bdf8 !important;
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+}
+
+.toc-dock-panel {
+    position: absolute;
+    top: calc(var(--toolbar-bottom, 166px) + 8px);
+    bottom: 68px;
+    width: clamp(360px, 40vw, 480px);
+    max-width: calc(100% - 28px);
+    background: rgba(15, 23, 42, 0.96);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    border-radius: 12px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    z-index: 30;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    transition: width 0.2s ease, top 0.2s ease;
+    animation: fadeIn 0.2s ease;
+}
+
+.toc-dock-left {
+    left: 14px;
+}
+
+.toc-dock-right {
+    right: 14px;
+    top: calc(var(--mode-bar-bottom, 50px) + 10px) !important;
+    bottom: 74px !important;
+}
+
+.toc-dock-panel[data-drawer="properties"] {
+    width: clamp(390px, 42vw, 540px);
+}
+
+.toc-dock-panel[data-drawer="gis"],
+.toc-dock-panel[data-drawer="sheets"],
+.toc-dock-panel[data-drawer="mcp"],
+.toc-dock-panel[data-drawer="pro-studio"],
+.toc-dock-panel[data-drawer="floor-plans"],
+.toc-dock-panel[data-drawer="enhance"],
+.toc-dock-panel[data-drawer="query"],
+.toc-dock-panel[data-drawer="smart-views"] {
+    width: clamp(430px, 44vw, 600px);
+}
+
+.toc-dock-panel.is-expanded {
+    width: min(1020px, calc(100% - 28px)) !important;
+    max-width: calc(100% - 28px) !important;
+    top: calc(var(--mode-bar-bottom, 50px) + 8px) !important;
+    bottom: 74px !important;
+    z-index: 34;
+}
+
+.toc-dock-body * {
+    box-sizing: border-box;
+}
+
+.toc-dock-body input,
+.toc-dock-body select,
+.toc-dock-body label {
+    min-width: 0;
+    max-width: 100%;
+}
+
+.toc-dock-panel[data-drawer="gis"] bim-text-input,
+.toc-dock-panel[data-drawer="gis"] bim-number-input {
+    width: 100% !important;
+}
+
+.toc-dock-panel[data-drawer="gis"] bim-number-input[slider] {
+    width: 100% !important;
+}
+
+.toc-dock-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+    background: rgba(30, 41, 59, 0.6);
+}
+
+.toc-dock-header-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+}
+
+.btn-expand-dock {
+    background: rgba(56, 189, 248, 0.12);
+    border: 1px solid rgba(56, 189, 248, 0.32);
+    color: #7dd3fc;
+    cursor: pointer;
+    padding: 3px 7px;
+    border-radius: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 0.68rem;
+    font-weight: 700;
+    transition: all 0.15s ease;
+}
+
+.btn-expand-dock:hover,
+.btn-expand-dock.active {
+    background: rgba(56, 189, 248, 0.24);
+    border-color: #38bdf8;
+    color: #ffffff;
+}
+
+.btn-close-dock {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 1.3rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: 2px 6px;
+    border-radius: 4px;
+    transition: color 0.15s ease;
+}
+
+.btn-close-dock:hover {
+    color: #f8fafc;
+    background: rgba(239, 68, 68, 0.2);
+}
+
+.toc-dock-body {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(148, 163, 184, 0.25) transparent;
+}
+
+.toc-dock-body::-webkit-scrollbar {
+    width: 5px;
+}
+
+.toc-dock-body::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.toc-dock-body::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.25);
+    border-radius: 4px;
+}
+
+.toc-dock-body::-webkit-scrollbar-thumb:hover {
+    background: rgba(56, 189, 248, 0.5);
+}
+
+.toc-dock-body bim-panel-section {
+    border: none !important;
+    background: transparent !important;
+}
+
+/* ==========================================================================
+   Module 5 — Lesson 2.5: Disabled State & Slider Styling
+   ========================================================================== */
+
+@keyframes pulse {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7);
+    }
+
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 8px rgba(16, 185, 129, 0);
+    }
+
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    }
+}
+
+bim-button.disabled,
+button.disabled {
+    opacity: 0.45 !important;
+    pointer-events: none !important;
+    filter: grayscale(80%) !important;
+    cursor: not-allowed !important;
+}
+
+.toc-dock-panel[data-drawer="gis"] bim-number-input[slider] {
+    --bim-input--h: 36px;
+    --bim-ui_main-base: #0284c7;
+    width: 100% !important;
+}
+
+.toc-dock-panel[data-drawer="gis"] bim-number-input[slider] .slider {
+    background: rgba(30, 41, 59, 0.7);
+    border-radius: 6px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+/* ==========================================================================
+   Module 5 — Lesson 2.4: Cesium 2D OpenStreetMap & Geocoder UI Styles
+   ========================================================================== */
+
+.gis-map-2d-container {
+    position: relative;
+    width: 100%;
+    height: 250px;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.gis-map-2d-container .cesium-viewer {
+    width: 100% !important;
+    height: 100% !important;
+    overflow: hidden;
+}
+
+.gis-map-2d-container .cesium-viewer-cesiumWidgetContainer {
+    width: 100% !important;
+    height: 100% !important;
+    overflow: hidden;
+}
+
+.gis-map-2d-container .cesium-widget,
+.gis-map-2d-container .cesium-widget canvas {
+    width: 100% !important;
+    height: 100% !important;
+    display: block;
+}
+
+/* Sharp modern theme for Cesium Geocoder Search Bar (Matches Lesson 2.4 Video) */
+.gis-map-2d-container .cesium-viewer-geocoderContainer {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    right: 6px;
+    z-index: 20;
+    display: flex;
+    align-items: center;
+}
+
+.gis-map-2d-container .cesium-geocoder-input {
+    width: 100% !important;
+    box-sizing: border-box;
+    background: rgba(15, 23, 42, 0.88) !important;
+    border: 1px solid rgba(56, 189, 248, 0.4) !important;
+    color: #f8fafc !important;
+    font-size: 0.76rem !important;
+    font-family: inherit !important;
+    border-radius: 6px !important;
+    padding: 6px 10px !important;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
+    outline: none !important;
+    transition: border-color 0.15s ease;
+}
+
+.gis-map-2d-container .cesium-geocoder-input:focus {
+    border-color: #38bdf8 !important;
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.4) !important;
+}
+
+.gis-map-2d-container .cesium-geocoder-searchButton {
+    background: transparent !important;
+    fill: #38bdf8 !important;
+    border: none !important;
+    cursor: pointer;
+}
+
+.gis-map-2d-container .cesium-widget-credits {
+    font-size: 9px !important;
+    opacity: 0.7;
+    pointer-events: none;
+}
+
+/* ==========================================================================
+   Architectural 3D ViewCube & Compass Navigator (AEC Pro Edition)
+   ========================================================================== */
+
+.toc-viewcube-deck {
+    position: absolute;
+    top: calc(var(--mode-bar-bottom, 50px) + 12px);
+    right: 18px;
+    z-index: 25;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    pointer-events: none;
+    user-select: none;
+}
+
+.toc-viewcube-mini-actions {
+    width: 82px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: -4px;
+    pointer-events: auto;
+}
+
+.toc-viewcube-icon-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    color: #cbd5e1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    transition: all 0.15s ease;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.45);
+}
+
+.toc-viewcube-icon-btn:hover {
+    background: rgba(14, 165, 233, 0.35);
+    border-color: #38bdf8;
+    color: #ffffff;
+}
+
+.toc-viewcube-controls-row {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    pointer-events: auto;
+}
+
+.toc-viewcube-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 14px;
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    color: #cbd5e1;
+    font-size: 0.70rem;
+    font-weight: 700;
+    cursor: pointer;
+    backdrop-filter: blur(12px);
+    transition: all 0.15s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.toc-viewcube-btn:hover {
+    background: rgba(30, 41, 59, 0.95);
+    border-color: #38bdf8;
+    color: #f8fafc;
+}
+
+.toc-viewcube-btn.active {
+    background: linear-gradient(135deg, #0284c7, #0ea5e9);
+    border-color: #38bdf8;
+    color: #ffffff;
+    box-shadow: 0 0 12px rgba(14, 165, 233, 0.4);
+}
+
+.toc-viewcube-btn.icon-only {
+    padding: 4px 6px;
+}
+
+.toc-viewcube-viewport {
+    width: 72px;
+    height: 72px;
+    perspective: 320px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
+}
+
+.toc-viewcube {
+    width: 52px;
+    height: 52px;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.05s linear;
+}
+
+.cube-face {
+    position: absolute;
+    width: 52px;
+    height: 52px;
+    background: rgba(22, 30, 49, 0.9);
+    border: 1.5px solid rgba(56, 189, 248, 0.45);
+    color: #f8fafc;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    box-sizing: border-box;
+    backface-visibility: visible;
+}
+
+.cube-face:hover {
+    background: rgba(14, 165, 233, 0.45);
+    border-color: #38bdf8;
+    color: #38bdf8;
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+}
+
+.cube-face.top {
+    transform: rotateX(90deg) translateZ(26px);
+    background: rgba(14, 165, 233, 0.2);
+}
+
+.cube-face.bottom {
+    transform: rotateX(-90deg) translateZ(26px);
+}
+
+.cube-face.front {
+    transform: translateZ(26px);
+    background: rgba(2, 132, 199, 0.25);
+}
+
+.cube-face.back {
+    transform: rotateY(180deg) translateZ(26px);
+}
+
+.cube-face.right {
+    transform: rotateY(90deg) translateZ(26px);
+}
+
+.cube-face.left {
+    transform: rotateY(-90deg) translateZ(26px);
+}
+
+.cube-corner {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    background: rgba(56, 189, 248, 0.25);
+    border: 1px solid rgba(56, 189, 248, 0.6);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.cube-corner:hover {
+    background: #38bdf8;
+    box-shadow: 0 0 8px #38bdf8;
+}
+
+.cube-corner.corner-ne {
+    top: -5px;
+    right: -5px;
+    transform: translateZ(26px);
+}
+
+.cube-corner.corner-nw {
+    top: -5px;
+    left: -5px;
+    transform: translateZ(26px);
+}
+
+.cube-corner.corner-se {
+    bottom: -5px;
+    right: -5px;
+    transform: translateZ(26px);
+}
+
+.cube-corner.corner-sw {
+    bottom: -5px;
+    left: -5px;
+    transform: translateZ(26px);
+}
+
+/* Rotating Compass Ring */
+.toc-viewcube-compass {
+    position: relative;
+    width: 66px;
+    height: 66px;
+    border-radius: 50%;
+    border: 1.5px dashed rgba(56, 189, 248, 0.35);
+    background: rgba(15, 23, 42, 0.7);
+    pointer-events: auto;
+    cursor: pointer;
+    transition: transform 0.05s linear;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.toc-viewcube-compass:hover {
+    border-color: #38bdf8;
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+}
+
+.compass-mark {
+    position: absolute;
+    font-size: 8px;
+    font-weight: 800;
+    color: #94a3b8;
+}
+
+.compass-mark.north {
+    top: 2px;
+    color: #ef4444;
+    font-weight: 900;
+}
+
+.compass-mark.south {
+    bottom: 2px;
+}
+
+.compass-mark.east {
+    right: 3px;
+}
+
+.compass-mark.west {
+    left: 3px;
+}
+
+.compass-needle {
+    width: 2px;
+    height: 24px;
+    background: linear-gradient(to bottom, #ef4444 50%, #94a3b8 50%);
+    border-radius: 1px;
+}
+
+/* Keyboard Navigation Shortcuts Modal */
+.toc-nav-shortcuts-modal {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    margin-top: 10px;
+    width: 280px;
+    background: rgba(15, 23, 42, 0.95);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    border-radius: 12px;
+    padding: 12px 14px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(16px);
+    pointer-events: auto;
+    animation: fadeIn 0.15s ease;
+}
+
+.shortcuts-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 0.80rem;
+    font-weight: 800;
+    color: #f8fafc;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+    padding-bottom: 6px;
+}
+
+.shortcuts-header button {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    font-size: 16px;
+    cursor: pointer;
+}
+
+.shortcuts-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.shortcut-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.72rem;
+}
+
+.key-badge {
+    padding: 2px 6px;
+    border-radius: 4px;
+    background: rgba(30, 41, 59, 0.9);
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    color: #38bdf8;
+    font-weight: 700;
+    font-family: monospace;
+}
+
+.key-desc {
+    color: #cbd5e1;
+    font-weight: 500;
+}
+
+/* ==========================================================================
+   Autodesk-Inspired Organized 3D Viewer HUD & Contextual Toolbars
+   ========================================================================== */
+
+.viewer-top-header {
+    position: absolute;
+    top: 10px;
+    left: 14px;
+    right: 14px;
+    z-index: 32;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 5px 10px;
+    background: rgba(11, 17, 30, 0.92);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+    border-radius: 12px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+    box-sizing: border-box;
+}
+
+.viewer-top-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+
+.viewer-top-divider {
+    width: 1px;
+    height: 18px;
+    background: rgba(148, 163, 184, 0.22);
+    margin: 0 3px;
+}
+
+.viewer-header-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 9px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #cbd5e1;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.15s ease;
+}
+
+.viewer-header-btn:hover {
+    background: rgba(255, 255, 255, 0.07);
+    color: #ffffff;
+}
+
+.viewer-header-btn.active {
+    background: rgba(56, 189, 248, 0.2);
+    border-color: rgba(56, 189, 248, 0.55);
+    color: #38bdf8;
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.2);
+}
+
+.viewer-header-btn.accent {
+    background: rgba(14, 165, 233, 0.2);
+    border-color: rgba(56, 189, 248, 0.4);
+    color: #38bdf8;
+}
+
+.viewer-header-btn .material-icons-round {
+    font-size: 16px;
+}
+
+.viewer-menu-wrap {
+    position: relative;
+    display: inline-flex;
+}
+
+.viewer-menu-popover {
+    position: absolute;
+    top: calc(100% + 8px);
+    left: 0;
+    min-width: 210px;
+    background: rgba(11, 17, 30, 0.98);
+    border: 1px solid rgba(56, 189, 248, 0.35);
+    border-radius: 11px;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75);
+    backdrop-filter: blur(18px);
+    z-index: 50;
+    animation: fadeIn 0.14s ease;
+}
+
+.viewer-menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    width: 100%;
+    padding: 8px 10px;
+    border-radius: 8px;
+    border: none;
+    background: transparent;
+    color: #e2e8f0;
+    font-size: 0.76rem;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+    transition: background 0.12s ease;
+}
+
+.viewer-menu-item:hover {
+    background: rgba(56, 189, 248, 0.16);
+    color: #38bdf8;
+}
+
+.viewer-menu-item.active {
+    background: rgba(56, 189, 248, 0.22);
+    color: #38bdf8;
+}
+
+.viewer-menu-item-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.viewer-menu-item .material-icons-round {
+    font-size: 16px;
+    color: #38bdf8;
+}
+
+/* Autodesk-style Contextual Sub-Bar floating cleanly centered above bottom dock */
+.viewer-ctx-subbar {
+    position: absolute;
+    bottom: 74px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 28;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: rgba(11, 17, 30, 0.95);
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    border-radius: 14px;
+    backdrop-filter: blur(16px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65);
+    max-width: calc(100% - 32px);
+    overflow-x: auto;
+    scrollbar-width: none;
+    animation: fadeInUp 0.15s ease;
+}
+
+.viewer-ctx-btn {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-width: 56px;
+    padding: 5px 9px;
+    border-radius: 9px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #cbd5e1;
+    font-size: 0.68rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.14s ease;
+    white-space: nowrap;
+}
+
+.viewer-ctx-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+
+.viewer-ctx-btn.active {
+    background: rgba(56, 189, 248, 0.22);
+    border-color: #38bdf8;
+    color: #38bdf8;
+}
+
+.viewer-ctx-btn .material-icons-round {
+    font-size: 17px;
+}
+
+/* Autodesk-style Calm Centered Bottom Dock */
+.viewer-bottom-dock {
+    position: absolute;
+    bottom: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 27;
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 5px 10px;
+    background: rgba(11, 17, 30, 0.94);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border: 1px solid rgba(56, 189, 248, 0.28);
+    border-radius: 16px;
+    box-shadow: 0 10px 34px rgba(0, 0, 0, 0.7);
+    max-width: calc(100% - 24px);
+    overflow-x: auto;
+    scrollbar-width: none;
+}
+
+.viewer-bottom-dock::-webkit-scrollbar {
+    display: none;
+}
+
+.viewer-dock-item {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    min-width: 50px;
+    padding: 5px 8px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #cbd5e1;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: all 0.15s ease;
+}
+
+.viewer-dock-item:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+
+.viewer-dock-item.active {
+    background: rgba(56, 189, 248, 0.2);
+    border-color: rgba(56, 189, 248, 0.55);
+    color: #38bdf8;
+}
+
+.viewer-dock-item .material-icons-round {
+    font-size: 18px;
+}
+
+.viewer-dock-label {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+}
+
+.viewer-dock-sep {
+    width: 1px;
+    height: 28px;
+    background: rgba(148, 163, 184, 0.2);
+    margin: 0 3px;
+    flex-shrink: 0;
+}
+
+@media (max-width: 768px) {
+    .viewer-dock-item {
+        min-width: 42px;
+        padding: 4px 6px;
+    }
+
+    .viewer-header-btn span:not(.material-icons-round) {
+        display: none;
+    }
+}
+
+/* =========================================================================
+   Pro Appearance Studio Floating HUD (.toc-pro-appear-toolbar)
+   ========================================================================= */
+bim-toolbar.toc-pro-appear-toolbar {
+    display: block !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    pointer-events: auto;
+    max-width: calc(100vw - 28px);
+}
+
+.toc-pro-shell {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 7px;
+    pointer-events: none;
+}
+
+.toc-pro-bar {
+    position: relative;
+    pointer-events: auto;
+    display: inline-flex;
+    align-items: stretch;
+    gap: 2px;
+    padding: 5px 8px;
+    background: linear-gradient(180deg, rgba(17, 24, 39, 0.96) 0%, rgba(9, 14, 26, 0.96) 100%);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(56, 189, 248, 0.32);
+    border-radius: 14px;
+    box-shadow:
+        0 14px 34px rgba(0, 0, 0, 0.65),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    max-width: calc(100vw - 30px);
+    overflow-x: auto;
+    overflow-y: visible;
+    scrollbar-width: none;
+}
+
+.toc-pro-bar::-webkit-scrollbar {
+    display: none;
+}
+
+.toc-pro-group {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 0 4px;
+}
+
+.toc-pro-group-label {
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #64748b;
+    padding-left: 5px;
+    line-height: 1;
+    user-select: none;
+}
+
+.toc-pro-group-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+}
+
+.toc-pro-sep {
+    width: 1px;
+    align-self: stretch;
+    margin: 4px 3px;
+    background: linear-gradient(180deg, transparent, rgba(148, 163, 184, 0.25), transparent);
+    flex-shrink: 0;
+}
+
+.toc-pro-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 30px;
+    padding: 0 9px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: rgba(255, 255, 255, 0.03);
+    color: #e2e8f0;
+    font-size: 0.73rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.14s ease, border-color 0.14s ease, color 0.14s ease, transform 0.1s ease;
+}
+
+.toc-pro-btn:hover {
+    background: rgba(56, 189, 248, 0.12);
+    border-color: rgba(56, 189, 248, 0.28);
+    color: #ffffff;
+}
+
+.toc-pro-btn:active {
+    transform: translateY(1px);
+}
+
+.toc-pro-btn.active {
+    background: rgba(56, 189, 248, 0.2);
+    border-color: rgba(56, 189, 248, 0.6);
+    color: #7dd3fc;
+    box-shadow: 0 0 14px rgba(56, 189, 248, 0.18);
+}
+
+.toc-pro-btn.warn:hover {
+    background: rgba(239, 68, 68, 0.16);
+    border-color: rgba(248, 113, 113, 0.45);
+    color: #fecaca;
+}
+
+.toc-pro-btn .material-icons-round {
+    font-size: 16px;
+    line-height: 1;
+}
+
+.toc-pro-caret {
+    font-size: 14px !important;
+    opacity: 0.72;
+    margin-left: -2px;
+}
+
+.toc-pro-swatch-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    flex-shrink: 0;
+}
+
+.toc-pro-kbd {
+    font-size: 9.5px;
+    font-weight: 700;
+    padding: 1px 4px;
+    border-radius: 4px;
+    background: rgba(148, 163, 184, 0.14);
+    border: 1px solid rgba(148, 163, 184, 0.22);
+    color: #94a3b8;
+    line-height: 1.15;
+}
+
+.toc-pro-chip {
+    font-size: 10px;
+    font-weight: 700;
+    padding: 1px 5px;
+    border-radius: 999px;
+    background: rgba(56, 189, 248, 0.22);
+    color: #7dd3fc;
+    line-height: 1.2;
+}
+
+.toc-pro-popover {
+    pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 268px;
+    max-width: min(320px, calc(100vw - 28px));
+    padding: 12px;
+    background: rgba(11, 17, 30, 0.97);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+    border: 1px solid rgba(56, 189, 248, 0.38);
+    border-radius: 12px;
+    box-shadow: 0 18px 42px rgba(0, 0, 0, 0.72), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    color: #e2e8f0;
+    animation: fadeInUp 0.12s ease;
+}
+
+.toc-pro-pop-title {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: #94a3b8;
+}
+
+.toc-pro-swatch-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+}
+
+.toc-pro-swatch-tile {
+    height: 26px;
+    border-radius: 7px;
+    border: 1px solid rgba(255, 255, 255, 0.24);
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+
+.toc-pro-swatch-tile:hover {
+    transform: scale(1.06);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.35);
+}
+
+.toc-pro-swatch-tile.selected {
+    box-shadow: 0 0 0 2px #0f172a, 0 0 0 3.5px #38bdf8;
+}
+
+.toc-pro-pop-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 7px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    background: rgba(30, 41, 59, 0.75);
+    color: #e2e8f0;
+    font-size: 0.75rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.12s ease;
+}
+
+.toc-pro-pop-btn:hover {
+    background: rgba(56, 189, 248, 0.16);
+    border-color: rgba(56, 189, 248, 0.45);
+    color: #ffffff;
+}
+
+.toc-pro-pop-btn.active {
+    background: rgba(56, 189, 248, 0.22);
+    border-color: #38bdf8;
+    color: #bae6fd;
+}
+
+.toc-pro-pop-btn.danger {
+    background: rgba(239, 68, 68, 0.14);
+    border-color: rgba(248, 113, 113, 0.3);
+    color: #fca5a5;
+}
+
+.toc-pro-pop-btn.danger:hover {
+    background: rgba(239, 68, 68, 0.24);
+    border-color: rgba(248, 113, 113, 0.55);
+}
+
+.toc-pro-pop-btn .material-icons-round {
+    font-size: 16px;
+}
+
+.toc-pro-mood-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+}
+
+.toc-pro-mood-tile {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 9px;
+    border-radius: 8px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    background: rgba(30, 41, 59, 0.7);
+    color: #cbd5e1;
+    font-size: 0.73rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.12s ease;
+}
+
+.toc-pro-mood-tile:hover {
+    border-color: rgba(56, 189, 248, 0.45);
+    color: #ffffff;
+}
+
+.toc-pro-mood-tile.active {
+    background: rgba(56, 189, 248, 0.2);
+    border-color: #38bdf8;
+    color: #7dd3fc;
+}
+
+.toc-pro-mood-preview {
+    width: 14px;
+    height: 14px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    flex-shrink: 0;
+}
+
+.toc-pro-seg {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    padding: 3px;
+    border-radius: 9px;
+    background: rgba(15, 23, 42, 0.9);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.toc-pro-seg-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 6px 4px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #94a3b8;
+    font-size: 0.71rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.12s ease;
+}
+
+.toc-pro-seg-btn:hover {
+    color: #ffffff;
+}
+
+.toc-pro-seg-btn.active {
+    background: rgba(56, 189, 248, 0.22);
+    border-color: rgba(56, 189, 248, 0.55);
+    color: #7dd3fc;
+}
+
+.toc-pro-toast {
+    pointer-events: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 11px;
+    border-radius: 9px;
+    background: rgba(11, 17, 30, 0.95);
+    border: 1px solid rgba(56, 189, 248, 0.45);
+    color: #bae6fd;
+    font-size: 0.72rem;
+    font-weight: 600;
+    backdrop-filter: blur(14px);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.55);
+}
+
+.toc-pro-toast.warn {
+    border-color: rgba(245, 158, 11, 0.55);
+    color: #fde68a;
+}
+
+@media (max-width: 768px) {
+    .toc-pro-group-label {
+        display: none;
+    }
+
+    .toc-pro-kbd {
+        display: none;
+    }
+
+    .toc-pro-btn {
+        padding: 0 7px;
+        height: 28px;
+        font-size: 0.69rem;
+    }
+}
+
+/* =========================================================================
+   Pro Full Projects Studio View (Matches Viewer Autodesk-Style Glass UI)
+   ========================================================================= */
+#main-header.pro-projects-header {
+    padding: 0.8rem 1.4rem;
+    gap: 1rem;
+    background: rgba(11, 17, 30, 0.94);
+    border-bottom: 1px solid rgba(56, 189, 248, 0.22);
+    backdrop-filter: blur(18px);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+.pro-live-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: rgba(16, 185, 129, 0.14);
+    border: 1px solid rgba(16, 185, 129, 0.38);
+    color: #34d399;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+}
+
+.pro-live-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #10b981;
+    box-shadow: 0 0 8px #10b981;
+}
+
+.pro-header-center {
+    flex: 1 1 280px;
+    max-width: 440px;
+    min-width: 200px;
+}
+
+.pro-header-center .projects-search-box {
+    width: 100%;
+}
+
+.pro-header-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.pro-action-group {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 3px;
+    border-radius: 10px;
+    background: rgba(15, 23, 42, 0.82);
+    border: 1px solid rgba(148, 163, 184, 0.22);
+}
+
+.pro-head-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 32px;
+    padding: 0 11px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #cbd5e1;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.14s ease;
+    white-space: nowrap;
+}
+
+.pro-head-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+}
+
+.pro-head-btn.primary {
+    height: 36px;
+    padding: 0 14px;
+    background: linear-gradient(135deg, #0284c7, #2563eb);
+    border-color: rgba(56, 189, 248, 0.5);
+    color: #ffffff;
+    font-weight: 700;
+    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
+}
+
+.pro-head-btn.primary:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+}
+
+.pro-head-btn .material-icons-round {
+    font-size: 17px;
+}
+
+.pro-kpi-strip {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.85rem;
+    padding: 0.9rem 1.4rem 0 1.4rem;
+    flex-shrink: 0;
+}
+
+.pro-kpi-card {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 0.78rem 1rem;
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgba(22, 31, 48, 0.92) 0%, rgba(13, 19, 32, 0.94) 100%);
+    border: 1px solid rgba(56, 189, 248, 0.22);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.pro-kpi-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.pro-kpi-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #94a3b8;
+}
+
+.pro-kpi-icon {
+    font-size: 18px !important;
+    opacity: 0.9;
+}
+
+.pro-kpi-value {
+    font-size: 1.42rem;
+    font-weight: 800;
+    color: #f8fafc;
+    line-height: 1.15;
+}
+
+.pro-kpi-sub {
+    font-size: 0.72rem;
+    color: #64748b;
+    font-weight: 500;
+}
+
+.pro-kpi-bar-track {
+    flex: 1;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.16);
+    overflow: hidden;
+}
+
+.pro-kpi-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #0ea5e9, #34d399);
+    transition: width 0.3s ease;
+}
+
+.projects-toolbar.pro-projects-rail {
+    padding: 0.9rem 1.4rem 0 1.4rem;
+    gap: 0.75rem;
+}
+
+.pro-rail-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.pro-view-switcher {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    padding: 3px;
+    border-radius: 8px;
+    background: rgba(15, 23, 42, 0.85);
+    border: 1px solid rgba(56, 189, 248, 0.25);
+}
+
+.pro-view-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    background: transparent;
+    color: #94a3b8;
+    font-size: 0.74rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.14s ease;
+}
+
+.pro-view-btn:hover {
+    color: #f8fafc;
+}
+
+.pro-view-btn.active {
+    background: rgba(56, 189, 248, 0.2);
+    border-color: rgba(56, 189, 248, 0.5);
+    color: #7dd3fc;
+}
+
+.pro-view-btn .material-icons-round {
+    font-size: 16px;
+}
+
+#projects-list.pro-projects-grid {
+    padding: 1rem 1.4rem 2.2rem 1.4rem;
+    grid-template-columns: repeat(auto-fill, minmax(335px, 1fr));
+    grid-auto-rows: 1fr;
+    align-items: stretch;
+    gap: 1.15rem;
+}
+
+#projects-list.pro-projects-grid > a {
+    height: 100%;
+    display: flex;
+}
+
+#projects-list.pro-projects-grid .project-card {
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.35rem;
+    border-radius: 12px;
+    background: linear-gradient(180deg, rgba(22, 30, 46, 0.94) 0%, rgba(14, 19, 31, 0.96) 100%);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+}
+
+#projects-list.pro-projects-grid .project-card .card-header {
+    flex: 1 1 auto;
+    align-items: flex-start;
+    padding-bottom: 0.9rem;
+}
+
+#projects-list.pro-projects-grid .project-card .card-title-group h3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 1.12rem;
+    min-height: 2.8rem;
+}
+
+#projects-list.pro-projects-grid .project-card .card-title-group bim-label {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    font-size: 0.86rem;
+    min-height: 3.6rem;
+}
+
+#projects-list.pro-projects-grid .project-card .card-details {
+    flex-shrink: 0;
+    gap: 0.62rem;
+}
+
+#projects-list.pro-projects-grid .project-card .detail-row {
+    gap: 8px;
+    font-size: 0.88rem;
+}
+
+#projects-list.pro-projects-grid .project-card .detail-label {
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+#projects-list.pro-projects-grid .project-card .detail-value {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+#projects-list.pro-projects-grid .project-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(56, 189, 248, 0.55);
+    box-shadow: 0 14px 34px rgba(2, 132, 199, 0.22);
+}
+
+.pro-schedule-wrap {
+    flex: 1;
+    padding: 1rem 1.4rem 2rem 1.4rem;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.pro-schedule-card {
+    flex: 1;
+    overflow: auto;
+    border-radius: 12px;
+    background: rgba(11, 17, 30, 0.92);
+    border: 1px solid rgba(56, 189, 248, 0.28);
+    box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
+}
+
+.pro-schedule-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.8rem;
+    text-align: left;
+}
+
+.pro-schedule-table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    padding: 11px 14px;
+    background: rgba(20, 29, 46, 0.98);
+    border-bottom: 1px solid rgba(56, 189, 248, 0.25);
+    color: #94a3b8;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    white-space: nowrap;
+}
+
+.pro-schedule-table tbody tr {
+    border-top: 1px solid rgba(148, 163, 184, 0.1);
+    cursor: pointer;
+    transition: background 0.12s ease;
+}
+
+.pro-schedule-table tbody tr:hover {
+    background: rgba(56, 189, 248, 0.09);
+}
+
+.pro-schedule-table tbody td {
+    padding: 10px 14px;
+    vertical-align: middle;
+}
+
+.pro-row-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: #fff;
+    flex-shrink: 0;
+}
+
+.pro-row-title {
+    font-weight: 700;
+    color: #f8fafc;
+    font-size: 0.83rem;
+}
+
+.pro-row-desc {
+    font-size: 0.71rem;
+    color: #64748b;
+    max-width: 280px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pro-type-badge {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.pro-type-badge.ifc {
+    background: rgba(16, 185, 129, 0.16);
+    border: 1px solid rgba(16, 185, 129, 0.4);
+    color: #34d399;
+}
+
+.pro-type-badge.twin {
+    background: rgba(56, 189, 248, 0.16);
+    border: 1px solid rgba(56, 189, 248, 0.4);
+    color: #7dd3fc;
+}
+
+.pro-status-pill {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: capitalize;
+    background: rgba(148, 163, 184, 0.16);
+    color: #cbd5e1;
+}
+
+.pro-status-pill.active {
+    background: rgba(16, 185, 129, 0.18);
+    color: #34d399;
+}
+
+.pro-status-pill.pending {
+    background: rgba(245, 158, 11, 0.18);
+    color: #fbbf24;
+}
+
+.pro-status-pill.finished {
+    background: rgba(56, 189, 248, 0.18);
+    color: #7dd3fc;
+}
+
+.pro-row-bar-track {
+    flex: 1;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.18);
+    overflow: hidden;
+}
+
+.pro-row-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #0284c7, #38bdf8);
+}
+
+.pro-row-open-btn {
+    padding: 5px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(56, 189, 248, 0.45);
+    background: rgba(56, 189, 248, 0.16);
+    color: #7dd3fc;
+    font-size: 0.72rem;
+    font-weight: 700;
+    cursor: pointer;
+    margin-right: 6px;
+}
+
+.pro-row-open-btn:hover {
+    background: rgba(56, 189, 248, 0.3);
+    color: #ffffff;
+}
+
+.pro-row-del-btn {
+    padding: 5px 7px;
+    border-radius: 6px;
+    border: 1px solid rgba(248, 113, 113, 0.3);
+    background: rgba(239, 68, 68, 0.12);
+    color: #fca5a5;
+    cursor: pointer;
+    vertical-align: middle;
+}
+
+.pro-row-del-btn:hover {
+    background: rgba(239, 68, 68, 0.28);
+    color: #ffffff;
+}
+
+@media (max-width: 1100px) {
+    .pro-kpi-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    .pro-kpi-strip {
+        grid-template-columns: 1fr;
+        padding: 0.75rem 0.9rem 0 0.9rem;
+    }
+
+    .projects-toolbar.pro-projects-rail,
+    #projects-list.pro-projects-grid,
+    .pro-schedule-wrap {
+        padding-left: 0.9rem;
+        padding-right: 0.9rem;
+    }
+}
