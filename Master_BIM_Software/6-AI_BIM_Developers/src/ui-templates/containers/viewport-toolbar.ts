@@ -864,9 +864,9 @@ export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarStat
 
           <div class="toc-pro-sep"></div>
 
-          <!-- Group 5: Module 6 Fragments Edit API -->
+          <!-- Group 5: Fragments Edit API -->
           <div class="toc-pro-group">
-            <span class="toc-pro-group-label">Fragments Edit</span>
+            <span class="toc-pro-group-label">Edits</span>
             <div class="toc-pro-group-row">
               <button
                 type="button"
@@ -1057,7 +1057,7 @@ export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarStat
               <div class="toc-pro-popover">
                 <div class="toc-pro-pop-title">
                   <span>Fragments Edit Actions</span>
-                  <span style="color: #a1a1aa;">2.1 – 2.3</span>
+                  <span style="color: #a1a1aa;">Pro API</span>
                 </div>
                 <button
                   type="button"
@@ -1152,7 +1152,7 @@ export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarStat
                   }}
                 >
                   <span class="material-icons-round" style="color: #38bdf8;">precision_manufacturing</span>
-                  <span>Open Parametric Modeler (2.5–2.7)</span>
+                  <span>Open Parametric Modeler</span>
                 </button>
                 <button
                   type="button"

@@ -121,7 +121,7 @@ export function ProjectCard(props: Props) {
                 <div className="card-title-group" style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", width: "100%" }}>
                     <div style={{ flex: 1, minWidth: 0, paddingRight: "8px" }}>
                         <h3>{props.project.name}</h3>
-                        <bim-label>{props.project.description}</bim-label>
+                        <p className="card-desc">{props.project.description}</p>
                     </div>
                     {props.onDelete && (
                         <button

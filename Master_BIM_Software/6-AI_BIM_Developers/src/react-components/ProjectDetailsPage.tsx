@@ -183,7 +183,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
     const [isDrawerExpanded, setIsDrawerExpanded] = React.useState<boolean>(false);
     const [isTopBarCollapsed, setIsTopBarCollapsed] = React.useState<boolean>(false);
     const [isFloatingToolbarCollapsed, setIsFloatingToolbarCollapsed] = React.useState<boolean>(false);
-    const [openHeaderMenu, setOpenHeaderMenu] = React.useState<"views" | "inspect" | null>(null);
+    const [openHeaderMenu, setOpenHeaderMenu] = React.useState<"views" | "inspect" | "workflows" | "studio" | null>(null);
     const [activeBottomSubbar, setActiveBottomSubbar] = React.useState<"camera" | "measure" | "section" | null>(null);
     const [cameraProjection, setCameraProjection] = React.useState<"Perspective" | "Orthographic">("Perspective");
     const [navControlMode, setNavControlMode] = React.useState<"Orbit" | "FirstPerson">("Orbit");
@@ -416,10 +416,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
             const comp = componentsRef.current;
             if (comp) {
                 try {
-                    const modeler = comp.get(Modeler);
-                    if (!modeler.hasGenerated) {
-                        modeler.rebuildActiveAssembly(true).catch(() => {});
-                    }
+                    comp.get(Modeler).refreshContext();
                 } catch {}
             }
         };
@@ -711,10 +708,13 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                 modelerContainerRef.current.replaceChildren(modelerSection);
                 const modeler = components.get(Modeler);
                 modeler.onStateChanged.add(() => updateModelerSection());
-                modeler.onFragmentModelBaked.add(() => {
+                modeler.onFragmentModelBaked.add((fragModel) => {
+                    setIsPromptDismissed(true);
+                    setCustomIfcName((prev) => prev || fragModel.modelId);
                     try {
                         components.get(FragmentsEditStudio).scanModel().catch(() => {});
                     } catch {}
+                    modeler.refreshContext();
                 });
             } catch (err) {
                 console.warn("[Modeler] Error mounting UI:", err);
@@ -894,6 +894,12 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
             const buffer = await file.arrayBuffer();
             await loadIfcFromBuffer(componentsRef.current, worldRef.current, buffer, file.name);
             setCustomIfcName(file.name);
+            setIsPromptDismissed(true);
+            try {
+                await componentsRef.current.get(FragmentsEditStudio).scanModel();
+                componentsRef.current.get(Modeler).refreshContext();
+            } catch {}
+            setTimeout(() => { void fitModelView(); }, 120);
 
             // Persist uploaded model name to Firestore so it remains loaded on refresh
             if (project?.id) {
@@ -1953,88 +1959,145 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                 </button>
                             </div>
 
-                            {/* RIGHT GROUP: Connected Cloud Workflows (Module 5) & Utilities */}
+                            {/* RIGHT GROUP: Organized Single-Row Pro Workflows, BIM Studio & Utilities */}
                             <div className="viewer-top-group">
-                                {isEmptyProject && (
+                                {/* Workflows Dropdown (Cloud Sync, AI MCP, Pro QA/4D, GIS) */}
+                                <div className="viewer-menu-wrap">
                                     <button
                                         type="button"
-                                        className={`viewer-header-btn ${activeDrawer === "gis" ? "active" : ""}`}
-                                        onClick={() => toggleDrawer("gis")}
-                                        title="Cesium 3D Tiles & 2D GIS Map (Empty Project Studio)"
+                                        className={`viewer-header-btn ${
+                                            openHeaderMenu === "workflows" ||
+                                            activeDrawer === "sheets" ||
+                                            activeDrawer === "mcp" ||
+                                            activeDrawer === "pro-studio" ||
+                                            activeDrawer === "gis"
+                                                ? "active"
+                                                : ""
+                                        }`}
+                                        onClick={() =>
+                                            setOpenHeaderMenu((prev) => (prev === "workflows" ? null : "workflows"))
+                                        }
+                                        title="Connected Cloud Workflows: Sheets Sync, AI MCP, Pro QA/4D & GIS"
                                     >
-                                        <span className="material-icons-round">public</span>
-                                        <span>GIS</span>
+                                        <span className="material-icons-round">hub</span>
+                                        <span>Workflows</span>
+                                        <span className="material-icons-round" style={{ fontSize: "14px", opacity: 0.7 }}>
+                                            expand_more
+                                        </span>
                                     </button>
-                                )}
 
-                                <button
-                                    type="button"
-                                    className={`viewer-header-btn ${activeDrawer === "sheets" ? "active" : ""}`}
-                                    onClick={() => toggleDrawer("sheets")}
-                                    title="Google Drive & Sheets BIM Takeoff Sync"
-                                >
-                                    <span className="material-icons-round">table_view</span>
-                                    <span>Sheets</span>
-                                </button>
+                                    {openHeaderMenu === "workflows" && (
+                                        <div className="viewer-menu-popover viewer-menu-popover-right">
+                                            <button
+                                                type="button"
+                                                className={`viewer-menu-item ${activeDrawer === "sheets" ? "active" : ""}`}
+                                                onClick={() => toggleDrawer("sheets")}
+                                            >
+                                                <span className="viewer-menu-item-left">
+                                                    <span className="material-icons-round">table_view</span>
+                                                    <span>Google Sheets Takeoff</span>
+                                                </span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className={`viewer-menu-item ${activeDrawer === "mcp" ? "active" : ""}`}
+                                                onClick={() => toggleDrawer("mcp")}
+                                            >
+                                                <span className="viewer-menu-item-left">
+                                                    <span className="material-icons-round">smart_toy</span>
+                                                    <span>AI MCP Copilot</span>
+                                                </span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className={`viewer-menu-item ${activeDrawer === "pro-studio" ? "active" : ""}`}
+                                                onClick={() => toggleDrawer("pro-studio")}
+                                            >
+                                                <span className="viewer-menu-item-left">
+                                                    <span className="material-icons-round">auto_fix_high</span>
+                                                    <span>Pro Studio (QA · 4D)</span>
+                                                </span>
+                                            </button>
+                                            {isEmptyProject && (
+                                                <button
+                                                    type="button"
+                                                    className={`viewer-menu-item ${activeDrawer === "gis" ? "active" : ""}`}
+                                                    onClick={() => toggleDrawer("gis")}
+                                                >
+                                                    <span className="viewer-menu-item-left">
+                                                        <span className="material-icons-round">public</span>
+                                                        <span>3D GIS & Site Tiles</span>
+                                                    </span>
+                                                </button>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
 
-                                <button
-                                    type="button"
-                                    className={`viewer-header-btn ${activeDrawer === "mcp" ? "active" : ""}`}
-                                    onClick={() => toggleDrawer("mcp")}
-                                    title="AI MCP–LLM Copilot Assistant"
-                                >
-                                    <span className="material-icons-round">smart_toy</span>
-                                    <span>AI MCP</span>
-                                </button>
-
-                                <button
-                                    type="button"
-                                    className={`viewer-header-btn ${activeDrawer === "pro-studio" ? "active" : ""}`}
-                                    onClick={() => toggleDrawer("pro-studio")}
-                                    title="3D Clash QA, 4D Phasing S-Curve, Property Editor & .FRAG Export"
-                                >
-                                    <span className="material-icons-round">auto_fix_high</span>
-                                    <span>Pro Studio</span>
-                                </button>
-
-                                <button
-                                    type="button"
-                                    className={`viewer-header-btn ${activeDrawer === "fragments-edit" ? "active" : ""}`}
-                                    onClick={() => {
-                                        const opening = activeDrawer !== "fragments-edit";
-                                        toggleDrawer("fragments-edit");
-                                        if (opening && componentsRef.current) {
-                                            try {
-                                                componentsRef.current.get(FragmentsEditStudio).scanModel().catch(() => {});
-                                            } catch {}
+                                {/* BIM Authoring Studio Dropdown (Module 6: Edit Studio + Parametric Modeler) */}
+                                <div className="viewer-menu-wrap">
+                                    <button
+                                        type="button"
+                                        className={`viewer-header-btn ${
+                                            openHeaderMenu === "studio" ||
+                                            activeDrawer === "fragments-edit" ||
+                                            activeDrawer === "modeler"
+                                                ? "active"
+                                                : ""
+                                        }`}
+                                        onClick={() =>
+                                            setOpenHeaderMenu((prev) => (prev === "studio" ? null : "studio"))
                                         }
-                                    }}
-                                    title="Module 6 Fragments Edit Studio — Transforms, Items, Samples & Geometry"
-                                >
-                                    <span className="material-icons-round">edit_square</span>
-                                    <span>Edit Studio</span>
-                                </button>
+                                        title="Fragments Editing & Parametric BIM Modeler"
+                                    >
+                                        <span className="material-icons-round">architecture</span>
+                                        <span>BIM Studio</span>
+                                        <span className="material-icons-round" style={{ fontSize: "14px", opacity: 0.7 }}>
+                                            expand_more
+                                        </span>
+                                    </button>
 
-                                <button
-                                    type="button"
-                                    className={`viewer-header-btn ${activeDrawer === "modeler" ? "active" : ""}`}
-                                    onClick={() => {
-                                        const opening = activeDrawer !== "modeler";
-                                        toggleDrawer("modeler");
-                                        if (opening && componentsRef.current) {
-                                            try {
-                                                const modeler = componentsRef.current.get(Modeler);
-                                                if (!modeler.hasGenerated) {
-                                                    modeler.rebuildActiveAssembly(true).catch(() => {});
-                                                }
-                                            } catch {}
-                                        }
-                                    }}
-                                    title="Parametric BIM Modeler (GeometryEngine Table + Rebar Cage)"
-                                >
-                                    <span className="material-icons-round">precision_manufacturing</span>
-                                    <span>Modeler</span>
-                                </button>
+                                    {openHeaderMenu === "studio" && (
+                                        <div className="viewer-menu-popover viewer-menu-popover-right">
+                                            <button
+                                                type="button"
+                                                className={`viewer-menu-item ${activeDrawer === "fragments-edit" ? "active" : ""}`}
+                                                onClick={() => {
+                                                    const opening = activeDrawer !== "fragments-edit";
+                                                    toggleDrawer("fragments-edit");
+                                                    if (opening && componentsRef.current) {
+                                                        try {
+                                                            componentsRef.current.get(FragmentsEditStudio).scanModel().catch(() => {});
+                                                        } catch {}
+                                                    }
+                                                }}
+                                            >
+                                                <span className="viewer-menu-item-left">
+                                                    <span className="material-icons-round">edit_square</span>
+                                                    <span>Fragments Edit Studio</span>
+                                                </span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className={`viewer-menu-item ${activeDrawer === "modeler" ? "active" : ""}`}
+                                                onClick={() => {
+                                                    const opening = activeDrawer !== "modeler";
+                                                    toggleDrawer("modeler");
+                                                    if (opening && componentsRef.current) {
+                                                        try {
+                                                            componentsRef.current.get(Modeler).refreshContext();
+                                                        } catch {}
+                                                    }
+                                                }}
+                                            >
+                                                <span className="viewer-menu-item-left">
+                                                    <span className="material-icons-round">precision_manufacturing</span>
+                                                    <span>Parametric Modeler</span>
+                                                </span>
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
 
                                 <div className="viewer-top-divider" />
 
@@ -2295,7 +2358,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                 <div ref={proStudioContainerRef} className="toc-dock-body"></div>
                             </div>
 
-                            {/* Dockable Module 6 Pro Fragments Edit Studio Drawer */}
+                            {/* Dockable Pro Fragments Edit Studio Drawer */}
                             <div
                                 className={`toc-dock-panel toc-dock-right ${isDrawerExpanded ? "is-expanded" : ""}`}
                                 data-drawer="fragments-edit"
@@ -2304,14 +2367,14 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                 <div className="toc-dock-header">
                                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                                         <span className="material-icons-round" style={{ color: "#e4e4e7", fontSize: "18px" }}>edit_square</span>
-                                        <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f4f4f5" }}>Fragments Edit Studio (2.1 – 2.4)</span>
+                                        <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f4f4f5" }}>Fragments Edit Studio</span>
                                     </div>
                                     {renderDockHeaderActions("Close Edit Studio")}
                                 </div>
                                 <div ref={fragmentsEditContainerRef} className="toc-dock-body"></div>
                             </div>
 
-                            {/* Dockable Module 6 Parametric Modeler Drawer */}
+                            {/* Dockable Parametric Modeler Drawer */}
                             <div
                                 className={`toc-dock-panel toc-dock-right ${isDrawerExpanded ? "is-expanded" : ""}`}
                                 data-drawer="modeler"
@@ -2320,7 +2383,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                 <div className="toc-dock-header">
                                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                                         <span className="material-icons-round" style={{ color: "#38bdf8", fontSize: "18px" }}>precision_manufacturing</span>
-                                        <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f4f4f5" }}>Parametric Modeler (2.5 – 2.7)</span>
+                                        <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f4f4f5" }}>Parametric Modeler</span>
                                     </div>
                                     {renderDockHeaderActions("Close Parametric Modeler")}
                                 </div>
