@@ -9,4 +9,6 @@ export * from "./sheets";
 export * from "./mcp-agent";
 export * from "./pro-studio";
 export * from "./floor-plans";
+export * from "./fragments-edit";
+export * from "./modeler";
 

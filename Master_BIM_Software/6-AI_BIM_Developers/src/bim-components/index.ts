@@ -5,6 +5,8 @@ export * from "./GisLayers";
 export * from "./SheetsSync";
 export * from "./McpAgent";
 export * from "./BimProSuite";
+export * from "./FragmentsEditStudio";
+export * from "./Modeler";
 
 
 

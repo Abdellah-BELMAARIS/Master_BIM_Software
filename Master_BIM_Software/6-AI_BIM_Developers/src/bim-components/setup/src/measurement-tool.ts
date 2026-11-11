@@ -26,7 +26,7 @@ function createDimensionSprite(text: string, accentHex = "#38bdf8"): THREE.Sprit
   canvas.height = 94;
   const ctx = canvas.getContext("2d")!;
 
-  ctx.fillStyle = "rgba(15, 23, 42, 0.94)";
+  ctx.fillStyle = "rgba(19, 20, 24, 0.94)";
   ctx.strokeStyle = accentHex;
   ctx.lineWidth = 3.5;
 

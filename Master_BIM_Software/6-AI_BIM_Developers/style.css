@@ -16,24 +16,24 @@ a[href*="thatopen.com"][style*="position: absolute"] {
    ========================================================================== */
 
 :root {
-    /* CYPECAD & Structural BIM Desktop Engineering Theme (Clean, Sober, Industrial) */
-    --bg-main: #131722;
-    --bg-sidebar: #181c28;
-    --bg-card: #1e2333;
-    --bg-card-hover: #262c3e;
-    --border-color: #2b3347;
-    --border-hairline: #3b4661;
+    /* Pure Obsidian / Graphite Desktop BIM Engineering Theme */
+    --bg-main: #0c0c0f;
+    --bg-sidebar: #121316;
+    --bg-card: #18191d;
+    --bg-card-hover: #202127;
+    --border-color: #27272e;
+    --border-hairline: #34353f;
 
-    /* Authentic CYPE / Structural Cobalt Blue */
+    /* Primary & Status Accents */
     --primary-blue: #2563eb;
     --primary-blue-hover: #1d4ed8;
     --accent-green: #15803d;
     --accent-amber: #b45309;
     --accent-red: #b91c1c;
 
-    --text-primary: #f8fafc;
-    --text-secondary: #94a3b8;
-    --text-muted: #64748b;
+    --text-primary: #f4f4f5;
+    --text-secondary: #a1a1aa;
+    --text-muted: #71717a;
 
     /* Architectural Straight Geometry Tokens */
     --radius-sharp: 2px;
@@ -135,7 +135,7 @@ a {
     width: 30px;
     height: 30px;
     border-radius: 8px;
-    background: rgba(30, 41, 59, 0.72);
+    background: rgba(32, 33, 38, 0.72);
     border: 1px solid rgba(148, 163, 184, 0.28);
     color: #94a3b8;
     display: inline-flex;
@@ -148,7 +148,7 @@ a {
 
 .sidebar-collapse-btn:hover {
     color: #38bdf8;
-    border-color: rgba(56, 189, 248, 0.55);
+    border-color: rgba(255, 255, 255, 0.28);
     background: rgba(56, 189, 248, 0.14);
 }
 
@@ -213,7 +213,7 @@ a {
     align-items: center;
     justify-content: flex-start;
     border-bottom: 1px solid var(--border-color);
-    background: linear-gradient(180deg, rgba(30, 41, 59, 0.45) 0%, rgba(19, 24, 34, 0) 100%);
+    background: linear-gradient(180deg, rgba(32, 33, 38, 0.45) 0%, rgba(19, 24, 34, 0) 100%);
     box-sizing: border-box;
     overflow: hidden;
 }
@@ -335,7 +335,7 @@ a {
 }
 
 .nav-item:hover {
-    background-color: #1e293b;
+    background-color: #212227;
     border-color: rgba(56, 189, 248, 0.2);
     color: var(--text-primary);
 }
@@ -384,7 +384,7 @@ a {
 }
 
 .nav-sub-item:hover {
-    background: rgba(30, 41, 59, 0.6);
+    background: rgba(32, 33, 38, 0.6);
     color: var(--text-primary);
 }
 
@@ -409,7 +409,7 @@ a {
     top: calc(var(--toolbar-bottom, 166px) + 8px);
     left: 50%;
     transform: translateX(-50%);
-    background: rgba(15, 23, 42, 0.92);
+    background: rgba(19, 20, 24, 0.92);
     border: 1px solid #f59e0b;
     border-radius: 24px;
     padding: 6px 16px;
@@ -438,8 +438,8 @@ a {
     right: 18px;
     width: 340px;
     max-width: calc(100% - 36px);
-    background: rgba(15, 23, 42, 0.96);
-    border: 1px solid rgba(56, 189, 248, 0.45);
+    background: rgba(19, 20, 24, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 12px;
     padding: 12px 14px;
     box-shadow: 0 12px 36px rgba(0, 0, 0, 0.7);
@@ -511,7 +511,7 @@ a {
 .ifc-loading-overlay {
     position: absolute;
     inset: 0;
-    background: rgba(15, 23, 42, 0.85);
+    background: rgba(19, 20, 24, 0.85);
     backdrop-filter: blur(8px);
     display: flex;
     flex-direction: column;
@@ -541,7 +541,7 @@ a {
     margin-top: auto;
     padding: 0.85rem;
     border-radius: 8px;
-    background: rgba(15, 23, 42, 0.75);
+    background: rgba(19, 20, 24, 0.75);
     border: 1px solid rgba(51, 65, 85, 0.6);
     box-sizing: border-box;
 }
@@ -561,7 +561,7 @@ a {
 .storage-bar {
     width: 100%;
     height: 5px;
-    background: #1e293b;
+    background: #212227;
     border-radius: 4px;
     overflow: hidden;
     margin-bottom: 0.45rem;
@@ -599,7 +599,7 @@ a {
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 6px rgba(37, 99, 235, 0.35);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
 }
 
 .user-meta {
@@ -870,7 +870,7 @@ dialog {
     align-items: center;
     gap: 0.35rem;
     flex-wrap: wrap;
-    background: rgba(15, 23, 42, 0.65);
+    background: rgba(19, 20, 24, 0.65);
     padding: 3px;
     border-radius: 8px;
     border: 1px solid rgba(51, 65, 85, 0.6);
@@ -894,12 +894,12 @@ dialog {
 
 .category-pill:hover {
     color: var(--text-primary);
-    background: rgba(30, 41, 59, 0.7);
+    background: rgba(32, 33, 38, 0.7);
 }
 
 .category-pill.active {
     color: #ffffff;
-    background: #1e293b;
+    background: #212227;
     border-color: rgba(56, 189, 248, 0.35);
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
 }
@@ -911,7 +911,7 @@ dialog {
 }
 
 .category-pill.active.parametric-pill {
-    border-color: rgba(56, 189, 248, 0.5);
+    border-color: rgba(255, 255, 255, 0.28);
     background: rgba(56, 189, 248, 0.18);
     color: #38bdf8;
 }
@@ -1036,7 +1036,7 @@ dialog {
     align-items: center;
     justify-content: center;
     color: #60a5fa;
-    box-shadow: 0 0 20px rgba(37, 99, 235, 0.25);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
 }
 
 .empty-state-icon-box .material-icons-round {
@@ -1240,7 +1240,7 @@ dialog {
 .card-progress-bar {
     width: 100%;
     height: 6px;
-    background-color: #131722;
+    background-color: #0c0c0f;
     border: 1px solid rgba(255, 255, 255, 0.06);
     border-radius: var(--radius-sharp);
     overflow: hidden;
@@ -1354,7 +1354,7 @@ dialog#error-modal::backdrop {
 }
 
 .error-modal-card {
-    background: #181c28;
+    background: var(--bg-card);
     border: 1px solid var(--accent-red);
     border-radius: var(--radius-straight);
     padding: 1.75rem 2rem;
@@ -1528,7 +1528,7 @@ dialog#error-modal::backdrop {
 .form-field textarea:focus,
 .form-field select:focus {
     border-color: var(--primary-blue);
-    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.25);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.22);
 }
 
 .form-field textarea {
@@ -1617,7 +1617,7 @@ dialog#error-modal::backdrop {
     justify-content: space-between;
     align-items: center;
     padding: 0.55rem 1.25rem;
-    background: rgba(14, 19, 29, 0.94);
+    background: rgba(18, 19, 22, 0.94);
     backdrop-filter: blur(14px);
     border-bottom: 1px solid var(--border-color);
     box-sizing: border-box;
@@ -1818,9 +1818,9 @@ dialog#error-modal::backdrop {
     scrollbar-width: none;
     -ms-overflow-style: none;
     max-width: calc(100% - 28px);
-    background: rgba(15, 23, 42, 0.94);
+    background: rgba(19, 20, 24, 0.94);
     backdrop-filter: blur(14px);
-    border: 1px solid rgba(56, 189, 248, 0.32);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 12px;
     padding: 3px 5px;
     box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
@@ -1856,7 +1856,7 @@ dialog#error-modal::backdrop {
 .viewer-mode-tab.active {
     background: var(--primary-blue);
     color: #ffffff;
-    box-shadow: 0 2px 10px rgba(37, 99, 235, 0.45);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
 }
 
 .viewer-mode-tab .material-icons-round {
@@ -1921,7 +1921,7 @@ dialog#error-modal::backdrop {
     gap: 16px;
     color: #ffffff;
     pointer-events: none;
-    box-shadow: inset 0 0 60px rgba(56, 189, 248, 0.35);
+    box-shadow: inset 0 0 60px rgba(0, 0, 0, 0.45);
     animation: tocPulseDrop 1.8s infinite ease-in-out;
 }
 
@@ -1939,9 +1939,9 @@ dialog#error-modal::backdrop {
     }
 }
 
-/* Ensure bim-toolbar inside floating grid is responsive and scrolls horizontally on small screens */
+/* Ensure bim-toolbar inside floating grid fits cleanly inside viewer bounds */
 .toc-viewport-floating-grid bim-toolbar {
-    max-width: calc(100vw - 32px) !important;
+    max-width: calc(100% - 28px) !important;
     overflow: visible !important;
     flex-wrap: wrap;
 }
@@ -2162,7 +2162,7 @@ dialog#error-modal::backdrop {
 }
 
 .progress-bar-container {
-    background-color: #131722;
+    background-color: #0c0c0f;
     border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: var(--radius-sharp);
     height: 20px;
@@ -2645,7 +2645,7 @@ dialog#error-modal::backdrop {
     justify-content: space-between;
     align-items: center;
     padding: 0 2.5rem;
-    background: rgba(14, 19, 29, 0.92);
+    background: rgba(18, 19, 22, 0.92);
     backdrop-filter: blur(14px);
     border-bottom: 1px solid var(--border-color);
     box-sizing: border-box;
@@ -2889,7 +2889,7 @@ dialog#error-modal::backdrop {
 
 .dropdown-menu {
     position: fixed;
-    background-color: #181c28;
+    background-color: var(--bg-card);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-straight);
     box-shadow: 0 10px 28px rgba(0, 0, 0, 0.75);
@@ -3541,10 +3541,10 @@ dialog#error-modal::backdrop {
     display: flex;
     align-items: center;
     gap: 0.4rem;
-    background: rgba(15, 23, 42, 0.94);
+    background: rgba(19, 20, 24, 0.94);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
-    border: 1px solid rgba(56, 189, 248, 0.35);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     padding: 6px 12px;
     border-radius: 30px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.65);
@@ -3563,8 +3563,8 @@ dialog#error-modal::backdrop {
 }
 
 .viewer-pro-hud:hover {
-    border-color: rgba(56, 189, 248, 0.5);
-    box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.7), 0 0 20px rgba(56, 189, 248, 0.3);
+    border-color: rgba(255, 255, 255, 0.28);
+    box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.78);
 }
 
 .hud-pill-group {
@@ -3604,7 +3604,7 @@ dialog#error-modal::backdrop {
 .hud-btn.active {
     background: #0284c7;
     color: #ffffff;
-    box-shadow: 0 0 12px rgba(56, 189, 248, 0.6);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
 }
 
 .hud-divider {
@@ -3656,9 +3656,9 @@ bim-viewport {
    Project Form 3D / IFC Model Upload Dropzone
    ========================================================================== */
 .btn-upload-model-dropzone:hover {
-    background: rgba(30, 41, 59, 0.8) !important;
+    background: rgba(32, 33, 38, 0.8) !important;
     border-color: var(--primary-blue) !important;
-    box-shadow: 0 0 16px rgba(37, 99, 235, 0.25);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
 }
 
 .model-file-attached {
@@ -3667,14 +3667,14 @@ bim-viewport {
 
 .model-file-attached:hover {
     border-color: rgba(56, 189, 248, 0.6) !important;
-    box-shadow: 0 0 12px rgba(56, 189, 248, 0.2);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
 }
 
 /* ==========================================================================
    That Open Company Course Tools — Dockable Glassmorphism Panels (Lessons 3.5 & 3.6)
    ========================================================================== */
 .toc-course-pill {
-    background: rgba(30, 41, 59, 0.65) !important;
+    background: rgba(32, 33, 38, 0.65) !important;
     border: 1px solid rgba(148, 163, 184, 0.25) !important;
     color: #94a3b8 !important;
     font-size: 0.75rem !important;
@@ -3682,7 +3682,7 @@ bim-viewport {
 
 .toc-course-pill:hover {
     background: rgba(56, 189, 248, 0.15) !important;
-    border-color: rgba(56, 189, 248, 0.45) !important;
+    border-color: rgba(255, 255, 255, 0.28) !important;
     color: #38bdf8 !important;
 }
 
@@ -3690,7 +3690,7 @@ bim-viewport {
     background: rgba(56, 189, 248, 0.25) !important;
     border-color: #38bdf8 !important;
     color: #38bdf8 !important;
-    box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
 }
 
 .toc-dock-panel {
@@ -3699,8 +3699,8 @@ bim-viewport {
     bottom: 68px;
     width: clamp(360px, 40vw, 480px);
     max-width: calc(100% - 28px);
-    background: rgba(15, 23, 42, 0.96);
-    border: 1px solid rgba(56, 189, 248, 0.35);
+    background: rgba(19, 20, 24, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 12px;
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.75);
     backdrop-filter: blur(16px);
@@ -3731,6 +3731,7 @@ bim-viewport {
 .toc-dock-panel[data-drawer="sheets"],
 .toc-dock-panel[data-drawer="mcp"],
 .toc-dock-panel[data-drawer="pro-studio"],
+.toc-dock-panel[data-drawer="fragments-edit"],
 .toc-dock-panel[data-drawer="floor-plans"],
 .toc-dock-panel[data-drawer="enhance"],
 .toc-dock-panel[data-drawer="query"],
@@ -3772,7 +3773,7 @@ bim-viewport {
     justify-content: space-between;
     padding: 10px 14px;
     border-bottom: 1px solid rgba(148, 163, 184, 0.2);
-    background: rgba(30, 41, 59, 0.6);
+    background: rgba(32, 33, 38, 0.6);
 }
 
 .toc-dock-header-actions {
@@ -3784,7 +3785,7 @@ bim-viewport {
 
 .btn-expand-dock {
     background: rgba(56, 189, 248, 0.12);
-    border: 1px solid rgba(56, 189, 248, 0.32);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     color: #7dd3fc;
     cursor: pointer;
     padding: 3px 7px;
@@ -3890,7 +3891,7 @@ button.disabled {
 }
 
 .toc-dock-panel[data-drawer="gis"] bim-number-input[slider] .slider {
-    background: rgba(30, 41, 59, 0.7);
+    background: rgba(32, 33, 38, 0.7);
     border-radius: 6px;
     border: 1px solid rgba(148, 163, 184, 0.2);
 }
@@ -3940,8 +3941,8 @@ button.disabled {
 .gis-map-2d-container .cesium-geocoder-input {
     width: 100% !important;
     box-sizing: border-box;
-    background: rgba(15, 23, 42, 0.88) !important;
-    border: 1px solid rgba(56, 189, 248, 0.4) !important;
+    background: rgba(19, 20, 24, 0.88) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
     color: #f8fafc !important;
     font-size: 0.76rem !important;
     font-family: inherit !important;
@@ -3954,7 +3955,7 @@ button.disabled {
 
 .gis-map-2d-container .cesium-geocoder-input:focus {
     border-color: #38bdf8 !important;
-    box-shadow: 0 0 10px rgba(56, 189, 248, 0.4) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45) !important;
 }
 
 .gis-map-2d-container .cesium-geocoder-searchButton {
@@ -3976,7 +3977,7 @@ button.disabled {
 
 .toc-viewcube-deck {
     position: absolute;
-    top: calc(var(--mode-bar-bottom, 50px) + 12px);
+    top: calc(var(--toolbar-bottom, var(--mode-bar-bottom, 50px)) + 12px);
     right: 18px;
     z-index: 25;
     display: flex;
@@ -3985,6 +3986,7 @@ button.disabled {
     gap: 8px;
     pointer-events: none;
     user-select: none;
+    transition: top 0.2s ease, right 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .toc-viewcube-mini-actions {
@@ -4000,8 +4002,8 @@ button.disabled {
     width: 24px;
     height: 24px;
     border-radius: 50%;
-    background: rgba(15, 23, 42, 0.85);
-    border: 1px solid rgba(56, 189, 248, 0.3);
+    background: rgba(19, 20, 24, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     color: #cbd5e1;
     display: inline-flex;
     align-items: center;
@@ -4031,8 +4033,8 @@ button.disabled {
     gap: 4px;
     padding: 4px 8px;
     border-radius: 14px;
-    background: rgba(15, 23, 42, 0.85);
-    border: 1px solid rgba(56, 189, 248, 0.3);
+    background: rgba(19, 20, 24, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     color: #cbd5e1;
     font-size: 0.70rem;
     font-weight: 700;
@@ -4043,7 +4045,7 @@ button.disabled {
 }
 
 .toc-viewcube-btn:hover {
-    background: rgba(30, 41, 59, 0.95);
+    background: rgba(32, 33, 38, 0.95);
     border-color: #38bdf8;
     color: #f8fafc;
 }
@@ -4052,7 +4054,7 @@ button.disabled {
     background: linear-gradient(135deg, #0284c7, #0ea5e9);
     border-color: #38bdf8;
     color: #ffffff;
-    box-shadow: 0 0 12px rgba(14, 165, 233, 0.4);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
 }
 
 .toc-viewcube-btn.icon-only {
@@ -4081,7 +4083,7 @@ button.disabled {
     position: absolute;
     width: 52px;
     height: 52px;
-    background: rgba(22, 30, 49, 0.9);
+    background: rgba(25, 26, 30, 0.9);
     border: 1.5px solid rgba(56, 189, 248, 0.45);
     color: #f8fafc;
     font-size: 9px;
@@ -4100,7 +4102,7 @@ button.disabled {
     background: rgba(14, 165, 233, 0.45);
     border-color: #38bdf8;
     color: #38bdf8;
-    box-shadow: 0 0 10px rgba(56, 189, 248, 0.6);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.45);
 }
 
 .cube-face.top {
@@ -4141,7 +4143,7 @@ button.disabled {
 
 .cube-corner:hover {
     background: #38bdf8;
-    box-shadow: 0 0 8px #38bdf8;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.55);
 }
 
 .cube-corner.corner-ne {
@@ -4175,7 +4177,7 @@ button.disabled {
     height: 66px;
     border-radius: 50%;
     border: 1.5px dashed rgba(56, 189, 248, 0.35);
-    background: rgba(15, 23, 42, 0.7);
+    background: rgba(19, 20, 24, 0.7);
     pointer-events: auto;
     cursor: pointer;
     transition: transform 0.05s linear;
@@ -4187,7 +4189,7 @@ button.disabled {
 
 .toc-viewcube-compass:hover {
     border-color: #38bdf8;
-    box-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
 }
 
 .compass-mark {
@@ -4229,8 +4231,8 @@ button.disabled {
     right: 0;
     margin-top: 10px;
     width: 280px;
-    background: rgba(15, 23, 42, 0.95);
-    border: 1px solid rgba(56, 189, 248, 0.35);
+    background: rgba(19, 20, 24, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 12px;
     padding: 12px 14px;
     box-shadow: 0 16px 40px rgba(0, 0, 0, 0.7);
@@ -4275,7 +4277,7 @@ button.disabled {
 .key-badge {
     padding: 2px 6px;
     border-radius: 4px;
-    background: rgba(30, 41, 59, 0.9);
+    background: rgba(32, 33, 38, 0.9);
     border: 1px solid rgba(148, 163, 184, 0.3);
     color: #38bdf8;
     font-weight: 700;
@@ -4302,10 +4304,10 @@ button.disabled {
     justify-content: space-between;
     gap: 10px;
     padding: 5px 10px;
-    background: rgba(11, 17, 30, 0.92);
+    background: rgba(15, 16, 19, 0.92);
     backdrop-filter: blur(16px);
     -webkit-backdrop-filter: blur(16px);
-    border: 1px solid rgba(56, 189, 248, 0.25);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 12px;
     box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
     box-sizing: border-box;
@@ -4348,16 +4350,16 @@ button.disabled {
 }
 
 .viewer-header-btn.active {
-    background: rgba(56, 189, 248, 0.2);
-    border-color: rgba(56, 189, 248, 0.55);
-    color: #38bdf8;
-    box-shadow: 0 0 12px rgba(56, 189, 248, 0.2);
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.34);
+    color: #ffffff;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45);
 }
 
 .viewer-header-btn.accent {
-    background: rgba(14, 165, 233, 0.2);
-    border-color: rgba(56, 189, 248, 0.4);
-    color: #38bdf8;
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.28);
+    color: #f4f4f5;
 }
 
 .viewer-header-btn .material-icons-round {
@@ -4374,8 +4376,8 @@ button.disabled {
     top: calc(100% + 8px);
     left: 0;
     min-width: 210px;
-    background: rgba(11, 17, 30, 0.98);
-    border: 1px solid rgba(56, 189, 248, 0.35);
+    background: rgba(15, 16, 19, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 11px;
     padding: 6px;
     display: flex;
@@ -4406,13 +4408,13 @@ button.disabled {
 }
 
 .viewer-menu-item:hover {
-    background: rgba(56, 189, 248, 0.16);
-    color: #38bdf8;
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
 }
 
 .viewer-menu-item.active {
-    background: rgba(56, 189, 248, 0.22);
-    color: #38bdf8;
+    background: rgba(255, 255, 255, 0.14);
+    color: #ffffff;
 }
 
 .viewer-menu-item-left {
@@ -4423,7 +4425,7 @@ button.disabled {
 
 .viewer-menu-item .material-icons-round {
     font-size: 16px;
-    color: #38bdf8;
+    color: #d4d4d8;
 }
 
 /* Autodesk-style Contextual Sub-Bar floating cleanly centered above bottom dock */
@@ -4437,8 +4439,8 @@ button.disabled {
     align-items: center;
     gap: 6px;
     padding: 6px 12px;
-    background: rgba(11, 17, 30, 0.95);
-    border: 1px solid rgba(56, 189, 248, 0.4);
+    background: rgba(15, 16, 19, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 14px;
     backdrop-filter: blur(16px);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65);
@@ -4473,9 +4475,9 @@ button.disabled {
 }
 
 .viewer-ctx-btn.active {
-    background: rgba(56, 189, 248, 0.22);
-    border-color: #38bdf8;
-    color: #38bdf8;
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.34);
+    color: #ffffff;
 }
 
 .viewer-ctx-btn .material-icons-round {
@@ -4493,10 +4495,10 @@ button.disabled {
     align-items: center;
     gap: 3px;
     padding: 5px 10px;
-    background: rgba(11, 17, 30, 0.94);
+    background: rgba(15, 16, 19, 0.94);
     backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(18px);
-    border: 1px solid rgba(56, 189, 248, 0.28);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 16px;
     box-shadow: 0 10px 34px rgba(0, 0, 0, 0.7);
     max-width: calc(100% - 24px);
@@ -4531,9 +4533,9 @@ button.disabled {
 }
 
 .viewer-dock-item.active {
-    background: rgba(56, 189, 248, 0.2);
-    border-color: rgba(56, 189, 248, 0.55);
-    color: #38bdf8;
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.34);
+    color: #ffffff;
 }
 
 .viewer-dock-item .material-icons-round {
@@ -4577,7 +4579,7 @@ bim-toolbar.toc-pro-appear-toolbar {
     padding: 0 !important;
     overflow: visible !important;
     pointer-events: auto;
-    max-width: calc(100vw - 28px);
+    max-width: 100%;
 }
 
 .toc-pro-shell {
@@ -4596,15 +4598,15 @@ bim-toolbar.toc-pro-appear-toolbar {
     align-items: stretch;
     gap: 2px;
     padding: 5px 8px;
-    background: linear-gradient(180deg, rgba(17, 24, 39, 0.96) 0%, rgba(9, 14, 26, 0.96) 100%);
+    background: linear-gradient(180deg, rgba(24, 25, 30, 0.96) 0%, rgba(16, 17, 20, 0.96) 100%);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(56, 189, 248, 0.32);
+    border: 1px solid rgba(255, 255, 255, 0.13);
     border-radius: 14px;
     box-shadow:
         0 14px 34px rgba(0, 0, 0, 0.65),
-        inset 0 1px 0 rgba(255, 255, 255, 0.08);
-    max-width: calc(100vw - 30px);
+        inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    max-width: calc(100% - 28px);
     overflow-x: auto;
     overflow-y: visible;
     scrollbar-width: none;
@@ -4629,6 +4631,7 @@ bim-toolbar.toc-pro-appear-toolbar {
     color: #64748b;
     padding-left: 5px;
     line-height: 1;
+    white-space: nowrap;
     user-select: none;
 }
 
@@ -4679,7 +4682,7 @@ bim-toolbar.toc-pro-appear-toolbar {
     background: rgba(56, 189, 248, 0.2);
     border-color: rgba(56, 189, 248, 0.6);
     color: #7dd3fc;
-    box-shadow: 0 0 14px rgba(56, 189, 248, 0.18);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.48);
 }
 
 .toc-pro-btn.warn:hover {
@@ -4736,10 +4739,10 @@ bim-toolbar.toc-pro-appear-toolbar {
     min-width: 268px;
     max-width: min(320px, calc(100vw - 28px));
     padding: 12px;
-    background: rgba(11, 17, 30, 0.97);
+    background: rgba(15, 16, 19, 0.97);
     backdrop-filter: blur(22px);
     -webkit-backdrop-filter: blur(22px);
-    border: 1px solid rgba(56, 189, 248, 0.38);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 12px;
     box-shadow: 0 18px 42px rgba(0, 0, 0, 0.72), inset 0 1px 0 rgba(255, 255, 255, 0.08);
     color: #e2e8f0;
@@ -4777,7 +4780,7 @@ bim-toolbar.toc-pro-appear-toolbar {
 }
 
 .toc-pro-swatch-tile.selected {
-    box-shadow: 0 0 0 2px #0f172a, 0 0 0 3.5px #38bdf8;
+    box-shadow: 0 0 0 2px #121316, 0 0 0 3.5px rgba(255, 255, 255, 0.85);
 }
 
 .toc-pro-pop-btn {
@@ -4788,7 +4791,7 @@ bim-toolbar.toc-pro-appear-toolbar {
     padding: 7px 10px;
     border-radius: 8px;
     border: 1px solid rgba(148, 163, 184, 0.18);
-    background: rgba(30, 41, 59, 0.75);
+    background: rgba(32, 33, 38, 0.75);
     color: #e2e8f0;
     font-size: 0.75rem;
     font-weight: 600;
@@ -4798,15 +4801,15 @@ bim-toolbar.toc-pro-appear-toolbar {
 }
 
 .toc-pro-pop-btn:hover {
-    background: rgba(56, 189, 248, 0.16);
-    border-color: rgba(56, 189, 248, 0.45);
+    background: rgba(255, 255, 255, 0.09);
+    border-color: rgba(255, 255, 255, 0.28);
     color: #ffffff;
 }
 
 .toc-pro-pop-btn.active {
-    background: rgba(56, 189, 248, 0.22);
-    border-color: #38bdf8;
-    color: #bae6fd;
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.36);
+    color: #ffffff;
 }
 
 .toc-pro-pop-btn.danger {
@@ -4837,7 +4840,7 @@ bim-toolbar.toc-pro-appear-toolbar {
     padding: 7px 9px;
     border-radius: 8px;
     border: 1px solid rgba(148, 163, 184, 0.2);
-    background: rgba(30, 41, 59, 0.7);
+    background: rgba(32, 33, 38, 0.7);
     color: #cbd5e1;
     font-size: 0.73rem;
     font-weight: 600;
@@ -4846,14 +4849,14 @@ bim-toolbar.toc-pro-appear-toolbar {
 }
 
 .toc-pro-mood-tile:hover {
-    border-color: rgba(56, 189, 248, 0.45);
+    border-color: rgba(255, 255, 255, 0.28);
     color: #ffffff;
 }
 
 .toc-pro-mood-tile.active {
-    background: rgba(56, 189, 248, 0.2);
-    border-color: #38bdf8;
-    color: #7dd3fc;
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.38);
+    color: #ffffff;
 }
 
 .toc-pro-mood-preview {
@@ -4870,7 +4873,7 @@ bim-toolbar.toc-pro-appear-toolbar {
     gap: 4px;
     padding: 3px;
     border-radius: 9px;
-    background: rgba(15, 23, 42, 0.9);
+    background: rgba(19, 20, 24, 0.9);
     border: 1px solid rgba(148, 163, 184, 0.18);
 }
 
@@ -4895,9 +4898,9 @@ bim-toolbar.toc-pro-appear-toolbar {
 }
 
 .toc-pro-seg-btn.active {
-    background: rgba(56, 189, 248, 0.22);
-    border-color: rgba(56, 189, 248, 0.55);
-    color: #7dd3fc;
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(255, 255, 255, 0.32);
+    color: #ffffff;
 }
 
 .toc-pro-toast {
@@ -4907,8 +4910,8 @@ bim-toolbar.toc-pro-appear-toolbar {
     gap: 6px;
     padding: 5px 11px;
     border-radius: 9px;
-    background: rgba(11, 17, 30, 0.95);
-    border: 1px solid rgba(56, 189, 248, 0.45);
+    background: rgba(15, 16, 19, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     color: #bae6fd;
     font-size: 0.72rem;
     font-weight: 600;
@@ -4943,7 +4946,7 @@ bim-toolbar.toc-pro-appear-toolbar {
 #main-header.pro-projects-header {
     padding: 0.8rem 1.4rem;
     gap: 1rem;
-    background: rgba(11, 17, 30, 0.94);
+    background: rgba(15, 16, 19, 0.94);
     border-bottom: 1px solid rgba(56, 189, 248, 0.22);
     backdrop-filter: blur(18px);
     display: flex;
@@ -4997,7 +5000,7 @@ bim-toolbar.toc-pro-appear-toolbar {
     gap: 3px;
     padding: 3px;
     border-radius: 10px;
-    background: rgba(15, 23, 42, 0.82);
+    background: rgba(19, 20, 24, 0.82);
     border: 1px solid rgba(148, 163, 184, 0.22);
 }
 
@@ -5027,10 +5030,10 @@ bim-toolbar.toc-pro-appear-toolbar {
     height: 36px;
     padding: 0 14px;
     background: linear-gradient(135deg, #0284c7, #2563eb);
-    border-color: rgba(56, 189, 248, 0.5);
+    border-color: rgba(255, 255, 255, 0.28);
     color: #ffffff;
     font-weight: 700;
-    box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
 }
 
 .pro-head-btn.primary:hover {
@@ -5056,8 +5059,8 @@ bim-toolbar.toc-pro-appear-toolbar {
     gap: 4px;
     padding: 0.78rem 1rem;
     border-radius: 12px;
-    background: linear-gradient(180deg, rgba(22, 31, 48, 0.92) 0%, rgba(13, 19, 32, 0.94) 100%);
-    border: 1px solid rgba(56, 189, 248, 0.22);
+    background: linear-gradient(180deg, rgba(25, 26, 30, 0.92) 0%, rgba(17, 18, 21, 0.94) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     box-shadow: 0 8px 22px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
@@ -5126,8 +5129,8 @@ bim-toolbar.toc-pro-appear-toolbar {
     gap: 2px;
     padding: 3px;
     border-radius: 8px;
-    background: rgba(15, 23, 42, 0.85);
-    border: 1px solid rgba(56, 189, 248, 0.25);
+    background: rgba(19, 20, 24, 0.85);
+    border: 1px solid rgba(255, 255, 255, 0.12);
 }
 
 .pro-view-btn {
@@ -5151,7 +5154,7 @@ bim-toolbar.toc-pro-appear-toolbar {
 
 .pro-view-btn.active {
     background: rgba(56, 189, 248, 0.2);
-    border-color: rgba(56, 189, 248, 0.5);
+    border-color: rgba(255, 255, 255, 0.28);
     color: #7dd3fc;
 }
 
@@ -5182,7 +5185,7 @@ bim-toolbar.toc-pro-appear-toolbar {
     gap: 1rem;
     padding: 1.35rem;
     border-radius: 12px;
-    background: linear-gradient(180deg, rgba(22, 30, 46, 0.94) 0%, rgba(14, 19, 31, 0.96) 100%);
+    background: linear-gradient(180deg, rgba(25, 26, 30, 0.94) 0%, rgba(18, 19, 22, 0.96) 100%);
     border: 1px solid rgba(148, 163, 184, 0.18);
     box-shadow: 0 10px 26px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.06);
     transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
@@ -5236,8 +5239,8 @@ bim-toolbar.toc-pro-appear-toolbar {
 
 #projects-list.pro-projects-grid .project-card:hover {
     transform: translateY(-2px);
-    border-color: rgba(56, 189, 248, 0.55);
-    box-shadow: 0 14px 34px rgba(2, 132, 199, 0.22);
+    border-color: rgba(255, 255, 255, 0.28);
+    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.62);
 }
 
 .pro-schedule-wrap {
@@ -5252,8 +5255,8 @@ bim-toolbar.toc-pro-appear-toolbar {
     flex: 1;
     overflow: auto;
     border-radius: 12px;
-    background: rgba(11, 17, 30, 0.92);
-    border: 1px solid rgba(56, 189, 248, 0.28);
+    background: rgba(15, 16, 19, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     box-shadow: 0 14px 36px rgba(0, 0, 0, 0.45);
 }
 
@@ -5269,8 +5272,8 @@ bim-toolbar.toc-pro-appear-toolbar {
     top: 0;
     z-index: 2;
     padding: 11px 14px;
-    background: rgba(20, 29, 46, 0.98);
-    border-bottom: 1px solid rgba(56, 189, 248, 0.25);
+    background: rgba(24, 25, 29, 0.98);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
     color: #94a3b8;
     font-size: 0.7rem;
     font-weight: 700;
@@ -5339,7 +5342,7 @@ bim-toolbar.toc-pro-appear-toolbar {
 
 .pro-type-badge.twin {
     background: rgba(56, 189, 248, 0.16);
-    border: 1px solid rgba(56, 189, 248, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     color: #7dd3fc;
 }
 
@@ -5386,7 +5389,7 @@ bim-toolbar.toc-pro-appear-toolbar {
 .pro-row-open-btn {
     padding: 5px 10px;
     border-radius: 6px;
-    border: 1px solid rgba(56, 189, 248, 0.45);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     background: rgba(56, 189, 248, 0.16);
     color: #7dd3fc;
     font-size: 0.72rem;

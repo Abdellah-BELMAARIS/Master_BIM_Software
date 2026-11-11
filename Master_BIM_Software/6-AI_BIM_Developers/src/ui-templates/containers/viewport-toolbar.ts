@@ -1,9 +1,9 @@
 import * as OBC from "@thatopen/components";
 import * as OBCF from "@thatopen/components-front";
-import * as FRAGS from "@thatopen/fragments";
 import * as BUI from "@thatopen/ui";
 import * as THREE from "three";
 import { SmartViews } from "../../bim-components/SmartViews";
+import { FragmentsEditStudio } from "../../bim-components/FragmentsEditStudio";
 
 export type ProSceneMoodId = "obsidian" | "studio" | "blueprint" | "daylight";
 export type ProRenderLookId = "shaded" | "clay" | "wireframe";
@@ -495,28 +495,75 @@ export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarStat
   };
 
   // =========================================================================
-  // 4. Visibility & Reset Operations (Hide, Isolate, Show All, Reset All)
+  // 4. Visibility, Activate Full & Reset Full Operations
   // =========================================================================
-  const onClearAllAppear = async () => {
+
+  /**
+   * Restores clean visibility, material/X-ray/finish state, and optionally resets
+   * Fragment Editor requests & Clipper sections across the active workspace.
+   */
+  const restoreWorkspaceState = async (options: {
+    resetFragments: boolean;
+    resetSections: boolean;
+    resetCamera: boolean;
+    label: string;
+  }) => {
     try {
+      const hider = components.get(OBC.Hider);
       const highlighter = components.get(OBCF.Highlighter);
-      await highlighter.clear();
+      const fragments = components.get(OBC.FragmentsManager);
+
+      if (options.resetFragments && fragments.initialized) {
+        for (const model of fragments.list.values()) {
+          try {
+            await fragments.core.editor.reset(model.modelId);
+          } catch {}
+        }
+        try {
+          await components.get(FragmentsEditStudio).syncAfterExternalReset();
+        } catch {}
+      }
+
+      if (options.resetSections) {
+        try {
+          components.get(OBC.Clipper).deleteAll();
+        } catch {}
+      }
+
+      await Promise.all([hider.set(true), highlighter.clear()]);
       clearGhostMode(true);
       await clearRenderFinish();
 
       const world = resolveWorld();
       if (world?.scene?.three) {
         world.scene.three.traverse((obj) => {
-          if (obj instanceof THREE.Mesh && obj.userData.__originalMaterial) {
-            obj.material = obj.userData.__originalMaterial;
-            delete obj.userData.__originalMaterial;
+          if (obj instanceof THREE.Mesh && !obj.name.includes("helper")) {
+            obj.visible = true;
+            if (obj.userData.__originalMaterial) {
+              obj.material = obj.userData.__originalMaterial;
+              delete obj.userData.__originalMaterial;
+            }
           }
         });
       }
+      const box = (window as unknown as { __selectionBoxHelper?: THREE.Object3D })
+        .__selectionBoxHelper;
+      if (box) box.visible = true;
 
       try {
-        components.get(SmartViews).currentState.colors = { queries: new Map(), items: new Map() };
-      } catch { }
+        const sv = components.get(SmartViews);
+        sv.recordVisibility("showAll");
+        sv.currentState.colors = { queries: new Map(), items: new Map() };
+      } catch {}
+
+      if (fragments.initialized && !world?.isDisposing) {
+        fragments.core.update(true);
+      }
+
+      if (options.resetCamera) {
+        await applySceneMood("obsidian");
+        await onFocusSelection();
+      }
 
       update({
         openMenu: null,
@@ -524,10 +571,29 @@ export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarStat
         renderLook: "shaded",
         isDisciplineColored: false,
       });
-      notify("Cleared color, X-Ray & finish overrides");
+      notify(options.label);
     } catch (error) {
-      console.error("[Highlighter] Error clearing colors:", error);
+      console.error("[ViewportToolbar] Error restoring workspace state:", error);
+      notify("Failed restoring state", "warn");
     }
+  };
+
+  const onResetFull = () =>
+    restoreWorkspaceState({
+      resetFragments: true,
+      resetSections: true,
+      resetCamera: true,
+      label: "Reset Full: restored model, transforms, materials & camera",
+    });
+
+  const onActivateFull = async () => {
+    window.dispatchEvent(new CustomEvent("toc-activate-full-view"));
+    await restoreWorkspaceState({
+      resetFragments: false,
+      resetSections: true,
+      resetCamera: true,
+      label: "Activated Full Viewer + Model Extents",
+    });
   };
 
   const onHideSelected = async () => {
@@ -596,34 +662,13 @@ export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarStat
     }
   };
 
-  const onShowAll = async () => {
-    try {
-      const hider = components.get(OBC.Hider);
-      const highlighter = components.get(OBCF.Highlighter);
-      await Promise.all([hider.set(true), highlighter.clear()]);
-      clearGhostMode(true);
-      await clearRenderFinish();
-
-      const world = resolveWorld();
-      world?.scene?.three.traverse((obj) => {
-        if (obj instanceof THREE.Mesh && !obj.name.includes("helper")) {
-          obj.visible = true;
-        }
-      });
-      const box = (window as unknown as { __selectionBoxHelper?: THREE.Object3D })
-        .__selectionBoxHelper;
-      if (box) box.visible = true;
-
-      try {
-        components.get(SmartViews).recordVisibility("showAll");
-      } catch { }
-
-      update({ renderLook: "shaded", isDisciplineColored: false });
-      notify("Restored full model visibility");
-    } catch (error) {
-      console.error("[Hider] Error restoring visibility:", error);
-    }
-  };
+  const onShowAll = () =>
+    restoreWorkspaceState({
+      resetFragments: false,
+      resetSections: false,
+      resetCamera: false,
+      label: "Show All: restored full element visibility",
+    });
 
   const onFocusSelection = async () => {
     const highlighter = components.get(OBCF.Highlighter);
@@ -680,90 +725,6 @@ export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarStat
     }
   };
 
-  // =========================================================================
-  // 5. Module 6 Lesson 1: Fragments Edit API (Global & Local Transformations)
-  // =========================================================================
-
-  /**
-   * Shifts all global or local transformations of the first loaded FragmentsModel
-   * along the vertical (Y) axis via the Fragments Editor API.
-   */
-  const editTransformations = async (mode: "global" | "local", deltaY: number) => {
-    const fragments = components.get(OBC.FragmentsManager);
-    const model = fragments.list.values().next().value;
-    if (!model) {
-      notify("Load an .IFC or .FRAG model first to use Fragments Edit API", "warn");
-      return;
-    }
-
-    update({ isBusy: true });
-    try {
-      const requests: FRAGS.EditRequest[] = [];
-      if (mode === "global") {
-        const globalTransforms = await model.getGlobalTransforms();
-        for (const [localId, globalTransform] of globalTransforms) {
-          globalTransform.position[1] += deltaY;
-          requests.push({
-            type: FRAGS.EditRequestType.UPDATE_GLOBAL_TRANSFORM,
-            localId,
-            data: globalTransform,
-          });
-        }
-      } else {
-        const localTransforms = await model.getLocalTransforms();
-        for (const [localId, localTransform] of localTransforms) {
-          localTransform.position[1] += deltaY;
-          requests.push({
-            type: FRAGS.EditRequestType.UPDATE_LOCAL_TRANSFORM,
-            localId,
-            data: localTransform,
-          });
-        }
-      }
-
-      if (requests.length === 0) {
-        notify(`No ${mode} transformations found in this model`, "warn");
-        return;
-      }
-
-      await fragments.core.editor.edit(model.modelId, requests);
-      await fragments.core.update(true);
-      const sign = deltaY >= 0 ? `+${deltaY}` : `${deltaY}`;
-      notify(
-        `${mode === "global" ? "Global" : "Local"} transforms Y ${sign} (${requests.length} items)`
-      );
-    } catch (error) {
-      console.error(`[FragmentsEdit] Error updating ${mode} transforms:`, error);
-      notify(`Failed updating ${mode} transformations`, "warn");
-    } finally {
-      update({ isBusy: false });
-    }
-  };
-
-  /**
-   * Resets all unsaved Fragments Editor requests on the first loaded model.
-   */
-  const resetFragmentEdits = async () => {
-    const fragments = components.get(OBC.FragmentsManager);
-    const model = fragments.list.values().next().value;
-    if (!model) {
-      notify("Load an .IFC or .FRAG model first", "warn");
-      return;
-    }
-
-    update({ isBusy: true });
-    try {
-      await fragments.core.editor.reset(model.modelId);
-      await fragments.core.update(true);
-      notify("Reset Fragment model edits");
-    } catch (error) {
-      console.error("[FragmentsEdit] Error resetting edits:", error);
-      notify("Failed resetting Fragment edits", "warn");
-    } finally {
-      update({ isBusy: false });
-    }
-  };
-
   const studioBadge =
     renderLook !== "shaded"
       ? renderLook === "clay"
@@ -794,11 +755,11 @@ export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarStat
               <button
                 type="button"
                 class="toc-pro-btn warn"
-                @click=${onClearAllAppear}
-                title="Clear Color, Clay, Wireframe & X-Ray Overrides"
+                @click=${onResetFull}
+                title="Reset Full: Restore Fragment Edits, Colors, X-Ray, Sections & View"
               >
-                <span class="material-icons-round">format_color_reset</span>
-                <span>Reset</span>
+                <span class="material-icons-round">restart_alt</span>
+                <span>Reset Full</span>
               </button>
             </div>
           </div>
@@ -832,10 +793,19 @@ export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarStat
                 type="button"
                 class="toc-pro-btn"
                 @click=${onShowAll}
-                title="Restore Full Model Visibility"
+                title="Show All: Restore All Hidden Elements, Colors & X-Ray"
               >
                 <span class="material-icons-round">visibility</span>
                 <span>Show All</span>
+              </button>
+              <button
+                type="button"
+                class="toc-pro-btn"
+                @click=${onActivateFull}
+                title="Activate Full: Enable Full Model, Clear Section Cuts & Frame Extents"
+              >
+                <span class="material-icons-round">select_all</span>
+                <span>Activate Full</span>
               </button>
             </div>
           </div>
@@ -902,10 +872,10 @@ export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarStat
                 type="button"
                 class="toc-pro-btn ${openMenu === "edit" ? "active" : ""}"
                 @click=${() => toggleMenu("edit")}
-                title="Edit Global & Local Fragment Transformations"
+                title="Fragments Edit API: Transforms, Items & Sample Instances"
               >
                 <span class="material-icons-round">edit</span>
-                <span>Edits</span>
+                <span>Edit</span>
                 <span class="material-icons-round toc-pro-caret">expand_more</span>
               </button>
             </div>
@@ -1081,53 +1051,116 @@ export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarStat
             `
       : ""}
 
-        <!-- Popover 4: Module 6 Fragments Edit API (Global & Local Transforms) -->
+        <!-- Popover 4: Clean Organized Module 6 Fragments Edit Menu -->
         ${openMenu === "edit"
       ? BUI.html`
               <div class="toc-pro-popover">
                 <div class="toc-pro-pop-title">
-                  <span>Fragments Edit API</span>
-                  <span style="color: #7dd3fc;">Transforms</span>
+                  <span>Fragments Edit Actions</span>
+                  <span style="color: #a1a1aa;">2.1 – 2.3</span>
                 </div>
                 <button
                   type="button"
                   class="toc-pro-pop-btn"
-                  @click=${() => editTransformations("global", 10)}
+                  @click=${async () => {
+                    update({ openMenu: null, isBusy: true });
+                    await components.get(FragmentsEditStudio).applyExplodedXRayView(6, 0.5, "storeys");
+                    update({ isBusy: false });
+                    notify("Activated Exploded Coordination View (50% X-Ray)");
+                  }}
                 >
-                  <span class="material-icons-round" style="color: #38bdf8;">arrow_upward</span>
-                  <span>Global Transform: Move Y +10</span>
+                  <span class="material-icons-round" style="color: #f59e0b;">view_in_ar</span>
+                  <span>Exploded Coordination (Levels + 50% X-Ray)</span>
                 </button>
                 <button
                   type="button"
                   class="toc-pro-pop-btn"
-                  @click=${() => editTransformations("global", -10)}
+                  @click=${async () => {
+                    update({ openMenu: null, isBusy: true });
+                    await components.get(FragmentsEditStudio).explodeStoreysOrHeights(6, "global", "storeys");
+                    update({ isBusy: false });
+                    notify("Exploded building floor levels");
+                  }}
                 >
-                  <span class="material-icons-round" style="color: #94a3b8;">arrow_downward</span>
-                  <span>Global Transform: Move Y -10</span>
+                  <span class="material-icons-round" style="color: #e4e4e7;">layers</span>
+                  <span>Explode Floor Levels</span>
                 </button>
                 <button
                   type="button"
                   class="toc-pro-pop-btn"
-                  @click=${() => editTransformations("local", 5)}
+                  @click=${async () => {
+                    update({ openMenu: null, isBusy: true });
+                    await components.get(FragmentsEditStudio).explodeStoreysOrHeights(6, "global", "disciplines");
+                    update({ isBusy: false });
+                    notify("Separated IFC discipline stacks");
+                  }}
                 >
-                  <span class="material-icons-round" style="color: #a855f7;">open_with</span>
-                  <span>Local Transform: Shift Y +5</span>
+                  <span class="material-icons-round" style="color: #38bdf8;">view_agenda</span>
+                  <span>Explode by IFC Discipline</span>
                 </button>
                 <button
                   type="button"
                   class="toc-pro-pop-btn"
-                  @click=${() => editTransformations("local", -5)}
+                  @click=${async () => {
+                    update({ openMenu: null, isBusy: true });
+                    await components.get(FragmentsEditStudio).bulkScaleMaterialsOpacity(0.5);
+                    update({ isBusy: false });
+                    notify("Reduced all materials opacity by 50%");
+                  }}
                 >
-                  <span class="material-icons-round" style="color: #94a3b8;">south</span>
-                  <span>Local Transform: Shift Y -5</span>
+                  <span class="material-icons-round" style="color: #a855f7;">opacity</span>
+                  <span>50% Model Opacity (Material Edit)</span>
+                </button>
+                <button
+                  type="button"
+                  class="toc-pro-pop-btn"
+                  @click=${async () => {
+                    update({ openMenu: null, isBusy: true });
+                    await components.get(FragmentsEditStudio).updateMetadata({
+                      editedBy: "Abdellah BELMAARIS",
+                      editedWith: "Master BIM AI Studio",
+                      lastEditedAt: new Date().toISOString(),
+                    });
+                    update({ isBusy: false });
+                    notify("Updated model Metadata (localId: 0)");
+                  }}
+                >
+                  <span class="material-icons-round" style="color: #10b981;">badge</span>
+                  <span>Stamp Metadata (localId: 0)</span>
+                </button>
+
+                <div class="toc-pro-pop-title" style="margin-top: 2px;">
+                  <span>Workspace</span>
+                </div>
+                <button
+                  type="button"
+                  class="toc-pro-pop-btn"
+                  @click=${() => {
+                    update({ openMenu: null });
+                    window.dispatchEvent(new CustomEvent("toc-open-fragments-edit"));
+                  }}
+                >
+                  <span class="material-icons-round" style="color: #60a5fa;">tune</span>
+                  <span>Open Pro Edit Studio (Full Tools)</span>
+                </button>
+                <button
+                  type="button"
+                  class="toc-pro-pop-btn"
+                  @click=${() => {
+                    update({ openMenu: null });
+                    window.dispatchEvent(new CustomEvent("toc-open-modeler"));
+                  }}
+                >
+                  <span class="material-icons-round" style="color: #38bdf8;">precision_manufacturing</span>
+                  <span>Open Parametric Modeler (2.5–2.7)</span>
                 </button>
                 <button
                   type="button"
                   class="toc-pro-pop-btn danger"
-                  @click=${resetFragmentEdits}
+                  @click=${onResetFull}
                 >
                   <span class="material-icons-round">restart_alt</span>
-                  <span>Reset Fragment Edits</span>
+                  <span>Reset Full (Model + Edits)</span>
                 </button>
               </div>
             `

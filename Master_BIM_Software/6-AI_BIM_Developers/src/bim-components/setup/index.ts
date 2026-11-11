@@ -3,6 +3,8 @@ import { Project } from "../../classes/Project";
 import { SheetsSync } from "../SheetsSync";
 import { McpAgent } from "../McpAgent";
 import { BimProSuite } from "../BimProSuite";
+import { FragmentsEditStudio } from "../FragmentsEditStudio";
+import { Modeler } from "../Modeler";
 import {
   createWorld,
   setupIfcLoader,
@@ -46,6 +48,9 @@ export const setupComponents = async (project?: Project) => {
   const mcpAgent = components.get(McpAgent);
   mcpAgent.connectBridge();
   components.get(BimProSuite);
+  // Module 6 (Lessons 2.1 – 2.7): Initialize Pro Fragments Edit Studio & Parametric Modeler
+  components.get(FragmentsEditStudio);
+  components.get(Modeler);
 
   let loadedModel: LoadedWorldModel | null = null;
   if (project) {

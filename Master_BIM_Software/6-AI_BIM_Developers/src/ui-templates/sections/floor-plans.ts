@@ -105,8 +105,8 @@ export const floorPlansTemplate: BUI.StatefullComponent<FloorPlansSectionState> 
           justify-content: space-between;
           padding: 11px 13px;
           border-radius: 12px;
-          background: linear-gradient(135deg, rgba(14, 165, 233, 0.16), rgba(15, 23, 42, 0.92));
-          border: 1px solid rgba(56, 189, 248, 0.4);
+          background: linear-gradient(135deg, rgba(14, 165, 233, 0.16), rgba(19, 20, 24, 0.92));
+          border: 1px solid rgba(255, 255, 255, 0.12);
         "
       >
         <div style="display: flex; flex-direction: column; gap: 2px;">
@@ -152,8 +152,8 @@ export const floorPlansTemplate: BUI.StatefullComponent<FloorPlansSectionState> 
           style="
             padding: 8px 10px;
             border-radius: 9px;
-            border: 1px solid rgba(56, 189, 248, 0.45);
-            background: rgba(30, 41, 59, 0.85);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            background: rgba(32, 33, 38, 0.85);
             color: #38bdf8;
             font-size: 0.74rem;
             font-weight: 700;
@@ -166,7 +166,7 @@ export const floorPlansTemplate: BUI.StatefullComponent<FloorPlansSectionState> 
 
       ${openView
         ? BUI.html`
-            <div style="padding: 9px 11px; border-radius: 9px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(56, 189, 248, 0.35); display: flex; flex-direction: column; gap: 6px;">
+            <div style="padding: 9px 11px; border-radius: 9px; background: rgba(19, 20, 24, 0.8); border: 1px solid rgba(255, 255, 255, 0.12); display: flex; flex-direction: column; gap: 6px;">
               <div style="display: flex; justify-content: space-between; font-size: 0.70rem; color: #38bdf8; font-weight: 700;">
                 <span>Cut Depth Range (${openView.id})</span>
                 <span>${openView.range.toFixed(1)} m</span>
@@ -190,7 +190,7 @@ export const floorPlansTemplate: BUI.StatefullComponent<FloorPlansSectionState> 
 
       ${state.statusMessage
         ? BUI.html`
-            <div style="padding: 7px 10px; border-radius: 7px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(56, 189, 248, 0.3); color: #bae6fd; font-size: 0.70rem;">
+            <div style="padding: 7px 10px; border-radius: 7px; background: rgba(56, 189, 248, 0.12); border: 1px solid rgba(255, 255, 255, 0.12); color: #bae6fd; font-size: 0.70rem;">
               ${state.statusMessage}
             </div>
           `
@@ -218,7 +218,7 @@ export const floorPlansTemplate: BUI.StatefullComponent<FloorPlansSectionState> 
                     justify-content: space-between;
                     padding: 9px 11px;
                     border-radius: 9px;
-                    background: ${isOpen ? "rgba(14, 165, 233, 0.22)" : "rgba(15, 23, 42, 0.85)"};
+                    background: ${isOpen ? "rgba(14, 165, 233, 0.22)" : "rgba(19, 20, 24, 0.85)"};
                     border: 1px solid ${isOpen ? "#38bdf8" : "rgba(148, 163, 184, 0.22)"};
                   "
                 >

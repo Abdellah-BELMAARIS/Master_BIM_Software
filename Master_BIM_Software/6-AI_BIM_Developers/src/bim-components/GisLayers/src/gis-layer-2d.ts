@@ -262,8 +262,8 @@ export class GISLayer2D {
       const badge = document.createElement("div");
       badge.style.padding = "3px 8px";
       badge.style.borderRadius = "6px";
-      badge.style.background = "rgba(15, 23, 42, 0.85)";
-      badge.style.border = "1px solid rgba(56, 189, 248, 0.3)";
+      badge.style.background = "rgba(19, 20, 24, 0.88)";
+      badge.style.border = "1px solid rgba(255, 255, 255, 0.14)";
       badge.style.color = "#38bdf8";
       badge.style.fontSize = "0.68rem";
       badge.style.fontWeight = "700";
@@ -282,7 +282,7 @@ export class GISLayer2D {
       zoomInBtn.style.width = "24px";
       zoomInBtn.style.height = "24px";
       zoomInBtn.style.borderRadius = "4px";
-      zoomInBtn.style.background = "rgba(30, 41, 59, 0.85)";
+      zoomInBtn.style.background = "rgba(32, 33, 38, 0.88)";
       zoomInBtn.style.border = "1px solid rgba(148, 163, 184, 0.3)";
       zoomInBtn.style.color = "#f8fafc";
       zoomInBtn.style.fontSize = "13px";
@@ -296,7 +296,7 @@ export class GISLayer2D {
       zoomOutBtn.style.width = "24px";
       zoomOutBtn.style.height = "24px";
       zoomOutBtn.style.borderRadius = "4px";
-      zoomOutBtn.style.background = "rgba(30, 41, 59, 0.85)";
+      zoomOutBtn.style.background = "rgba(32, 33, 38, 0.88)";
       zoomOutBtn.style.border = "1px solid rgba(148, 163, 184, 0.3)";
       zoomOutBtn.style.color = "#f8fafc";
       zoomOutBtn.style.fontSize = "13px";

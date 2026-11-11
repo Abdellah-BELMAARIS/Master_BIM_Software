@@ -65,7 +65,7 @@ export const proStudioTemplate: BUI.StatefullComponent<ProStudioSectionState> = 
           gap: 8px;
           padding: 10px 12px;
           border-radius: 12px;
-          background: linear-gradient(135deg, rgba(168, 85, 247, 0.18), rgba(15, 23, 42, 0.94));
+          background: linear-gradient(135deg, rgba(168, 85, 247, 0.18), rgba(19, 20, 24, 0.94));
           border: 1px solid rgba(192, 132, 252, 0.4);
         "
       >
@@ -79,7 +79,7 @@ export const proStudioTemplate: BUI.StatefullComponent<ProStudioSectionState> = 
       </div>
 
       <!-- Status Strip -->
-      <div style="padding: 6px 10px; border-radius: 7px; background: rgba(30, 41, 59, 0.68); border: 1px solid rgba(148, 163, 184, 0.22); font-size: 0.70rem; color: #e2e8f0;">
+      <div style="padding: 6px 10px; border-radius: 7px; background: rgba(32, 33, 38, 0.68); border: 1px solid rgba(148, 163, 184, 0.22); font-size: 0.70rem; color: #e2e8f0;">
         ${pro.statusMessage}
       </div>
 
@@ -88,7 +88,7 @@ export const proStudioTemplate: BUI.StatefullComponent<ProStudioSectionState> = 
         <button
           type="button"
           @click=${() => update({ activeTab: "clash" })}
-          style="padding: 7px 6px; border-radius: 8px; font-size: 0.71rem; font-weight: 700; cursor: pointer; background: ${tab === "clash" ? "rgba(239, 68, 68, 0.2)" : "rgba(30, 41, 59, 0.65)"}; border: 1px solid ${tab === "clash" ? "#ef4444" : "rgba(148, 163, 184, 0.22)"}; color: ${tab === "clash" ? "#fca5a5" : "#94a3b8"};"
+          style="padding: 7px 6px; border-radius: 8px; font-size: 0.71rem; font-weight: 700; cursor: pointer; background: ${tab === "clash" ? "rgba(239, 68, 68, 0.2)" : "rgba(32, 33, 38, 0.65)"}; border: 1px solid ${tab === "clash" ? "#ef4444" : "rgba(148, 163, 184, 0.22)"}; color: ${tab === "clash" ? "#fca5a5" : "#94a3b8"};"
         >
           Clash QA (${pro.clashes.length})
         </button>
@@ -98,14 +98,14 @@ export const proStudioTemplate: BUI.StatefullComponent<ProStudioSectionState> = 
       if (pro.phases.length === 0) await pro.buildConstructionPhases();
       update({ activeTab: "4d" });
     }}
-          style="padding: 7px 6px; border-radius: 8px; font-size: 0.71rem; font-weight: 700; cursor: pointer; background: ${tab === "4d" ? "rgba(56, 189, 248, 0.22)" : "rgba(30, 41, 59, 0.65)"}; border: 1px solid ${tab === "4d" ? "#38bdf8" : "rgba(148, 163, 184, 0.22)"}; color: ${tab === "4d" ? "#7dd3fc" : "#94a3b8"};"
+          style="padding: 7px 6px; border-radius: 8px; font-size: 0.71rem; font-weight: 700; cursor: pointer; background: ${tab === "4d" ? "rgba(56, 189, 248, 0.22)" : "rgba(32, 33, 38, 0.65)"}; border: 1px solid ${tab === "4d" ? "#38bdf8" : "rgba(148, 163, 184, 0.22)"}; color: ${tab === "4d" ? "#7dd3fc" : "#94a3b8"};"
         >
           4D Phasing
         </button>
         <button
           type="button"
           @click=${() => update({ activeTab: "editor" })}
-          style="padding: 7px 6px; border-radius: 8px; font-size: 0.71rem; font-weight: 700; cursor: pointer; background: ${tab === "editor" ? "rgba(168, 85, 247, 0.22)" : "rgba(30, 41, 59, 0.65)"}; border: 1px solid ${tab === "editor" ? "#c084fc" : "rgba(148, 163, 184, 0.22)"}; color: ${tab === "editor" ? "#e9d5ff" : "#94a3b8"};"
+          style="padding: 7px 6px; border-radius: 8px; font-size: 0.71rem; font-weight: 700; cursor: pointer; background: ${tab === "editor" ? "rgba(168, 85, 247, 0.22)" : "rgba(32, 33, 38, 0.65)"}; border: 1px solid ${tab === "editor" ? "#c084fc" : "rgba(148, 163, 184, 0.22)"}; color: ${tab === "editor" ? "#e9d5ff" : "#94a3b8"};"
         >
           Edit &amp; .FRAG
         </button>
@@ -114,13 +114,13 @@ export const proStudioTemplate: BUI.StatefullComponent<ProStudioSectionState> = 
       ${tab === "clash"
       ? BUI.html`
             <!-- 3D Clash Matrix Config -->
-            <div style="display: flex; flex-direction: column; gap: 7px; padding: 10px 12px; border-radius: 10px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(239, 68, 68, 0.28);">
+            <div style="display: flex; flex-direction: column; gap: 7px; padding: 10px 12px; border-radius: 10px; background: rgba(19, 20, 24, 0.85); border: 1px solid rgba(239, 68, 68, 0.28);">
               <label style="display: flex; flex-direction: column; gap: 3px; font-size: 0.67rem; color: #94a3b8;">
                 <span>Discipline A (Red Highlight)</span>
                 <select
                   .value=${pro.disciplineA}
                   @change=${(e: Event) => { pro.disciplineA = (e.target as HTMLSelectElement).value; update(); }}
-                  style="padding: 6px 8px; border-radius: 6px; background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(148, 163, 184, 0.28); color: #f8fafc; font-size: 0.71rem;"
+                  style="padding: 6px 8px; border-radius: 6px; background: rgba(32, 33, 38, 0.9); border: 1px solid rgba(148, 163, 184, 0.28); color: #f8fafc; font-size: 0.71rem;"
                 >
                   ${DISCIPLINE_OPTIONS.map((o) => BUI.html`<option value=${o.value} ?selected=${pro.disciplineA === o.value}>${o.label}</option>`)}
                 </select>
@@ -130,7 +130,7 @@ export const proStudioTemplate: BUI.StatefullComponent<ProStudioSectionState> = 
                 <select
                   .value=${pro.disciplineB}
                   @change=${(e: Event) => { pro.disciplineB = (e.target as HTMLSelectElement).value; update(); }}
-                  style="padding: 6px 8px; border-radius: 6px; background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(148, 163, 184, 0.28); color: #f8fafc; font-size: 0.71rem;"
+                  style="padding: 6px 8px; border-radius: 6px; background: rgba(32, 33, 38, 0.9); border: 1px solid rgba(148, 163, 184, 0.28); color: #f8fafc; font-size: 0.71rem;"
                 >
                   ${DISCIPLINE_OPTIONS.map((o) => BUI.html`<option value=${o.value} ?selected=${pro.disciplineB === o.value}>${o.label}</option>`)}
                 </select>
@@ -147,7 +147,7 @@ export const proStudioTemplate: BUI.StatefullComponent<ProStudioSectionState> = 
                 <button
                   type="button"
                   @click=${() => pro.clearClashMarkers()}
-                  style="padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.3); background: rgba(30, 41, 59, 0.85); color: #cbd5e1; font-size: 0.72rem; font-weight: 600; cursor: pointer;"
+                  style="padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.3); background: rgba(32, 33, 38, 0.85); color: #cbd5e1; font-size: 0.72rem; font-weight: 600; cursor: pointer;"
                 >
                   Clear
                 </button>
@@ -206,7 +206,7 @@ export const proStudioTemplate: BUI.StatefullComponent<ProStudioSectionState> = 
       : tab === "4d"
         ? BUI.html`
             <!-- 4D Construction Phasing Controls -->
-            <div style="display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 10px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(56, 189, 248, 0.3);">
+            <div style="display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 10px; background: rgba(19, 20, 24, 0.85); border: 1px solid rgba(255, 255, 255, 0.12);">
               <div style="display: flex; justify-content: space-between; align-items: center;">
                 <span style="font-size: 0.71rem; color: #94a3b8; font-weight: 700; text-transform: uppercase;">Construction Timeline</span>
                 <span style="font-size: 0.85rem; font-weight: 800; color: #38bdf8;">${pro.phaseProgress}% Built</span>
@@ -233,7 +233,7 @@ export const proStudioTemplate: BUI.StatefullComponent<ProStudioSectionState> = 
                 <button
                   type="button"
                   @click=${() => { pro.stopPlay4D(); pro.setPhaseProgress(100); }}
-                  style="padding: 7px 10px; border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.3); background: rgba(30, 41, 59, 0.85); color: #cbd5e1; font-size: 0.72rem; font-weight: 600; cursor: pointer;"
+                  style="padding: 7px 10px; border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.3); background: rgba(32, 33, 38, 0.85); color: #cbd5e1; font-size: 0.72rem; font-weight: 600; cursor: pointer;"
                 >
                   Reset 100%
                 </button>
@@ -247,7 +247,7 @@ export const proStudioTemplate: BUI.StatefullComponent<ProStudioSectionState> = 
                   <line x1="${10 + (pro.phaseProgress / 100) * 260}" y1="10" x2="${10 + (pro.phaseProgress / 100) * 260}" y2="82" stroke="#38bdf8" stroke-dasharray="3 3" stroke-width="1.2" />
                   <polyline fill="none" stroke="#34d399" stroke-width="2.2" points=${polylinePts} />
                   ${curvePoints.map(
-          (pt) => BUI.html`<circle cx=${pt.x} cy=${pt.y} r="3.5" fill=${pt.color} stroke="#0f172a" stroke-width="1" />`
+          (pt) => BUI.html`<circle cx=${pt.x} cy=${pt.y} r="3.5" fill=${pt.color} stroke="#121316" stroke-width="1" />`
         )}
                 </svg>
               </div>
@@ -262,7 +262,7 @@ export const proStudioTemplate: BUI.StatefullComponent<ProStudioSectionState> = 
                   <button
                     type="button"
                     @click=${() => pro.setPhaseProgress(ph.endPct)}
-                    style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-radius: 8px; border: 1px solid ${isActive ? ph.color : "rgba(148, 163, 184, 0.2)"}; background: ${isDone || isActive ? "rgba(30, 41, 59, 0.82)" : "rgba(15, 23, 42, 0.55)"}; text-align: left; cursor: pointer;"
+                    style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-radius: 8px; border: 1px solid ${isActive ? ph.color : "rgba(148, 163, 184, 0.2)"}; background: ${isDone || isActive ? "rgba(32, 33, 38, 0.82)" : "rgba(19, 20, 24, 0.55)"}; text-align: left; cursor: pointer;"
                   >
                     <div>
                       <div style="font-size: 0.73rem; font-weight: 700; color: #f8fafc;">${ph.label}</div>
@@ -276,7 +276,7 @@ export const proStudioTemplate: BUI.StatefullComponent<ProStudioSectionState> = 
           `
         : BUI.html`
             <!-- Live Property Override Editor & .FRAG Binary Exporter -->
-            <div style="display: flex; flex-direction: column; gap: 9px; padding: 12px; border-radius: 10px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(192, 132, 252, 0.32);">
+            <div style="display: flex; flex-direction: column; gap: 9px; padding: 12px; border-radius: 10px; background: rgba(19, 20, 24, 0.85); border: 1px solid rgba(192, 132, 252, 0.32);">
               <div style="display: flex; gap: 6px;">
                 <button
                   type="button"
@@ -297,26 +297,26 @@ export const proStudioTemplate: BUI.StatefullComponent<ProStudioSectionState> = 
 
               ${target
             ? BUI.html`
-                    <div style="padding: 8px 10px; border-radius: 8px; background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(148, 163, 184, 0.2);">
+                    <div style="padding: 8px 10px; border-radius: 8px; background: rgba(32, 33, 38, 0.7); border: 1px solid rgba(148, 163, 184, 0.2);">
                       <div style="font-size: 0.76rem; font-weight: 700; color: #f8fafc;">${target.name}</div>
                       <div style="font-size: 0.66rem; color: #7dd3fc;">${target.category} · LocalID #${target.localId}</div>
                     </div>
 
                     <label style="display: flex; flex-direction: column; gap: 3px; font-size: 0.68rem; color: #94a3b8;">
                       <span>Fire Rating / Specification</span>
-                      <input type="text" .value=${fireDraft} @input=${(e: Event) => { fireDraft = (e.target as HTMLInputElement).value; }} style="padding: 6px 8px; border-radius: 6px; background: rgba(30,41,59,0.9); border: 1px solid rgba(148,163,184,0.3); color: #f8fafc; font-size: 0.72rem;" />
+                      <input type="text" .value=${fireDraft} @input=${(e: Event) => { fireDraft = (e.target as HTMLInputElement).value; }} style="padding: 6px 8px; border-radius: 6px; background: rgba(32, 33, 38,0.9); border: 1px solid rgba(148,163,184,0.3); color: #f8fafc; font-size: 0.72rem;" />
                     </label>
                     <label style="display: flex; flex-direction: column; gap: 3px; font-size: 0.68rem; color: #94a3b8;">
                       <span>Construction Stage / Phase</span>
-                      <input type="text" .value=${phaseDraft} @input=${(e: Event) => { phaseDraft = (e.target as HTMLInputElement).value; }} style="padding: 6px 8px; border-radius: 6px; background: rgba(30,41,59,0.9); border: 1px solid rgba(148,163,184,0.3); color: #f8fafc; font-size: 0.72rem;" />
+                      <input type="text" .value=${phaseDraft} @input=${(e: Event) => { phaseDraft = (e.target as HTMLInputElement).value; }} style="padding: 6px 8px; border-radius: 6px; background: rgba(32, 33, 38,0.9); border: 1px solid rgba(148,163,184,0.3); color: #f8fafc; font-size: 0.72rem;" />
                     </label>
                     <label style="display: flex; flex-direction: column; gap: 3px; font-size: 0.68rem; color: #94a3b8;">
                       <span>Unit Cost Override (USD)</span>
-                      <input type="number" .value=${costDraft} @input=${(e: Event) => { costDraft = (e.target as HTMLInputElement).value; }} style="padding: 6px 8px; border-radius: 6px; background: rgba(30,41,59,0.9); border: 1px solid rgba(148,163,184,0.3); color: #f8fafc; font-size: 0.72rem;" />
+                      <input type="number" .value=${costDraft} @input=${(e: Event) => { costDraft = (e.target as HTMLInputElement).value; }} style="padding: 6px 8px; border-radius: 6px; background: rgba(32, 33, 38,0.9); border: 1px solid rgba(148,163,184,0.3); color: #f8fafc; font-size: 0.72rem;" />
                     </label>
                     <label style="display: flex; flex-direction: column; gap: 3px; font-size: 0.68rem; color: #94a3b8;">
                       <span>Engineer Notes</span>
-                      <input type="text" .value=${notesDraft} @input=${(e: Event) => { notesDraft = (e.target as HTMLInputElement).value; }} style="padding: 6px 8px; border-radius: 6px; background: rgba(30,41,59,0.9); border: 1px solid rgba(148,163,184,0.3); color: #f8fafc; font-size: 0.72rem;" />
+                      <input type="text" .value=${notesDraft} @input=${(e: Event) => { notesDraft = (e.target as HTMLInputElement).value; }} style="padding: 6px 8px; border-radius: 6px; background: rgba(32, 33, 38,0.9); border: 1px solid rgba(148,163,184,0.3); color: #f8fafc; font-size: 0.72rem;" />
                     </label>
                     <button
                       type="button"

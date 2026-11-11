@@ -24,8 +24,8 @@ function CompanyLogo({ compact = false }: { compact?: boolean }) {
         >
             <defs>
                 <linearGradient id="logoBadgeBg" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stopColor="#1e293b" />
-                    <stop offset="100%" stopColor="#0f172a" />
+                    <stop offset="0%" stopColor="#212227" />
+                    <stop offset="100%" stopColor="#121316" />
                 </linearGradient>
                 <linearGradient id="logoCubeTop" x1="0" y1="0" x2="1" y2="1">
                     <stop offset="0%" stopColor="#38bdf8" stopOpacity="0.45" />
@@ -37,7 +37,7 @@ function CompanyLogo({ compact = false }: { compact?: boolean }) {
                 </linearGradient>
                 <linearGradient id="logoCubeRight" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#1e40af" stopOpacity="0.5" />
-                    <stop offset="100%" stopColor="#0f172a" stopOpacity="0.4" />
+                    <stop offset="100%" stopColor="#121316" stopOpacity="0.4" />
                 </linearGradient>
             </defs>
 

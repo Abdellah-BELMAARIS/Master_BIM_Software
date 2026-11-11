@@ -344,7 +344,7 @@ export const gisTemplate: BUI.StatefullComponent<GISState> = (
           justify-content: space-between;
           padding: 12px 14px;
           border-radius: 12px;
-          background: ${isEnabled ? "linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(6, 78, 59, 0.25))" : "linear-gradient(135deg, rgba(30, 41, 59, 0.8), rgba(15, 23, 42, 0.9))"};
+          background: ${isEnabled ? "linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(6, 78, 59, 0.25))" : "linear-gradient(135deg, rgba(32, 33, 38, 0.8), rgba(19, 20, 24, 0.9))"};
           border: 1px solid ${isEnabled ? "rgba(16, 185, 129, 0.5)" : "rgba(148, 163, 184, 0.25)"};
           box-shadow: ${isEnabled ? "0 0 20px rgba(16, 185, 129, 0.2)" : "0 4px 12px rgba(0, 0, 0, 0.4)"};
           transition: all 0.25s ease;
@@ -366,7 +366,7 @@ export const gisTemplate: BUI.StatefullComponent<GISState> = (
               <span style="font-size: 0.88rem; font-weight: 800; color: #f8fafc; letter-spacing: 0.02em;">
                 Cesium 3D Tiles Studio
               </span>
-              <span style="font-size: 0.64rem; padding: 1px 6px; border-radius: 4px; background: rgba(56, 189, 248, 0.2); border: 1px solid rgba(56, 189, 248, 0.4); color: #38bdf8; font-weight: 700;">
+              <span style="font-size: 0.64rem; padding: 1px 6px; border-radius: 4px; background: rgba(56, 189, 248, 0.2); border: 1px solid rgba(255, 255, 255, 0.12); color: #38bdf8; font-weight: 700;">
                 PRO
               </span>
             </div>
@@ -395,10 +395,10 @@ export const gisTemplate: BUI.StatefullComponent<GISState> = (
               gap: 2px;
               padding: 9px 11px;
               border-radius: 9px;
-              background: ${isGoogleActive ? "linear-gradient(135deg, rgba(37, 99, 235, 0.35), rgba(14, 165, 233, 0.2))" : "rgba(30, 41, 59, 0.6)"};
+              background: ${isGoogleActive ? "linear-gradient(135deg, rgba(37, 99, 235, 0.35), rgba(14, 165, 233, 0.2))" : "rgba(32, 33, 38, 0.6)"};
               border: 1px solid ${isGoogleActive ? "#38bdf8" : "rgba(148, 163, 184, 0.25)"};
               color: ${isGoogleActive ? "#38bdf8" : "#cbd5e1"};
-              box-shadow: ${isGoogleActive ? "0 0 14px rgba(56, 189, 248, 0.25)" : "none"};
+              box-shadow: ${isGoogleActive ? "0 6px 16px rgba(0, 0, 0, 0.45)" : "none"};
               cursor: pointer;
               text-align: left;
               transition: all 0.2s ease;
@@ -420,10 +420,10 @@ export const gisTemplate: BUI.StatefullComponent<GISState> = (
               gap: 2px;
               padding: 9px 11px;
               border-radius: 9px;
-              background: ${isOsmActive ? "linear-gradient(135deg, rgba(37, 99, 235, 0.35), rgba(14, 165, 233, 0.2))" : "rgba(30, 41, 59, 0.6)"};
+              background: ${isOsmActive ? "linear-gradient(135deg, rgba(37, 99, 235, 0.35), rgba(14, 165, 233, 0.2))" : "rgba(32, 33, 38, 0.6)"};
               border: 1px solid ${isOsmActive ? "#38bdf8" : "rgba(148, 163, 184, 0.25)"};
               color: ${isOsmActive ? "#38bdf8" : "#cbd5e1"};
-              box-shadow: ${isOsmActive ? "0 0 14px rgba(56, 189, 248, 0.25)" : "none"};
+              box-shadow: ${isOsmActive ? "0 6px 16px rgba(0, 0, 0, 0.45)" : "none"};
               cursor: pointer;
               text-align: left;
               transition: all 0.2s ease;
@@ -456,7 +456,7 @@ export const gisTemplate: BUI.StatefullComponent<GISState> = (
                 border-radius: 5px;
                 font-size: 0.66rem;
                 font-weight: 700;
-                background: ${isDarkMapActive ? "rgba(56, 189, 248, 0.25)" : "rgba(30, 41, 59, 0.7)"};
+                background: ${isDarkMapActive ? "rgba(56, 189, 248, 0.25)" : "rgba(32, 33, 38, 0.7)"};
                 border: 1px solid ${isDarkMapActive ? "#38bdf8" : "rgba(148, 163, 184, 0.25)"};
                 color: ${isDarkMapActive ? "#38bdf8" : "#94a3b8"};
                 cursor: pointer;
@@ -473,7 +473,7 @@ export const gisTemplate: BUI.StatefullComponent<GISState> = (
                 border-radius: 5px;
                 font-size: 0.66rem;
                 font-weight: 700;
-                background: ${!isDarkMapActive ? "rgba(56, 189, 248, 0.25)" : "rgba(30, 41, 59, 0.7)"};
+                background: ${!isDarkMapActive ? "rgba(56, 189, 248, 0.25)" : "rgba(32, 33, 38, 0.7)"};
                 border: 1px solid ${!isDarkMapActive ? "#38bdf8" : "rgba(148, 163, 184, 0.25)"};
                 color: ${!isDarkMapActive ? "#38bdf8" : "#94a3b8"};
                 cursor: pointer;
@@ -494,7 +494,7 @@ export const gisTemplate: BUI.StatefullComponent<GISState> = (
             overflow: hidden;
             position: relative;
             background: #090d16;
-            border: 1px solid rgba(56, 189, 248, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.12);
             box-shadow: 0 4px 18px rgba(0, 0, 0, 0.5);
           "
         >
@@ -520,7 +520,7 @@ export const gisTemplate: BUI.StatefullComponent<GISState> = (
                   gap: 1px;
                   padding: 7px 9px;
                   border-radius: 8px;
-                  background: rgba(30, 41, 59, 0.7);
+                  background: rgba(32, 33, 38, 0.7);
                   border: 1px solid rgba(148, 163, 184, 0.25);
                   color: #f8fafc;
                   cursor: pointer;
@@ -591,7 +591,7 @@ export const gisTemplate: BUI.StatefullComponent<GISState> = (
       </div>
 
       <!-- IFC / BIM Site Matrix Alignment -->
-      <div style="display: flex; flex-direction: column; gap: 7px; padding: 10px 12px; border-radius: 10px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(56, 189, 248, 0.25);">
+      <div style="display: flex; flex-direction: column; gap: 7px; padding: 10px 12px; border-radius: 10px; background: rgba(19, 20, 24, 0.8); border: 1px solid rgba(255, 255, 255, 0.12);">
         <div style="display: flex; justify-content: space-between; align-items: center;">
           <span style="font-size: 0.70rem; color: #38bdf8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">
             BIM Site Georeference Matrix
@@ -622,7 +622,7 @@ export const gisTemplate: BUI.StatefullComponent<GISState> = (
               step="1"
               .value=${String(gisLayers.bimAlignment.offsetX)}
               @change=${(e: Event) => { gisLayers.alignBimModels({ offsetX: Number((e.target as HTMLInputElement).value) || 0 }); }}
-              style="padding: 4px 6px; border-radius: 5px; background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(148, 163, 184, 0.25); color: #f8fafc; font-size: 0.70rem; width: 100%; box-sizing: border-box;"
+              style="padding: 4px 6px; border-radius: 5px; background: rgba(32, 33, 38, 0.9); border: 1px solid rgba(148, 163, 184, 0.25); color: #f8fafc; font-size: 0.70rem; width: 100%; box-sizing: border-box;"
             />
           </label>
           <label style="display: flex; flex-direction: column; gap: 2px; font-size: 0.62rem; color: #94a3b8;">
@@ -632,7 +632,7 @@ export const gisTemplate: BUI.StatefullComponent<GISState> = (
               step="0.5"
               .value=${String(gisLayers.bimAlignment.offsetY)}
               @change=${(e: Event) => { gisLayers.alignBimModels({ offsetY: Number((e.target as HTMLInputElement).value) || 0 }); }}
-              style="padding: 4px 6px; border-radius: 5px; background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(148, 163, 184, 0.25); color: #f8fafc; font-size: 0.70rem; width: 100%; box-sizing: border-box;"
+              style="padding: 4px 6px; border-radius: 5px; background: rgba(32, 33, 38, 0.9); border: 1px solid rgba(148, 163, 184, 0.25); color: #f8fafc; font-size: 0.70rem; width: 100%; box-sizing: border-box;"
             />
           </label>
           <label style="display: flex; flex-direction: column; gap: 2px; font-size: 0.62rem; color: #94a3b8;">
@@ -642,7 +642,7 @@ export const gisTemplate: BUI.StatefullComponent<GISState> = (
               step="1"
               .value=${String(gisLayers.bimAlignment.offsetZ)}
               @change=${(e: Event) => { gisLayers.alignBimModels({ offsetZ: Number((e.target as HTMLInputElement).value) || 0 }); }}
-              style="padding: 4px 6px; border-radius: 5px; background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(148, 163, 184, 0.25); color: #f8fafc; font-size: 0.70rem; width: 100%; box-sizing: border-box;"
+              style="padding: 4px 6px; border-radius: 5px; background: rgba(32, 33, 38, 0.9); border: 1px solid rgba(148, 163, 184, 0.25); color: #f8fafc; font-size: 0.70rem; width: 100%; box-sizing: border-box;"
             />
           </label>
           <label style="display: flex; flex-direction: column; gap: 2px; font-size: 0.62rem; color: #94a3b8;">
@@ -652,7 +652,7 @@ export const gisTemplate: BUI.StatefullComponent<GISState> = (
               step="5"
               .value=${String(gisLayers.bimAlignment.headingDeg)}
               @change=${(e: Event) => { gisLayers.alignBimModels({ headingDeg: Number((e.target as HTMLInputElement).value) || 0 }); }}
-              style="padding: 4px 6px; border-radius: 5px; background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(148, 163, 184, 0.25); color: #f8fafc; font-size: 0.70rem; width: 100%; box-sizing: border-box;"
+              style="padding: 4px 6px; border-radius: 5px; background: rgba(32, 33, 38, 0.9); border: 1px solid rgba(148, 163, 184, 0.25); color: #f8fafc; font-size: 0.70rem; width: 100%; box-sizing: border-box;"
             />
           </label>
         </div>
@@ -675,7 +675,7 @@ export const gisTemplate: BUI.StatefullComponent<GISState> = (
           margin-top: 4px;
           padding: 10px 14px;
           border-radius: 10px;
-          background: rgba(15, 23, 42, 0.8);
+          background: rgba(19, 20, 24, 0.8);
           border: 1px dashed rgba(56, 189, 248, 0.3);
           display: flex;
           flex-direction: column;

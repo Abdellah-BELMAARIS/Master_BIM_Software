@@ -67,7 +67,7 @@ export const modelsTemplate: BUI.StatefullComponent<ModelsState> = (
       label="Federated Models & IFC Hierarchy"
       icon="tabler:folders"
       fixed
-      style="display: flex; flex-direction: column; height: 100%; overflow: hidden; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(56, 189, 248, 0.25);"
+      style="display: flex; flex-direction: column; height: 100%; overflow: hidden; background: rgba(19, 20, 24, 0.95); border: 1px solid rgba(255, 255, 255, 0.12);"
     >
       <div style="display: flex; align-items: center; gap: 0.4rem; padding: 0.5rem 0.75rem; border-bottom: 1px solid rgba(148, 163, 184, 0.15);">
         ${loadModelsBtn}

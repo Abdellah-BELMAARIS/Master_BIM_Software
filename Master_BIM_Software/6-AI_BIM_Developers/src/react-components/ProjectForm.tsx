@@ -495,7 +495,7 @@ export function ProjectForm(props: ProjectFormProps) {
                                     borderRadius: "8px",
                                     cursor: "pointer",
                                     textAlign: "left",
-                                    background: modelCategory === "ifc" ? "rgba(16, 185, 129, 0.16)" : "rgba(15, 23, 42, 0.65)",
+                                    background: modelCategory === "ifc" ? "rgba(16, 185, 129, 0.16)" : "rgba(19, 20, 24, 0.65)",
                                     border: modelCategory === "ifc" ? "1.5px solid #10b981" : "1px solid rgba(148, 163, 184, 0.28)",
                                     color: modelCategory === "ifc" ? "#34d399" : "#cbd5e1",
                                 }}
@@ -525,7 +525,7 @@ export function ProjectForm(props: ProjectFormProps) {
                                     borderRadius: "8px",
                                     cursor: "pointer",
                                     textAlign: "left",
-                                    background: modelCategory === "3d" ? "rgba(56, 189, 248, 0.16)" : "rgba(15, 23, 42, 0.65)",
+                                    background: modelCategory === "3d" ? "rgba(56, 189, 248, 0.16)" : "rgba(19, 20, 24, 0.65)",
                                     border: modelCategory === "3d" ? "1.5px solid #38bdf8" : "1px solid rgba(148, 163, 184, 0.28)",
                                     color: modelCategory === "3d" ? "#38bdf8" : "#cbd5e1",
                                 }}
@@ -554,7 +554,7 @@ export function ProjectForm(props: ProjectFormProps) {
                                     borderRadius: "8px",
                                     cursor: "pointer",
                                     textAlign: "left",
-                                    background: modelCategory === "empty" ? "rgba(129, 140, 248, 0.16)" : "rgba(15, 23, 42, 0.65)",
+                                    background: modelCategory === "empty" ? "rgba(129, 140, 248, 0.16)" : "rgba(19, 20, 24, 0.65)",
                                     border: modelCategory === "empty" ? "1.5px solid #818cf8" : "1px solid rgba(148, 163, 184, 0.28)",
                                     color: modelCategory === "empty" ? "#a5b4fc" : "#cbd5e1",
                                 }}
@@ -578,7 +578,7 @@ export function ProjectForm(props: ProjectFormProps) {
                                         fontSize: "0.74rem",
                                         fontWeight: 700,
                                         cursor: "pointer",
-                                        background: sourceMode === "empty" ? "rgba(56, 189, 248, 0.18)" : "rgba(15, 23, 42, 0.6)",
+                                        background: sourceMode === "empty" ? "rgba(56, 189, 248, 0.18)" : "rgba(19, 20, 24, 0.6)",
                                         border: sourceMode === "empty" ? "1px solid #38bdf8" : "1px solid rgba(148, 163, 184, 0.22)",
                                         color: sourceMode === "empty" ? "#38bdf8" : "#94a3b8",
                                     }}
@@ -601,7 +601,7 @@ export function ProjectForm(props: ProjectFormProps) {
                                         fontSize: "0.74rem",
                                         fontWeight: 700,
                                         cursor: "pointer",
-                                        background: sourceMode === "preset" ? "rgba(16, 185, 129, 0.18)" : "rgba(15, 23, 42, 0.6)",
+                                        background: sourceMode === "preset" ? "rgba(16, 185, 129, 0.18)" : "rgba(19, 20, 24, 0.6)",
                                         border: sourceMode === "preset" ? "1px solid #10b981" : "1px solid rgba(148, 163, 184, 0.22)",
                                         color: sourceMode === "preset" ? "#34d399" : "#94a3b8",
                                     }}
@@ -617,7 +617,7 @@ export function ProjectForm(props: ProjectFormProps) {
                                         fontSize: "0.74rem",
                                         fontWeight: 700,
                                         cursor: "pointer",
-                                        background: sourceMode === "upload" ? "rgba(168, 85, 247, 0.18)" : "rgba(15, 23, 42, 0.6)",
+                                        background: sourceMode === "upload" ? "rgba(168, 85, 247, 0.18)" : "rgba(19, 20, 24, 0.6)",
                                         border: sourceMode === "upload" ? "1px solid #a855f7" : "1px solid rgba(148, 163, 184, 0.22)",
                                         color: sourceMode === "upload" ? "#c084fc" : "#94a3b8",
                                     }}
@@ -695,7 +695,7 @@ export function ProjectForm(props: ProjectFormProps) {
                                     gap: "12px",
                                     padding: "0.75rem 1rem",
                                     borderRadius: "8px",
-                                    background: "rgba(30, 41, 59, 0.55)",
+                                    background: "rgba(32, 33, 38, 0.55)",
                                     border: "1px solid rgba(56, 189, 248, 0.28)",
                                     color: "#e2e8f0",
                                 }}
@@ -725,8 +725,8 @@ export function ProjectForm(props: ProjectFormProps) {
                                     display: "flex",
                                     alignItems: "center",
                                     justifyContent: "space-between",
-                                    background: "rgba(15, 23, 42, 0.75)",
-                                    border: "1px solid rgba(56, 189, 248, 0.4)",
+                                    background: "rgba(19, 20, 24, 0.75)",
+                                    border: "1px solid rgba(255, 255, 255, 0.12)",
                                     borderRadius: "6px",
                                     padding: "0.6rem 0.85rem",
                                     gap: "10px",
@@ -760,7 +760,7 @@ export function ProjectForm(props: ProjectFormProps) {
                                             type="button"
                                             onClick={() => fileInputRef.current?.click()}
                                             style={{
-                                                background: "rgba(30, 41, 59, 0.8)",
+                                                background: "rgba(32, 33, 38, 0.8)",
                                                 border: "1px solid var(--border-color)",
                                                 color: "var(--text-secondary)",
                                                 borderRadius: "4px",
@@ -803,7 +803,7 @@ export function ProjectForm(props: ProjectFormProps) {
                                         gap: "6px",
                                         width: "100%",
                                         padding: "1rem",
-                                        background: "rgba(15, 23, 42, 0.6)",
+                                        background: "rgba(19, 20, 24, 0.6)",
                                         border: "1.5px dashed rgba(56, 189, 248, 0.45)",
                                         borderRadius: "8px",
                                         color: "#f8fafc",

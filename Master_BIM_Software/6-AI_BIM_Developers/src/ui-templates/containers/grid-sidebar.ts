@@ -20,7 +20,7 @@ export const gridSidebarTemplate: BUI.StatefullComponent<GridSidebarState> = (
   };
 
   return BUI.html`
-    <bim-toolbar vertical style="background: rgba(15, 23, 42, 0.96); border-right: 1px solid rgba(56, 189, 248, 0.22); height: 100%; padding: 6px 4px;">
+    <bim-toolbar vertical style="background: rgba(19, 20, 24, 0.96); border-right: 1px solid rgba(255, 255, 255, 0.12); height: 100%; padding: 6px 4px;">
       <bim-toolbar-section>
         ${Object.entries(grid.layouts).map(([name, layoutDef]) => {
           const isActive = grid.layout === name;

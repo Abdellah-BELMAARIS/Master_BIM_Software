@@ -150,7 +150,7 @@ export const setDefaults = (
             tooltip-title="Colorize Query Items (Syncs to Smart Views)"
           >
             <bim-context-menu>
-              <div style="display: flex; flex-direction: column; gap: 0.5rem; padding: 0.65rem; min-width: 13rem; background: rgba(15, 23, 42, 0.96); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 10px;">
+              <div style="display: flex; flex-direction: column; gap: 0.5rem; padding: 0.65rem; min-width: 13rem; background: rgba(19, 20, 24, 0.96); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 10px;">
                 <bim-color-input
                   ${BUI.ref((el) => {
                     colorInput = el as BUI.ColorInput;

@@ -289,7 +289,7 @@ export const sheetsTemplate: BUI.StatefullComponent<SheetsSectionState> = (
           gap: 10px;
           padding: 11px 14px;
           border-radius: 12px;
-          background: linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(15, 23, 42, 0.94));
+          background: linear-gradient(135deg, rgba(16, 185, 129, 0.16), rgba(19, 20, 24, 0.94));
           border: 1px solid rgba(16, 185, 129, 0.4);
           flex-wrap: wrap;
         "
@@ -331,14 +331,14 @@ export const sheetsTemplate: BUI.StatefullComponent<SheetsSectionState> = (
         <button
           type="button"
           @click=${() => update({ activeSubTab: "export" })}
-          style="padding: 7px 10px; border-radius: 8px; font-size: 0.74rem; font-weight: 700; cursor: pointer; background: ${subTab === "export" ? "rgba(16, 185, 129, 0.22)" : "rgba(30, 41, 59, 0.65)"}; border: 1px solid ${subTab === "export" ? "#10b981" : "rgba(148, 163, 184, 0.22)"}; color: ${subTab === "export" ? "#34d399" : "#94a3b8"};"
+          style="padding: 7px 10px; border-radius: 8px; font-size: 0.74rem; font-weight: 700; cursor: pointer; background: ${subTab === "export" ? "rgba(16, 185, 129, 0.22)" : "rgba(32, 33, 38, 0.65)"}; border: 1px solid ${subTab === "export" ? "#10b981" : "rgba(148, 163, 184, 0.22)"}; color: ${subTab === "export" ? "#34d399" : "#94a3b8"};"
         >
           Export Takeoff (${rows.length})
         </button>
         <button
           type="button"
           @click=${() => update({ activeSubTab: "actions" })}
-          style="padding: 7px 10px; border-radius: 8px; font-size: 0.74rem; font-weight: 700; cursor: pointer; background: ${subTab === "actions" ? "rgba(56, 189, 248, 0.22)" : "rgba(30, 41, 59, 0.65)"}; border: 1px solid ${subTab === "actions" ? "#38bdf8" : "rgba(148, 163, 184, 0.22)"}; color: ${subTab === "actions" ? "#38bdf8" : "#94a3b8"};"
+          style="padding: 7px 10px; border-radius: 8px; font-size: 0.74rem; font-weight: 700; cursor: pointer; background: ${subTab === "actions" ? "rgba(56, 189, 248, 0.22)" : "rgba(32, 33, 38, 0.65)"}; border: 1px solid ${subTab === "actions" ? "#38bdf8" : "rgba(148, 163, 184, 0.22)"}; color: ${subTab === "actions" ? "#38bdf8" : "#94a3b8"};"
         >
           Sheet Actions (${sheetsSync.sheetActionRows.length})
         </button>
@@ -348,19 +348,19 @@ export const sheetsTemplate: BUI.StatefullComponent<SheetsSectionState> = (
         ? BUI.html`
             <!-- KPI Summary Strip -->
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 7px;">
-              <div style="padding: 8px 10px; border-radius: 9px; background: rgba(30, 41, 59, 0.72); border: 1px solid rgba(148, 163, 184, 0.2);">
+              <div style="padding: 8px 10px; border-radius: 9px; background: rgba(32, 33, 38, 0.72); border: 1px solid rgba(148, 163, 184, 0.2);">
                 <div style="font-size: 0.63rem; color: #94a3b8; text-transform: uppercase;">Elements</div>
                 <div style="font-size: 0.96rem; font-weight: 800; color: #f8fafc;">${rows.length}</div>
               </div>
-              <div style="padding: 8px 10px; border-radius: 9px; background: rgba(30, 41, 59, 0.72); border: 1px solid rgba(148, 163, 184, 0.2);">
+              <div style="padding: 8px 10px; border-radius: 9px; background: rgba(32, 33, 38, 0.72); border: 1px solid rgba(148, 163, 184, 0.2);">
                 <div style="font-size: 0.63rem; color: #94a3b8; text-transform: uppercase;">Area</div>
                 <div style="font-size: 0.94rem; font-weight: 800; color: #a78bfa; white-space: nowrap;">${totalArea.toLocaleString(undefined, { maximumFractionDigits: 1 })} m²</div>
               </div>
-              <div style="padding: 8px 10px; border-radius: 9px; background: rgba(30, 41, 59, 0.72); border: 1px solid rgba(148, 163, 184, 0.2);">
+              <div style="padding: 8px 10px; border-radius: 9px; background: rgba(32, 33, 38, 0.72); border: 1px solid rgba(148, 163, 184, 0.2);">
                 <div style="font-size: 0.63rem; color: #94a3b8; text-transform: uppercase;">Volume</div>
                 <div style="font-size: 0.94rem; font-weight: 800; color: #38bdf8; white-space: nowrap;">${totalVol.toLocaleString(undefined, { maximumFractionDigits: 1 })} m³</div>
               </div>
-              <div style="padding: 8px 10px; border-radius: 9px; background: rgba(30, 41, 59, 0.72); border: 1px solid rgba(148, 163, 184, 0.2);">
+              <div style="padding: 8px 10px; border-radius: 9px; background: rgba(32, 33, 38, 0.72); border: 1px solid rgba(148, 163, 184, 0.2);">
                 <div style="font-size: 0.63rem; color: #94a3b8; text-transform: uppercase;">Est. Cost</div>
                 <div style="font-size: 0.94rem; font-weight: 800; color: #34d399; white-space: nowrap;">$${totalCost.toLocaleString()}</div>
               </div>
@@ -398,7 +398,7 @@ export const sheetsTemplate: BUI.StatefullComponent<SheetsSectionState> = (
                         font-size: 0.71rem;
                         font-weight: 600;
                         cursor: pointer;
-                        background: ${active ? "rgba(56, 189, 248, 0.22)" : "rgba(30, 41, 59, 0.6)"};
+                        background: ${active ? "rgba(56, 189, 248, 0.22)" : "rgba(32, 33, 38, 0.6)"};
                         border: 1px solid ${active ? "#38bdf8" : "rgba(148, 163, 184, 0.22)"};
                         color: ${active ? "#7dd3fc" : "#94a3b8"};
                       "
@@ -412,7 +412,7 @@ export const sheetsTemplate: BUI.StatefullComponent<SheetsSectionState> = (
           `
         : BUI.html`
             <!-- Pro Interactive BIM Sheet Actions Studio -->
-            <div style="display: flex; flex-direction: column; gap: 9px; padding: 11px 12px; border-radius: 10px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(56, 189, 248, 0.35);">
+            <div style="display: flex; flex-direction: column; gap: 9px; padding: 11px 12px; border-radius: 10px; background: rgba(19, 20, 24, 0.85); border: 1px solid rgba(255, 255, 255, 0.12);">
               <div style="display: flex; flex-wrap: wrap; gap: 6px;">
                 <button
                   type="button"
@@ -424,7 +424,7 @@ export const sheetsTemplate: BUI.StatefullComponent<SheetsSectionState> = (
                 <button
                   type="button"
                   @click=${onSyncActionsFromModel}
-                  style="flex: 1; min-width: 110px; padding: 7px 10px; border-radius: 8px; border: 1px solid rgba(56, 189, 248, 0.45); background: rgba(56, 189, 248, 0.18); color: #7dd3fc; font-size: 0.72rem; font-weight: 700; cursor: pointer;"
+                  style="flex: 1; min-width: 110px; padding: 7px 10px; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(56, 189, 248, 0.18); color: #7dd3fc; font-size: 0.72rem; font-weight: 700; cursor: pointer;"
                 >
                   Sync From Model
                 </button>
@@ -434,7 +434,7 @@ export const sheetsTemplate: BUI.StatefullComponent<SheetsSectionState> = (
                     const msg = await sheetsSync.executeSheetAction("", "show");
                     update({ actionStatus: msg });
                   }}
-                  style="padding: 7px 10px; border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.3); background: rgba(30, 41, 59, 0.85); color: #cbd5e1; font-size: 0.72rem; font-weight: 600; cursor: pointer;"
+                  style="padding: 7px 10px; border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.3); background: rgba(32, 33, 38, 0.85); color: #cbd5e1; font-size: 0.72rem; font-weight: 600; cursor: pointer;"
                 >
                   Show All
                 </button>
@@ -444,7 +444,7 @@ export const sheetsTemplate: BUI.StatefullComponent<SheetsSectionState> = (
                 <button
                   type="button"
                   @click=${onReadSheetActions}
-                  style="flex: 1; padding: 6px 9px; border-radius: 7px; border: 1px solid rgba(56, 189, 248, 0.35); background: rgba(30, 41, 59, 0.75); color: #38bdf8; font-size: 0.70rem; font-weight: 700; cursor: pointer;"
+                  style="flex: 1; padding: 6px 9px; border-radius: 7px; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(32, 33, 38, 0.75); color: #38bdf8; font-size: 0.70rem; font-weight: 700; cursor: pointer;"
                 >
                   Pull Sheet Rules
                 </button>
@@ -462,14 +462,14 @@ export const sheetsTemplate: BUI.StatefullComponent<SheetsSectionState> = (
                 <select
                   .value=${ruleCategory}
                   @change=${(e: Event) => update({ newRuleCategory: (e.target as HTMLSelectElement).value })}
-                  style="padding: 5px 6px; border-radius: 6px; background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(148, 163, 184, 0.28); color: #f8fafc; font-size: 0.70rem;"
+                  style="padding: 5px 6px; border-radius: 6px; background: rgba(32, 33, 38, 0.9); border: 1px solid rgba(148, 163, 184, 0.28); color: #f8fafc; font-size: 0.70rem;"
                 >
                   ${IFC_RULE_PRESETS.map((c) => BUI.html`<option value=${c}>${c}</option>`)}
                 </select>
                 <select
                   .value=${ruleAction}
                   @change=${(e: Event) => update({ newRuleAction: (e.target as HTMLSelectElement).value })}
-                  style="padding: 5px 6px; border-radius: 6px; background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(148, 163, 184, 0.28); color: #f8fafc; font-size: 0.70rem;"
+                  style="padding: 5px 6px; border-radius: 6px; background: rgba(32, 33, 38, 0.9); border: 1px solid rgba(148, 163, 184, 0.28); color: #f8fafc; font-size: 0.70rem;"
                 >
                   ${ACTION_OPTIONS.map((opt) => BUI.html`<option value=${opt.value}>${opt.label}</option>`)}
                 </select>
@@ -498,7 +498,7 @@ export const sheetsTemplate: BUI.StatefullComponent<SheetsSectionState> = (
               <div style="overflow: auto; max-height: clamp(190px, 30vh, 360px); border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.22); background: rgba(9, 13, 22, 0.88);">
                 <table style="width: 100%; border-collapse: collapse; font-size: 0.70rem; color: #cbd5e1; text-align: left;">
                   <thead>
-                    <tr style="background: rgba(30, 41, 59, 0.95); color: #94a3b8; position: sticky; top: 0;">
+                    <tr style="background: rgba(32, 33, 38, 0.95); color: #94a3b8; position: sticky; top: 0;">
                       <th style="padding: 6px 8px;">Color</th>
                       <th style="padding: 6px 8px;">IFC Category</th>
                       <th style="padding: 6px 8px;">Qty</th>
@@ -534,7 +534,7 @@ export const sheetsTemplate: BUI.StatefullComponent<SheetsSectionState> = (
                                 sheetsSync.updateSheetActionRule(idx, { Action: (e.target as HTMLSelectElement).value });
                                 update();
                               }}
-                              style="padding: 3px 5px; border-radius: 5px; background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(148, 163, 184, 0.22); color: #7dd3fc; font-size: 0.68rem;"
+                              style="padding: 3px 5px; border-radius: 5px; background: rgba(32, 33, 38, 0.85); border: 1px solid rgba(148, 163, 184, 0.22); color: #7dd3fc; font-size: 0.68rem;"
                             >
                               ${ACTION_OPTIONS.map((opt) => BUI.html`<option value=${opt.value} ?selected=${act === opt.value}>${opt.label}</option>`)}
                             </select>
@@ -569,7 +569,7 @@ export const sheetsTemplate: BUI.StatefullComponent<SheetsSectionState> = (
           `}
 
       <!-- Google Drive + Firebase Backend Explorer (Lesson 3.1 - 3.3) -->
-      <div style="display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 10px; background: rgba(15, 23, 42, 0.8); border: 1px solid rgba(56, 189, 248, 0.25);">
+      <div style="display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 10px; background: rgba(19, 20, 24, 0.8); border: 1px solid rgba(255, 255, 255, 0.12);">
         <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap;">
           <span style="font-size: 0.70rem; color: #38bdf8; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;">
             Drive &amp; Sheets
@@ -583,7 +583,7 @@ export const sheetsTemplate: BUI.StatefullComponent<SheetsSectionState> = (
               }}
               style="
                 padding: 3px 7px; border-radius: 5px; font-size: 0.64rem; font-weight: 700; cursor: pointer;
-                background: ${cfg.endpointUrl.includes("127.0.0.1") ? "rgba(56, 189, 248, 0.25)" : "rgba(30, 41, 59, 0.8)"};
+                background: ${cfg.endpointUrl.includes("127.0.0.1") ? "rgba(56, 189, 248, 0.25)" : "rgba(32, 33, 38, 0.8)"};
                 border: 1px solid ${cfg.endpointUrl.includes("127.0.0.1") ? "#38bdf8" : "rgba(148, 163, 184, 0.25)"};
                 color: ${cfg.endpointUrl.includes("127.0.0.1") ? "#38bdf8" : "#94a3b8"};
               "
@@ -596,7 +596,7 @@ export const sheetsTemplate: BUI.StatefullComponent<SheetsSectionState> = (
               }}
               style="
                 padding: 3px 7px; border-radius: 5px; font-size: 0.64rem; font-weight: 700; cursor: pointer;
-                background: ${cfg.endpointUrl.includes("cloudfunctions.net") ? "rgba(56, 189, 248, 0.25)" : "rgba(30, 41, 59, 0.8)"};
+                background: ${cfg.endpointUrl.includes("cloudfunctions.net") ? "rgba(56, 189, 248, 0.25)" : "rgba(32, 33, 38, 0.8)"};
                 border: 1px solid ${cfg.endpointUrl.includes("cloudfunctions.net") ? "#38bdf8" : "rgba(148, 163, 184, 0.25)"};
                 color: ${cfg.endpointUrl.includes("cloudfunctions.net") ? "#38bdf8" : "#94a3b8"};
               "
@@ -618,7 +618,7 @@ export const sheetsTemplate: BUI.StatefullComponent<SheetsSectionState> = (
                   .value=${cfg.endpointUrl}
                   @input=${(e: Event) => sheetsSync.saveConfig({ endpointUrl: (e.target as HTMLInputElement).value })}
                   placeholder="${LOCAL_EMULATOR_BASE_URL}/writeBimDataToSheets"
-                  style="padding: 6px 8px; border-radius: 6px; background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(148, 163, 184, 0.3); color: #f8fafc; font-size: 0.71rem;"
+                  style="padding: 6px 8px; border-radius: 6px; background: rgba(32, 33, 38, 0.85); border: 1px solid rgba(148, 163, 184, 0.3); color: #f8fafc; font-size: 0.71rem;"
                 />
               </label>
             `
@@ -628,7 +628,7 @@ export const sheetsTemplate: BUI.StatefullComponent<SheetsSectionState> = (
           <button
             type="button"
             @click=${onBrowseDrive}
-            style="flex: 1; padding: 6px 9px; border-radius: 7px; border: 1px solid rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.14); color: #38bdf8; font-size: 0.72rem; font-weight: 700; cursor: pointer;"
+            style="flex: 1; padding: 6px 9px; border-radius: 7px; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(56, 189, 248, 0.14); color: #38bdf8; font-size: 0.72rem; font-weight: 700; cursor: pointer;"
           >
             📁 List Drive Sheets
           </button>
@@ -643,7 +643,7 @@ export const sheetsTemplate: BUI.StatefullComponent<SheetsSectionState> = (
 
         ${sheetsSync.serviceAccountEmail
           ? BUI.html`
-              <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 6px 8px; border-radius: 7px; background: rgba(30, 41, 59, 0.72); border: 1px solid rgba(148, 163, 184, 0.2);">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 6px 8px; border-radius: 7px; background: rgba(32, 33, 38, 0.72); border: 1px solid rgba(148, 163, 184, 0.2);">
                 <div style="display: flex; flex-direction: column; min-width: 0;">
                   <span style="font-size: 0.62rem; color: #94a3b8;">Share Sheet (Editor) with Service Account:</span>
                   <span style="font-size: 0.67rem; color: #7dd3fc; font-family: monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${sheetsSync.serviceAccountEmail}</span>
@@ -651,7 +651,7 @@ export const sheetsTemplate: BUI.StatefullComponent<SheetsSectionState> = (
                 <button
                   type="button"
                   @click=${onCopyServiceEmail}
-                  style="padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.16); color: #7dd3fc; font-size: 0.66rem; font-weight: 700; cursor: pointer; flex-shrink: 0;"
+                  style="padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(56, 189, 248, 0.16); color: #7dd3fc; font-size: 0.66rem; font-weight: 700; cursor: pointer; flex-shrink: 0;"
                 >
                   ${state.copiedEmail ? "Copied!" : "Copy"}
                 </button>
@@ -682,7 +682,7 @@ export const sheetsTemplate: BUI.StatefullComponent<SheetsSectionState> = (
                         href=${`https://docs.google.com/spreadsheets/d/${encodeURIComponent(cfg.spreadsheetId)}/edit`}
                         target="_blank"
                         rel="noopener noreferrer"
-                        style="display: inline-flex; align-items: center; gap: 5px; padding: 5px 9px; border-radius: 7px; background: rgba(56, 189, 248, 0.16); border: 1px solid rgba(56, 189, 248, 0.45); color: #7dd3fc; font-size: 0.68rem; font-weight: 700; text-decoration: none;"
+                        style="display: inline-flex; align-items: center; gap: 5px; padding: 5px 9px; border-radius: 7px; background: rgba(56, 189, 248, 0.16); border: 1px solid rgba(255, 255, 255, 0.12); color: #7dd3fc; font-size: 0.68rem; font-weight: 700; text-decoration: none;"
                         title="Open active BIM Google Sheet in new tab"
                       >
                         <span>📊 Open Active Sheet ↗</span>
@@ -712,7 +712,7 @@ export const sheetsTemplate: BUI.StatefullComponent<SheetsSectionState> = (
                       style="
                         display: flex; justify-content: space-between; align-items: center;
                         padding: 5px 8px; border-radius: 6px; text-align: left; cursor: pointer;
-                        background: ${cfg.spreadsheetId === f.id ? "rgba(16, 185, 129, 0.2)" : "rgba(30, 41, 59, 0.7)"};
+                        background: ${cfg.spreadsheetId === f.id ? "rgba(16, 185, 129, 0.2)" : "rgba(32, 33, 38, 0.7)"};
                         border: 1px solid ${cfg.spreadsheetId === f.id ? "#10b981" : "rgba(148, 163, 184, 0.2)"};
                         color: #f8fafc; font-size: 0.70rem;
                       "
@@ -734,7 +734,7 @@ export const sheetsTemplate: BUI.StatefullComponent<SheetsSectionState> = (
               .value=${cfg.spreadsheetId}
               @input=${(e: Event) => sheetsSync.saveConfig({ spreadsheetId: (e.target as HTMLInputElement).value })}
               placeholder="Paste Google Sheet ID..."
-              style="width: 100%; padding: 6px 8px; border-radius: 6px; background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(148, 163, 184, 0.3); color: #f8fafc; font-size: 0.73rem;"
+              style="width: 100%; padding: 6px 8px; border-radius: 6px; background: rgba(32, 33, 38, 0.85); border: 1px solid rgba(148, 163, 184, 0.3); color: #f8fafc; font-size: 0.73rem;"
             />
           </label>
           <label style="display: flex; flex-direction: column; gap: 3px; font-size: 0.68rem; color: #94a3b8; min-width: 0;">
@@ -743,7 +743,7 @@ export const sheetsTemplate: BUI.StatefullComponent<SheetsSectionState> = (
               ? BUI.html`
                   <select
                     @change=${(e: Event) => { sheetsSync.saveConfig({ sheetName: (e.target as HTMLSelectElement).value }); update(); }}
-                    style="padding: 6px 8px; border-radius: 6px; background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(148, 163, 184, 0.3); color: #f8fafc; font-size: 0.73rem;"
+                    style="padding: 6px 8px; border-radius: 6px; background: rgba(32, 33, 38, 0.85); border: 1px solid rgba(148, 163, 184, 0.3); color: #f8fafc; font-size: 0.73rem;"
                   >
                     ${sheetsSync.sheetTabs.map(
                       (t) => BUI.html`<option value=${t.title} ?selected=${t.title === cfg.sheetName}>${t.title}</option>`
@@ -756,7 +756,7 @@ export const sheetsTemplate: BUI.StatefullComponent<SheetsSectionState> = (
                     .value=${cfg.sheetName}
                     @input=${(e: Event) => sheetsSync.saveConfig({ sheetName: (e.target as HTMLInputElement).value })}
                     placeholder="BIM_Schedule"
-                    style="padding: 6px 8px; border-radius: 6px; background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(148, 163, 184, 0.3); color: #f8fafc; font-size: 0.73rem;"
+                    style="padding: 6px 8px; border-radius: 6px; background: rgba(32, 33, 38, 0.85); border: 1px solid rgba(148, 163, 184, 0.3); color: #f8fafc; font-size: 0.73rem;"
                   />
                 `}
           </label>
@@ -796,7 +796,7 @@ export const sheetsTemplate: BUI.StatefullComponent<SheetsSectionState> = (
 
         ${state.showScriptModal
           ? BUI.html`
-              <pre style="margin: 4px 0 0; padding: 8px; border-radius: 6px; background: #020617; border: 1px solid rgba(56, 189, 248, 0.3); color: #a5f3fc; font-size: 0.64rem; overflow-x: auto; max-height: 120px;">${APPS_SCRIPT_TEMPLATE}</pre>
+              <pre style="margin: 4px 0 0; padding: 8px; border-radius: 6px; background: #020617; border: 1px solid rgba(255, 255, 255, 0.12); color: #a5f3fc; font-size: 0.64rem; overflow-x: auto; max-height: 120px;">${APPS_SCRIPT_TEMPLATE}</pre>
             `
           : ""}
       </div>
@@ -855,7 +855,7 @@ export const sheetsTemplate: BUI.StatefullComponent<SheetsSectionState> = (
           style="
             padding: 8px 8px;
             border-radius: 9px;
-            border: 1px solid rgba(56, 189, 248, 0.45);
+            border: 1px solid rgba(255, 255, 255, 0.12);
             background: rgba(56, 189, 248, 0.16);
             color: #38bdf8;
             font-size: 0.71rem;
@@ -873,7 +873,7 @@ export const sheetsTemplate: BUI.StatefullComponent<SheetsSectionState> = (
             padding: 8px 8px;
             border-radius: 9px;
             border: 1px solid rgba(148, 163, 184, 0.35);
-            background: rgba(30, 41, 59, 0.85);
+            background: rgba(32, 33, 38, 0.85);
             color: #f8fafc;
             font-size: 0.71rem;
             font-weight: 600;
@@ -903,13 +903,13 @@ export const sheetsTemplate: BUI.StatefullComponent<SheetsSectionState> = (
             .value=${state.searchQuery || ""}
             @input=${(e: Event) => update({ searchQuery: (e.target as HTMLInputElement).value })}
             placeholder="Filter element / class..."
-            style="padding: 4px 8px; border-radius: 6px; background: rgba(30, 41, 59, 0.8); border: 1px solid rgba(148, 163, 184, 0.25); color: #f8fafc; font-size: 0.69rem; min-width: 140px;"
+            style="padding: 4px 8px; border-radius: 6px; background: rgba(32, 33, 38, 0.8); border: 1px solid rgba(148, 163, 184, 0.25); color: #f8fafc; font-size: 0.69rem; min-width: 140px;"
           />
         </div>
         <div style="overflow: auto; flex: 1; min-height: 180px; border-radius: 8px; border: 1px solid rgba(148, 163, 184, 0.22); background: rgba(9, 13, 22, 0.85);">
           <table style="width: 100%; border-collapse: collapse; font-size: 0.70rem; color: #cbd5e1; text-align: left;">
             <thead>
-              <tr style="background: rgba(30, 41, 59, 0.95); color: #94a3b8; position: sticky; top: 0;">
+              <tr style="background: rgba(32, 33, 38, 0.95); color: #94a3b8; position: sticky; top: 0;">
                 <th style="padding: 7px 9px;">Name</th>
                 <th style="padding: 7px 9px;">Class</th>
                 <th style="padding: 7px 9px;">Area</th>

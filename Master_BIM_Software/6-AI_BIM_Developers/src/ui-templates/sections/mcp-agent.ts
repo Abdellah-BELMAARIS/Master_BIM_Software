@@ -120,7 +120,7 @@ export const mcpAgentTemplate: BUI.StatefullComponent<McpAgentSectionState> = (
           gap: 8px;
           padding: 8px 10px;
           border-radius: 12px;
-          background: linear-gradient(135deg, rgba(168, 85, 247, 0.14), rgba(15, 23, 42, 0.94));
+          background: linear-gradient(135deg, rgba(168, 85, 247, 0.14), rgba(19, 20, 24, 0.94));
           border: 1px solid rgba(168, 85, 247, 0.35);
           flex-shrink: 0;
         "
@@ -154,7 +154,7 @@ export const mcpAgentTemplate: BUI.StatefullComponent<McpAgentSectionState> = (
             style="
               padding: 4px 8px;
               border-radius: 7px;
-              background: ${state.showClaudePanel ? "rgba(168, 85, 247, 0.28)" : "rgba(30, 41, 59, 0.85)"};
+              background: ${state.showClaudePanel ? "rgba(168, 85, 247, 0.28)" : "rgba(32, 33, 38, 0.85)"};
               border: 1px solid ${state.showClaudePanel ? "#a855f7" : "rgba(148, 163, 184, 0.25)"};
               color: #e9d5ff;
               font-size: 0.65rem;
@@ -171,7 +171,7 @@ export const mcpAgentTemplate: BUI.StatefullComponent<McpAgentSectionState> = (
             style="
               padding: 4px 8px;
               border-radius: 7px;
-              background: rgba(30, 41, 59, 0.85);
+              background: rgba(32, 33, 38, 0.85);
               border: 1px solid rgba(148, 163, 184, 0.25);
               color: #94a3b8;
               font-size: 0.65rem;
@@ -188,7 +188,7 @@ export const mcpAgentTemplate: BUI.StatefullComponent<McpAgentSectionState> = (
       <!-- Collapsible Claude MCP Tools & Config Panel -->
       ${state.showClaudePanel
         ? BUI.html`
-            <div style="display: flex; flex-direction: column; gap: 7px; padding: 10px 11px; border-radius: 10px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(168, 85, 247, 0.35); flex-shrink: 0;">
+            <div style="display: flex; flex-direction: column; gap: 7px; padding: 10px 11px; border-radius: 10px; background: rgba(19, 20, 24, 0.85); border: 1px solid rgba(168, 85, 247, 0.35); flex-shrink: 0;">
               <div style="display: flex; justify-content: space-between; align-items: center;">
                 <span style="font-size: 0.68rem; color: #c084fc; font-weight: 700; text-transform: uppercase;">
                   Registered MCP Tools (${visibleTools.length})
@@ -206,7 +206,7 @@ export const mcpAgentTemplate: BUI.StatefullComponent<McpAgentSectionState> = (
                   (t) => BUI.html`
                     <span
                       title="${t.description}"
-                      style="padding: 2px 6px; border-radius: 5px; background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(168, 85, 247, 0.25); color: #d8b4fe; font-family: monospace; font-size: 0.62rem;"
+                      style="padding: 2px 6px; border-radius: 5px; background: rgba(32, 33, 38, 0.9); border: 1px solid rgba(168, 85, 247, 0.25); color: #d8b4fe; font-family: monospace; font-size: 0.62rem;"
                     >${t.name}</span>
                   `
                 )}
@@ -239,7 +239,7 @@ export const mcpAgentTemplate: BUI.StatefullComponent<McpAgentSectionState> = (
                     a.click();
                     setTimeout(() => URL.revokeObjectURL(a.href), 1000);
                   }}
-                  style="padding: 5px 10px; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.16); color: #38bdf8; font-size: 0.66rem; font-weight: 700; cursor: pointer;"
+                  style="padding: 5px 10px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.12); background: rgba(56, 189, 248, 0.16); color: #38bdf8; font-size: 0.66rem; font-weight: 700; cursor: pointer;"
                 >
                   Download JSON
                 </button>
@@ -298,7 +298,7 @@ export const mcpAgentTemplate: BUI.StatefullComponent<McpAgentSectionState> = (
                   max-width: 92%;
                   padding: 9px 11px;
                   border-radius: 14px 14px 14px 4px;
-                  background: rgba(15, 23, 42, 0.94);
+                  background: rgba(19, 20, 24, 0.94);
                   border: 1px solid ${msg.status === "error" ? "rgba(239, 68, 68, 0.45)" : msg.status === "success" ? "rgba(56, 189, 248, 0.35)" : "rgba(168, 85, 247, 0.3)"};
                   color: #e2e8f0;
                   font-size: 0.75rem;
@@ -322,9 +322,9 @@ export const mcpAgentTemplate: BUI.StatefullComponent<McpAgentSectionState> = (
                               style="
                                 padding: 3px 8px;
                                 border-radius: 999px;
-                                background: rgba(56, 189, 248, 0.14);
-                                border: 1px solid rgba(56, 189, 248, 0.38);
-                                color: #38bdf8;
+                                background: rgba(255, 255, 255, 0.08);
+                                border: 1px solid rgba(255, 255, 255, 0.16);
+                                color: #e4e4e7;
                                 font-size: 0.64rem;
                                 font-weight: 700;
                                 cursor: pointer;
@@ -364,7 +364,7 @@ export const mcpAgentTemplate: BUI.StatefullComponent<McpAgentSectionState> = (
                     style="
                       padding: 4px 8px;
                       border-radius: 999px;
-                      background: rgba(30, 41, 59, 0.78);
+                      background: rgba(32, 33, 38, 0.78);
                       border: 1px solid rgba(148, 163, 184, 0.25);
                       color: #cbd5e1;
                       font-size: 0.65rem;
@@ -392,7 +392,7 @@ export const mcpAgentTemplate: BUI.StatefullComponent<McpAgentSectionState> = (
             min-width: 0;
             padding: 9px 11px;
             border-radius: 10px;
-            background: rgba(15, 23, 42, 0.92);
+            background: rgba(19, 20, 24, 0.92);
             border: 1px solid rgba(168, 85, 247, 0.45);
             color: #f8fafc;
             font-size: 0.76rem;

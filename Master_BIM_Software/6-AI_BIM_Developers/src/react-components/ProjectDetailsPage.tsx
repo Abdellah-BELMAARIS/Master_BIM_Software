@@ -28,6 +28,8 @@ import {
     SheetsSync,
     McpAgent,
     BimProSuite,
+    FragmentsEditStudio,
+    Modeler,
 } from "../bim-components";
 import { NavigationCube } from "./NavigationCube";
 
@@ -174,11 +176,13 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
         | "gis"
         | "sheets"
         | "mcp"
-        | "pro-studio";
+        | "pro-studio"
+        | "fragments-edit"
+        | "modeler";
     const [activeDrawer, setActiveDrawer] = React.useState<DockDrawerId | null>(null);
     const [isDrawerExpanded, setIsDrawerExpanded] = React.useState<boolean>(false);
     const [isTopBarCollapsed, setIsTopBarCollapsed] = React.useState<boolean>(false);
-    const [isFloatingToolbarCollapsed, setIsFloatingToolbarCollapsed] = React.useState<boolean>(true);
+    const [isFloatingToolbarCollapsed, setIsFloatingToolbarCollapsed] = React.useState<boolean>(false);
     const [openHeaderMenu, setOpenHeaderMenu] = React.useState<"views" | "inspect" | null>(null);
     const [activeBottomSubbar, setActiveBottomSubbar] = React.useState<"camera" | "measure" | "section" | null>(null);
     const [cameraProjection, setCameraProjection] = React.useState<"Perspective" | "Orthographic">("Perspective");
@@ -356,6 +360,83 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
     const sheetsContainerRef = React.useRef<HTMLDivElement | null>(null);
     const mcpContainerRef = React.useRef<HTMLDivElement | null>(null);
     const proStudioContainerRef = React.useRef<HTMLDivElement | null>(null);
+    const fragmentsEditContainerRef = React.useRef<HTMLDivElement | null>(null);
+    const modelerContainerRef = React.useRef<HTMLDivElement | null>(null);
+
+    const [isFullscreenActive, setIsFullscreenActive] = React.useState<boolean>(false);
+
+    const toggleFullViewMode = React.useCallback(async (forceEnable?: boolean) => {
+        const nextFull = forceEnable !== undefined ? forceEnable : !isLeftPaneCollapsed;
+        setIsLeftPaneCollapsed(nextFull);
+        if (nextFull) {
+            setActiveDrawer(null);
+            setOpenHeaderMenu(null);
+        }
+
+        const wrapper = viewerWrapperRef.current;
+        try {
+            if (nextFull) {
+                if (wrapper && !document.fullscreenElement && typeof wrapper.requestFullscreen === "function") {
+                    await wrapper.requestFullscreen().catch(() => {});
+                }
+                document.body.classList.add("sidebar-collapsed");
+            } else {
+                if (document.fullscreenElement && typeof document.exitFullscreen === "function") {
+                    await document.exitFullscreen().catch(() => {});
+                }
+                document.body.classList.remove("sidebar-collapsed");
+            }
+        } catch {}
+
+        requestAnimationFrame(() => {
+            window.dispatchEvent(new Event("resize"));
+        });
+    }, [isLeftPaneCollapsed]);
+
+    React.useEffect(() => {
+        const onFullscreenChange = () => {
+            const active = Boolean(document.fullscreenElement);
+            setIsFullscreenActive(active);
+            if (!active) {
+                document.body.classList.remove("sidebar-collapsed");
+                window.dispatchEvent(new Event("resize"));
+            }
+        };
+        const onOpenFragmentsEdit = () => {
+            setActiveDrawer("fragments-edit");
+            const comp = componentsRef.current;
+            if (comp) {
+                try {
+                    comp.get(FragmentsEditStudio).scanModel().catch(() => {});
+                } catch {}
+            }
+        };
+        const onOpenModeler = () => {
+            setActiveDrawer("modeler");
+            const comp = componentsRef.current;
+            if (comp) {
+                try {
+                    const modeler = comp.get(Modeler);
+                    if (!modeler.hasGenerated) {
+                        modeler.rebuildActiveAssembly(true).catch(() => {});
+                    }
+                } catch {}
+            }
+        };
+        const onActivateFullView = () => {
+            void toggleFullViewMode(true);
+        };
+        document.addEventListener("fullscreenchange", onFullscreenChange);
+        window.addEventListener("toc-open-fragments-edit", onOpenFragmentsEdit);
+        window.addEventListener("toc-open-modeler", onOpenModeler);
+        window.addEventListener("toc-activate-full-view", onActivateFullView);
+        return () => {
+            document.removeEventListener("fullscreenchange", onFullscreenChange);
+            window.removeEventListener("toc-open-fragments-edit", onOpenFragmentsEdit);
+            window.removeEventListener("toc-open-modeler", onOpenModeler);
+            window.removeEventListener("toc-activate-full-view", onActivateFullView);
+        };
+    }, [toggleFullViewMode]);
 
     // Measure .viewer-mode-switch-bar and floating <bim-toolbar> dynamically -> --mode-bar-bottom & --toolbar-bottom
     // Guarantees zero overlap between top bar, floating toolbar, dockable drawers, and banners at all breakpoints
@@ -400,7 +481,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
             ro.disconnect();
             mo.disconnect();
         };
-    }, [project?.id, viewerMode, project?.modelCategory, engineReadyTick, isTopBarCollapsed, isFloatingToolbarCollapsed]);
+    }, [project?.id, viewerMode, project?.modelCategory, engineReadyTick, isTopBarCollapsed, isFloatingToolbarCollapsed, hasActiveModel]);
 
     // Toggle visibility of the floating toolbar overlay (<bim-grid class="toc-viewport-floating-grid">)
     React.useEffect(() => {
@@ -601,6 +682,42 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                 });
             } catch (err) {
                 console.warn("[ProStudio] Error mounting UI:", err);
+            }
+        }
+
+        if (fragmentsEditContainerRef.current) {
+            try {
+                const [editSection, updateEditSection] = BUI.Component.create<
+                    BUI.PanelSection,
+                    templates.FragmentsEditSectionState
+                >(templates.fragmentsEditTemplate, { components });
+                fragmentsEditContainerRef.current.replaceChildren(editSection);
+                const editStudio = components.get(FragmentsEditStudio);
+                editStudio.onStateChanged.add(() => updateEditSection());
+                if (components.get(OBC.FragmentsManager).list.size > 0) {
+                    editStudio.scanModel().catch(() => {});
+                }
+            } catch (err) {
+                console.warn("[FragmentsEditStudio] Error mounting UI:", err);
+            }
+        }
+
+        if (modelerContainerRef.current) {
+            try {
+                const [modelerSection, updateModelerSection] = BUI.Component.create<
+                    BUI.PanelSection,
+                    templates.ModelerSectionState
+                >(templates.modelerTemplate, { components });
+                modelerContainerRef.current.replaceChildren(modelerSection);
+                const modeler = components.get(Modeler);
+                modeler.onStateChanged.add(() => updateModelerSection());
+                modeler.onFragmentModelBaked.add(() => {
+                    try {
+                        components.get(FragmentsEditStudio).scanModel().catch(() => {});
+                    } catch {}
+                });
+            } catch (err) {
+                console.warn("[Modeler] Error mounting UI:", err);
             }
         }
     }, [engineReadyTick, project?.id]);
@@ -1396,6 +1513,8 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
             sheetsContainerRef.current?.replaceChildren();
             mcpContainerRef.current?.replaceChildren();
             proStudioContainerRef.current?.replaceChildren();
+            fragmentsEditContainerRef.current?.replaceChildren();
+            modelerContainerRef.current?.replaceChildren();
 
             if (selectionBoxRef.current && worldRef.current) {
                 try {
@@ -1584,7 +1703,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                             display: "inline-flex",
                             alignItems: "center",
                             gap: "6px",
-                            background: isLeftPaneCollapsed ? "rgba(56, 189, 248, 0.2)" : "rgba(30, 41, 59, 0.75)",
+                            background: isLeftPaneCollapsed ? "rgba(56, 189, 248, 0.2)" : "rgba(32, 33, 38, 0.75)",
                             border: isLeftPaneCollapsed ? "1px solid #38bdf8" : "1px solid rgba(148, 163, 184, 0.3)",
                             borderRadius: "8px",
                             padding: "6px 14px",
@@ -1878,6 +1997,45 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                     <span>Pro Studio</span>
                                 </button>
 
+                                <button
+                                    type="button"
+                                    className={`viewer-header-btn ${activeDrawer === "fragments-edit" ? "active" : ""}`}
+                                    onClick={() => {
+                                        const opening = activeDrawer !== "fragments-edit";
+                                        toggleDrawer("fragments-edit");
+                                        if (opening && componentsRef.current) {
+                                            try {
+                                                componentsRef.current.get(FragmentsEditStudio).scanModel().catch(() => {});
+                                            } catch {}
+                                        }
+                                    }}
+                                    title="Module 6 Fragments Edit Studio — Transforms, Items, Samples & Geometry"
+                                >
+                                    <span className="material-icons-round">edit_square</span>
+                                    <span>Edit Studio</span>
+                                </button>
+
+                                <button
+                                    type="button"
+                                    className={`viewer-header-btn ${activeDrawer === "modeler" ? "active" : ""}`}
+                                    onClick={() => {
+                                        const opening = activeDrawer !== "modeler";
+                                        toggleDrawer("modeler");
+                                        if (opening && componentsRef.current) {
+                                            try {
+                                                const modeler = componentsRef.current.get(Modeler);
+                                                if (!modeler.hasGenerated) {
+                                                    modeler.rebuildActiveAssembly(true).catch(() => {});
+                                                }
+                                            } catch {}
+                                        }
+                                    }}
+                                    title="Parametric BIM Modeler (GeometryEngine Table + Rebar Cage)"
+                                >
+                                    <span className="material-icons-round">precision_manufacturing</span>
+                                    <span>Modeler</span>
+                                </button>
+
                                 <div className="viewer-top-divider" />
 
                                 <button
@@ -1924,9 +2082,9 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                     display: "inline-flex",
                                     alignItems: "center",
                                     gap: "6px",
-                                    background: "rgba(11, 17, 30, 0.92)",
+                                    background: "rgba(15, 16, 19, 0.92)",
                                     backdropFilter: "blur(14px)",
-                                    border: "1px solid rgba(56, 189, 248, 0.4)",
+                                    border: "1px solid rgba(255, 255, 255, 0.12)",
                                     borderRadius: "12px",
                                     padding: "6px 12px",
                                     color: "#38bdf8",
@@ -1948,9 +2106,9 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                         display: "inline-flex",
                                         alignItems: "center",
                                         gap: "6px",
-                                        background: "rgba(11, 17, 30, 0.92)",
+                                        background: "rgba(15, 16, 19, 0.92)",
                                         backdropFilter: "blur(14px)",
-                                        border: "1px solid rgba(56, 189, 248, 0.4)",
+                                        border: "1px solid rgba(255, 255, 255, 0.12)",
                                         borderRadius: "12px",
                                         padding: "6px 12px",
                                         color: "#38bdf8",
@@ -2137,6 +2295,38 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                 <div ref={proStudioContainerRef} className="toc-dock-body"></div>
                             </div>
 
+                            {/* Dockable Module 6 Pro Fragments Edit Studio Drawer */}
+                            <div
+                                className={`toc-dock-panel toc-dock-right ${isDrawerExpanded ? "is-expanded" : ""}`}
+                                data-drawer="fragments-edit"
+                                style={{ display: activeDrawer === "fragments-edit" ? "flex" : "none" }}
+                            >
+                                <div className="toc-dock-header">
+                                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                        <span className="material-icons-round" style={{ color: "#e4e4e7", fontSize: "18px" }}>edit_square</span>
+                                        <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f4f4f5" }}>Fragments Edit Studio (2.1 – 2.4)</span>
+                                    </div>
+                                    {renderDockHeaderActions("Close Edit Studio")}
+                                </div>
+                                <div ref={fragmentsEditContainerRef} className="toc-dock-body"></div>
+                            </div>
+
+                            {/* Dockable Module 6 Parametric Modeler Drawer */}
+                            <div
+                                className={`toc-dock-panel toc-dock-right ${isDrawerExpanded ? "is-expanded" : ""}`}
+                                data-drawer="modeler"
+                                style={{ display: activeDrawer === "modeler" ? "flex" : "none" }}
+                            >
+                                <div className="toc-dock-header">
+                                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                        <span className="material-icons-round" style={{ color: "#38bdf8", fontSize: "18px" }}>precision_manufacturing</span>
+                                        <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f4f4f5" }}>Parametric Modeler (2.5 – 2.7)</span>
+                                    </div>
+                                    {renderDockHeaderActions("Close Parametric Modeler")}
+                                </div>
+                                <div ref={modelerContainerRef} className="toc-dock-body"></div>
+                            </div>
+
                             <bim-grid
                                 className="viewer-grid"
                                 ref={gridRef}
@@ -2157,7 +2347,9 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                     activeDrawer === "gis" ||
                                     activeDrawer === "sheets" ||
                                     activeDrawer === "mcp" ||
-                                    activeDrawer === "pro-studio"
+                                    activeDrawer === "pro-studio" ||
+                                    activeDrawer === "fragments-edit" ||
+                                    activeDrawer === "modeler"
                                 }
                                 onFocusExtents={fitModelView}
                             />
@@ -2171,11 +2363,11 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                         top: "calc(var(--toolbar-bottom, 54px) + 10px)",
                                         left: "16px",
                                         zIndex: 18,
-                                        background: "rgba(15, 23, 42, 0.94)",
-                                        border: "1px solid rgba(56, 189, 248, 0.45)",
+                                        background: "rgba(18, 19, 23, 0.94)",
+                                        border: "1px solid rgba(255, 255, 255, 0.16)",
                                         borderRadius: "20px",
                                         padding: "5px 14px",
-                                        color: "#38bdf8",
+                                        color: "#e4e4e7",
                                         fontSize: "0.80rem",
                                         fontWeight: 600,
                                         display: "inline-flex",
@@ -2231,14 +2423,14 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                         alignItems: "center",
                                         textAlign: "center",
                                         gap: "14px",
-                                        background: "rgba(15, 23, 42, 0.92)",
+                                        background: "rgba(19, 20, 24, 0.92)",
                                         border: isDraggingFile ? "2px solid #38bdf8" : "1.5px dashed rgba(56, 189, 248, 0.45)",
                                         backdropFilter: "blur(20px)",
                                         borderRadius: "20px",
                                         padding: "2.4rem 2.8rem",
                                         maxWidth: "480px",
                                         width: "90%",
-                                        boxShadow: isDraggingFile ? "0 0 35px rgba(56, 189, 248, 0.5)" : "0 18px 50px rgba(0, 0, 0, 0.7)",
+                                        boxShadow: "0 18px 50px rgba(0, 0, 0, 0.72)",
                                         transition: "all 0.25s ease",
                                     }}
                                 >
@@ -2250,7 +2442,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                             position: "absolute",
                                             top: "14px",
                                             right: "14px",
-                                            background: "rgba(30, 41, 59, 0.7)",
+                                            background: "rgba(32, 33, 38, 0.7)",
                                             border: "1px solid rgba(148, 163, 184, 0.3)",
                                             borderRadius: "50%",
                                             width: "30px",
@@ -2279,7 +2471,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                             display: "flex",
                                             alignItems: "center",
                                             justifyContent: "center",
-                                            boxShadow: "0 0 20px rgba(56, 189, 248, 0.2)",
+                                            boxShadow: "0 8px 20px rgba(0, 0, 0, 0.45)",
                                         }}
                                     >
                                         <span
@@ -2296,7 +2488,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                             padding: "3px 12px",
                                             borderRadius: "14px",
                                             background: "linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(37, 99, 235, 0.2))",
-                                            border: "1px solid rgba(56, 189, 248, 0.4)",
+                                            border: "1px solid rgba(255, 255, 255, 0.12)",
                                             color: "#38bdf8",
                                             fontSize: "0.72rem",
                                             fontWeight: 800,
@@ -2350,8 +2542,8 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                                 style={{
                                                     padding: "5px 11px",
                                                     borderRadius: "8px",
-                                                    background: "rgba(30, 41, 59, 0.7)",
-                                                    border: "1px solid rgba(56, 189, 248, 0.3)",
+                                                    background: "rgba(32, 33, 38, 0.7)",
+                                                    border: "1px solid rgba(255, 255, 255, 0.12)",
                                                     color: "#f8fafc",
                                                     fontSize: "0.76rem",
                                                     fontWeight: 600,
@@ -2375,8 +2567,8 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                                 style={{
                                                     padding: "5px 11px",
                                                     borderRadius: "8px",
-                                                    background: "rgba(30, 41, 59, 0.7)",
-                                                    border: "1px solid rgba(56, 189, 248, 0.3)",
+                                                    background: "rgba(32, 33, 38, 0.7)",
+                                                    border: "1px solid rgba(255, 255, 255, 0.12)",
                                                     color: "#f8fafc",
                                                     fontSize: "0.76rem",
                                                     fontWeight: 600,
@@ -2400,8 +2592,8 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                                 style={{
                                                     padding: "5px 11px",
                                                     borderRadius: "8px",
-                                                    background: "rgba(30, 41, 59, 0.7)",
-                                                    border: "1px solid rgba(56, 189, 248, 0.3)",
+                                                    background: "rgba(32, 33, 38, 0.7)",
+                                                    border: "1px solid rgba(255, 255, 255, 0.12)",
                                                     color: "#f8fafc",
                                                     fontSize: "0.76rem",
                                                     fontWeight: 600,
@@ -2452,8 +2644,8 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                                 display: "inline-flex",
                                                 alignItems: "center",
                                                 gap: "7px",
-                                                background: "rgba(30, 41, 59, 0.8)",
-                                                border: "1px solid rgba(56, 189, 248, 0.35)",
+                                                background: "rgba(32, 33, 38, 0.8)",
+                                                border: "1px solid rgba(255, 255, 255, 0.12)",
                                                 borderRadius: "12px",
                                                 padding: "11px 18px",
                                                 color: "#38bdf8",
@@ -2480,8 +2672,8 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                         top: "calc(var(--toolbar-bottom, 54px) + 10px)",
                                         left: "16px",
                                         zIndex: 18,
-                                        background: "rgba(15, 23, 42, 0.90)",
-                                        border: "1px solid rgba(56, 189, 248, 0.4)",
+                                        background: "rgba(19, 20, 24, 0.90)",
+                                        border: "1px solid rgba(255, 255, 255, 0.12)",
                                         borderRadius: "20px",
                                         padding: "6px 14px",
                                         color: "#38bdf8",
@@ -2867,7 +3059,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                         type="button"
                                         className={`viewer-dock-item ${!isFloatingToolbarCollapsed ? "active" : ""}`}
                                         onClick={() => setIsFloatingToolbarCollapsed((prev) => !prev)}
-                                        title="Pro Appearance Studio — Colorize, Visibility, X-Ray & Lighting"
+                                        title="Toggle Appearance & Fragments Edit Toolbar"
                                     >
                                         <span className="material-icons-round">tune</span>
                                         <span className="viewer-dock-label">Appear</span>
@@ -2888,15 +3080,15 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
 
                                 <button
                                     type="button"
-                                    className={`viewer-dock-item ${isLeftPaneCollapsed ? "active" : ""}`}
-                                    onClick={() => setIsLeftPaneCollapsed((prev) => !prev)}
-                                    title={isLeftPaneCollapsed ? "Restore Left Project Panel" : "Expand Viewer Full Width"}
+                                    className={`viewer-dock-item ${isLeftPaneCollapsed || isFullscreenActive ? "active" : ""}`}
+                                    onClick={() => void toggleFullViewMode()}
+                                    title={isLeftPaneCollapsed || isFullscreenActive ? "Exit Fullscreen View (Esc)" : "Activate Pro Fullscreen Canvas"}
                                 >
                                     <span className="material-icons-round">
-                                        {isLeftPaneCollapsed ? "fullscreen_exit" : "fullscreen"}
+                                        {isLeftPaneCollapsed || isFullscreenActive ? "fullscreen_exit" : "fullscreen"}
                                     </span>
                                     <span className="viewer-dock-label">
-                                        {isLeftPaneCollapsed ? "Standard" : "Full View"}
+                                        {isLeftPaneCollapsed || isFullscreenActive ? "Exit Full" : "Full View"}
                                     </span>
                                 </button>
                             </div>
