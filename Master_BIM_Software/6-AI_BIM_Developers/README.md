@@ -24,6 +24,20 @@ Pioneer AI-driven Building Information Modeling development by combining large l
 
 ## 📂 Workspace Structure
 ```text
-06 - 🤖 AI for BIM Developers (Fragments Edit API & Agents)/
-├── README.md
+6-AI_BIM_Developers/
+├── src/bim-components/
+│   ├── BimProSuite/
+│   ├── FragmentsEditStudio/
+│   ├── McpAgent/
+│   ├── Modeler/
+│   └── setup/
+├── src/classes/            # Project and task models
+├── src/core/               # Application and database setup
+├── src/firebase/           # Cloud integration
+├── src/react-components/   # Pages, details, and 3D views
+├── src/ui-templates/       # Reusable BIM interface
+├── public/models/          # Runtime BIM models
+└── package.json, vite.config.ts, firebase.json
 ```
+
+Run `npm run dev` or `npm run build` from this folder. Generated `dist/` and `node_modules/` folders are not source files.

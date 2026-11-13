@@ -4,8 +4,6 @@ Recorded Live Masterclass #10
 
 Source: https://people.thatopen.com/c/recorded-live-masterclasses-master-bim-software-developer/masterclass-mastering-that-open-engine-ui-components
 
-## Goal
-Continue the full BIM platform with this live session's features.
-
-## Notes
+## Folder status
+This folder currently contains the session reference only; runnable project source is not included.
 

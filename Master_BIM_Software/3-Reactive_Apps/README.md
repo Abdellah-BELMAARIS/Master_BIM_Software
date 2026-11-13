@@ -27,6 +27,18 @@ This module transitions from vanilla web development to building production-grad
 
 ## 📂 Workspace Structure
 ```text
-03 - ⚛️ Creating Reactive Apps (ThreeJS, React & Firebase)/
-├── README.md
+3-Reactive_Apps/
+├── assets/                 # Source models and textures
+├── public/                 # Browser-served models and runtime assets
+├── src/
+│   ├── classes/            # Project models and managers
+│   ├── core/               # Shared app and database setup
+│   ├── firebase/           # Firebase integration
+│   └── react-components/   # Pages, details, and Three.js views
+├── index.html
+├── style.css
+├── package.json
+└── vite.config.ts
 ```
+
+Run `npm run dev` or `npm run build` from this folder. Generated `dist/` and `node_modules/` folders are not source files.

@@ -25,6 +25,19 @@ Master the **That Open Engine** (`@thatopen/components`) and **Fragments** forma
 
 ## 📂 Workspace Structure
 ```text
-04 - 🏢 Creating BIM Apps (That Open Engine & Fragments)/
-├── README.md
+4-BIM_Apps/
+├── src/
+│   ├── bim-components/     # BIM tools, setup, and domain components
+│   ├── classes/            # Project and task models
+│   ├── core/               # Application and database setup
+│   ├── firebase/           # Cloud integration
+│   ├── react-components/   # Pages, details, and 3D views
+│   └── ui-templates/       # Buttons, sections, grids, and tables
+├── ifc-to-frag/            # IFC conversion utility and sample models
+├── public/models/          # Runtime IFC, Fragments, and 3D assets
+├── resources/              # Runtime decoder resources
+├── index.html, style.css
+└── package.json, vite.config.ts
 ```
+
+Run `npm run dev` or `npm run build` from this folder. Generated `dist/` and `node_modules/` folders are not source files.

@@ -4,8 +4,6 @@ Recorded Live Masterclass #9
 
 Source: https://people.thatopen.com/c/recorded-live-masterclasses-master-bim-software-developer/masterclass-migrating-from-that-open-engine-1-0-0-to-2-0-0
 
-## Goal
-Continue the full BIM platform with this live session's features.
-
-## Notes
+## Folder status
+This folder currently contains the session reference only; runnable project source is not included.
 

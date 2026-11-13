@@ -1,30 +1,30 @@
-# 🏢 Module 04 — Creating BIM Apps (That Open Engine & Fragments)
+# Module 05 - Connecting BIM workflows
 
-## 📌 Module Overview
-Master the **That Open Engine** (`@thatopen/components`) and **Fragments** format (`@thatopen/fragments`) to build browser-based Building Information Modeling (BIM) applications capable of loading gigabyte-scale IFC models in milliseconds.
+Connect BIM models to external data, cloud services, GIS, spreadsheets, and AI-assisted tools. This module builds on the BIM viewer in module 04.
 
----
-
-## 🎯 Key Learning Objectives
-1. **That Open Engine Architecture:**
-   - Understanding `OBC.Components` and component registry patterns.
-   - Managing `OBC.World` instances (SimpleWorld, ShadowedScene, Postproduction).
-   - Viewport configuration, raycasting, and camera control extensions.
-
-2. **IFC to Fragments Processing:**
-   - Converting heavy IFC files to lightweight flatbuffers (`.frag` format).
-   - High-throughput geometry streaming with WebGL instances.
-   - Managing spatial trees (`IfcSpatialStructure`), elements, and property sets (`Psets`).
-
-3. **BIM Queries & Custom Components:**
-   - Element selection, isolating, hiding, and thematic coloring.
-   - Building custom components (`OBC.Component`) for domain workflows.
-   - User Interface binding using That Open BUI (`@thatopen/ui`).
+## Main workflow areas
+- GIS and site context: `src/bim-components/GisLayers/`.
+- Spreadsheet sync: `src/bim-components/SheetsSync/`.
+- External data and saved views: `src/bim-components/DataEnhancer/` and `src/bim-components/SmartViews/`.
+- MCP tools and BIM quality workflows: `src/bim-components/McpAgent/` and `BimProSuite/`.
+- Server-side integrations in `functions/src/` and `mcp-bim-server/src/`.
+- Historical CYPE implementation in `archive/cype-integration/`.
 
 ---
 
 ## 📂 Workspace Structure
 ```text
-04 - 🏢 Creating BIM Apps (That Open Engine & Fragments)/
-├── README.md
+5-Connecting_Workflows/
+├── src/bim-components/     # GIS, Sheets, MCP, QA, and data integrations
+├── src/classes/            # Project and task models
+├── src/core/               # Application and database setup
+├── src/react-components/   # Application pages and 3D views
+├── src/ui-templates/       # Reusable BIM interface
+├── functions/src/          # Firebase Cloud Functions
+├── mcp-bim-server/src/     # Standalone BIM MCP server
+├── ifc-to-frag/            # IFC conversion utility
+├── archive/cype-integration/ # Read-only historical CYPE source
+└── package.json, firebase.json, vite.config.ts
 ```
+
+Run each service from its own folder and follow its `package.json` scripts. Do not edit generated `dist/`, `node_modules/`, or bundled `resources/` files as application source.
