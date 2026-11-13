@@ -73,9 +73,15 @@ function getCypeAuthorizationUrl(value: unknown): string {
     throw new Error("BIMserver.center returned an invalid authorization URL.");
   }
 
+  const isTrustedHost =
+    url.hostname === "bimserver.center" ||
+    url.hostname.endsWith(".bimserver.center") ||
+    url.hostname === "cype.com" ||
+    url.hostname.endsWith(".cype.com");
+
   if (
     url.protocol !== "https:" ||
-    (url.hostname !== "bimserver.center" && !url.hostname.endsWith(".bimserver.center")) ||
+    !isTrustedHost ||
     url.username ||
     url.password
   ) {

@@ -14,6 +14,10 @@ export interface CypeSectionState {
   projectId?: string;
   activeTab?: "models" | "issues" | "auth";
   disciplineFilter?: "All" | CypeContributionItem["discipline"];
+  searchQuery?: string;
+  showUploadForm?: boolean;
+  uploadName?: string;
+  uploadDiscipline?: CypeContributionItem["discipline"];
   issueStatusFilter?: "all" | CypeIssue["status"];
   newIssueTitle?: string;
   newIssueDiscipline?: CypeIssue["discipline"];
@@ -50,11 +54,23 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
   const issueStatusFilter = state.issueStatusFilter || "all";
 
   const activeProject = cype.projects.find((p) => p.id === cype.selectedProjectId) || cype.projects[0];
-  const allDocs = cype.getActiveContributions();
-  const visibleDocs =
-    disciplineFilter === "All"
-      ? allDocs
-      : allDocs.filter((d) => d.discipline === disciplineFilter);
+  const inferDiscipline = (doc: CypeContributionItem): CypeContributionItem["discipline"] => {
+    const n = doc.name.toUpperCase();
+    if (n.includes("CYPECAD") || n.includes("ARM") || n.includes("STR")) return "Structure";
+    if (n.includes("LIGHT") || n.includes("MEP") || n.includes("HVAC") || n.includes("ELEC")) return "MEP";
+    if (n.includes("COORD") || n.includes("FED")) return "Coordination";
+    return doc.discipline;
+  };
+  const allDocs = cype.getActiveContributions().map((d) => ({
+    ...d,
+    discipline: inferDiscipline(d),
+  }));
+  const search = (state.searchQuery || "").trim().toLowerCase();
+  const visibleDocs = allDocs.filter((d) => {
+    const matchesDisc = disciplineFilter === "All" || d.discipline === disciplineFilter;
+    const matchesSearch = !search || d.name.toLowerCase().includes(search);
+    return matchesDisc && matchesSearch;
+  });
 
   const allIssues = cype.getActiveIssues();
   const visibleIssues =
@@ -64,7 +80,7 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
 
   const isLiveMode = cype.auth.mode === "live-cype";
   const hasSession = Boolean(cype.auth.sessionId.trim());
-  const sessionHealthy = isLiveMode && hasSession && cype.isSessionValid();
+  const sessionHealthy = hasSession && cype.isSessionValid();
   const canFinishLogin = cype.hasPendingAuthorization();
   const isElectronDesktop = typeof window !== "undefined" && "desktopInfo" in window;
 
@@ -203,6 +219,20 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
               })}
             </div>
 
+            <!-- Search & Count Bar -->
+            <div style="display: flex; align-items: center; gap: 6px;">
+              <input
+                type="text"
+                .value=${state.searchQuery || ""}
+                @input=${(e: Event) => update({ searchQuery: (e.target as HTMLInputElement).value })}
+                placeholder="Search models (e.g. VILLA_06, CYPECAD, ARCHI)..."
+                style="flex: 1; padding: 6px 9px; border-radius: 7px; background: #18191d; border: 1px solid rgba(255, 255, 255, 0.12); color: #f8fafc; font-size: 0.71rem; box-sizing: border-box;"
+              />
+              <span style="font-size: 0.66rem; font-weight: 700; color: #94a3b8; padding: 4px 8px; border-radius: 6px; background: #18191d; border: 1px solid rgba(255, 255, 255, 0.08); white-space: nowrap;">
+                ${visibleDocs.length} / ${allDocs.length}
+              </span>
+            </div>
+
             <!-- OpenBIM Contributions Cards -->
             <div style="display: flex; flex-direction: column; gap: 8px; flex: 1; overflow-y: auto; padding-right: 2px;">
               ${visibleDocs.length === 0
@@ -249,18 +279,69 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
                   })}
             </div>
 
-            <button
-              type="button"
-              @click=${() =>
-                cype.publishContribution(
-                  `BIM Coordination Update (${new Date().toLocaleDateString()})`,
-                  "Coordination"
-                )}
-              style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.45); background: rgba(16, 185, 129, 0.16); color: #34d399; font-size: 0.72rem; font-weight: 700; cursor: pointer;"
-              title="Publish a coordination deliverable back to BIMserver.center"
-            >
-              + Publish Coordination Contribution → BIMserver.center
-            </button>
+            ${state.showUploadForm
+              ? BUI.html`
+                  <div style="display: flex; flex-direction: column; gap: 7px; padding: 10px 12px; border-radius: 10px; background: #121316; border: 1px solid rgba(16, 185, 129, 0.35);">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                      <span style="font-size: 0.68rem; font-weight: 700; color: #34d399; text-transform: uppercase; letter-spacing: 0.05em;">
+                        Publish to BIMserver.center
+                      </span>
+                      <button
+                        type="button"
+                        @click=${() => update({ showUploadForm: false })}
+                        style="background: transparent; border: none; color: #94a3b8; cursor: pointer; font-size: 0.72rem;"
+                      >✕</button>
+                    </div>
+                    <input
+                      type="text"
+                      .value=${state.uploadName ?? `BIM Coordination Update (${new Date().toLocaleDateString()})`}
+                      @input=${(e: Event) => update({ uploadName: (e.target as HTMLInputElement).value })}
+                      placeholder="Contribution name..."
+                      style="width: 100%; padding: 6px 9px; border-radius: 7px; background: #18191d; border: 1px solid rgba(255, 255, 255, 0.12); color: #f8fafc; font-size: 0.71rem; box-sizing: border-box;"
+                    />
+                    <div style="display: flex; gap: 6px;">
+                      <select
+                        .value=${state.uploadDiscipline || "Coordination"}
+                        @change=${(e: Event) =>
+                          update({
+                            uploadDiscipline: (e.target as HTMLSelectElement)
+                              .value as CypeContributionItem["discipline"],
+                          })}
+                        style="flex: 1; padding: 6px 8px; border-radius: 7px; background: #18191d; border: 1px solid rgba(255, 255, 255, 0.12); color: #f8fafc; font-size: 0.71rem;"
+                      >
+                        <option value="Coordination">Coordination</option>
+                        <option value="Architecture">Architecture</option>
+                        <option value="Structure">Structure</option>
+                        <option value="MEP">MEP</option>
+                      </select>
+                      <button
+                        type="button"
+                        @click=${() => {
+                          const title = (
+                            state.uploadName ||
+                            `BIM Coordination Update (${new Date().toLocaleDateString()})`
+                          ).trim();
+                          const disc = state.uploadDiscipline || "Coordination";
+                          void cype.publishContribution(title, disc);
+                          update({ showUploadForm: false });
+                        }}
+                        style="padding: 6px 12px; border-radius: 7px; border: none; background: #10b981; color: #052e16; font-size: 0.71rem; font-weight: 700; cursor: pointer;"
+                      >
+                        Publish Now
+                      </button>
+                    </div>
+                  </div>
+                `
+              : BUI.html`
+                  <button
+                    type="button"
+                    @click=${() => update({ showUploadForm: true })}
+                    style="width: 100%; padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.45); background: rgba(16, 185, 129, 0.16); color: #34d399; font-size: 0.72rem; font-weight: 700; cursor: pointer;"
+                    title="Publish a coordination deliverable back to BIMserver.center"
+                  >
+                    + Publish / Upload Contribution → BIMserver.center
+                  </button>
+                `}
           `
         : tab === "issues"
         ? BUI.html`

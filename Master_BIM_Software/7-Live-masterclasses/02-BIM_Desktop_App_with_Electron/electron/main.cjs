@@ -32,7 +32,10 @@ const isTrustedCypeUrl = (value) => {
   try {
     const url = new URL(value);
     return url.protocol === "https:" &&
-      (url.hostname === "bimserver.center" || url.hostname.endsWith(".bimserver.center"));
+      (url.hostname === "bimserver.center" ||
+        url.hostname.endsWith(".bimserver.center") ||
+        url.hostname === "cype.com" ||
+        url.hostname.endsWith(".cype.com"));
   } catch {
     return false;
   }
