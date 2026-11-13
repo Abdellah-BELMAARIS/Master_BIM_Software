@@ -9,7 +9,13 @@ import {
   prettyClass,
 } from "../bim-components/SemanticEmbeddings";
 
-type Tab = "search" | "classify" | "map" | "group" | "lab";
+type Tab = "search" | "transcribe" | "classify" | "map" | "group" | "lab";
+type AudioTranscriber = (
+  audio: string,
+  options: { chunk_length_s: number; stride_length_s: number },
+) => Promise<{ text: string }>;
+
+const TRANSCRIPTION_MODEL = "Xenova/whisper-tiny.en";
 
 const LAB_PAIRS: [string, string, string, boolean][] = [
   ["Synonyms", "Exterior brick wall, 20 cm thick", "Masonry façade 200 mm", true],
@@ -34,11 +40,15 @@ function Bar({ value }: { value: number }) {
 
 export function EmbeddingsStudio({ getComponents }: { getComponents: () => OBC.Components | null }) {
   const engineRef = React.useRef<SemanticEmbeddings | null>(null);
+  const transcriberRef = React.useRef<AudioTranscriber | null>(null);
   const [tab, setTab] = React.useState<Tab>("search");
   const [status, setStatus] = React.useState("Model not loaded");
   const [busy, setBusy] = React.useState(false);
   const [loadPct, setLoadPct] = React.useState(0);
   const [count, setCount] = React.useState(0);
+  const [audioFile, setAudioFile] = React.useState<File | null>(null);
+  const [transcript, setTranscript] = React.useState("");
+  const [transcriptionProgress, setTranscriptionProgress] = React.useState(0);
 
   const [query, setQuery] = React.useState("vertical structural element");
   const [minScore, setMinScore] = React.useState(40);
@@ -93,15 +103,63 @@ export function EmbeddingsStudio({ getComponents }: { getComponents: () => OBC.C
       setStatus(n ? `${n} elements indexed · ${EMBEDDING_MODEL.split("/")[1]} · 384 dims` : "No models loaded — load an IFC first");
     });
 
-  const doSearch = () =>
+  const doSearch = (searchText = query) =>
     run("Searching…", async () => {
       if (!count) return setStatus("Index the model first");
-      const r = await engine().search(query, 500);
+      const r = await engine().search(searchText, 500);
       setResults(r);
       const hits = r.filter((x) => x.score >= minScore).map((x) => x.item);
       await engine().select(hits);
-      setStatus(`${hits.length} elements match “${query}” (≥ ${minScore}%)`);
+      setStatus(`${hits.length} elements match “${searchText}” (≥ ${minScore}%)`);
     });
+
+  const transcribeAudio = () =>
+    run("Transcribing audio…", async () => {
+      if (!audioFile) return setStatus("Choose an audio file first");
+      setTranscriptionProgress(0);
+      if (!transcriberRef.current) {
+        setStatus("Loading the local English speech model…");
+        const { pipeline } = await import("@huggingface/transformers");
+        const transcriber = await pipeline(
+          "automatic-speech-recognition",
+          TRANSCRIPTION_MODEL,
+          {
+            dtype: "q8",
+            progress_callback: (event: any) => {
+              if (event?.status === "progress" && Number.isFinite(event.progress)) {
+                setTranscriptionProgress(Math.round(event.progress));
+              }
+            },
+          } as any,
+        );
+        transcriberRef.current = transcriber as unknown as AudioTranscriber;
+      }
+
+      const audioUrl = URL.createObjectURL(audioFile);
+      try {
+        const result = await transcriberRef.current(audioUrl, {
+          chunk_length_s: 30,
+          stride_length_s: 5,
+        });
+        const text = result.text.trim();
+        if (!text) throw new Error("No speech was recognized in this audio file");
+        setTranscript(text);
+        setQuery(text);
+        setTranscriptionProgress(100);
+        setStatus("Transcription ready — edit it or search the indexed BIM model");
+      } finally {
+        URL.revokeObjectURL(audioUrl);
+      }
+    });
+
+  const downloadTranscript = () => {
+    const url = URL.createObjectURL(new Blob([transcript], { type: "text/plain;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "masterclass-transcript.txt";
+    link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0);
+  };
 
   const doClassify = () =>
     run("Classifying…", async () => {
@@ -161,6 +219,7 @@ export function EmbeddingsStudio({ getComponents }: { getComponents: () => OBC.C
 
   const TABS: [Tab, string, string][] = [
     ["search", "travel_explore", "Search"],
+    ["transcribe", "graphic_eq", "Transcribe"],
     ["classify", "category", "IFC Class"],
     ["map", "account_tree", "Classify"],
     ["group", "hub", "Group"],
@@ -200,7 +259,7 @@ export function EmbeddingsStudio({ getComponents }: { getComponents: () => OBC.C
           <p className="emb-hint">Describe elements in plain language — matches are found by meaning, not keywords.</p>
           <div className="emb-row">
             <input className="emb-input" value={query} onChange={(e) => setQuery(e.target.value)} onKeyDown={(e) => e.key === "Enter" && doSearch()} placeholder="e.g. glazed opening, load bearing pillar…" />
-            <button className="emb-btn primary" disabled={busy} onClick={doSearch}>
+            <button className="emb-btn primary" disabled={busy} onClick={() => doSearch()}>
               <span className="material-icons-round">search</span>
             </button>
           </div>
@@ -223,6 +282,57 @@ export function EmbeddingsStudio({ getComponents }: { getComponents: () => OBC.C
               </button>
             ))}
           </div>
+        </div>
+      )}
+
+      {tab === "transcribe" && (
+        <div className="emb-panel">
+          <p className="emb-hint">
+            Transcribe English audio locally with Whisper, then use the transcript to find related BIM elements.
+            The speech model downloads once; your audio file is processed in this browser.
+          </p>
+          <input
+            className="emb-input"
+            type="file"
+            accept="audio/*"
+            aria-label="Choose audio file to transcribe"
+            disabled={busy}
+            onChange={(event) => {
+              setAudioFile(event.target.files?.[0] ?? null);
+              setTranscript("");
+              setTranscriptionProgress(0);
+            }}
+          />
+          {audioFile && <p className="emb-hint">Selected: {audioFile.name}</p>}
+          {busy && transcriptionProgress > 0 && transcriptionProgress < 100 && (
+            <Bar value={transcriptionProgress} />
+          )}
+          <div className="emb-row">
+            <button className="emb-btn primary" disabled={busy || !audioFile} onClick={transcribeAudio}>
+              <span className="material-icons-round">graphic_eq</span>
+              {transcriberRef.current ? "Transcribe audio" : "Load model and transcribe"}
+            </button>
+            {transcript && (
+              <>
+                <button className="emb-btn" disabled={busy} onClick={() => doSearch(transcript.trim())}>
+                  <span className="material-icons-round">search</span>Search BIM
+                </button>
+                <button className="emb-btn" onClick={downloadTranscript}>
+                  <span className="material-icons-round">download</span>TXT
+                </button>
+              </>
+            )}
+          </div>
+          <textarea
+            className="emb-input emb-area emb-transcript"
+            value={transcript}
+            onChange={(event) => {
+              setTranscript(event.target.value);
+              setQuery(event.target.value);
+            }}
+            placeholder="Your editable transcript will appear here…"
+            aria-label="Editable audio transcript"
+          />
         </div>
       )}
 

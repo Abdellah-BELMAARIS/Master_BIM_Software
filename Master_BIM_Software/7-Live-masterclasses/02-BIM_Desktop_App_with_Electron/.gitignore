@@ -1,0 +1,10 @@
+node_modules/
+dist/
+viewer/dist/
+electron/renderer/
+out/
+.env
+.env.*
+viewer/.env
+viewer/.env.*
+!viewer/.env.example
