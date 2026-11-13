@@ -65,6 +65,7 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
   const isLiveMode = cype.auth.mode === "live-cype";
   const hasSession = Boolean(cype.auth.sessionId.trim());
   const sessionHealthy = isLiveMode && hasSession && cype.isSessionValid();
+  const canFinishLogin = cype.hasPendingAuthorization();
 
   let newIssueDraft = state.newIssueTitle ?? "";
   const issueDisc = state.newIssueDiscipline || "Structure";
@@ -374,7 +375,7 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
               <span style="font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8;">Secure Backend Proxy</span>
               <code style="display: block; overflow-wrap: anywhere; color: #7dd3fc; font-size: 0.65rem;">${cype.auth.proxyEndpoint || CYPE_PROXY_ENDPOINT}</code>
               <p style="margin: 0; color: #64748b; font-size: 0.64rem; line-height: 1.4;">
-                Live access requires a trusted CYPE functions backend. Configure <code>VITE_CYPE_FUNCTIONS_URL</code>; local emulator is used by default.
+                Start the Functions emulator from <code>5-Connecting_Workflows</code> for local access. Deployed access requires a trusted HTTPS backend configured with <code>VITE_CYPE_FUNCTIONS_URL</code>.
               </p>
 
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
@@ -416,8 +417,9 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
                 </button>
                 <button
                   type="button"
+                  ?disabled=${!canFinishLogin || cype.isBusy}
                   @click=${() => void cype.completeAuthorization().then(() => update())}
-                  style="padding: 8px 10px; border-radius: 8px; border: 1px solid rgba(16, 185, 129, 0.5); background: rgba(16, 185, 129, 0.16); color: #34d399; font-size: 0.71rem; font-weight: 700; cursor: pointer;"
+                  style="padding: 8px 10px; border-radius: 8px; border: 1px solid ${canFinishLogin ? "rgba(16, 185, 129, 0.5)" : "rgba(148, 163, 184, 0.22)"}; background: ${canFinishLogin ? "rgba(16, 185, 129, 0.16)" : "rgba(30, 41, 59, 0.5)"}; color: ${canFinishLogin ? "#34d399" : "#64748b"}; font-size: 0.71rem; font-weight: 700; cursor: ${canFinishLogin ? "pointer" : "not-allowed"}; opacity: ${canFinishLogin ? "1" : "0.6"};"
                 >
                   Finish Login
                 </button>

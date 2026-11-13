@@ -3,6 +3,7 @@ const fs = require("node:fs");
 const http = require("node:http");
 const path = require("node:path");
 
+const rendererPort = 5174;
 const rendererRoot = path.resolve(__dirname, "..", "dist");
 let rendererServer;
 let mainWindow;
@@ -26,6 +27,28 @@ const contentTypes = {
 const isMissingPath = (error) =>
   error && typeof error === "object" && ["ENOENT", "ENOTDIR"].includes(error.code);
 
+const isTrustedCypeUrl = (value) => {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" &&
+      (url.hostname === "bimserver.center" || url.hostname.endsWith(".bimserver.center"));
+  } catch {
+    return false;
+  }
+};
+
+const isViewerCallbackUrl = (value, rendererUrl) => {
+  try {
+    const url = new URL(value);
+    const viewerUrl = new URL(rendererUrl);
+    return url.protocol === "http:" &&
+      url.origin === viewerUrl.origin &&
+      url.pathname === "/";
+  } catch {
+    return false;
+  }
+};
+
 const startRendererServer = () =>
   new Promise((resolve, reject) => {
     const server = http.createServer((request, response) => {
@@ -42,7 +65,7 @@ const startRendererServer = () =>
         return;
       }
 
-      const requestedPath = pathname === "/" ? "/index.html" : pathname;
+      const requestedPath = pathname === "/" ? "/viewer/index.html" : pathname;
       const candidate = resolveInside(rendererRoot, requestedPath);
       if (!candidate) {
         response.writeHead(403).end("Forbidden");
@@ -102,7 +125,7 @@ const startRendererServer = () =>
     });
 
     server.once("error", reject);
-    server.listen(0, "127.0.0.1", () => {
+    server.listen(rendererPort, "127.0.0.1", () => {
       const address = server.address();
       if (!address || typeof address === "string") {
         server.close();
@@ -136,7 +159,12 @@ const createWindow = async (rendererUrl) => {
     if (url.startsWith("https://")) void shell.openExternal(url);
     return { action: "deny" };
   });
-  window.webContents.on("will-navigate", (event) => event.preventDefault());
+  const handleNavigation = (event, url) => {
+    if (isTrustedCypeUrl(url) || isViewerCallbackUrl(url, rendererUrl)) return;
+    event.preventDefault();
+  };
+  window.webContents.on("will-navigate", handleNavigation);
+  window.webContents.on("will-redirect", handleNavigation);
   await window.loadURL(rendererUrl);
 };
 

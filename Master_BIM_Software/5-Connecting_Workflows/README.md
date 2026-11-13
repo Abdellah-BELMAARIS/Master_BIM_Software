@@ -8,7 +8,8 @@ Connect BIM models to external data, cloud services, GIS, spreadsheets, and AI-a
 - External data and saved views: `src/bim-components/DataEnhancer/` and `src/bim-components/SmartViews/`.
 - MCP tools and BIM quality workflows: `src/bim-components/McpAgent/` and `BimProSuite/`.
 - Server-side integrations in `functions/src/` and `mcp-bim-server/src/`.
-- Historical CYPE implementation in `archive/cype-integration/`.
+- CYPE/BIMserver.center OAuth and API proxy endpoints in `functions/src/cype.ts`.
+- Historical CYPE integration references in `archive/cype-integration/`.
 
 ---
 
@@ -28,3 +29,10 @@ Connect BIM models to external data, cloud services, GIS, spreadsheets, and AI-a
 ```
 
 Run each service from its own folder and follow its `package.json` scripts. Do not edit generated `dist/`, `node_modules/`, or bundled `resources/` files as application source.
+
+The local Functions emulator used by Live Masterclass 02 is available with:
+
+```powershell
+npm --prefix functions run build
+firebase emulators:start --only functions --project master-bim-software
+```

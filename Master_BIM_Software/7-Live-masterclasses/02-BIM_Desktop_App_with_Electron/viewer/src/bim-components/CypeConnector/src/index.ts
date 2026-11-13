@@ -58,6 +58,28 @@ export interface CypeAuthConfig {
 const CYPE_STORAGE_KEY = "toc_cype_bimserver_config_v2";
 const CYPE_PENDING_AUTH_KEY = "toc_cype_pending_auth";
 
+function getCypeAuthorizationUrl(value: unknown): string {
+  if (typeof value !== "string") {
+    throw new Error("BIMserver.center did not return a valid authorization URL.");
+  }
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error("BIMserver.center returned an invalid authorization URL.");
+  }
+
+  if (
+    url.protocol !== "https:" ||
+    (url.hostname !== "bimserver.center" && !url.hostname.endsWith(".bimserver.center")) ||
+    url.username ||
+    url.password
+  ) {
+    throw new Error("BIMserver.center returned an untrusted authorization URL.");
+  }
+  return url.toString();
+}
+
 const SANDBOX_PROJECTS: CypeProject[] = [
   {
     id: "cype-proj-aurora",
@@ -317,6 +339,18 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
     return true;
   }
 
+  hasPendingAuthorization(): boolean {
+    try {
+      const pending = sessionStorage.getItem(CYPE_PENDING_AUTH_KEY);
+      if (!pending) return false;
+      const parsed = JSON.parse(pending);
+      return typeof parsed.sessionTemp === "string" && Boolean(parsed.sessionTemp) &&
+        typeof parsed.securityId === "string" && Boolean(parsed.securityId);
+    } catch {
+      return false;
+    }
+  }
+
   /**
    * Lesson 5.3: Starts 3-step BIMserver.center login (POST /login -> redirect to consent URL -> store projectId)
    */
@@ -344,6 +378,7 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
       if (!res.ok || !data?.url || !data?.session_temp) {
         throw new Error(data?.error || data?.message || `HTTP ${res.status}`);
       }
+      const authorizationUrl = getCypeAuthorizationUrl(data.url);
 
       try {
         sessionStorage.setItem(
@@ -359,11 +394,16 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
       this.syncStatus = "Redirecting to BIMserver.center authorization...";
       this.isBusy = false;
       this.onStateChanged.trigger();
-      window.location.href = data.url;
-      return data.url;
-    } catch (err: any) {
+      window.location.href = authorizationUrl;
+      return authorizationUrl;
+    } catch (err: unknown) {
       this.isBusy = false;
-      this.syncStatus = `CYPE Login Error: ${err?.message || err}`;
+      const message = err instanceof TypeError && /failed to fetch|networkerror|load failed/i.test(err.message)
+        ? `Cannot reach the CYPE backend at ${this.auth.proxyEndpoint}. Start the local Functions emulator or configure VITE_CYPE_FUNCTIONS_URL.`
+        : err instanceof Error
+        ? err.message
+        : String(err);
+      this.syncStatus = `CYPE Login Error: ${message}`;
       this.onStateChanged.trigger();
       throw err;
     }

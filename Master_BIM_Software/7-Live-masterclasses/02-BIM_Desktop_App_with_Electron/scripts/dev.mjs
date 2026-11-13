@@ -14,27 +14,17 @@ await viewerServer.listen();
 const viewerUrl = viewerServer.resolvedUrls?.local?.[0];
 if (!viewerUrl) throw new Error("Vite did not provide a viewer development URL");
 
-process.env.VITE_VIEWER_URL = viewerUrl;
-const desktopServer = await createServer();
-await desktopServer.listen();
-const desktopUrl = desktopServer.resolvedUrls?.local?.[0];
-if (!desktopUrl) {
-  await viewerServer.close();
-  await desktopServer.close();
-  throw new Error("Vite did not provide a desktop-shell development URL");
-}
-
 console.log(`BIM-GIS viewer ready at ${viewerUrl}`);
-console.log(`Electron shell ready at ${desktopUrl}`);
+console.log(`Opening the viewer directly in Electron...`);
 console.log("Launching the desktop app...");
 
 const electron = spawn(electronPath, ["."], {
-  env: { ...process.env, VITE_DEV_SERVER_URL: desktopUrl },
+  env: { ...process.env, VITE_DEV_SERVER_URL: viewerUrl },
   stdio: "inherit",
 });
 
 const shutdown = async (code = 0) => {
-  await Promise.all([viewerServer.close(), desktopServer.close()]);
+  await viewerServer.close();
   process.exitCode = code;
 };
 
