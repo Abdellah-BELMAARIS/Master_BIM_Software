@@ -2,9 +2,13 @@ import * as OBC from "@thatopen/components";
 
 export const CYPE_LOCAL_EMULATOR_BASE =
   "http://127.0.0.1:5001/master-bim-software/us-central1";
+const isElectronDesktop =
+  typeof window !== "undefined" && "desktopInfo" in window;
 export const CYPE_PROXY_ENDPOINT =
   import.meta.env.VITE_CYPE_FUNCTIONS_URL?.trim() ||
-  `${CYPE_LOCAL_EMULATOR_BASE}/cypeProxy`;
+  (isElectronDesktop
+    ? `${window.location.origin}/cypeProxy`
+    : `${CYPE_LOCAL_EMULATOR_BASE}/cypeProxy`);
 export const CYPE_USER_PROFILE_URL = "https://bimserver.center/en/";
 export const CYPE_DEV_PORTAL_URL = "https://developers.bimserver.center/";
 
@@ -75,7 +79,9 @@ function getCypeAuthorizationUrl(value: unknown): string {
     url.username ||
     url.password
   ) {
-    throw new Error("BIMserver.center returned an untrusted authorization URL.");
+    throw new Error(
+      `BIMserver.center returned an untrusted authorization origin (${url.protocol}//${url.host}).`
+    );
   }
   return url.toString();
 }

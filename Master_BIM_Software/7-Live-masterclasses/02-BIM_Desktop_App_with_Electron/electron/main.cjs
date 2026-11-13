@@ -2,6 +2,7 @@ const { app, BrowserWindow, shell } = require("electron");
 const fs = require("node:fs");
 const http = require("node:http");
 const path = require("node:path");
+const { handleCypeRequest } = require("./cype-proxy.cjs");
 
 const rendererPort = 5174;
 const rendererRoot = path.resolve(__dirname, "..", "dist");
@@ -51,17 +52,27 @@ const isViewerCallbackUrl = (value, rendererUrl) => {
 
 const startRendererServer = () =>
   new Promise((resolve, reject) => {
-    const server = http.createServer((request, response) => {
-      if (request.method !== "GET" && request.method !== "HEAD") {
-        response.writeHead(405).end();
-        return;
-      }
-
+    const server = http.createServer(async (request, response) => {
       let pathname;
       try {
         pathname = decodeURIComponent(new URL(request.url || "/", "http://127.0.0.1").pathname);
       } catch {
         response.writeHead(400).end("Bad request");
+        return;
+      }
+
+      if (
+        pathname === "/cypeLogin" ||
+        pathname === "/cypeExchangeSession" ||
+        pathname === "/cypeProxy" ||
+        pathname === "/cypeDownloadFile"
+      ) {
+        await handleCypeRequest(pathname, request, response);
+        return;
+      }
+
+      if (request.method !== "GET" && request.method !== "HEAD") {
+        response.writeHead(405).end();
         return;
       }
 

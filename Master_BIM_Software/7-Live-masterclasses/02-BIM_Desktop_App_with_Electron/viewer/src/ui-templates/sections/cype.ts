@@ -66,6 +66,7 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
   const hasSession = Boolean(cype.auth.sessionId.trim());
   const sessionHealthy = isLiveMode && hasSession && cype.isSessionValid();
   const canFinishLogin = cype.hasPendingAuthorization();
+  const isElectronDesktop = typeof window !== "undefined" && "desktopInfo" in window;
 
   let newIssueDraft = state.newIssueTitle ?? "";
   const issueDisc = state.newIssueDiscipline || "Structure";
@@ -371,11 +372,20 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
           `
         : BUI.html`
             <!-- Card 1: Mode & Environment -->
-            <div style="display: flex; flex-direction: column; gap: 9px; padding: 11px 12px; border-radius: 10px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(56, 189, 248, 0.26);">
-              <span style="font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8;">Secure Backend Proxy</span>
-              <code style="display: block; overflow-wrap: anywhere; color: #7dd3fc; font-size: 0.65rem;">${cype.auth.proxyEndpoint || CYPE_PROXY_ENDPOINT}</code>
-              <p style="margin: 0; color: #64748b; font-size: 0.64rem; line-height: 1.4;">
-                Start the Functions emulator from <code>5-Connecting_Workflows</code> for local access. Deployed access requires a trusted HTTPS backend configured with <code>VITE_CYPE_FUNCTIONS_URL</code>.
+            <div style="display: flex; flex-direction: column; gap: 9px; padding: 11px 12px; border-radius: 10px; background: #121316; border: 1px solid rgba(255, 255, 255, 0.1);">
+              <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+                <span style="font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8;">Secure Backend Proxy</span>
+                <span style="font-size: 0.63rem; font-weight: 700; color: ${isElectronDesktop ? "#34d399" : "#94a3b8"};">
+                  ${isElectronDesktop ? "● Native Desktop Proxy" : "● External / Emulator"}
+                </span>
+              </div>
+              <code style="display: block; overflow-wrap: anywhere; color: #e2e8f0; background: #18191d; padding: 6px 8px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.06); font-size: 0.65rem;">${cype.auth.proxyEndpoint || CYPE_PROXY_ENDPOINT}</code>
+              <p style="margin: 0; color: #94a3b8; font-size: 0.64rem; line-height: 1.4;">
+                ${
+                  isElectronDesktop
+                    ? "Handled natively by the Electron desktop main process on 127.0.0.1:5174 (no external emulator required)."
+                    : "Start the local Functions emulator or configure VITE_CYPE_FUNCTIONS_URL for deployed HTTPS access."
+                }
               </p>
 
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
