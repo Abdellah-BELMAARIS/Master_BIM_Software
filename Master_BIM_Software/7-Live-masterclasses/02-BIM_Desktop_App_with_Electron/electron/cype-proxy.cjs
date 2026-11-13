@@ -16,8 +16,21 @@ const getRecord = (value) =>
 const getString = (value, maxLength) =>
   typeof value === "string" ? value.trim().slice(0, maxLength) : "";
 
-const isTrustedCypeHost = (hostname) =>
-  hostname === "bimserver.center" || hostname.endsWith(".bimserver.center");
+const isTrustedCypeHost = (hostname) => {
+  const h = (hostname || "").toLowerCase();
+  return (
+    h === "bimserver.center" ||
+    h.endsWith(".bimserver.center") ||
+    h === "cype.com" ||
+    h.endsWith(".cype.com") ||
+    h === "cype.es" ||
+    h.endsWith(".cype.es") ||
+    h.endsWith(".amazonaws.com") ||
+    h.endsWith(".cloudfront.net") ||
+    h.endsWith(".googleapis.com") ||
+    h.endsWith(".blob.core.windows.net")
+  );
+};
 
 const getRedirectUri = (value) => {
   const raw = getString(value, 512);
@@ -239,15 +252,33 @@ const handleCypeRequest = async (pathname, request, response) => {
     const fileUrl = isAllowedDownloadUrl(body.fileUrl);
     const sessionId = getString(body.sessionId, 8192);
     if (!fileUrl) {
-      sendJson(response, 400, { error: "The file URL must use a trusted BIMserver.center HTTPS host." });
+      sendJson(response, 400, { error: "The file URL must use a trusted BIMserver.center or cloud storage HTTPS host." });
+      return true;
+    }
+    const pathLower = fileUrl.pathname.toLowerCase();
+    if (pathLower.includes("/file/") || pathLower.includes("/view/") || pathLower.includes("/project/")) {
+      sendJson(response, 400, {
+        error: `URL "${fileUrl.href}" is a BIMserver.center web page, not an IFC binary stream.`,
+      });
       return true;
     }
     try {
-      const headers = sessionId ? { Authorization: `Bearer ${sessionId}` } : {};
+      // Send Authorization header only when downloading from BIMserver.center directly.
+      // S3 presigned URLs reject requests containing both signature params and Authorization headers.
+      const headers = sessionId && fileUrl.hostname.includes("bimserver.center")
+        ? { Authorization: `Bearer ${sessionId}` }
+        : {};
       const fileResponse = await fetch(fileUrl, { headers, signal: AbortSignal.timeout(60_000) });
       if (!fileResponse.ok) {
         sendJson(response, fileResponse.status, {
           error: `Failed downloading the CYPE file (HTTP ${fileResponse.status}).`,
+        });
+        return true;
+      }
+      const contentType = (fileResponse.headers.get("content-type") || "").toLowerCase();
+      if (contentType.includes("text/html")) {
+        sendJson(response, 400, {
+          error: "BIMserver.center returned an HTML webpage instead of an IFC file stream.",
         });
         return true;
       }
@@ -257,14 +288,12 @@ const handleCypeRequest = async (pathname, request, response) => {
         return true;
       }
       const buffer = Buffer.from(await fileResponse.arrayBuffer());
-      response.writeHead(200, {
-        "Content-Type": fileResponse.headers.get("content-type") || "application/octet-stream",
-        "Content-Length": String(buffer.length),
-        "Cache-Control": "no-store",
+      sendJson(response, 200, {
+        base64: buffer.toString("base64"),
+        contentType: fileResponse.headers.get("content-type") || "application/octet-stream",
       });
-      response.end(buffer);
-    } catch {
-      sendJson(response, 502, { error: "Could not download the CYPE file." });
+    } catch (err) {
+      sendJson(response, 502, { error: `Could not download the CYPE file: ${err?.message || err}` });
     }
     return true;
   }

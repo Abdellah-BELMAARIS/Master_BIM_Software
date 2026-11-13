@@ -92,6 +92,96 @@ function getCypeAuthorizationUrl(value: unknown): string {
   return url.toString();
 }
 
+function isBimserverWebPageUrl(val: string): boolean {
+  if (!val || typeof val !== "string") return false;
+  const s = val.toLowerCase();
+  return (
+    s.includes("/en/file/") ||
+    s.includes("/es/file/") ||
+    s.includes("/fr/file/") ||
+    s.includes("/pt/file/") ||
+    s.includes("/it/file/") ||
+    s.includes("/file/") ||
+    s.includes("/view/") ||
+    s.includes("/login")
+  );
+}
+
+function isValidDownloadUrl(val: string): boolean {
+  if (!val || typeof val !== "string") return false;
+  const s = val.trim();
+  if (!s.startsWith("http://") && !s.startsWith("https://")) return false;
+  if (isBimserverWebPageUrl(s)) return false;
+  return true;
+}
+
+/**
+ * Robust helper to extract downloadable URL from BIMserver.center objects.
+ * Handles single url strings, mirror url arrays (urls / links / mirrors),
+ * filters out HTML webpage URLs, and resolves nested document/file structures.
+ */
+function extractBimserverDownloadUrl(item: any): string {
+  if (!item) return "";
+  if (typeof item === "string") {
+    return isValidDownloadUrl(item) ? item.trim() : "";
+  }
+
+  // 1. Check array fields (multiple mirror download links in BIMserver.center)
+  const candidateArrays = [
+    item.urls,
+    item.links,
+    item.download_urls,
+    item.downloadUrls,
+    item.mirrors,
+    item.files,
+  ];
+
+  for (const arr of candidateArrays) {
+    if (Array.isArray(arr) && arr.length > 0) {
+      for (const entry of arr) {
+        if (typeof entry === "string" && isValidDownloadUrl(entry)) {
+          return entry.trim();
+        } else if (entry && typeof entry === "object") {
+          const extracted = extractBimserverDownloadUrl(entry);
+          if (extracted && isValidDownloadUrl(extracted)) return extracted;
+        }
+      }
+    }
+  }
+
+  // 2. Direct string fields
+  const stringFields = [
+    item.url,
+    item.download_url,
+    item.url_download,
+    item.file_url,
+    item.ifc_url,
+    item.link,
+    item.streamUrl,
+    item.stream_url,
+    item.href,
+    item.uri,
+  ];
+
+  for (const field of stringFields) {
+    if (typeof field === "string" && isValidDownloadUrl(field)) {
+      return field.trim();
+    }
+  }
+
+  // 3. Nested object fields like item.file, item.document
+  if (item.file && typeof item.file === "object") {
+    const fUrl = extractBimserverDownloadUrl(item.file);
+    if (fUrl && isValidDownloadUrl(fUrl)) return fUrl;
+  }
+  if (item.document && typeof item.document === "object") {
+    const dUrl = extractBimserverDownloadUrl(item.document);
+    if (dUrl && isValidDownloadUrl(dUrl)) return dUrl;
+  }
+
+  return "";
+}
+
 const SANDBOX_PROJECTS: CypeProject[] = [
   {
     id: "cype-proj-aurora",
@@ -343,6 +433,10 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
     return proxy.replace(/\/cypeProxy\/?$/i, `/${fnName}`);
   }
 
+  private resolveProxyUrl(): string {
+    return this.resolveFunctionUrl("cypeProxy");
+  }
+
   isSessionValid(): boolean {
     if (!this.auth.sessionId.trim()) return false;
     if (this.auth.expiresAt > 0 && this.auth.expiresAt <= Date.now() + 60_000) {
@@ -401,7 +495,7 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
             projectId: currentProjectId || "",
           })
         );
-      } catch {}
+      } catch { }
 
       this.syncStatus = "Redirecting to BIMserver.center authorization...";
       this.isBusy = false;
@@ -413,8 +507,8 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
       const message = err instanceof TypeError && /failed to fetch|networkerror|load failed/i.test(err.message)
         ? `Cannot reach the CYPE backend at ${this.auth.proxyEndpoint}. Start the local Functions emulator or configure VITE_CYPE_FUNCTIONS_URL.`
         : err instanceof Error
-        ? err.message
-        : String(err);
+          ? err.message
+          : String(err);
       this.syncStatus = `CYPE Login Error: ${message}`;
       this.onStateChanged.trigger();
       throw err;
@@ -436,7 +530,7 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
           sessionTemp = parsed.sessionTemp || "";
           securityId = parsed.securityId || "";
         }
-      } catch {}
+      } catch { }
     }
 
     if (!sessionTemp || !securityId) {
@@ -462,7 +556,7 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
 
       try {
         sessionStorage.removeItem(CYPE_PENDING_AUTH_KEY);
-      } catch {}
+      } catch { }
 
       this.saveAuth({
         mode: "live-cype",
@@ -592,31 +686,51 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
     const parsed: CypeContributionItem[] = [];
 
     for (const c of records) {
-      const docs: any[] = Array.isArray(c.documents) ? c.documents : [];
-      const ifcDoc = docs.find((d) => String(d.name || "").toLowerCase().endsWith(".ifc")) || docs[0];
+      const docs: any[] = Array.isArray(c.documents)
+        ? c.documents
+        : Array.isArray(c.documents?.records)
+          ? c.documents.records
+          : Array.isArray(c.files)
+            ? c.files
+            : [];
+      const ifcDoc = docs.find((d) => String(d?.name || d?.file_name || d?.filename || "").toLowerCase().endsWith(".ifc")) || docs[0];
+      const docUrl = extractBimserverDownloadUrl(ifcDoc) || extractBimserverDownloadUrl(c);
       const modTs = c.date_last_change || c.date_create;
       parsed.push({
         id: String(c.id),
         projectId,
-        name: ifcDoc?.name || c.name || `Contribution_${c.id}.ifc`,
+        name: ifcDoc?.name || ifcDoc?.file_name || c.name || `Contribution_${c.id}.ifc`,
         appSource: c.application?.name || "CYPE OpenBIM",
         discipline: String(c.name || "").toLowerCase().includes("mep")
           ? "MEP"
           : String(c.name || "").toLowerCase().includes("str") || String(c.application?.name || "").includes("CYPECAD")
-          ? "Structure"
-          : "Architecture",
+            ? "Structure"
+            : "Architecture",
         version: `Rev ${c.version || 1}`,
         sizeLabel: ifcDoc?.size
           ? `${(Number(ifcDoc.size) / (1024 * 1024)).toFixed(1)} MB`
           : "Cloud IFC",
         modifiedAt: modTs ? new Date(Number(modTs) * 1000).toLocaleDateString() : "Recent",
-        ifcFileName: ifcDoc?.name || `${(c.name || "cype_model").replace(/\s+/g, "_")}.ifc`,
-        streamUrl: ifcDoc?.url || "",
-        isRemoteBinary: Boolean(ifcDoc?.url && String(ifcDoc.url).startsWith("http")),
+        ifcFileName: ifcDoc?.name || ifcDoc?.file_name || `${(c.name || "cype_model").replace(/\s+/g, "_")}.ifc`,
+        streamUrl: docUrl,
+        isRemoteBinary: Boolean(docUrl && String(docUrl).startsWith("http")),
       });
     }
 
     this.contributions = parsed;
+    try {
+      localStorage.setItem(
+        `toc_cype_project_models_v1_${projectId}`,
+        JSON.stringify(parsed)
+      );
+      void fetch("/api/db", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ table: `cype-models-${projectId}`, data: parsed }),
+      }).catch(() => { });
+    } catch {
+      // ignore storage quota errors
+    }
     this.onStateChanged.trigger();
   }
 
@@ -684,7 +798,77 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
    * and triggers load into That Open Engine WebIFC viewer.
    */
   async loadContributionIfc(item: CypeContributionItem) {
-    if (!item.streamUrl) {
+    let targetUrl = item.streamUrl;
+    if (targetUrl && isBimserverWebPageUrl(targetUrl)) {
+      targetUrl = "";
+    }
+
+    if (!targetUrl && this.auth.mode === "live-cype" && this.auth.sessionId.trim()) {
+      this.loadingDocId = item.id;
+      this.syncStatus = `Resolving IFC document URL for "${item.name}"...`;
+      this.onStateChanged.trigger();
+      try {
+        const docsData = await this.callProxy(
+          `/contributions/${encodeURIComponent(item.id)}?expand=documents`
+        ).catch(() => ({}));
+        console.warn("[CYPE] Contribution docs response:", docsData);
+        const rec = docsData?.record || docsData;
+        const list = Array.isArray(rec?.documents)
+          ? rec.documents
+          : Array.isArray(rec?.documents?.records)
+            ? rec.documents.records
+            : Array.isArray(docsData?.records)
+              ? docsData.records
+              : Array.isArray(docsData)
+                ? docsData
+                : [];
+        const ifcDoc =
+          list.find((d: any) =>
+            String(d?.name || d?.file_name || d?.filename || "")
+              .toLowerCase()
+              .endsWith(".ifc")
+          ) || list[0];
+        if (ifcDoc?.name && !item.ifcFileName.toLowerCase().endsWith(".ifc")) {
+          item.ifcFileName = ifcDoc.name;
+        }
+        targetUrl =
+          extractBimserverDownloadUrl(ifcDoc) ||
+          extractBimserverDownloadUrl(rec) ||
+          "";
+        if (!targetUrl && ifcDoc?.id) {
+          const docDetail = await this.callProxy(
+            `/documents/${encodeURIComponent(ifcDoc.id)}`
+          ).catch(() => ({}));
+          console.warn("[CYPE] Document detail response:", docDetail);
+          const dRec = docDetail?.record || docDetail;
+          targetUrl = extractBimserverDownloadUrl(dRec) || "";
+        }
+        if (!targetUrl && ifcDoc?.id) {
+          try {
+            const urlsDetail = await this.callProxy(
+              `/documents/${encodeURIComponent(ifcDoc.id)}/urls`
+            ).catch(() => ({}));
+            targetUrl = extractBimserverDownloadUrl(urlsDetail) || "";
+          } catch { }
+        }
+        if (targetUrl) {
+          item.streamUrl = targetUrl;
+          item.isRemoteBinary = true;
+          try {
+            void fetch("/api/db", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ table: `cype-models-${item.projectId}`, data: this.contributions }),
+            }).catch(() => {});
+          } catch {}
+        }
+      } catch {
+        // fall through to missing URL message
+      }
+    }
+
+    if (!targetUrl) {
+      this.loadingDocId = null;
       this.syncStatus = `Contribution "${item.name}" has no downloadable IFC document URL.`;
       this.onStateChanged.trigger();
       return;
@@ -697,25 +881,45 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
     try {
       let buffer: ArrayBuffer;
       if (item.isRemoteBinary && this.auth.mode === "live-cype") {
-        const res = await fetch(this.resolveFunctionUrl("cypeDownloadFile"), {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ fileUrl: item.streamUrl, sessionId: this.auth.sessionId.trim() }),
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok || !data?.base64) {
-          throw new Error(data?.error || `HTTP ${res.status}`);
+        try {
+          const res = await fetch(this.resolveFunctionUrl("cypeDownloadFile"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ fileUrl: targetUrl, sessionId: this.auth.sessionId.trim() }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data?.base64) {
+            throw new Error(data?.error || `HTTP ${res.status}`);
+          }
+          const binary = atob(data.base64);
+          const bytes = new Uint8Array(binary.length);
+          for (let i = 0; i < binary.length; i++) {
+            bytes[i] = binary.charCodeAt(i);
+          }
+          buffer = bytes.buffer;
+        } catch (proxyErr) {
+          console.warn("[CYPE] Proxy download failed, falling back to direct stream:", proxyErr);
+          const directRes = await fetch(targetUrl);
+          if (!directRes.ok) throw proxyErr;
+          buffer = await directRes.arrayBuffer();
         }
-        const binary = atob(data.base64);
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) {
-          bytes[i] = binary.charCodeAt(i);
-        }
-        buffer = bytes.buffer;
       } else {
-        const res = await fetch(item.streamUrl);
+        const res = await fetch(targetUrl);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         buffer = await res.arrayBuffer();
+      }
+
+      // Sanity check buffer bytes before loading into That Open Engine
+      const raw = new Uint8Array(buffer);
+      const peek = new TextDecoder("latin1")
+        .decode(raw.subarray(0, Math.min(raw.length, 512)))
+        .trimStart()
+        .toLowerCase();
+
+      if (!raw.length || peek.startsWith("<!doctype") || peek.startsWith("<html")) {
+        throw new Error(
+          `BIMserver.center returned an HTML page instead of IFC file bytes for "${item.ifcFileName}".`
+        );
       }
 
       await this.onLoadIfcRequested.trigger({ buffer, fileName: item.ifcFileName });

@@ -240,7 +240,7 @@ export class GISLayer3D {
 
     // 6. Provide camera & resolution context
     const camera = world.camera.three as THREE.PerspectiveCamera;
-    const renderer = world.renderer.three as THREE.WebGLRenderer;
+    const renderer = world.renderer?.three as THREE.WebGLRenderer | undefined;
     if (camera && renderer) {
       tiles.setCamera(camera);
       tiles.setResolutionFromRenderer(camera, renderer);

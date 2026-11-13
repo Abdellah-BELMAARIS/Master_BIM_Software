@@ -192,7 +192,7 @@ export const viewportToolbarTemplate: BUI.StatefullComponent<ViewportToolbarStat
         try {
           components
             .get(SmartViews)
-            .currentState.colors.items.set(hexColor, { "3d": new Set([selectedMesh.id]) });
+            .currentState?.colors?.items?.set(hexColor, { "3d": new Set([selectedMesh.id]) });
         } catch { }
       }
 

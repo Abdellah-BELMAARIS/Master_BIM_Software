@@ -58,6 +58,88 @@ export interface CypeAuthConfig {
 const CYPE_STORAGE_KEY = "toc_cype_bimserver_config_v1";
 const CYPE_PENDING_AUTH_KEY = "toc_cype_pending_auth";
 
+function isBimserverWebPageUrl(val: string): boolean {
+  if (!val || typeof val !== "string") return false;
+  const s = val.toLowerCase();
+  return (
+    s.includes("/en/file/") ||
+    s.includes("/es/file/") ||
+    s.includes("/fr/file/") ||
+    s.includes("/pt/file/") ||
+    s.includes("/it/file/") ||
+    s.includes("/file/") ||
+    s.includes("/view/") ||
+    s.includes("/login")
+  );
+}
+
+function isValidDownloadUrl(val: string): boolean {
+  if (!val || typeof val !== "string") return false;
+  const s = val.trim();
+  if (!s.startsWith("http://") && !s.startsWith("https://")) return false;
+  if (isBimserverWebPageUrl(s)) return false;
+  return true;
+}
+
+function extractBimserverDownloadUrl(item: any): string {
+  if (!item) return "";
+  if (typeof item === "string") {
+    return isValidDownloadUrl(item) ? item.trim() : "";
+  }
+
+  const candidateArrays = [
+    item.urls,
+    item.links,
+    item.download_urls,
+    item.downloadUrls,
+    item.mirrors,
+    item.files,
+  ];
+
+  for (const arr of candidateArrays) {
+    if (Array.isArray(arr) && arr.length > 0) {
+      for (const entry of arr) {
+        if (typeof entry === "string" && isValidDownloadUrl(entry)) {
+          return entry.trim();
+        } else if (entry && typeof entry === "object") {
+          const extracted = extractBimserverDownloadUrl(entry);
+          if (extracted && isValidDownloadUrl(extracted)) return extracted;
+        }
+      }
+    }
+  }
+
+  const stringFields = [
+    item.url,
+    item.download_url,
+    item.url_download,
+    item.file_url,
+    item.ifc_url,
+    item.link,
+    item.streamUrl,
+    item.stream_url,
+    item.href,
+    item.uri,
+  ];
+
+  for (const field of stringFields) {
+    if (typeof field === "string" && isValidDownloadUrl(field)) {
+      return field.trim();
+    }
+  }
+
+  if (item.file && typeof item.file === "object") {
+    const fUrl = extractBimserverDownloadUrl(item.file);
+    if (fUrl && isValidDownloadUrl(fUrl)) return fUrl;
+  }
+  if (item.document && typeof item.document === "object") {
+    const dUrl = extractBimserverDownloadUrl(item.document);
+    if (dUrl && isValidDownloadUrl(dUrl)) return dUrl;
+  }
+
+  return "";
+}
+
 const SANDBOX_PROJECTS: CypeProject[] = [
   {
     id: "cype-proj-aurora",
@@ -507,13 +589,20 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
     const parsed: CypeContributionItem[] = [];
 
     for (const c of records) {
-      const docs: any[] = Array.isArray(c.documents) ? c.documents : [];
-      const ifcDoc = docs.find((d) => String(d.name || "").toLowerCase().endsWith(".ifc")) || docs[0];
+      const docs: any[] = Array.isArray(c.documents)
+        ? c.documents
+        : Array.isArray(c.documents?.records)
+        ? c.documents.records
+        : Array.isArray(c.files)
+        ? c.files
+        : [];
+      const ifcDoc = docs.find((d) => String(d?.name || d?.file_name || d?.filename || "").toLowerCase().endsWith(".ifc")) || docs[0];
+      const docUrl = extractBimserverDownloadUrl(ifcDoc) || extractBimserverDownloadUrl(c);
       const modTs = c.date_last_change || c.date_create;
       parsed.push({
         id: String(c.id),
         projectId,
-        name: ifcDoc?.name || c.name || `Contribution_${c.id}.ifc`,
+        name: ifcDoc?.name || ifcDoc?.file_name || c.name || `Contribution_${c.id}.ifc`,
         appSource: c.application?.name || "CYPE OpenBIM",
         discipline: String(c.name || "").toLowerCase().includes("mep")
           ? "MEP"
@@ -525,9 +614,9 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
           ? `${(Number(ifcDoc.size) / (1024 * 1024)).toFixed(1)} MB`
           : "Cloud IFC",
         modifiedAt: modTs ? new Date(Number(modTs) * 1000).toLocaleDateString() : "Recent",
-        ifcFileName: ifcDoc?.name || `${(c.name || "cype_model").replace(/\s+/g, "_")}.ifc`,
-        streamUrl: ifcDoc?.url || "",
-        isRemoteBinary: Boolean(ifcDoc?.url && String(ifcDoc.url).startsWith("http")),
+        ifcFileName: ifcDoc?.name || ifcDoc?.file_name || `${(c.name || "cype_model").replace(/\s+/g, "_")}.ifc`,
+        streamUrl: docUrl,
+        isRemoteBinary: Boolean(docUrl && String(docUrl).startsWith("http")),
       });
     }
 
@@ -596,7 +685,7 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
    * and triggers load into That Open Engine WebIFC viewer.
    */
   async loadContributionIfc(item: CypeContributionItem) {
-    if (!item.streamUrl) {
+    if (!item.streamUrl || isBimserverWebPageUrl(item.streamUrl)) {
       this.syncStatus = `Contribution "${item.name}" has no downloadable IFC document URL.`;
       this.onStateChanged.trigger();
       return;
@@ -609,21 +698,28 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
     try {
       let buffer: ArrayBuffer;
       if (item.isRemoteBinary && this.auth.mode === "live-cype") {
-        const res = await fetch(this.resolveFunctionUrl("cypeDownloadFile"), {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ fileUrl: item.streamUrl, sessionId: this.auth.sessionId.trim() }),
-        });
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok || !data?.base64) {
-          throw new Error(data?.error || `HTTP ${res.status}`);
+        try {
+          const res = await fetch(this.resolveFunctionUrl("cypeDownloadFile"), {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ fileUrl: item.streamUrl, sessionId: this.auth.sessionId.trim() }),
+          });
+          const data = await res.json().catch(() => ({}));
+          if (!res.ok || !data?.base64) {
+            throw new Error(data?.error || `HTTP ${res.status}`);
+          }
+          const binary = atob(data.base64);
+          const bytes = new Uint8Array(binary.length);
+          for (let i = 0; i < binary.length; i++) {
+            bytes[i] = binary.charCodeAt(i);
+          }
+          buffer = bytes.buffer;
+        } catch (proxyErr) {
+          console.warn("[CYPE] Proxy download failed, falling back to direct fetch:", proxyErr);
+          const directRes = await fetch(item.streamUrl);
+          if (!directRes.ok) throw proxyErr;
+          buffer = await directRes.arrayBuffer();
         }
-        const binary = atob(data.base64);
-        const bytes = new Uint8Array(binary.length);
-        for (let i = 0; i < binary.length; i++) {
-          bytes[i] = binary.charCodeAt(i);
-        }
-        buffer = bytes.buffer;
       } else {
         const res = await fetch(item.streamUrl);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);

@@ -3,6 +3,7 @@ const fs = require("node:fs");
 const http = require("node:http");
 const path = require("node:path");
 const { handleCypeRequest } = require("./cype-proxy.cjs");
+const { handleDbRequest } = require("./local-db.cjs");
 
 const rendererPort = 5174;
 const rendererRoot = path.resolve(__dirname, "..", "dist");
@@ -31,11 +32,20 @@ const isMissingPath = (error) =>
 const isTrustedCypeUrl = (value) => {
   try {
     const url = new URL(value);
-    return url.protocol === "https:" &&
-      (url.hostname === "bimserver.center" ||
-        url.hostname.endsWith(".bimserver.center") ||
-        url.hostname === "cype.com" ||
-        url.hostname.endsWith(".cype.com"));
+    const h = url.hostname.toLowerCase();
+    return (
+      url.protocol === "https:" &&
+      (h === "bimserver.center" ||
+        h.endsWith(".bimserver.center") ||
+        h === "cype.com" ||
+        h.endsWith(".cype.com") ||
+        h === "cype.es" ||
+        h.endsWith(".cype.es") ||
+        h.endsWith(".amazonaws.com") ||
+        h.endsWith(".cloudfront.net") ||
+        h.endsWith(".googleapis.com") ||
+        h.endsWith(".blob.core.windows.net"))
+    );
   } catch {
     return false;
   }
@@ -64,6 +74,11 @@ const startRendererServer = () =>
         return;
       }
 
+      if (pathname === "/api/db") {
+        await handleDbRequest(request, response);
+        return;
+      }
+
       if (
         pathname === "/cypeLogin" ||
         pathname === "/cypeExchangeSession" ||
@@ -81,6 +96,7 @@ const startRendererServer = () =>
 
       const requestedPath = pathname === "/" ? "/viewer/index.html" : pathname;
       const candidate = resolveInside(rendererRoot, requestedPath);
+
       if (!candidate) {
         response.writeHead(403).end("Forbidden");
         return;
@@ -88,19 +104,24 @@ const startRendererServer = () =>
 
       const viewerCandidate = resolveInside(path.join(rendererRoot, "viewer"), requestedPath);
       const candidates = [candidate];
+
       if (viewerCandidate && viewerCandidate !== candidate) candidates.push(viewerCandidate);
 
       const findFile = async () => {
         for (const filePath of candidates) {
           try {
             const stat = await fs.promises.stat(filePath);
-            if (stat.isFile()) return filePath;
-            if (stat.isDirectory()) {
+
+      if (stat.isFile()) return filePath;
+
+      if (stat.isDirectory()) {
               const indexPath = path.join(filePath, "index.html");
-              if ((await fs.promises.stat(indexPath)).isFile()) return indexPath;
+
+      if ((await fs.promises.stat(indexPath)).isFile()) return indexPath;
             }
           } catch (error) {
-            if (!isMissingPath(error)) throw error;
+
+      if (!isMissingPath(error)) throw error;
           }
         }
 
@@ -109,7 +130,8 @@ const startRendererServer = () =>
           await fs.promises.access(viewerIndex);
           return viewerIndex;
         } catch (error) {
-          if (isMissingPath(error)) return path.join(rendererRoot, "index.html");
+
+      if (isMissingPath(error)) return path.join(rendererRoot, "index.html");
           throw error;
         }
       };
@@ -126,7 +148,8 @@ const startRendererServer = () =>
             if (!response.headersSent) response.writeHead(404);
             response.end("Not found");
           });
-          if (request.method === "HEAD") {
+
+      if (request.method === "HEAD") {
             response.end();
           } else {
             stream.pipe(response);
@@ -141,6 +164,7 @@ const startRendererServer = () =>
     server.once("error", reject);
     server.listen(rendererPort, "127.0.0.1", () => {
       const address = server.address();
+
       if (!address || typeof address === "string") {
         server.close();
         reject(new Error("Could not determine the local renderer server address"));
@@ -195,10 +219,12 @@ app.whenReady().then(async () => {
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       const url = process.env.VITE_DEV_SERVER_URL;
+
       if (url) void createWindow(url);
       else if (rendererServer) {
         const address = rendererServer.address();
-        if (address && typeof address !== "string") void createWindow(`http://127.0.0.1:${address.port}/`);
+
+      if (address && typeof address !== "string") void createWindow(`http://127.0.0.1:${address.port}/`);
       }
     }
   });

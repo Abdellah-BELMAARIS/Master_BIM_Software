@@ -13,6 +13,7 @@ export interface CypeSectionState {
   components: OBC.Components;
   projectId?: string;
   activeTab?: "models" | "issues" | "auth";
+  viewMode?: "table" | "cards";
   disciplineFilter?: "All" | CypeContributionItem["discipline"];
   searchQuery?: string;
   showUploadForm?: boolean;
@@ -231,14 +232,110 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
               <span style="font-size: 0.66rem; font-weight: 700; color: #94a3b8; padding: 4px 8px; border-radius: 6px; background: #18191d; border: 1px solid rgba(255, 255, 255, 0.08); white-space: nowrap;">
                 ${visibleDocs.length} / ${allDocs.length}
               </span>
+              ${visibleDocs.length > 0
+                ? BUI.html`
+                    <button
+                      type="button"
+                      ?disabled=${Boolean(cype.loadingDocId)}
+                      @click=${async () => {
+                        for (const doc of visibleDocs) {
+                          await cype.loadContributionIfc(doc);
+                        }
+                      }}
+                      title="Federate all currently filtered IFC models into the 3D viewer"
+                      style="padding: 5px 9px; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.35); background: rgba(56, 189, 248, 0.12); color: #7dd3fc; font-size: 0.66rem; font-weight: 700; cursor: pointer; white-space: nowrap;"
+                    >
+                      Load All
+                    </button>
+                  `
+                : ""}
+              <button
+                type="button"
+                @click=${() => update({ viewMode: (state.viewMode || "table") === "table" ? "cards" : "table" })}
+                title="Switch between Table and Card view"
+                style="padding: 5px 8px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.12); background: #18191d; color: #e2e8f0; font-size: 0.66rem; font-weight: 700; cursor: pointer; white-space: nowrap;"
+              >
+                ${(state.viewMode || "table") === "table" ? "Cards" : "Table"}
+              </button>
             </div>
 
             <!-- OpenBIM Contributions Cards -->
             <div style="display: flex; flex-direction: column; gap: 8px; flex: 1; overflow-y: auto; padding-right: 2px;">
               ${visibleDocs.length === 0
                 ? BUI.html`
-                    <div style="padding: 24px 16px; text-align: center; border-radius: 10px; border: 1px dashed rgba(148, 163, 184, 0.25); font-size: 0.72rem; color: #64748b;">
-                      No OpenBIM IFC contributions match this filter yet.
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 22px 16px; text-align: center; border-radius: 10px; background: #121316; border: 1px dashed rgba(255, 255, 255, 0.14); font-size: 0.72rem; color: #94a3b8;">
+                      <span class="material-icons-round" style="font-size: 22px; color: #64748b;">cloud_off</span>
+                      <div>
+                        ${isLiveMode && !sessionHealthy
+                          ? "Sign in to BIMserver.center to load your cloud projects and IFC models."
+                          : allDocs.length === 0
+                          ? "This project has no OpenBIM IFC contributions yet."
+                          : "No models match your current search or discipline filter."}
+                      </div>
+                      <div style="display: flex; gap: 6px; flex-wrap: wrap; justify-content: center;">
+                        ${isLiveMode && !sessionHealthy
+                          ? BUI.html`
+                              <button
+                                type="button"
+                                @click=${() => update({ activeTab: "auth" })}
+                                style="padding: 5px 10px; border-radius: 6px; border: none; background: #0284c7; color: #fff; font-size: 0.68rem; font-weight: 700; cursor: pointer;"
+                              >Go to CYPE Auth →</button>
+                            `
+                          : allDocs.length === 0
+                          ? BUI.html`
+                              <button
+                                type="button"
+                                @click=${() => void cype.syncLiveWorkspace()}
+                                style="padding: 5px 10px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.14); background: #18191d; color: #e2e8f0; font-size: 0.68rem; font-weight: 700; cursor: pointer;"
+                              >↻ Sync Workspace</button>
+                            `
+                          : BUI.html`
+                              <button
+                                type="button"
+                                @click=${() => update({ disciplineFilter: "All", searchQuery: "" })}
+                                style="padding: 5px 10px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.14); background: #18191d; color: #e2e8f0; font-size: 0.68rem; font-weight: 700; cursor: pointer;"
+                              >Clear Filters</button>
+                            `}
+                      </div>
+                    </div>
+                  `
+                : (state.viewMode || "table") === "table"
+                ? BUI.html`
+                    <div style="border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1); background: #121316; overflow: auto;">
+                      <table style="width: 100%; border-collapse: collapse; font-size: 0.69rem; text-align: left;">
+                        <thead>
+                          <tr style="background: #18191d; color: #94a3b8; border-bottom: 1px solid rgba(255, 255, 255, 0.08);">
+                            <th style="padding: 7px 9px; font-weight: 700;">Model</th>
+                            <th style="padding: 7px 6px; font-weight: 700;">Disc.</th>
+                            <th style="padding: 7px 6px; font-weight: 700;">Rev</th>
+                            <th style="padding: 7px 6px; font-weight: 700;">Updated</th>
+                            <th style="padding: 7px 9px; font-weight: 700; text-align: right;">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          ${visibleDocs.map((doc) => {
+                            const isLoading = cype.loadingDocId === doc.id;
+                            const accent = DISCIPLINE_ACCENT[doc.discipline] || "#38bdf8";
+                            return BUI.html`
+                              <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+                                <td style="padding: 7px 9px; color: #f8fafc; font-weight: 600; word-break: break-word;">${doc.name}</td>
+                                <td style="padding: 7px 6px; color: ${accent}; font-weight: 700; white-space: nowrap;">${doc.discipline}</td>
+                                <td style="padding: 7px 6px; color: #94a3b8; white-space: nowrap;">${doc.version}</td>
+                                <td style="padding: 7px 6px; color: #64748b; white-space: nowrap;">${doc.modifiedAt}</td>
+                                <td style="padding: 7px 9px; text-align: right; white-space: nowrap;">
+                                  <button
+                                    type="button"
+                                    @click=${() => cype.loadContributionIfc(doc)}
+                                    style="padding: 4px 8px; border-radius: 6px; border: none; background: #0284c7; color: #fff; font-size: 0.65rem; font-weight: 700; cursor: pointer;"
+                                  >
+                                    ${isLoading ? "Loading..." : "Load 3D"}
+                                  </button>
+                                </td>
+                              </tr>
+                            `;
+                          })}
+                        </tbody>
+                      </table>
                     </div>
                   `
                 : visibleDocs.map((doc) => {

@@ -19,8 +19,51 @@ export class ProjectsManager {
     onProjectDeleted: (id: string) => void = () => {};
     onProjectsChanged: (projects: Project[]) => void = () => {};
 
+    private static readonly STORAGE_KEY = "toc_projects_cache_v1";
+
     constructor() {
-        // Lesson 4.3: Hardcoded projects cleared; projects are now dynamically retrieved from Cloud Firestore
+        this.loadFromLocalStorage();
+    }
+
+    private saveToLocalStorage(): void {
+        try {
+            const payload = this.list.map((p) => ({
+                id: p.id,
+                name: p.name,
+                description: p.description,
+                userRole: p.userRole,
+                status: p.status,
+                finishDate: p.finishDate instanceof Date ? p.finishDate.toISOString() : p.finishDate,
+                cost: p.cost,
+                progress: p.progress,
+                modelKey: (p as any).modelKey || p.modelType,
+            }));
+            localStorage.setItem(ProjectsManager.STORAGE_KEY, JSON.stringify(payload));
+            void fetch("/api/db", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ table: "projects", data: payload }),
+            }).catch(() => {});
+        } catch {
+            // ignore storage quota errors
+        }
+    }
+
+    private loadFromLocalStorage(): void {
+        try {
+            const raw = localStorage.getItem(ProjectsManager.STORAGE_KEY);
+            if (!raw) return;
+            const parsed = JSON.parse(raw);
+            if (!Array.isArray(parsed)) return;
+            for (const item of parsed) {
+                if (item && typeof item.name === "string" && !this.getProject(item.id)) {
+                    const proj = new Project(item, item.id);
+                    this.list.push(proj);
+                }
+            }
+        } catch {
+            // ignore malformed cache
+        }
     }
 
     // Creates a new project and pushes to list (UI card is rendered by React <ProjectCard />)
@@ -47,6 +90,7 @@ export class ProjectsManager {
 
         const project = new Project(data, id);
         this.list.push(project);
+        this.saveToLocalStorage();
         this.onProjectCreated(project);
         this.onProjectsChanged([...this.list]);
         return project;
@@ -93,6 +137,7 @@ export class ProjectsManager {
         project.finishDate = isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
         project.cost = data.cost ?? project.cost;
         project.progress = data.progress ?? project.progress;
+        this.saveToLocalStorage();
         if (data.modelType) {
             project.modelType = data.modelType;
         }
@@ -346,6 +391,7 @@ export class ProjectsManager {
             return project.id !== id;
         });
         this.list = remaining;
+        this.saveToLocalStorage();
         this.onProjectDeleted(id);
         this.onProjectsChanged([...this.list]);
     }

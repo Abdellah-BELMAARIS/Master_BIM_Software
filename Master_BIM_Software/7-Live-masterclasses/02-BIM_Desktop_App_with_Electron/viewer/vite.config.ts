@@ -4,12 +4,17 @@ import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
 const { handleCypeRequest } = require("../electron/cype-proxy.cjs");
+const { handleDbRequest } = require("../electron/local-db.cjs");
 
 const cypeDevProxyPlugin = (): Plugin => ({
   name: "cype-dev-proxy",
   configureServer(server) {
     server.middlewares.use(async (req, res, next) => {
       const pathname = (req.url || "").split("?")[0];
+      if (pathname === "/api/db") {
+        await handleDbRequest(req, res);
+        return;
+      }
       if (
         pathname === "/cypeLogin" ||
         pathname === "/cypeExchangeSession" ||

@@ -575,15 +575,16 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
 
                 // Auto-hydrate saved coordination viewpoints from Cloud Firestore
                 if (project?.id) {
+                    const projectId = project.id;
                     const smartViews = components.get(SmartViews);
-                    smartViews.loadFromFirestore(project.id).catch((err) => {
+                    smartViews.loadFromFirestore(projectId).catch((err) => {
                         console.warn("[SmartViews] Error loading from Firestore:", err);
                     });
                     smartViews.onViewCreated.add(() => {
-                        smartViews.saveToFirestore(project.id);
+                        smartViews.saveToFirestore(projectId);
                     });
                     smartViews.onViewDeleted.add(() => {
-                        smartViews.saveToFirestore(project.id);
+                        smartViews.saveToFirestore(projectId);
                     });
                 }
             } catch (err) {

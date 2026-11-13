@@ -2,6 +2,12 @@ node_modules
 dist
 .firebase
 .env
+.env.*
 .env.local
 .DS_Store
+**/service-account*.json
+**/resources/*.json
+!**/resources/**/package.json
+**/*.log
+**/firebase-debug.log*
 
