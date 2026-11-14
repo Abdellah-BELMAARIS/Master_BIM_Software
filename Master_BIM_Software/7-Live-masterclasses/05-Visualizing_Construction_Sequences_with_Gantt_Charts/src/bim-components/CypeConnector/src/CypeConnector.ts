@@ -748,8 +748,19 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
         body: method !== "GET" && body ? JSON.stringify(body) : undefined,
       }
     );
-    if (!ok) {
-      throw new Error(data?.error || data?.message || `HTTP ${status}`);
+    const hasApiError =
+      (data?.error !== undefined && data?.error !== null && data?.error !== false && data?.error !== 0 && data?.error !== "") ||
+      String(data?.status || "").toUpperCase() === "ERROR";
+
+    if (!ok || hasApiError) {
+      const rawErr = data?.error ?? data?.message;
+      const errMsg =
+        typeof rawErr === "string"
+          ? rawErr
+          : rawErr && typeof rawErr === "object"
+            ? rawErr.message || rawErr.description || JSON.stringify(rawErr)
+            : `HTTP ${status} (${JSON.stringify(data).slice(0, 160)})`;
+      throw new Error(errMsg);
     }
     return data;
   }
@@ -1247,11 +1258,29 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
         this.syncStatus = `Creating BIMserver.center contribution "${cleanName}"...`;
         this.onStateChanged.trigger();
 
-        const created = await this.callProxy("/contributions", "POST", {
-          project_id: Number(this.selectedProjectId) || this.selectedProjectId,
-          name: cleanName,
-          description: `Published from Master BIM Viewer (${resolvedDiscipline} · ${resolvedFileName})`,
-        });
+        let created: any;
+        try {
+          created = await this.callProxy("/contributions", "POST", {
+            project_id: Number(this.selectedProjectId) || this.selectedProjectId,
+            name: cleanName,
+            description: `Published from Master BIM Viewer (${resolvedDiscipline} · ${resolvedFileName})`,
+          });
+        } catch (primaryErr: any) {
+          if (this.selectedProjectId) {
+            created = await this.callProxy(
+              `/projects/${encodeURIComponent(this.selectedProjectId)}/contributions`,
+              "POST",
+              {
+                name: cleanName,
+                description: `Published from Master BIM Viewer (${resolvedDiscipline} · ${resolvedFileName})`,
+              }
+            ).catch(() => {
+              throw primaryErr;
+            });
+          } else {
+            throw primaryErr;
+          }
+        }
 
         let contributionId = String(
           created?.id ??
@@ -1307,8 +1336,10 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
         if (fileBlob) {
           if (!contributionId) {
             throw new Error(
-              `Contribution created, but BIMserver.center did not return a contribution ID (keys: ${
-                created && typeof created === "object" ? Object.keys(created).join(", ") || "empty" : typeof created
+              `BIMserver.center did not return a contribution ID (response: ${
+                created && typeof created === "object"
+                  ? JSON.stringify(created).slice(0, 180)
+                  : String(created)
               }).`
             );
           }
