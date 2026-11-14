@@ -271,5 +271,18 @@
     "ifcFileName": "CYPECAD_AIDA_002.ifc",
     "streamUrl": "",
     "isRemoteBinary": false
+  },
+  {
+    "id": "78593044",
+    "projectId": "1362312",
+    "name": "CONNECT_AIDA_001",
+    "appSource": "CYPE OpenBIM",
+    "discipline": "Architecture",
+    "version": "Rev 1",
+    "sizeLabel": "Cloud IFC",
+    "modifiedAt": "11/13/2026",
+    "ifcFileName": "CONNECT_AIDA_001.ifc",
+    "streamUrl": "",
+    "isRemoteBinary": false
   }
 ]
