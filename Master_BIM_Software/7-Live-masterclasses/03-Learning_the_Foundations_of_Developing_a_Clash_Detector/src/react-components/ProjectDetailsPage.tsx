@@ -2517,7 +2517,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                 <div className="toc-dock-header">
                                     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                                         <span className="material-icons-round" style={{ color: "#d8b4fe", fontSize: "18px" }}>auto_fix_high</span>
-                                        <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f8fafc" }}>BIM Pro Studio (Clash QA · 4D · Export)</span>
+                                        <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f8fafc" }}>BIM Pro Studio (Clash QA · Export)</span>
                                     </div>
                                     {renderDockHeaderActions("Close Pro Studio")}
                                 </div>
