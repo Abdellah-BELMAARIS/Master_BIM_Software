@@ -750,14 +750,20 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
               </div>
             </div>
 
-            <!-- Card 3: App Credentials & Session Keys -->
-            <div style="display: flex; flex-direction: column; gap: 9px; padding: 11px 12px; border-radius: 10px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(148, 163, 184, 0.22);">
+            <!-- Card 3: Advanced Developer App Credentials & Session Keys -->
+            <details ?open=${!cype.hasBuiltInAppCredentials()} style="padding: 10px 12px; border-radius: 10px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(148, 163, 184, 0.22);">
+              <summary style="cursor: pointer; font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8; user-select: none;">
+                ${cype.hasBuiltInAppCredentials() ? "Advanced: Custom App Credentials & Token" : "App Credentials (Required for Login)"}
+              </summary>
+              <div style="display: flex; flex-direction: column; gap: 9px; margin-top: 9px;">
               <div style="display: flex; justify-content: space-between; align-items: center;">
-                <span style="font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8;">App Credentials</span>
+                <span style="font-size: 0.64rem; color: #64748b;">
+                  ${cype.hasBuiltInAppCredentials() ? "Built-in app login is active for all users." : "Configure VITE_CYPE_CLIENT_ID & VITE_CYPE_CLIENT_SECRET in .env.local so users can sign in with 1 click."}
+                </span>
                 <button
                   type="button"
                   @click=${() => update({ showSecrets: !state.showSecrets })}
-                  style="display: inline-flex; align-items: center; gap: 4px; background: transparent; border: none; color: #38bdf8; font-size: 0.66rem; font-weight: 600; cursor: pointer;"
+                  style="display: inline-flex; align-items: center; gap: 4px; background: transparent; border: none; color: #38bdf8; font-size: 0.66rem; font-weight: 600; cursor: pointer; flex-shrink: 0;"
                 >
                   <span class="material-icons-round" style="font-size: 14px;">${state.showSecrets ? "visibility_off" : "visibility"}</span>
                   <span>${state.showSecrets ? "Hide" : "Show"}</span>
@@ -822,7 +828,8 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
                     `
             : ""}
               </div>
-            </div>
+              </div>
+            </details>
             <p style="margin: 0; color: #64748b; font-size: 0.64rem; line-height: 1.4;">
               Client secrets and bearer tokens stay in memory and are cleared when the viewer closes. Use only a trusted HTTPS backend; credentials are never sent directly to BIMserver.center from this UI.
             </p>

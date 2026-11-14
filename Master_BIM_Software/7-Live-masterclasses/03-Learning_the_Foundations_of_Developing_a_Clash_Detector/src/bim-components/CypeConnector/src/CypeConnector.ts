@@ -26,6 +26,8 @@ export const CYPE_PROXY_ENDPOINT =
 export const CYPE_USER_PROFILE_URL = "https://bimserver.center/en/";
 export const CYPE_DEV_PORTAL_URL = "https://developers.bimserver.center/";
 export const CYPE_API_BASE = "https://apis.bimserver.center/v1/BIMSERVER";
+const ENV_CYPE_CLIENT_ID = import.meta.env.VITE_CYPE_CLIENT_ID?.trim() || "";
+const ENV_CYPE_CLIENT_SECRET = import.meta.env.VITE_CYPE_CLIENT_SECRET?.trim() || "";
 const CYPE_DEFAULT_SCOPES = [
   "DATA_USER_READ",
   "PROJECTS_USER_READ",
@@ -505,6 +507,10 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
     return true;
   }
 
+  hasBuiltInAppCredentials(): boolean {
+    return Boolean(ENV_CYPE_CLIENT_ID && ENV_CYPE_CLIENT_SECRET);
+  }
+
   hasPendingAuthorization(): boolean {
     try {
       const pending = sessionStorage.getItem(CYPE_PENDING_AUTH_KEY);
@@ -527,12 +533,12 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
 
     try {
       this.assertSafeProxyEndpoint();
-      if (!this.auth.clientId.trim() || !this.auth.clientSecret.trim()) {
-        throw new Error("Enter your CYPE app client ID and secret to connect.");
+      const clientId = this.auth.clientId.trim() || ENV_CYPE_CLIENT_ID;
+      const clientSecret = this.auth.clientSecret.trim() || ENV_CYPE_CLIENT_SECRET;
+      if (!clientId || !clientSecret) {
+        throw new Error("CYPE app credentials are not configured. Set VITE_CYPE_CLIENT_ID / VITE_CYPE_CLIENT_SECRET or enter them under Advanced.");
       }
       const redirectUri = `${window.location.origin}/`;
-      const clientId = this.auth.clientId.trim();
-      const clientSecret = this.auth.clientSecret.trim();
       const { ok, status, data } = await this.fetchJsonWithDirectFallback(
         this.resolveFunctionUrl("cypeLogin"),
         { clientId, clientSecret, redirectUri },
@@ -649,11 +655,11 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
     if (!this.auth.refreshToken) {
       throw new Error("No refresh_token stored yet.");
     }
-    if (!this.auth.clientSecret.trim()) {
-      throw new Error("Re-enter your CYPE app secret to refresh the session.");
+    const clientId = this.auth.clientId.trim() || ENV_CYPE_CLIENT_ID;
+    const clientSecret = this.auth.clientSecret.trim() || ENV_CYPE_CLIENT_SECRET;
+    if (!clientId || !clientSecret) {
+      throw new Error("CYPE app credentials are required to refresh the session.");
     }
-    const clientId = this.auth.clientId.trim();
-    const clientSecret = this.auth.clientSecret.trim();
     const { ok, status, data } = await this.fetchJsonWithDirectFallback(
       this.resolveFunctionUrl("cypeExchangeSession"),
       { refreshToken: this.auth.refreshToken, clientId, clientSecret },
