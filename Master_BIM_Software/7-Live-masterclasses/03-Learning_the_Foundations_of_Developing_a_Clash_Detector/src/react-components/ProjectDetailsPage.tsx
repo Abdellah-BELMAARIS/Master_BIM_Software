@@ -34,6 +34,7 @@ import {
     CypeConnector,
 } from "../bim-components";
 import { IfcWalkController, WalkSpeedPreset } from "../bim-components/setup/src/walk-controller";
+import { clearAllModels } from "../bim-components/setup/src/model-layout";
 import { NavigationCube } from "./NavigationCube";
 
 export interface ProjectDetailsPageProps {
@@ -2066,6 +2067,25 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                     <span className="material-icons-round">upload_file</span>
                                     <span>Load IFC</span>
                                 </button>
+
+                                {hasActiveModel && (
+                                    <button
+                                        type="button"
+                                        className="viewer-header-btn"
+                                        onClick={async () => {
+                                            if (componentsRef.current) {
+                                                await clearAllModels(componentsRef.current);
+                                            }
+                                            setCustomIfcName(null);
+                                            setEngineReadyTick((t) => t + 1);
+                                        }}
+                                        title="Clear all loaded IFC / 3D models from the scene"
+                                        style={{ color: "#fca5a5" }}
+                                    >
+                                        <span className="material-icons-round">delete_sweep</span>
+                                        <span>Clear 3D</span>
+                                    </button>
+                                )}
                             </div>
 
                             {/* RIGHT GROUP: Organized Single-Row Pro Workflows, BIM Studio & Utilities */}

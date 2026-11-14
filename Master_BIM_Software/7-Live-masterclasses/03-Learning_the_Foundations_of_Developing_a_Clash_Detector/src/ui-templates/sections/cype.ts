@@ -13,6 +13,7 @@ import {
   arrangeModelsInGrid,
   clearAllModels,
   fitAllModelsCamera,
+  removeModelById,
   resetModelsOrigin,
 } from "../../bim-components/setup/src/model-layout";
 
@@ -83,7 +84,8 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
     const matchesSearch = !search || d.name.toLowerCase().includes(search);
     return matchesDisc && matchesSearch;
   });
-  const loadedModelCount = components.get(OBC.FragmentsManager).list.size;
+  const loadedModelIds = Array.from(components.get(OBC.FragmentsManager).list.keys());
+  const loadedModelCount = loadedModelIds.length;
 
   const allIssues = cype.getActiveIssues();
   const visibleIssues =
@@ -278,38 +280,58 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
 
             ${loadedModelCount > 0
           ? BUI.html`
-                  <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 6px 9px; border-radius: 8px; background: rgba(15, 23, 42, 0.72); border: 1px solid rgba(56, 189, 248, 0.22); flex-wrap: wrap;">
-                    <span style="font-size: 0.66rem; font-weight: 700; color: #7dd3fc;">
-                      3D Scene (${loadedModelCount} loaded)
-                    </span>
-                    <div style="display: flex; align-items: center; gap: 5px; flex-wrap: wrap;">
-                      <button
-                        type="button"
-                        @click=${() => void arrangeModelsInGrid(components)}
-                        title="Arrange loaded models in a clean non-overlapping grid"
-                        style="padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.3); background: rgba(56, 189, 248, 0.12); color: #7dd3fc; font-size: 0.64rem; font-weight: 700; cursor: pointer;"
-                      >Arrange</button>
-                      <button
-                        type="button"
-                        @click=${() => void resetModelsOrigin(components)}
-                        title="Align all loaded models back to shared origin (0,0,0)"
-                        style="padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.14); background: #18191d; color: #e2e8f0; font-size: 0.64rem; font-weight: 700; cursor: pointer;"
-                      >Origin</button>
-                      <button
-                        type="button"
-                        @click=${() => void fitAllModelsCamera(components)}
-                        title="Frame all loaded models in the 3D viewport"
-                        style="padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.14); background: #18191d; color: #e2e8f0; font-size: 0.64rem; font-weight: 700; cursor: pointer;"
-                      >Fit</button>
-                      <button
-                        type="button"
-                        @click=${async () => {
-                await clearAllModels(components);
-                update({});
-              }}
-                        title="Remove and dispose all loaded models from the 3D scene"
-                        style="padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(239, 68, 68, 0.35); background: rgba(239, 68, 68, 0.16); color: #fca5a5; font-size: 0.64rem; font-weight: 700; cursor: pointer;"
-                      >Clear 3D</button>
+                  <div style="display: flex; flex-direction: column; gap: 6px; padding: 7px 9px; border-radius: 8px; background: rgba(15, 23, 42, 0.72); border: 1px solid rgba(56, 189, 248, 0.22);">
+                    <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: wrap;">
+                      <span style="font-size: 0.66rem; font-weight: 700; color: #7dd3fc;">
+                        3D Scene (${loadedModelCount} loaded)
+                      </span>
+                      <div style="display: flex; align-items: center; gap: 5px; flex-wrap: wrap;">
+                        <button
+                          type="button"
+                          @click=${() => void arrangeModelsInGrid(components)}
+                          title="Arrange loaded models in a clean non-overlapping grid"
+                          style="padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.3); background: rgba(56, 189, 248, 0.12); color: #7dd3fc; font-size: 0.64rem; font-weight: 700; cursor: pointer;"
+                        >Arrange</button>
+                        <button
+                          type="button"
+                          @click=${() => void resetModelsOrigin(components)}
+                          title="Align all loaded models back to shared origin (0,0,0)"
+                          style="padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.14); background: #18191d; color: #e2e8f0; font-size: 0.64rem; font-weight: 700; cursor: pointer;"
+                        >Origin</button>
+                        <button
+                          type="button"
+                          @click=${() => void fitAllModelsCamera(components)}
+                          title="Frame all loaded models in the 3D viewport"
+                          style="padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.14); background: #18191d; color: #e2e8f0; font-size: 0.64rem; font-weight: 700; cursor: pointer;"
+                        >Fit</button>
+                        <button
+                          type="button"
+                          @click=${async () => {
+                  await clearAllModels(components);
+                  update({});
+                }}
+                          title="Remove and dispose all loaded models from the 3D scene"
+                          style="padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(239, 68, 68, 0.35); background: rgba(239, 68, 68, 0.16); color: #fca5a5; font-size: 0.64rem; font-weight: 700; cursor: pointer;"
+                        >Clear 3D</button>
+                      </div>
+                    </div>
+                    <div style="display: flex; flex-wrap: wrap; gap: 4px;">
+                      ${loadedModelIds.map(
+                (id) => BUI.html`
+                          <span style="display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; border-radius: 999px; background: rgba(30, 41, 59, 0.9); border: 1px solid rgba(148, 163, 184, 0.25); font-size: 0.62rem; color: #e2e8f0; max-width: 100%;">
+                            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 150px;">${id}</span>
+                            <button
+                              type="button"
+                              @click=${async () => {
+                    await removeModelById(components, id);
+                    update({});
+                  }}
+                              title="Delete ${id} from 3D scene"
+                              style="background: transparent; border: none; color: #fca5a5; cursor: pointer; padding: 0 2px; font-size: 0.72rem; font-weight: 700; line-height: 1;"
+                            >&times;</button>
+                          </span>
+                        `
+              )}
                     </div>
                   </div>
                 `
