@@ -1198,18 +1198,14 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
     }
   }
 
-  private async uploadContributionFile(contributionId: string, fileBlob: Blob, fileName: string): Promise<void> {
-    const formData = new FormData();
-    formData.append("id", contributionId);
-    formData.append("contribution_id", contributionId);
-    formData.append("file", fileBlob, fileName);
-
-    const res = await fetch(`${CYPE_API_BASE}/apiupload.asp`, {
+  private async postContainerAction(url: string, body?: BodyInit): Promise<void> {
+    const res = await fetch(url, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${this.auth.sessionId.trim()}`,
+        ...(body ? { "Content-Type": "application/octet-stream" } : {}),
       },
-      body: formData,
+      body,
     });
 
     const rawText = await res.text();
@@ -1226,6 +1222,17 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
 
     if (!res.ok || hasUploadErr) {
       throw new Error(this.formatApiError(parsed, `File upload HTTP ${res.status}`));
+    }
+  }
+
+  private async uploadToContributionContainer(containerUrl: string, fileBlob: Blob): Promise<void> {
+    const sep = containerUrl.includes("?") ? "&" : "?";
+    try {
+      await this.postContainerAction(`${containerUrl}${sep}document_index=0`, fileBlob);
+      await this.postContainerAction(`${containerUrl}${sep}endpoint=true`);
+    } catch (err) {
+      void this.postContainerAction(`${containerUrl}${sep}remove=true`).catch(() => {});
+      throw err;
     }
   }
 
@@ -1290,103 +1297,30 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
         const safeTitle = cleanName.replace(/[/\\:*?"<>|]/g, "-").slice(0, 100);
         const safeDesc = `Published from Master BIM Viewer (${resolvedDiscipline} - ${resolvedFileName})`.slice(0, 240);
         const projVal = Number(this.selectedProjectId) || this.selectedProjectId;
-        const attempts: Array<{ endpoint: string; body: Record<string, any> }> = [
-          ...(this.selectedProjectId
-            ? [
-                {
-                  endpoint: `/projects/${encodeURIComponent(this.selectedProjectId)}/contributions`,
-                  body: { name: safeTitle, description: safeDesc },
-                },
-              ]
-            : []),
-          {
-            endpoint: "/contributions",
-            body: { project_id: projVal, name: safeTitle, description: safeDesc },
-          },
-          {
-            endpoint: "/contributions",
-            body: { id_project: projVal, name: safeTitle, description: safeDesc },
-          },
-        ];
+        const docName = resolvedFileName || `${safeTitle.replace(/\s+/g, "_")}.ifc`;
 
-        let created: any;
-        let lastErr: any;
-        for (const attempt of attempts) {
-          try {
-            created = await this.callProxy(attempt.endpoint, "POST", attempt.body);
-            break;
-          } catch (err: any) {
-            lastErr = err;
-          }
-        }
-        if (!created) {
-          throw lastErr || new Error("BIMserver.center rejected contribution creation.");
-        }
+        const created = await this.callProxy("/contributions", "POST", {
+          project_id: projVal,
+          name: safeTitle,
+          description: safeDesc,
+          entity_validation_id: null,
+          documents: [{ name: docName }],
+        });
 
-        let contributionId = String(
-          created?.id ??
-            created?.contribution_id ??
-            created?.id_contribution ??
-            created?.record?.id ??
-            created?.data?.id ??
-            created?.result?.id ??
-            created?.contribution?.id ??
-            created?.records?.[0]?.id ??
-            (typeof created === "number" || typeof created === "string" ? created : "")
-        ).trim();
-
-        if (!contributionId && fileBlob) {
-          try {
-            const listRes = await this.callProxy(
-              `/projects/${encodeURIComponent(this.selectedProjectId)}/contributions?limit=100`
-            );
-            const rawRecords: any[] = Array.isArray(listRes?.records)
-              ? listRes.records
-              : Array.isArray(listRes)
-                ? listRes
-                : [];
-            const nameMatches = rawRecords
-              .filter((r) => String(r?.name || "").trim().toLowerCase() === cleanName.toLowerCase())
-              .sort((a, b) => (Number(b?.id) || 0) - (Number(a?.id) || 0));
-            if (nameMatches[0]?.id != null) {
-              contributionId = String(nameMatches[0].id).trim();
-            } else if (rawRecords.length > 0) {
-              const latest = [...rawRecords].sort(
-                (a, b) => (Number(b?.date_create) || Number(b?.id) || 0) - (Number(a?.date_create) || Number(a?.id) || 0)
-              )[0];
-              const createdSec = Number(latest?.date_create || 0);
-              if (createdSec > 0 && Math.abs(Date.now() / 1000 - createdSec) < 120 && latest?.id != null) {
-                contributionId = String(latest.id).trim();
-              }
-            }
-          } catch {
-            // Fall through to fetchProjectContributions fallback
-          }
-        }
-
-        if (!contributionId && fileBlob) {
-          await this.fetchProjectContributions(this.selectedProjectId);
-          const match = this.getActiveContributions().find(
-            (c) => c.name.trim().toLowerCase() === cleanName.toLowerCase()
-          );
-          if (match?.id) {
-            contributionId = String(match.id).trim();
-          }
-        }
-
+        const containerUrl = String(created?.url || "").trim();
         if (fileBlob) {
-          if (!contributionId) {
+          if (!containerUrl) {
             throw new Error(
-              `BIMserver.center did not return a contribution ID (response: ${
-                created && typeof created === "object"
-                  ? JSON.stringify(created).slice(0, 180)
-                  : String(created)
-              }).`
+              `BIMserver.center did not return an upload container URL (response: ${JSON.stringify(created).slice(0, 180)}).`
             );
           }
           this.syncStatus = `Uploading ${resolvedFileName} (${sizeLabel}) to BIMserver.center...`;
           this.onStateChanged.trigger();
-          await this.uploadContributionFile(contributionId, fileBlob, resolvedFileName);
+          await this.uploadToContributionContainer(containerUrl, fileBlob);
+        } else if (containerUrl) {
+          // Metadata-only contribution: close container with a tiny README note or endpoint
+          const readmeBlob = new Blob([`${safeTitle}\n${safeDesc}\n`], { type: "text/plain" });
+          await this.uploadToContributionContainer(containerUrl, readmeBlob);
         }
 
         await this.fetchProjectContributions(this.selectedProjectId);
