@@ -6,7 +6,6 @@ import { buildLuxuryVillaEnvironment, IVillaEnvironment } from "../../../react-c
 import { buildCarShowroomEnvironment, ICarEnvironment } from "../../../react-components/three/CarEnvironment";
 import { buildBridgeEnvironment, IBridgeEnvironment } from "../../../react-components/three/BridgeEnvironment";
 import { buildGearEnvironment, IGearEnvironment } from "../../../react-components/three/GearEnvironment";
-import { buildCubeEnvironment, ICubeEnvironment } from "../../../react-components/three/CubeEnvironment";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
 import { MTLLoader } from "three/examples/jsm/loaders/MTLLoader.js";
 
@@ -599,16 +598,8 @@ export async function loadProjectModel(
       cameraControls.setLookAt(19, 12, 21, 0, 4.8, 0, false);
     }
   } else {
-    // Default BIM Modular Pavilion
-    const cubeEnv: ICubeEnvironment = buildCubeEnvironment();
-    modelGroup.add(cubeEnv.group);
-    disposables.push(cubeEnv.dispose);
-    updateCallback = (elapsed: number) => {
-      cubeEnv.updatePavilion(elapsed);
-    };
-    if (cameraControls) {
-      cameraControls.setLookAt(10, 6.5, 11, 0, 1.8, 0, false);
-    }
+    // No matching preset or attached IFC/3D file: keep an empty workspace
+    console.log("[loadProjectModel] No preset or attached model; keeping empty workspace.");
   }
 
   return {
