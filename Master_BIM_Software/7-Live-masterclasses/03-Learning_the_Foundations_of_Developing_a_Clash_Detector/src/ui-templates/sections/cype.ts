@@ -465,7 +465,7 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
                 state.uploadModelId || (loadedModels.length === 0 && hasSceneGeometry ? "__scene__" : "");
               const alsoDownload = Boolean(state.alsoDownload);
               const canExportSource =
-                uploadSource === "glb"
+                uploadSource === "glb" || uploadSource === "ifc"
                   ? loadedModels.length > 0 || hasSceneGeometry
                   : loadedModels.length > 0;
 
@@ -516,6 +516,7 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
                         style="padding: 6px 8px; border-radius: 7px; background: #18191d; border: 1px solid rgba(255, 255, 255, 0.12); color: #f8fafc; font-size: 0.71rem;"
                       >
                         <option value="glb">Edited 3D Model (.glb)</option>
+                        <option value="ifc">OpenBIM IFC4 Model (.ifc)</option>
                         <option value="frag">Edited Fragments (.frag)</option>
                         <option value="file">Local File (.ifc / .bcf / .glb)</option>
                         <option value="metadata">Metadata Entry Only</option>
@@ -570,7 +571,7 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
                         `
                     : ""}
 
-                    ${uploadSource === "glb" || uploadSource === "frag"
+                    ${uploadSource === "glb" || uploadSource === "ifc" || uploadSource === "frag"
                   ? BUI.html`
                         <label style="display: flex; align-items: center; gap: 6px; font-size: 0.66rem; color: #94a3b8; cursor: pointer;">
                           <input
@@ -585,7 +586,7 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
                   : ""}
 
                     <div style="display: flex; gap: 6px;">
-                      ${uploadSource === "glb" || uploadSource === "frag"
+                      ${uploadSource === "glb" || uploadSource === "ifc" || uploadSource === "frag"
                   ? BUI.html`
                           <button
                             type="button"

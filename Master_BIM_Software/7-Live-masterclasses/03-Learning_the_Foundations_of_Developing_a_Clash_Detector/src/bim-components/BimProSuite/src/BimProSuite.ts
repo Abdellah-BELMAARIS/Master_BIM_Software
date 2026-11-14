@@ -3,6 +3,7 @@ import * as OBC from "@thatopen/components";
 import * as OBCF from "@thatopen/components-front";
 import { DataEnhancer, unwrapIfcAttr } from "../../DataEnhancer";
 import { SheetsSync } from "../../SheetsSync";
+import { CypeConnector } from "../../CypeConnector";
 import {
   ClashDetectionMode,
   ClashElementRecord,
@@ -68,6 +69,7 @@ export class BimProSuite extends OBC.Component implements OBC.Disposable {
   toleranceMeters = -0.02;
   clusterProximityMeters = 2.5;
   clashMetrics: ClashPipelineMetrics | null = null;
+  isIsolated = false;
   statusMessage = "Ready for 3D Clash QA, 4D Phasing & Property Export";
   isBusy = false;
 
@@ -382,6 +384,80 @@ export class BimProSuite extends OBC.Component implements OBC.Disposable {
 
     this.statusMessage = `Inspecting ${clash.id}: ${clash.aName} vs ${clash.bName} (${clash.overlapVolumeM3} m³)`;
     this.onStateChanged.trigger();
+  }
+
+  async isolateClashPair(clash: ClashResultItem) {
+    if (clash.modelId === "__scene__") {
+      await this.focusClash(clash);
+      return;
+    }
+    try {
+      const hider = this.components.get(OBC.Hider);
+      const bModel = clash.bModelId && clash.bModelId !== "__scene__" ? clash.bModelId : clash.modelId;
+      const map: OBC.ModelIdMap =
+        bModel === clash.modelId
+          ? { [clash.modelId]: new Set([clash.aLocalId, clash.bLocalId]) }
+          : {
+              [clash.modelId]: new Set([clash.aLocalId]),
+              [bModel]: new Set([clash.bLocalId]),
+            };
+      await hider.isolate(map);
+      this.isIsolated = true;
+      await this.focusClash(clash);
+      this.statusMessage = `Isolated ${clash.id} pair (${clash.aName} × ${clash.bName}).`;
+    } catch (err: any) {
+      this.statusMessage = `Isolation failed: ${err?.message || err}`;
+    }
+    this.onStateChanged.trigger();
+  }
+
+  async clearClashIsolation() {
+    try {
+      const hider = this.components.get(OBC.Hider);
+      await hider.set(true);
+      this.isIsolated = false;
+      this.statusMessage = "Restored full model visibility.";
+    } catch {
+      this.isIsolated = false;
+    }
+    this.onStateChanged.trigger();
+  }
+
+  async publishClashesToCype(targetClashes?: ClashResultItem[]) {
+    const list = (targetClashes && targetClashes.length > 0 ? targetClashes : this.clashes).slice(0, 10);
+    if (list.length === 0) {
+      this.statusMessage = "Run a Clash Scan first before publishing to CYPE Issues.";
+      this.onStateChanged.trigger();
+      return;
+    }
+
+    this.isBusy = true;
+    this.statusMessage = `Publishing ${list.length} clash(es) to CYPE Issues...`;
+    this.onStateChanged.trigger();
+
+    try {
+      const cype = this.components.get(CypeConnector);
+      for (const c of list) {
+        const pt = c.collisionPoint
+          ? ` @ (${c.collisionPoint.x.toFixed(1)}, ${c.collisionPoint.y.toFixed(1)}, ${c.collisionPoint.z.toFixed(1)})`
+          : "";
+        const title = `[${c.id}${c.clusterId ? `/${c.clusterId}` : ""}] ${c.aName} × ${c.bName} (${c.overlapVolumeM3} m³${pt})`;
+        const disc =
+          c.aCategory.toLowerCase().includes("pipe") ||
+          c.aCategory.toLowerCase().includes("duct") ||
+          c.bCategory.toLowerCase().includes("pipe") ||
+          c.bCategory.toLowerCase().includes("duct")
+            ? "MEP"
+            : "Structure";
+        await cype.createIssue(title, disc, c.severity);
+      }
+      this.statusMessage = `Published ${list.length} clash issue(s) to CYPE Issues!`;
+    } catch (err: any) {
+      this.statusMessage = `CYPE Issue publish failed: ${err?.message || err}`;
+    } finally {
+      this.isBusy = false;
+      this.onStateChanged.trigger();
+    }
   }
 
   async exportClashesToGoogleSheet() {

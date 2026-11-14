@@ -7,8 +7,9 @@ import {
   getLoadedModelIds,
   hasExportableSceneGeometry,
 } from "./exporter";
+import { exportSceneToIfc4 } from "./ifc-exporter";
 
-export type PublishDeliverableSource = "glb" | "frag" | "file" | "metadata";
+export type PublishDeliverableSource = "glb" | "ifc" | "frag" | "file" | "metadata";
 
 export interface PublishContributionOptions {
   name: string;
@@ -1135,19 +1136,21 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
   }
 
   async exportActiveModel(
-    format: "glb" | "frag" = "glb",
+    format: "glb" | "ifc" | "frag" = "glb",
     modelId?: string,
     baseName?: string
   ): Promise<void> {
     this.isBusy = true;
-    this.syncStatus = `Exporting edited model as .${format}...`;
+    this.syncStatus = `Exporting active model as .${format}...`;
     this.onStateChanged.trigger();
 
     try {
       const artifact =
         format === "frag"
           ? await exportLoadedModelToFrag(this.components, modelId, baseName)
-          : await exportLoadedModelsToGlb(this.components, modelId, baseName);
+          : format === "ifc"
+            ? await exportSceneToIfc4(this.components, baseName)
+            : await exportLoadedModelsToGlb(this.components, modelId, baseName);
       downloadBlob(artifact.blob, artifact.fileName);
       this.syncStatus = `Exported ${artifact.fileName} (${artifact.sizeLabel}).`;
     } catch (err: any) {
@@ -1211,6 +1214,11 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
 
       if (source === "glb") {
         const artifact = await exportLoadedModelsToGlb(this.components, opts.modelId, cleanName);
+        fileBlob = artifact.blob;
+        resolvedFileName = artifact.fileName;
+        sizeLabel = artifact.sizeLabel;
+      } else if (source === "ifc") {
+        const artifact = await exportSceneToIfc4(this.components, cleanName);
         fileBlob = artifact.blob;
         resolvedFileName = artifact.fileName;
         sizeLabel = artifact.sizeLabel;

@@ -5,6 +5,8 @@ import { BimProSuite } from "../../bim-components/BimProSuite";
 export interface ProStudioSectionState {
   components: OBC.Components;
   activeTab?: "clash" | "4d" | "editor";
+  clashSeverityFilter?: "all" | "high" | "medium" | "low";
+  clashClusterFilter?: string;
   fireRatingDraft?: string;
   phaseTagDraft?: string;
   costUsdDraft?: string;
@@ -191,20 +193,28 @@ export const proStudioTemplate: BUI.StatefullComponent<ProStudioSectionState> = 
 
               ${pro.clashes.length > 0
           ? BUI.html`
-                    <div style="display: flex; gap: 6px;">
+                    <div style="display: flex; gap: 6px; flex-wrap: wrap;">
                       <button
                         type="button"
                         @click=${() => pro.onClashLogRequested.trigger(pro.clashes)}
-                        style="flex: 1; padding: 6px 8px; border-radius: 7px; border: 1px solid rgba(245, 158, 11, 0.45); background: rgba(245, 158, 11, 0.16); color: #fcd34d; font-size: 0.69rem; font-weight: 700; cursor: pointer;"
+                        style="flex: 1; min-width: 110px; padding: 6px 8px; border-radius: 7px; border: 1px solid rgba(245, 158, 11, 0.45); background: rgba(245, 158, 11, 0.16); color: #fcd34d; font-size: 0.68rem; font-weight: 700; cursor: pointer;"
                       >
-                        Log Clashes → Project Tasks
+                        Log → Tasks
+                      </button>
+                      <button
+                        type="button"
+                        ?disabled=${pro.isBusy}
+                        @click=${() => void pro.publishClashesToCype()}
+                        style="flex: 1; min-width: 110px; padding: 6px 8px; border-radius: 7px; border: 1px solid rgba(56, 189, 248, 0.45); background: rgba(56, 189, 248, 0.16); color: #7dd3fc; font-size: 0.68rem; font-weight: 700; cursor: pointer;"
+                      >
+                        Publish → CYPE
                       </button>
                       <button
                         type="button"
                         @click=${() => pro.exportClashesToGoogleSheet().catch((e) => { pro.statusMessage = e?.message || "Export failed"; update(); })}
-                        style="flex: 1; padding: 6px 8px; border-radius: 7px; border: 1px solid rgba(16, 185, 129, 0.45); background: rgba(16, 185, 129, 0.16); color: #34d399; font-size: 0.69rem; font-weight: 700; cursor: pointer;"
+                        style="flex: 1; min-width: 110px; padding: 6px 8px; border-radius: 7px; border: 1px solid rgba(16, 185, 129, 0.45); background: rgba(16, 185, 129, 0.16); color: #34d399; font-size: 0.68rem; font-weight: 700; cursor: pointer;"
                       >
-                        Export → Google Sheet
+                        Export → Sheet
                       </button>
                     </div>
                   `
@@ -239,36 +249,98 @@ export const proStudioTemplate: BUI.StatefullComponent<ProStudioSectionState> = 
                 `
           : ""}
 
-            <!-- Clash Results Table -->
-            <div style="flex: 1; overflow-y: auto; border-radius: 9px; border: 1px solid rgba(148, 163, 184, 0.2); background: rgba(9, 13, 22, 0.85);">
-              ${pro.clashes.length === 0
-          ? BUI.html`<div style="padding: 24px; text-align: center; font-size: 0.72rem; color: #64748b;">Select two BIM disciplines above and click "Run 3D Clash Scan".</div>`
-          : pro.clashes.map(
-            (c) => BUI.html`
-                      <button
-                        type="button"
-                        @click=${() => pro.focusClash(c)}
-                        style="display: flex; flex-direction: column; gap: 3px; width: 100%; padding: 8px 10px; border: none; border-bottom: 1px solid rgba(148, 163, 184, 0.12); background: transparent; text-align: left; cursor: pointer;"
-                      >
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center; gap: 6px;">
-                          <span style="font-size: 0.70rem; font-weight: 800; color: ${c.severity === "high" ? "#f87171" : "#fbbf24"};">
-                            ${c.id} · ${c.severity.toUpperCase()} (${c.overlapVolumeM3} m³)
-                          </span>
-                          <span style="display: inline-flex; align-items: center; gap: 4px;">
-                            ${c.clusterId ? BUI.html`<span style="font-size: 0.60rem; font-weight: 700; padding: 1px 5px; border-radius: 999px; background: rgba(56, 189, 248, 0.16); color: #7dd3fc;">${c.clusterId}</span>` : ""}
-                            <span style="font-size: 0.65rem; color: #7dd3fc;">Inspect →</span>
-                          </span>
-                        </div>
-                        <div style="font-size: 0.72rem; color: #f8fafc; font-weight: 600;">
-                          ${c.aName} <span style="color: #94a3b8;">×</span> ${c.bName}
-                        </div>
-                        <div style="font-size: 0.64rem; color: #64748b;">
-                          ${c.aCategory} vs ${c.bCategory}
-                        </div>
-                      </button>
-                    `
-          )}
-            </div>
+            ${pro.clashes.length > 0
+          ? (() => {
+              const sevFilter = state.clashSeverityFilter || "all";
+              const clusterFilter = state.clashClusterFilter || "all";
+              const clusters = Array.from(
+                new Set(pro.clashes.map((c) => c.clusterId).filter(Boolean) as string[])
+              );
+              const filteredClashes = pro.clashes.filter((c) => {
+                const okSev = sevFilter === "all" || c.severity === sevFilter;
+                const okCluster = clusterFilter === "all" || c.clusterId === clusterFilter;
+                return okSev && okCluster;
+              });
+
+              return BUI.html`
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; flex-wrap: wrap;">
+                  <div style="display: flex; gap: 4px; flex-wrap: wrap;">
+                    ${(["all", "high", "medium", "low"] as const).map((sev) => {
+                      const active = sevFilter === sev;
+                      return BUI.html`
+                        <button
+                          type="button"
+                          @click=${() => update({ clashSeverityFilter: sev })}
+                          style="padding: 3px 7px; border-radius: 999px; font-size: 0.62rem; font-weight: 700; cursor: pointer; background: ${active ? "rgba(239, 68, 68, 0.22)" : "rgba(30, 41, 59, 0.7)"}; border: 1px solid ${active ? "#ef4444" : "rgba(148, 163, 184, 0.2)"}; color: ${active ? "#fca5a5" : "#94a3b8"};"
+                        >${sev.toUpperCase()}</button>
+                      `;
+                    })}
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 4px;">
+                    ${clusters.length > 1
+                      ? BUI.html`
+                          <select
+                            .value=${clusterFilter}
+                            @change=${(e: Event) => update({ clashClusterFilter: (e.target as HTMLSelectElement).value })}
+                            style="padding: 3px 6px; border-radius: 6px; background: #18191d; border: 1px solid rgba(255, 255, 255, 0.14); color: #cbd5e1; font-size: 0.63rem;"
+                          >
+                            <option value="all">All Clusters (${clusters.length})</option>
+                            ${clusters.map((cid) => BUI.html`<option value=${cid}>Cluster ${cid}</option>`)}
+                          </select>
+                        `
+                      : ""}
+                    ${pro.isIsolated
+                      ? BUI.html`
+                          <button
+                            type="button"
+                            @click=${() => void pro.clearClashIsolation()}
+                            style="padding: 3px 7px; border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.45); background: rgba(16, 185, 129, 0.18); color: #34d399; font-size: 0.63rem; font-weight: 700; cursor: pointer;"
+                          >Show All</button>
+                        `
+                      : ""}
+                  </div>
+                </div>
+
+                <!-- Clash Results Table -->
+                <div style="flex: 1; overflow-y: auto; border-radius: 9px; border: 1px solid rgba(148, 163, 184, 0.2); background: rgba(9, 13, 22, 0.85);">
+                  ${filteredClashes.map(
+                    (c) => BUI.html`
+                          <div style="display: flex; flex-direction: column; gap: 3px; width: 100%; padding: 8px 10px; border-bottom: 1px solid rgba(148, 163, 184, 0.12); box-sizing: border-box;">
+                            <div style="display: flex; justify-content: space-between; width: 100%; align-items: center; gap: 6px;">
+                              <span style="font-size: 0.70rem; font-weight: 800; color: ${c.severity === "high" ? "#f87171" : "#fbbf24"};">
+                                ${c.id} · ${c.severity.toUpperCase()} (${c.overlapVolumeM3} m³)
+                              </span>
+                              <span style="display: inline-flex; align-items: center; gap: 5px;">
+                                ${c.clusterId ? BUI.html`<span style="font-size: 0.60rem; font-weight: 700; padding: 1px 5px; border-radius: 999px; background: rgba(56, 189, 248, 0.16); color: #7dd3fc;">${c.clusterId}</span>` : ""}
+                                <button
+                                  type="button"
+                                  @click=${() => void pro.isolateClashPair(c)}
+                                  style="padding: 2px 6px; border-radius: 5px; border: 1px solid rgba(168, 85, 247, 0.4); background: rgba(168, 85, 247, 0.14); color: #e9d5ff; font-size: 0.61rem; font-weight: 700; cursor: pointer;"
+                                >Isolate</button>
+                                <button
+                                  type="button"
+                                  @click=${() => void pro.focusClash(c)}
+                                  style="padding: 2px 6px; border-radius: 5px; border: 1px solid rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.14); color: #7dd3fc; font-size: 0.61rem; font-weight: 700; cursor: pointer;"
+                                >Inspect →</button>
+                              </span>
+                            </div>
+                            <div style="font-size: 0.72rem; color: #f8fafc; font-weight: 600;">
+                              ${c.aName} <span style="color: #94a3b8;">×</span> ${c.bName}
+                            </div>
+                            <div style="font-size: 0.64rem; color: #64748b;">
+                              ${c.aCategory} vs ${c.bCategory}
+                            </div>
+                          </div>
+                        `
+                  )}
+                </div>
+              `;
+            })()
+          : BUI.html`
+                <div style="flex: 1; overflow-y: auto; border-radius: 9px; border: 1px solid rgba(148, 163, 184, 0.2); background: rgba(9, 13, 22, 0.85);">
+                  <div style="padding: 24px; text-align: center; font-size: 0.72rem; color: #64748b;">Select two BIM disciplines above and click "Run 3D Clash Scan".</div>
+                </div>
+              `}
           `
       : tab === "4d"
         ? BUI.html`
