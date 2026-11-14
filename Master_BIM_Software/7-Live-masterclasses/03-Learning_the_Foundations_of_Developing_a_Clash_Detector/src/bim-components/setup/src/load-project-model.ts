@@ -263,7 +263,7 @@ export async function loadProjectModel(
 
   if (
     project.modelType === "empty" ||
-    (project.modelCategory === "empty" && !project.ifcFileName && !hasBufferedCustomIfc) ||
+    (project.modelCategory === "empty" && !hasBufferedCustomIfc) ||
     (project.modelCategory === "ifc" && !project.ifcFileName && !ifcMetaEarly && !hasBufferedCustomIfc)
   ) {
     console.log("[loadProjectModel] Empty workspace initialized (no preloaded IFC/3D model).");

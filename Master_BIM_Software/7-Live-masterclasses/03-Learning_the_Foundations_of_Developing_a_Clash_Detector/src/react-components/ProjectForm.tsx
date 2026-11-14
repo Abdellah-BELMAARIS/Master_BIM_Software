@@ -196,6 +196,8 @@ export function ProjectForm(props: ProjectFormProps) {
         if (modelCategory === "empty") {
             finalModelCategory = "empty";
             modelType = "empty";
+            ifcFileName = "";
+            ifcSchema = undefined;
         } else if (sourceMode === "upload" && uploadedFileName) {
             if (uploadedFileName.toLowerCase().endsWith(".ifc") || uploadedFileName.toLowerCase().endsWith(".frag")) {
                 finalModelCategory = "ifc";

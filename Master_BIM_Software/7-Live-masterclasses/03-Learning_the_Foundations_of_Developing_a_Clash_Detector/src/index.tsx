@@ -81,12 +81,35 @@ const showUsersPage = () => {
 };
 
 // Lesson 3.8: Mount React Root with BrowserRouter, Routes, and Route
+function CypeOAuthReturnHandler() {
+    const location = Router.useLocation();
+    const navigate = Router.useNavigate();
+
+    React.useEffect(() => {
+        if (location.pathname !== "/") return;
+        try {
+            const raw = sessionStorage.getItem("toc_cype_pending_auth");
+            if (!raw) return;
+            const parsed = JSON.parse(raw);
+            const projectId = typeof parsed?.projectId === "string" ? parsed.projectId.trim() : "";
+            if (projectId && parsed?.sessionTemp && parsed?.securityId) {
+                navigate(`/project/${encodeURIComponent(projectId)}?cype_auth=callback`, { replace: true });
+            }
+        } catch {
+            // Ignore malformed pending auth storage
+        }
+    }, [location.pathname, navigate]);
+
+    return null;
+}
+
 const appRoot = document.getElementById("app");
 if (appRoot) {
     const root = ReactDOM.createRoot(appRoot);
     flushSync(() => {
         root.render(
             <Router.BrowserRouter basename={import.meta.env.BASE_URL}>
+                <CypeOAuthReturnHandler />
                 <Sidebar
                     activeTab="projects"
                     onNavigate={(tab) => {

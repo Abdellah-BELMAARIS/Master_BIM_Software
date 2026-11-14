@@ -674,6 +674,13 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                         cype.onStateChanged.trigger();
                     }
                 });
+                if (cype.hasPendingAuthorization()) {
+                    setActiveDrawer("cype");
+                    if (window.location.search.includes("cype_auth=callback")) {
+                        window.history.replaceState({}, "", window.location.pathname);
+                    }
+                    void cype.completeAuthorization();
+                }
             } catch (err) {
                 console.warn("[CYPE] Error mounting CYPE workflow panel:", err);
             }
