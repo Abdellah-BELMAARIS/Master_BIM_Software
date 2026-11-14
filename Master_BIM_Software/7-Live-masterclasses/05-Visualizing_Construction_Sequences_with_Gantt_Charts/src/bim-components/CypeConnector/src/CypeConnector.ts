@@ -810,7 +810,9 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
       if (this.selectedProjectId) {
         await Promise.all([
           this.fetchProjectContributions(this.selectedProjectId),
-          this.fetchProjectIssues(this.selectedProjectId),
+          this.fetchProjectIssues(this.selectedProjectId).catch(() => {
+            this.issues = [];
+          }),
         ]);
       }
 
@@ -920,7 +922,9 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
       try {
         await Promise.all([
           this.fetchProjectContributions(projectId),
-          this.fetchProjectIssues(projectId),
+          this.fetchProjectIssues(projectId).catch(() => {
+            this.issues = [];
+          }),
         ]);
       } catch (error) {
         this.syncStatus = `Could not load CYPE project: ${error instanceof Error ? error.message : String(error)}`;
@@ -1273,28 +1277,40 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
         this.syncStatus = `Creating BIMserver.center contribution "${cleanName}"...`;
         this.onStateChanged.trigger();
 
+        const safeTitle = cleanName.replace(/[/\\:*?"<>|]/g, "-").slice(0, 100);
+        const safeDesc = `Published from Master BIM Viewer (${resolvedDiscipline} - ${resolvedFileName})`.slice(0, 240);
+        const projVal = Number(this.selectedProjectId) || this.selectedProjectId;
+        const attempts: Array<{ endpoint: string; body: Record<string, any> }> = [
+          ...(this.selectedProjectId
+            ? [
+                {
+                  endpoint: `/projects/${encodeURIComponent(this.selectedProjectId)}/contributions`,
+                  body: { name: safeTitle, description: safeDesc },
+                },
+              ]
+            : []),
+          {
+            endpoint: "/contributions",
+            body: { project_id: projVal, name: safeTitle, description: safeDesc },
+          },
+          {
+            endpoint: "/contributions",
+            body: { id_project: projVal, name: safeTitle, description: safeDesc },
+          },
+        ];
+
         let created: any;
-        try {
-          created = await this.callProxy("/contributions", "POST", {
-            project_id: Number(this.selectedProjectId) || this.selectedProjectId,
-            name: cleanName,
-            description: `Published from Master BIM Viewer (${resolvedDiscipline} · ${resolvedFileName})`,
-          });
-        } catch (primaryErr: any) {
-          if (this.selectedProjectId) {
-            created = await this.callProxy(
-              `/projects/${encodeURIComponent(this.selectedProjectId)}/contributions`,
-              "POST",
-              {
-                name: cleanName,
-                description: `Published from Master BIM Viewer (${resolvedDiscipline} · ${resolvedFileName})`,
-              }
-            ).catch(() => {
-              throw primaryErr;
-            });
-          } else {
-            throw primaryErr;
+        let lastErr: any;
+        for (const attempt of attempts) {
+          try {
+            created = await this.callProxy(attempt.endpoint, "POST", attempt.body);
+            break;
+          } catch (err: any) {
+            lastErr = err;
           }
+        }
+        if (!created) {
+          throw lastErr || new Error("BIMserver.center rejected contribution creation.");
         }
 
         let contributionId = String(
