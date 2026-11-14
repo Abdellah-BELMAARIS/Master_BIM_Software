@@ -62,8 +62,43 @@ const isAllowedDownloadUrl = (value) => {
   }
 };
 
+const ALLOWED_ORIGINS = new Set([
+  "https://master-bim-software.web.app",
+  "https://master-bim-software.firebaseapp.com",
+  "http://127.0.0.1:5173",
+  "http://localhost:5173",
+]);
+
+const getCorsHeaders = (request) => {
+  const origin = getString(request?.headers?.origin, 256);
+  const envOrigin = getString(process.env.ALLOWED_ORIGIN || "", 256);
+  const allowOrigin =
+    (origin && (ALLOWED_ORIGINS.has(origin) || (envOrigin && origin === envOrigin)))
+      ? origin
+      : "https://master-bim-software.web.app";
+  return {
+    "Access-Control-Allow-Origin": allowOrigin,
+    "Access-Control-Allow-Methods": "POST, OPTIONS",
+    "Access-Control-Allow-Headers": "Content-Type, Authorization",
+    "Access-Control-Max-Age": "86400",
+    Vary: "Origin",
+  };
+};
+
 const readJsonBody = (request) =>
   new Promise((resolve, reject) => {
+    if (request && request.body !== undefined) {
+      if (typeof request.body === "string") {
+        try {
+          resolve(request.body ? JSON.parse(request.body) : {});
+        } catch {
+          reject(new Error("Invalid JSON body."));
+        }
+        return;
+      }
+      resolve(request.body || {});
+      return;
+    }
     const chunks = [];
     let size = 0;
     request.on("data", (chunk) => {
@@ -89,16 +124,17 @@ const readJsonBody = (request) =>
     request.on("error", reject);
   });
 
-const sendJson = (response, status, payload) => {
+const sendJson = (response, status, payload, request) => {
   const body = JSON.stringify(payload);
   response.writeHead(status, {
     "Content-Type": "application/json; charset=utf-8",
     "Cache-Control": "no-store",
+    ...getCorsHeaders(request),
   });
   response.end(body);
 };
 
-const forwardJson = async (upstream, response) => {
+const forwardJson = async (upstream, response, request) => {
   const text = await upstream.text();
   let parsed;
   try {
@@ -106,16 +142,20 @@ const forwardJson = async (upstream, response) => {
   } catch {
     parsed = { raw: text };
   }
-  sendJson(response, upstream.status, parsed);
+  sendJson(response, upstream.status, parsed, request);
 };
 
 const handleCypeRequest = async (pathname, request, response) => {
+  const cors = getCorsHeaders(request);
+  for (const [k, v] of Object.entries(cors)) {
+    response.setHeader(k, v);
+  }
   if (request.method === "OPTIONS") {
     response.writeHead(204).end();
     return true;
   }
   if (request.method !== "POST") {
-    sendJson(response, 405, { error: "Method not allowed." });
+    sendJson(response, 405, { error: "Method not allowed." }, request);
     return true;
   }
 
@@ -123,7 +163,7 @@ const handleCypeRequest = async (pathname, request, response) => {
   try {
     body = getRecord(await readJsonBody(request)) || {};
   } catch (error) {
-    sendJson(response, 400, { error: error instanceof Error ? error.message : "Invalid request." });
+    sendJson(response, 400, { error: error instanceof Error ? error.message : "Invalid request." }, request);
     return true;
   }
 

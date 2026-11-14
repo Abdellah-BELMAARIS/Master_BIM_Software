@@ -477,6 +477,12 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
           redirectUri,
         }),
       });
+      const ct = res.headers.get("content-type") || "";
+      if (ct.includes("text/html")) {
+        throw new Error(
+          "No CYPE proxy backend is active on this origin. Deploy the CYPE proxy (Vercel/Render) and set VITE_CYPE_FUNCTIONS_URL, or run locally at http://127.0.0.1:5173/."
+        );
+      }
       const data = await res.json().catch(() => ({}));
       if (!res.ok || !data?.url || !data?.session_temp) {
         throw new Error(data?.error || data?.message || `HTTP ${res.status}`);

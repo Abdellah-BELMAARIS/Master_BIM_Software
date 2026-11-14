@@ -1,0 +1,9 @@
+{
+  "version": 2,
+  "rewrites": [
+    { "source": "/cypeLogin", "destination": "/api/cypeLogin" },
+    { "source": "/cypeExchangeSession", "destination": "/api/cypeExchangeSession" },
+    { "source": "/cypeProxy", "destination": "/api/cypeProxy" },
+    { "source": "/cypeDownloadFile", "destination": "/api/cypeDownloadFile" }
+  ]
+}
