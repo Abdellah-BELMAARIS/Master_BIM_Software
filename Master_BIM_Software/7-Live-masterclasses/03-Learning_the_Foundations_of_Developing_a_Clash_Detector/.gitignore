@@ -1,0 +1,12 @@
+node_modules/
+dist/
+.firebase/
+.env
+.env.*
+!.env.example
+resources/*.json
+!resources/**/package.json
+**/service-account*.json
+*.log
+firebase-debug.log*
+
