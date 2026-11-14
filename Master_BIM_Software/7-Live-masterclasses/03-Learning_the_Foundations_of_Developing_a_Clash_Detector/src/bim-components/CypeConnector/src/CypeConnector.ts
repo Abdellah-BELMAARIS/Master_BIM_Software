@@ -1248,12 +1248,43 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
         let contributionId = String(
           created?.id ??
             created?.contribution_id ??
+            created?.id_contribution ??
             created?.record?.id ??
             created?.data?.id ??
+            created?.result?.id ??
             created?.contribution?.id ??
             created?.records?.[0]?.id ??
             (typeof created === "number" || typeof created === "string" ? created : "")
         ).trim();
+
+        if (!contributionId && fileBlob) {
+          try {
+            const listRes = await this.callProxy(
+              `/projects/${encodeURIComponent(this.selectedProjectId)}/contributions?limit=100`
+            );
+            const rawRecords: any[] = Array.isArray(listRes?.records)
+              ? listRes.records
+              : Array.isArray(listRes)
+                ? listRes
+                : [];
+            const nameMatches = rawRecords
+              .filter((r) => String(r?.name || "").trim().toLowerCase() === cleanName.toLowerCase())
+              .sort((a, b) => (Number(b?.id) || 0) - (Number(a?.id) || 0));
+            if (nameMatches[0]?.id != null) {
+              contributionId = String(nameMatches[0].id).trim();
+            } else if (rawRecords.length > 0) {
+              const latest = [...rawRecords].sort(
+                (a, b) => (Number(b?.date_create) || Number(b?.id) || 0) - (Number(a?.date_create) || Number(a?.id) || 0)
+              )[0];
+              const createdSec = Number(latest?.date_create || 0);
+              if (createdSec > 0 && Math.abs(Date.now() / 1000 - createdSec) < 120 && latest?.id != null) {
+                contributionId = String(latest.id).trim();
+              }
+            }
+          } catch {
+            // Fall through to fetchProjectContributions fallback
+          }
+        }
 
         if (!contributionId && fileBlob) {
           await this.fetchProjectContributions(this.selectedProjectId);
