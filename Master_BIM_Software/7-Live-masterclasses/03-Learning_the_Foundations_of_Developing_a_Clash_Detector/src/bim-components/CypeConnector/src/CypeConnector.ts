@@ -1,9 +1,11 @@
 import * as OBC from "@thatopen/components";
 import {
+  collectSceneModelObjects,
   downloadBlob,
   exportLoadedModelsToGlb,
   exportLoadedModelToFrag,
   getLoadedModelIds,
+  hasExportableSceneGeometry,
 } from "./exporter";
 
 export type PublishDeliverableSource = "glb" | "frag" | "file" | "metadata";
@@ -1119,6 +1121,17 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
 
   getLoadedModelIds(): string[] {
     return getLoadedModelIds(this.components);
+  }
+
+  hasExportableScene(): boolean {
+    return hasExportableSceneGeometry(this.components);
+  }
+
+  getExportableSceneLabel(): string {
+    const objs = collectSceneModelObjects(this.components);
+    if (objs.length === 0) return "Active 3D Scene";
+    const named = objs.map((o) => o.name).filter(Boolean);
+    return named.length > 0 ? named[0] : `Active 3D Scene (${objs.length} group${objs.length > 1 ? "s" : ""})`;
   }
 
   async exportActiveModel(

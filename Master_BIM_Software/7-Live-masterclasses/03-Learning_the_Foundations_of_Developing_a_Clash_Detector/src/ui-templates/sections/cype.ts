@@ -435,10 +435,17 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
             ${state.showUploadForm
           ? (() => {
               const loadedModels = cype.getLoadedModelIds();
+              const hasSceneGeometry = cype.hasExportableScene();
+              const sceneLabel = cype.getExportableSceneLabel();
               const uploadSource: PublishDeliverableSource =
-                state.uploadSource || (loadedModels.length > 0 ? "glb" : "file");
-              const selectedModelId = state.uploadModelId || "";
+                state.uploadSource || (loadedModels.length > 0 || hasSceneGeometry ? "glb" : "file");
+              const selectedModelId =
+                state.uploadModelId || (loadedModels.length === 0 && hasSceneGeometry ? "__scene__" : "");
               const alsoDownload = Boolean(state.alsoDownload);
+              const canExportSource =
+                uploadSource === "glb"
+                  ? loadedModels.length > 0 || hasSceneGeometry
+                  : loadedModels.length > 0;
 
               return BUI.html`
                   <div style="display: flex; flex-direction: column; gap: 8px; padding: 11px 12px; border-radius: 10px; background: #121316; border: 1px solid rgba(16, 185, 129, 0.35);">
@@ -502,7 +509,12 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
                           style="width: 100%; padding: 6px 8px; border-radius: 7px; background: #18191d; border: 1px solid rgba(255, 255, 255, 0.12); color: #cbd5e1; font-size: 0.7rem;"
                         >
                           ${uploadSource === "glb"
-                        ? BUI.html`<option value="">All Loaded Models (${loadedModels.length})</option>`
+                        ? loadedModels.length > 0
+                          ? BUI.html`
+                                <option value="">All Loaded IFC / Fragment Models (${loadedModels.length})</option>
+                                ${hasSceneGeometry ? BUI.html`<option value="__scene__">Active 3D Scene (${sceneLabel})</option>` : ""}
+                              `
+                          : BUI.html`<option value="__scene__">Active 3D Scene (${sceneLabel})</option>`
                         : BUI.html`<option value="">Active First Model (${loadedModels[0] || "none"})</option>`}
                           ${loadedModels.map(
                           (id) => BUI.html`<option value=${id}>${id}</option>`
@@ -555,7 +567,7 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
                   ? BUI.html`
                           <button
                             type="button"
-                            ?disabled=${cype.isBusy || loadedModels.length === 0}
+                            ?disabled=${cype.isBusy || !canExportSource}
                             @click=${() => {
                         const title = (
                           state.uploadName ||

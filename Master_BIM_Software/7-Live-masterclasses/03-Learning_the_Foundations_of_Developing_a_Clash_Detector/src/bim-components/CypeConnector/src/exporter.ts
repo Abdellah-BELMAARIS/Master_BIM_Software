@@ -47,8 +47,67 @@ export function getLoadedModelIds(components: OBC.Components): string[] {
   return Array.from(fragments.list.keys());
 }
 
+function isSceneHelperObject(obj: THREE.Object3D): boolean {
+  const name = (obj.name || "").toLowerCase();
+  if (
+    obj instanceof THREE.Light ||
+    obj instanceof THREE.Camera ||
+    obj instanceof THREE.GridHelper ||
+    obj instanceof THREE.AxesHelper ||
+    obj instanceof THREE.Box3Helper ||
+    (obj as any).isTransformControls ||
+    (obj as any).isGrid ||
+    name.includes("grid") ||
+    name.includes("helper") ||
+    name.includes("gizmo") ||
+    name.includes("measurement") ||
+    name.includes("clipper")
+  ) {
+    return true;
+  }
+  return false;
+}
+
+function containsRenderableMesh(root: THREE.Object3D): boolean {
+  let found = false;
+  root.traverse((child) => {
+    if (found) return;
+    if (
+      (child instanceof THREE.Mesh || child instanceof THREE.InstancedMesh) &&
+      !isSceneHelperObject(child)
+    ) {
+      found = true;
+    }
+  });
+  return found;
+}
+
+export function collectSceneModelObjects(components: OBC.Components): THREE.Object3D[] {
+  try {
+    const worlds = components.get(OBC.Worlds);
+    const first = worlds.list.values().next();
+    const world = first.done ? null : first.value;
+    if (!world?.scene?.three) return [];
+
+    return world.scene.three.children.filter(
+      (child) =>
+        child.visible &&
+        !isSceneHelperObject(child) &&
+        containsRenderableMesh(child)
+    );
+  } catch {
+    return [];
+  }
+}
+
+export function hasExportableSceneGeometry(components: OBC.Components): boolean {
+  const fragments = components.get(OBC.FragmentsManager);
+  if (fragments.list.size > 0) return true;
+  return collectSceneModelObjects(components).length > 0;
+}
+
 /**
- * Exports one or all currently loaded models (including BIM Studio edits)
+ * Exports one or all currently loaded models (Fragments/IFC or built-in 3D scene models such as 10-Villa)
  * to a binary .glb (glTF 2.0) file using Three.js GLTFExporter.
  */
 export async function exportLoadedModelsToGlb(
@@ -58,36 +117,51 @@ export async function exportLoadedModelsToGlb(
 ): Promise<ExportedModelArtifact> {
   const fragments = components.get(OBC.FragmentsManager);
   const entries = Array.from(fragments.list.entries());
-  if (entries.length === 0) {
-    throw new Error("Load at least one 3D / IFC model before exporting.");
-  }
-
-  const selected = modelId
-    ? entries.filter(([id]) => id === modelId)
-    : entries;
-  if (selected.length === 0) {
-    throw new Error(`Model "${modelId}" is no longer loaded.`);
-  }
-
-  await flushModelEdits(
-    fragments,
-    selected.map(([id]) => id)
-  );
+  const useSceneFallback = entries.length === 0 || modelId === "__scene__";
 
   const exportRoot = new THREE.Group();
   exportRoot.name = "MasterBIM_Export";
   const restoreParents: Array<{ obj: THREE.Object3D; parent: THREE.Object3D | null }> = [];
+  let exportedCount = 0;
+  let defaultTitle = "master_bim_coordination";
 
-  for (const [, model] of selected) {
-    const obj = (model as any).object as THREE.Object3D | undefined;
-    if (obj) {
+  if (!useSceneFallback) {
+    const selected = modelId
+      ? entries.filter(([id]) => id === modelId)
+      : entries;
+    if (selected.length === 0) {
+      throw new Error(`Model "${modelId}" is no longer loaded.`);
+    }
+
+    await flushModelEdits(
+      fragments,
+      selected.map(([id]) => id)
+    );
+
+    for (const [, model] of selected) {
+      const obj = (model as any).object as THREE.Object3D | undefined;
+      if (obj) {
+        restoreParents.push({ obj, parent: obj.parent });
+        exportRoot.add(obj);
+      }
+    }
+    exportedCount = selected.length;
+    defaultTitle = selected.length === 1 ? selected[0][0] : "master_bim_coordination";
+  } else {
+    const sceneObjects = collectSceneModelObjects(components);
+    if (sceneObjects.length === 0) {
+      throw new Error("Load or open a 3D / IFC model before exporting.");
+    }
+    for (const obj of sceneObjects) {
       restoreParents.push({ obj, parent: obj.parent });
       exportRoot.add(obj);
     }
+    exportedCount = sceneObjects.length;
+    defaultTitle = sceneObjects[0]?.name || "master_bim_3d_scene";
   }
 
   if (exportRoot.children.length === 0) {
-    throw new Error("No exportable 3D meshes were found in the selected model.");
+    throw new Error("No exportable 3D meshes were found in the active 3D scene.");
   }
 
   try {
@@ -109,14 +183,14 @@ export async function exportLoadedModelsToGlb(
     });
 
     const blob = new Blob([arrayBuffer], { type: "model/gltf-binary" });
-    const rawTitle = baseName?.trim() || (selected.length === 1 ? selected[0][0] : "master_bim_coordination");
+    const rawTitle = baseName?.trim() || defaultTitle;
     const fileName = `${sanitizeFileName(rawTitle)}.glb`;
 
     return {
       blob,
       fileName,
       sizeLabel: formatSize(blob.size),
-      modelCount: selected.length,
+      modelCount: exportedCount,
     };
   } finally {
     for (const { obj, parent } of restoreParents) {
