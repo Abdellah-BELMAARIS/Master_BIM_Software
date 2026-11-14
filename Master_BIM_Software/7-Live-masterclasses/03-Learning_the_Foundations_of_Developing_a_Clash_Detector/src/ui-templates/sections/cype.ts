@@ -9,6 +9,12 @@ import {
   CYPE_USER_PROFILE_URL,
   CYPE_DEV_PORTAL_URL,
 } from "../../bim-components/CypeConnector";
+import {
+  arrangeModelsInGrid,
+  clearAllModels,
+  fitAllModelsCamera,
+  resetModelsOrigin,
+} from "../../bim-components/setup/src/model-layout";
 
 export interface CypeSectionState {
   components: OBC.Components;
@@ -77,6 +83,7 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
     const matchesSearch = !search || d.name.toLowerCase().includes(search);
     return matchesDisc && matchesSearch;
   });
+  const loadedModelCount = components.get(OBC.FragmentsManager).list.size;
 
   const allIssues = cype.getActiveIssues();
   const visibleIssues =
@@ -268,6 +275,45 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
                 ${(state.viewMode || "table") === "table" ? "Cards" : "Table"}
               </button>
             </div>
+
+            ${loadedModelCount > 0
+          ? BUI.html`
+                  <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 6px 9px; border-radius: 8px; background: rgba(15, 23, 42, 0.72); border: 1px solid rgba(56, 189, 248, 0.22); flex-wrap: wrap;">
+                    <span style="font-size: 0.66rem; font-weight: 700; color: #7dd3fc;">
+                      3D Scene (${loadedModelCount} loaded)
+                    </span>
+                    <div style="display: flex; align-items: center; gap: 5px; flex-wrap: wrap;">
+                      <button
+                        type="button"
+                        @click=${() => void arrangeModelsInGrid(components)}
+                        title="Arrange loaded models in a clean non-overlapping grid"
+                        style="padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.3); background: rgba(56, 189, 248, 0.12); color: #7dd3fc; font-size: 0.64rem; font-weight: 700; cursor: pointer;"
+                      >Arrange</button>
+                      <button
+                        type="button"
+                        @click=${() => void resetModelsOrigin(components)}
+                        title="Align all loaded models back to shared origin (0,0,0)"
+                        style="padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.14); background: #18191d; color: #e2e8f0; font-size: 0.64rem; font-weight: 700; cursor: pointer;"
+                      >Origin</button>
+                      <button
+                        type="button"
+                        @click=${() => void fitAllModelsCamera(components)}
+                        title="Frame all loaded models in the 3D viewport"
+                        style="padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.14); background: #18191d; color: #e2e8f0; font-size: 0.64rem; font-weight: 700; cursor: pointer;"
+                      >Fit</button>
+                      <button
+                        type="button"
+                        @click=${async () => {
+                await clearAllModels(components);
+                update({});
+              }}
+                        title="Remove and dispose all loaded models from the 3D scene"
+                        style="padding: 4px 8px; border-radius: 6px; border: 1px solid rgba(239, 68, 68, 0.35); background: rgba(239, 68, 68, 0.16); color: #fca5a5; font-size: 0.64rem; font-weight: 700; cursor: pointer;"
+                      >Clear 3D</button>
+                    </div>
+                  </div>
+                `
+          : ""}
 
             <!-- OpenBIM Contributions Cards -->
             <div style="display: flex; flex-direction: column; gap: 8px; flex: 1; overflow-y: auto; padding-right: 2px;">

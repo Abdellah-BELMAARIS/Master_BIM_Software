@@ -8,6 +8,7 @@ import { buildBridgeEnvironment, IBridgeEnvironment } from "../../../react-compo
 import { buildGearEnvironment, IGearEnvironment } from "../../../react-components/three/GearEnvironment";
 import { OBJLoader } from "three/examples/jsm/loaders/OBJLoader.js";
 import { MTLLoader } from "three/examples/jsm/loaders/MTLLoader.js";
+import { arrangeModelsInGrid } from "./model-layout";
 
 export interface LoadedWorldModel {
   group: THREE.Group;
@@ -666,25 +667,29 @@ export async function loadIfcFromBuffer(
         fragments.core.update(true);
       }
 
-      const cameraControls = (world.camera as any).controls;
-      const box = ifcModel.box;
-      if (cameraControls && box && !box.isEmpty()) {
-        const center = new THREE.Vector3();
-        const size = new THREE.Vector3();
-        box.getCenter(center);
-        box.getSize(size);
-        const span = Math.max(size.length() * 0.6, 12);
-        cameraControls.setLookAt(
-          center.x + span * 0.85,
-          center.y + Math.max(span * 0.58, size.y * 1.15),
-          center.z + span * 0.85,
-          center.x,
-          center.y,
-          center.z,
-          true
-        );
-      } else if (world.camera instanceof OBC.SimpleCamera) {
-        await world.camera.fitToItems();
+      if (fragments.list.size > 1) {
+        await arrangeModelsInGrid(components, world);
+      } else {
+        const cameraControls = (world.camera as any).controls;
+        const box = ifcModel.box;
+        if (cameraControls && box && !box.isEmpty()) {
+          const center = new THREE.Vector3();
+          const size = new THREE.Vector3();
+          box.getCenter(center);
+          box.getSize(size);
+          const span = Math.max(size.length() * 0.6, 12);
+          cameraControls.setLookAt(
+            center.x + span * 0.85,
+            center.y + Math.max(span * 0.58, size.y * 1.15),
+            center.z + span * 0.85,
+            center.x,
+            center.y,
+            center.z,
+            true
+          );
+        } else if (world.camera instanceof OBC.SimpleCamera) {
+          await world.camera.fitToItems();
+        }
       }
       if (fragments.initialized && !world.isDisposing) {
         fragments.core.update(true);

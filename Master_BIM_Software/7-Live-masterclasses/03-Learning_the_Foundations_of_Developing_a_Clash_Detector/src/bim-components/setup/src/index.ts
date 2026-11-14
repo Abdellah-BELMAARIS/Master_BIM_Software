@@ -7,3 +7,4 @@ export * from "./data-enhancer";
 export * from "./smart-views";
 export * from "./load-project-model";
 export * from "./measurement-tool";
+export * from "./model-layout";

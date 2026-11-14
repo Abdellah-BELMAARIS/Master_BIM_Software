@@ -2,6 +2,12 @@ import * as BUI from "@thatopen/ui";
 import * as OBC from "@thatopen/components";
 import * as CUI from "@thatopen/ui-obc";
 import { loadButtonTemplate, LoadButtonState } from "../buttons";
+import {
+  arrangeModelsInGrid,
+  clearAllModels,
+  fitAllModelsCamera,
+  resetModelsOrigin,
+} from "../../bim-components/setup/src/model-layout";
 
 /**
  * Module 4 — Lessons 3.6 & 3.7: Creating a Fragments List Panel + Exporting Fragments
@@ -62,6 +68,22 @@ export const modelsTemplate: BUI.StatefullComponent<ModelsState> = (
     }
   };
 
+  const onArrangeGrid = async () => {
+    await arrangeModelsInGrid(components);
+  };
+
+  const onResetOrigin = async () => {
+    await resetModelsOrigin(components);
+  };
+
+  const onFitAll = async () => {
+    await fitAllModelsCamera(components);
+  };
+
+  const onClearAll = async () => {
+    await clearAllModels(components);
+  };
+
   return BUI.html`
     <bim-panel-section
       label="Federated Models & IFC Hierarchy"
@@ -81,6 +103,36 @@ export const modelsTemplate: BUI.StatefullComponent<ModelsState> = (
           icon="solar:download-bold"
           tooltip-title="Export Compressed Fragment Binaries (.frag)"
           style="flex: 0;"
+        ></bim-button>
+      </div>
+      <div style="display: flex; align-items: center; gap: 0.35rem; padding: 0.4rem 0.75rem; border-bottom: 1px solid rgba(148, 163, 184, 0.12); background: rgba(15, 23, 42, 0.45); flex-wrap: wrap;">
+        <bim-button
+          @click=${onArrangeGrid}
+          label="Arrange Grid"
+          icon="tabler:layout-grid"
+          tooltip-title="Arrange all loaded models in an organized non-overlapping grid"
+          style="flex: 1; min-width: fit-content;"
+        ></bim-button>
+        <bim-button
+          @click=${onResetOrigin}
+          label="Origin (0,0)"
+          icon="tabler:crosshair"
+          tooltip-title="Align all models back to shared origin (0,0,0)"
+          style="flex: 1; min-width: fit-content;"
+        ></bim-button>
+        <bim-button
+          @click=${onFitAll}
+          label="Fit All"
+          icon="tabler:focus-2"
+          tooltip-title="Frame all loaded models in the 3D viewport"
+          style="flex: 1; min-width: fit-content;"
+        ></bim-button>
+        <bim-button
+          @click=${onClearAll}
+          label="Clear All"
+          icon="tabler:trash"
+          tooltip-title="Remove and dispose all loaded models from the 3D scene"
+          style="flex: 1; min-width: fit-content; --bim-button--bgc: rgba(239, 68, 68, 0.18); --bim-button--c: #fca5a5;"
         ></bim-button>
       </div>
       <div style="flex: 1; overflow: auto; min-height: 0;">
