@@ -764,9 +764,19 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
     const rawErr = payload?.error ?? payload?.message ?? payload;
     if (typeof rawErr === "string") return rawErr;
     if (rawErr && typeof rawErr === "object") {
-      if (typeof rawErr.message === "string") return rawErr.message;
-      if (typeof rawErr.description === "string") return rawErr.description;
-      if (typeof rawErr.error === "string") return rawErr.error;
+      const baseMsg =
+        typeof rawErr.message === "string"
+          ? rawErr.message
+          : typeof rawErr.description === "string"
+            ? rawErr.description
+            : typeof rawErr.error === "string"
+              ? rawErr.error
+              : "";
+      const extras = rawErr.fields || rawErr.errors || rawErr.details || rawErr.data;
+      const code = rawErr.code != null ? ` [${rawErr.code}]` : "";
+      if (baseMsg) {
+        return extras ? `${baseMsg}${code} (${JSON.stringify(extras)})` : `${baseMsg}${code}`;
+      }
       try {
         return JSON.stringify(rawErr);
       } catch {
