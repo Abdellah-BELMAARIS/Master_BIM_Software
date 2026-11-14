@@ -86,6 +86,9 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
   const isSameOriginProxy =
     typeof window !== "undefined" &&
     (cype.auth.proxyEndpoint || CYPE_PROXY_ENDPOINT).startsWith(window.location.origin);
+  const isLocalDevOrigin =
+    typeof window !== "undefined" &&
+    (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1");
 
   let newIssueDraft = state.newIssueTitle ?? "";
   const issueDisc = state.newIssueDiscipline || "Structure";
@@ -556,14 +559,22 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
               <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
                 <span style="font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8;">Secure Backend Proxy</span>
                 <span style="font-size: 0.63rem; font-weight: 700; color: ${isSameOriginProxy ? "#34d399" : "#94a3b8"};">
-                  ${isSameOriginProxy ? "● Built-in Web Proxy" : "● External Proxy"}
+                  ${
+                    isSameOriginProxy
+                      ? isLocalDevOrigin
+                        ? "● Built-in Web Proxy"
+                        : "● Firebase Hosting + Functions"
+                      : "● External Proxy"
+                  }
                 </span>
               </div>
               <code style="display: block; overflow-wrap: anywhere; color: #e2e8f0; background: #18191d; padding: 6px 8px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.06); font-size: 0.65rem;">${cype.auth.proxyEndpoint || CYPE_PROXY_ENDPOINT}</code>
               <p style="margin: 0; color: #94a3b8; font-size: 0.64rem; line-height: 1.4;">
                 ${
                   isSameOriginProxy
-                    ? "Handled directly by the built-in Vite web server proxy (/cypeProxy) on this origin."
+                    ? isLocalDevOrigin
+                      ? "Handled directly by the built-in Vite web server proxy (/cypeProxy) on this origin."
+                      : "Routed via Firebase Hosting rewrites (/cypeProxy) to Firebase Cloud Functions on this origin."
                     : "Using external CYPE proxy URL configured via VITE_CYPE_FUNCTIONS_URL."
                 }
               </p>
