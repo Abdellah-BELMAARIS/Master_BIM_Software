@@ -106,6 +106,93 @@ export function hasExportableSceneGeometry(components: OBC.Components): boolean 
   return collectSceneModelObjects(components).length > 0;
 }
 
+async function buildFragmentExportGroup(
+  model: any,
+  modelId: string
+): Promise<{ group: THREE.Group; disposables: Array<{ dispose: () => void }> }> {
+  const group = new THREE.Group();
+  group.name = sanitizeFileName(modelId) || "FragmentModel";
+  const disposables: Array<{ dispose: () => void }> = [];
+
+  if (typeof model?.getItemsIdsWithGeometry !== "function" || typeof model?.getItemsGeometry !== "function") {
+    return { group, disposables };
+  }
+
+  let localIds: number[] = [];
+  try {
+    localIds = await model.getItemsIdsWithGeometry();
+  } catch {
+    return { group, disposables };
+  }
+  if (!Array.isArray(localIds) || localIds.length === 0) {
+    return { group, disposables };
+  }
+
+  const modelObj = model.object as THREE.Object3D | undefined;
+  if (modelObj) modelObj.updateMatrixWorld(true);
+  const modelMatrix = modelObj ? modelObj.matrixWorld : new THREE.Matrix4();
+
+  const defaultMat = new THREE.MeshStandardMaterial({
+    color: 0x94a3b8,
+    roughness: 0.65,
+    metalness: 0.1,
+  });
+  disposables.push(defaultMat);
+
+  const MAX_ITEMS = 4000;
+  const BATCH_SIZE = 300;
+  const targetIds = localIds.slice(0, MAX_ITEMS);
+
+  for (let offset = 0; offset < targetIds.length; offset += BATCH_SIZE) {
+    const batchIds = targetIds.slice(offset, offset + BATCH_SIZE);
+    let geomGroups: any[][] = [];
+    try {
+      geomGroups = await model.getItemsGeometry(batchIds);
+    } catch {
+      continue;
+    }
+
+    for (let i = 0; i < batchIds.length; i++) {
+      const meshes = geomGroups[i];
+      if (!Array.isArray(meshes) || meshes.length === 0) continue;
+
+      for (const m of meshes) {
+        if (!m?.positions || m.positions.length < 9) continue;
+        const posArr =
+          m.positions instanceof Float32Array ? m.positions : new Float32Array(m.positions);
+        const geom = new THREE.BufferGeometry();
+        geom.setAttribute("position", new THREE.BufferAttribute(posArr, 3));
+        if (m.indices && m.indices.length >= 3) {
+          const idxArr =
+            m.indices instanceof Uint32Array || m.indices instanceof Uint16Array
+              ? m.indices
+              : new Uint32Array(m.indices);
+          geom.setIndex(new THREE.BufferAttribute(idxArr, 1));
+        }
+        geom.computeVertexNormals();
+
+        const localMat =
+          m.transform instanceof THREE.Matrix4
+            ? m.transform
+            : m.transform?.elements?.length === 16
+              ? new THREE.Matrix4().fromArray(m.transform.elements)
+              : Array.isArray(m.transform) && m.transform.length === 16
+                ? new THREE.Matrix4().fromArray(m.transform)
+                : new THREE.Matrix4();
+        const worldMat = new THREE.Matrix4().multiplyMatrices(modelMatrix, localMat);
+        geom.applyMatrix4(worldMat);
+
+        const mesh = new THREE.Mesh(geom, defaultMat);
+        mesh.name = `Item_${batchIds[i]}`;
+        group.add(mesh);
+        disposables.push(geom);
+      }
+    }
+  }
+
+  return { group, disposables };
+}
+
 /**
  * Exports one or all currently loaded models (Fragments/IFC or built-in 3D scene models such as 10-Villa)
  * to a binary .glb (glTF 2.0) file using Three.js GLTFExporter.
@@ -122,6 +209,7 @@ export async function exportLoadedModelsToGlb(
   const exportRoot = new THREE.Group();
   exportRoot.name = "MasterBIM_Export";
   const restoreParents: Array<{ obj: THREE.Object3D; parent: THREE.Object3D | null }> = [];
+  const disposables: Array<{ dispose: () => void }> = [];
   let exportedCount = 0;
   let defaultTitle = "master_bim_coordination";
 
@@ -138,11 +226,11 @@ export async function exportLoadedModelsToGlb(
       selected.map(([id]) => id)
     );
 
-    for (const [, model] of selected) {
-      const obj = (model as any).object as THREE.Object3D | undefined;
-      if (obj) {
-        restoreParents.push({ obj, parent: obj.parent });
-        exportRoot.add(obj);
+    for (const [id, model] of selected) {
+      const { group, disposables: modelDisposables } = await buildFragmentExportGroup(model, id);
+      disposables.push(...modelDisposables);
+      if (group.children.length > 0) {
+        exportRoot.add(group);
       }
     }
     exportedCount = selected.length;
@@ -193,6 +281,11 @@ export async function exportLoadedModelsToGlb(
       modelCount: exportedCount,
     };
   } finally {
+    for (const d of disposables) {
+      try {
+        d.dispose();
+      } catch {}
+    }
     for (const { obj, parent } of restoreParents) {
       if (parent) {
         parent.add(obj);
