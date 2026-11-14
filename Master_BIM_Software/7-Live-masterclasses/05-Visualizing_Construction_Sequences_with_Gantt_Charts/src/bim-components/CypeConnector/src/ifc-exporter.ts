@@ -39,46 +39,160 @@ function inferIfcClass(name: string): string {
   return "IFCBUILDINGELEMENTPROXY";
 }
 
-function collectWorldMeshes(components: OBC.Components): THREE.Mesh[] {
-  const meshes: THREE.Mesh[] = [];
+interface ExportableMeshSource {
+  name: string;
+  ifcClass: string;
+  positions: ArrayLike<number>;
+  indices?: ArrayLike<number>;
+  matrixWorld: THREE.Matrix4;
+}
+
+const MAX_EXPORT_MESHES = 300;
+
+function hasReadableBufferArray(attr: unknown): attr is THREE.BufferAttribute {
+  if (!attr || typeof attr !== "object") return false;
+  const anyAttr = attr as { array?: ArrayLike<number>; data?: { array?: ArrayLike<number> } };
+  return Boolean(anyAttr.array || anyAttr.data?.array);
+}
+
+async function collectFragmentMeshSources(
+  components: OBC.Components
+): Promise<ExportableMeshSource[]> {
+  const sources: ExportableMeshSource[] = [];
   const fragments = components.get(OBC.FragmentsManager);
+  if (fragments.list.size === 0) return sources;
 
-  if (fragments.list.size > 0) {
-    for (const [, model] of fragments.list) {
-      const obj = (model as any).object as THREE.Object3D | undefined;
-      if (!obj) continue;
-      obj.traverse((child) => {
-        if (child instanceof THREE.Mesh && child.visible && child.geometry) {
-          meshes.push(child);
-        }
-      });
+  for (const [, model] of fragments.list) {
+    if (sources.length >= MAX_EXPORT_MESHES) break;
+    const anyModel = model as any;
+    if (typeof anyModel.getItemsIdsWithGeometry !== "function" || typeof anyModel.getItemsGeometry !== "function") {
+      continue;
+    }
+
+    let localIds: number[] = [];
+    try {
+      localIds = await anyModel.getItemsIdsWithGeometry();
+    } catch {
+      continue;
+    }
+    if (!Array.isArray(localIds) || localIds.length === 0) continue;
+
+    const remaining = MAX_EXPORT_MESHES - sources.length;
+    const sliceIds = localIds.slice(0, remaining);
+
+    let geomGroups: any[][] = [];
+    try {
+      geomGroups = await anyModel.getItemsGeometry(sliceIds);
+    } catch {
+      continue;
+    }
+
+    let itemsData: any[] = [];
+    if (typeof anyModel.getItemsData === "function") {
+      try {
+        itemsData = await anyModel.getItemsData(sliceIds, {
+          attributesDefault: false,
+          attributes: ["Name"],
+        });
+      } catch {
+        itemsData = [];
+      }
+    }
+
+    const modelObj = anyModel.object as THREE.Object3D | undefined;
+    if (modelObj) modelObj.updateMatrixWorld(true);
+    const modelMatrix = modelObj ? modelObj.matrixWorld : new THREE.Matrix4();
+
+    for (let i = 0; i < sliceIds.length && sources.length < MAX_EXPORT_MESHES; i++) {
+      const meshes = geomGroups[i];
+      if (!Array.isArray(meshes) || meshes.length === 0) continue;
+
+      const meta = itemsData[i];
+      const rawName = String(meta?.Name?.value ?? meta?.Name ?? `Element_${sliceIds[i]}`).trim();
+      const rawCat = String(meta?._category?.value ?? meta?._category ?? "").trim().toUpperCase();
+      const ifcClass = rawCat.startsWith("IFC") ? rawCat : inferIfcClass(rawName);
+
+      for (const m of meshes) {
+        if (sources.length >= MAX_EXPORT_MESHES) break;
+        if (!m?.positions || m.positions.length < 9) continue;
+        const worldMat = new THREE.Matrix4().multiplyMatrices(
+          modelMatrix,
+          m.transform instanceof THREE.Matrix4 ? m.transform : new THREE.Matrix4()
+        );
+        sources.push({
+          name: rawName || `Element_${sources.length + 1}`,
+          ifcClass,
+          positions: m.positions,
+          indices: m.indices,
+          matrixWorld: worldMat,
+        });
+      }
     }
   }
 
-  if (meshes.length === 0) {
-    const roots = collectSceneModelObjects(components);
-    for (const root of roots) {
-      root.traverse((child) => {
-        if (child instanceof THREE.Mesh && child.visible && child.geometry) {
-          meshes.push(child);
+  return sources;
+}
+
+function collectSceneMeshSources(components: OBC.Components): ExportableMeshSource[] {
+  const sources: ExportableMeshSource[] = [];
+  const roots = collectSceneModelObjects(components);
+  const vTmp = new THREE.Vector3();
+
+  for (const root of roots) {
+    root.traverse((child) => {
+      if (sources.length >= MAX_EXPORT_MESHES) return;
+      if (!(child instanceof THREE.Mesh) || !child.visible || !child.geometry) return;
+      const geom = child.geometry;
+      const pos = geom.getAttribute("position");
+      if (!hasReadableBufferArray(pos) || pos.count < 3) return;
+
+      const index = geom.getIndex();
+      if (index && !hasReadableBufferArray(index)) return;
+
+      child.updateMatrixWorld(true);
+      const posArr = new Float32Array(pos.count * 3);
+      for (let i = 0; i < pos.count; i++) {
+        vTmp.fromBufferAttribute(pos, i);
+        posArr[i * 3] = vTmp.x;
+        posArr[i * 3 + 1] = vTmp.y;
+        posArr[i * 3 + 2] = vTmp.z;
+      }
+
+      let idxArr: Uint32Array | undefined;
+      if (index) {
+        idxArr = new Uint32Array(index.count);
+        for (let i = 0; i < index.count; i++) {
+          idxArr[i] = index.getX(i);
         }
+      }
+
+      const rawName = child.name?.trim() || `Element_${sources.length + 1}`;
+      sources.push({
+        name: rawName,
+        ifcClass: inferIfcClass(rawName),
+        positions: posArr,
+        indices: idxArr,
+        matrixWorld: child.matrixWorld.clone(),
       });
-    }
+    });
   }
 
-  return meshes;
+  return sources;
 }
 
 /**
- * Exports active 3D scene meshes (including built-in 10-Villa / parametric models)
+ * Exports active 3D scene meshes (including Fragments/IFC models and built-in parametric models)
  * as a valid ISO-10303-21 IFC4 STEP file using IFCTRIANGULATEDFACESET geometry.
  */
 export async function exportSceneToIfc4(
   components: OBC.Components,
   baseName?: string
 ): Promise<ExportedModelArtifact> {
-  const meshes = collectWorldMeshes(components);
-  if (meshes.length === 0) {
+  let sources = await collectFragmentMeshSources(components);
+  if (sources.length === 0) {
+    sources = collectSceneMeshSources(components);
+  }
+  if (sources.length === 0) {
     throw new Error("Load or open a 3D / IFC model before exporting to IFC4.");
   }
 
@@ -126,17 +240,15 @@ export async function exportSceneToIfc4(
 
   const elementIds: number[] = [];
   const v = new THREE.Vector3();
-  const maxMeshes = Math.min(meshes.length, 300);
 
-  for (let mIdx = 0; mIdx < maxMeshes; mIdx++) {
-    const mesh = meshes[mIdx];
-    const geom = mesh.geometry;
-    const pos = geom.getAttribute("position");
-    if (!pos || pos.count < 3) continue;
+  for (let mIdx = 0; mIdx < sources.length; mIdx++) {
+    const src = sources[mIdx];
+    const pos = src.positions;
+    const vertCount = Math.floor(pos.length / 3);
+    if (vertCount < 3) continue;
 
-    mesh.updateMatrixWorld(true);
-    const index = geom.getIndex();
-    const triCount = index ? Math.floor(index.count / 3) : Math.floor(pos.count / 3);
+    const index = src.indices;
+    const triCount = index ? Math.floor(index.length / 3) : Math.floor(vertCount / 3);
     if (triCount === 0) continue;
 
     // Keep each mesh compact (<= 400 tris) so large parametric scenes stay fast & lightweight
@@ -146,14 +258,15 @@ export async function exportSceneToIfc4(
     let vCounter = 1;
 
     for (let t = 0; t < triCount; t += step) {
-      const i0 = index ? index.getX(t * 3) : t * 3;
-      const i1 = index ? index.getX(t * 3 + 1) : t * 3 + 1;
-      const i2 = index ? index.getX(t * 3 + 2) : t * 3 + 2;
+      const i0 = index ? index[t * 3] : t * 3;
+      const i1 = index ? index[t * 3 + 1] : t * 3 + 1;
+      const i2 = index ? index[t * 3 + 2] : t * 3 + 2;
+      if (i0 >= vertCount || i1 >= vertCount || i2 >= vertCount) continue;
 
       const triIndices = [i0, i1, i2];
       const faceIdx: number[] = [];
       for (const idx of triIndices) {
-        v.fromBufferAttribute(pos, idx).applyMatrix4(mesh.matrixWorld);
+        v.set(pos[idx * 3], pos[idx * 3 + 1], pos[idx * 3 + 2]).applyMatrix4(src.matrixWorld);
         // Convert Three.js Y-up (x, y, z) -> IFC Z-up (x, -z, y)
         const ix = Number(v.x.toFixed(4));
         const iy = Number((-v.z).toFixed(4));
@@ -172,10 +285,8 @@ export async function exportSceneToIfc4(
     const prodShapeId = add(`IFCPRODUCTDEFINITIONSHAPE($,$,(#${shapeRepId}))`);
     const elemPlaceId = add(`IFCLOCALPLACEMENT(#${storeyPlaceId},#${worldPlaceId})`);
 
-    const rawName = mesh.name?.trim() || `Element_${mIdx + 1}`;
-    const ifcClass = inferIfcClass(rawName);
     const elemId = add(
-      `${ifcClass}('${generateIfcGuid()}',#${ownerId},'${escapeIfcString(rawName)}',$,$,#${elemPlaceId},#${prodShapeId},$)`
+      `${src.ifcClass}('${generateIfcGuid()}',#${ownerId},'${escapeIfcString(src.name)}',$,$,#${elemPlaceId},#${prodShapeId},$)`
     );
     elementIds.push(elemId);
   }
