@@ -8,3 +8,4 @@ export * from "./smart-views";
 export * from "./load-project-model";
 export * from "./measurement-tool";
 export * from "./model-layout";
+export * from "./walk-controller";

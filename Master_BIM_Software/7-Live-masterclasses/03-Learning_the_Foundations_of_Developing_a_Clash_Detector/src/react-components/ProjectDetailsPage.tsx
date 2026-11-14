@@ -33,6 +33,7 @@ import {
     Modeler,
     CypeConnector,
 } from "../bim-components";
+import { IfcWalkController, WalkSpeedPreset } from "../bim-components/setup/src/walk-controller";
 import { NavigationCube } from "./NavigationCube";
 
 export interface ProjectDetailsPageProps {
@@ -188,9 +189,11 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
     const [isTopBarCollapsed, setIsTopBarCollapsed] = React.useState<boolean>(false);
     const [isFloatingToolbarCollapsed, setIsFloatingToolbarCollapsed] = React.useState<boolean>(false);
     const [openHeaderMenu, setOpenHeaderMenu] = React.useState<"views" | "inspect" | "workflows" | "studio" | null>(null);
-    const [activeBottomSubbar, setActiveBottomSubbar] = React.useState<"camera" | "measure" | "section" | null>(null);
+    const [activeBottomSubbar, setActiveBottomSubbar] = React.useState<"camera" | "measure" | "section" | "walk" | null>(null);
     const [cameraProjection, setCameraProjection] = React.useState<"Perspective" | "Orthographic">("Perspective");
     const [navControlMode, setNavControlMode] = React.useState<"Orbit" | "FirstPerson">("Orbit");
+    const [walkSpeed, setWalkSpeed] = React.useState<WalkSpeedPreset>("normal");
+    const walkControllerRef = React.useRef<IfcWalkController | null>(null);
     const pressedKeysRef = React.useRef<Set<string>>(new Set());
 
     React.useEffect(() => {
@@ -860,14 +863,62 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
         } catch {}
     };
 
-    const toggleNavControlMode = () => {
+    React.useEffect(() => {
+        return () => {
+            walkControllerRef.current?.dispose();
+            walkControllerRef.current = null;
+        };
+    }, []);
+
+    const getOrCreateWalkController = () => {
+        const components = componentsRef.current;
+        const world = worldRef.current;
+        if (!components || !world) return null;
+        if (!walkControllerRef.current) {
+            walkControllerRef.current = new IfcWalkController(components, world, () => {
+                setNavControlMode("Orbit");
+                setActiveBottomSubbar((prev) => (prev === "walk" ? null : prev));
+            });
+        }
+        return walkControllerRef.current;
+    };
+
+    const toggleNavControlMode = async () => {
         const cam = worldRef.current?.camera;
         if (!cam || !(cam instanceof OBC.OrthoPerspectiveCamera)) return;
         const next = navControlMode === "Orbit" ? "FirstPerson" : "Orbit";
         try {
-            cam.set(next);
-            setNavControlMode(next);
+            if (next === "FirstPerson") {
+                const ctrl = getOrCreateWalkController();
+                if (ctrl) {
+                    ctrl.setSpeedPreset(walkSpeed);
+                    await ctrl.enter(true);
+                } else {
+                    cam.set("FirstPerson");
+                }
+                setCameraProjection("Perspective");
+                setNavControlMode("FirstPerson");
+                setActiveBottomSubbar("walk");
+            } else {
+                walkControllerRef.current?.exit();
+                cam.set("Orbit");
+                setNavControlMode("Orbit");
+                setActiveBottomSubbar((prev) => (prev === "walk" ? null : prev));
+            }
         } catch {}
+    };
+
+    const handleWalkSpeedChange = (preset: WalkSpeedPreset) => {
+        setWalkSpeed(preset);
+        walkControllerRef.current?.setSpeedPreset(preset);
+    };
+
+    const handleWalkEyeLevel = async () => {
+        await walkControllerRef.current?.moveToModelEyeLevel(1.68);
+    };
+
+    const handleWalkElevation = (deltaMeters: number) => {
+        walkControllerRef.current?.adjustElevation(deltaMeters);
     };
 
     const handleTakeScreenshot = () => {
@@ -3019,11 +3070,106 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                     </button>
                                     <button
                                         type="button"
+                                        className={`viewer-ctx-btn ${navControlMode === "FirstPerson" ? "active" : ""}`}
+                                        onClick={toggleNavControlMode}
+                                        title="Enter First-Person IFC Walkthrough (WASD + Mouse Look)"
+                                    >
+                                        <span className="material-icons-round">directions_walk</span>
+                                        <span>Walk</span>
+                                    </button>
+                                    <button
+                                        type="button"
                                         onClick={() => setActiveBottomSubbar(null)}
                                         style={{ background: "transparent", border: "none", color: "#94a3b8", cursor: "pointer", fontSize: "16px", padding: "2px 6px" }}
                                         title="Close Camera Bar"
                                     >
                                         &times;
+                                    </button>
+                                </div>
+                            )}
+
+                            {activeBottomSubbar === "walk" && navControlMode === "FirstPerson" && (
+                                <div className="viewer-ctx-subbar" style={{ gap: "6px", flexWrap: "wrap", maxWidth: "92vw" }}>
+                                    <span
+                                        style={{
+                                            display: "inline-flex",
+                                            alignItems: "center",
+                                            gap: "5px",
+                                            fontSize: "0.68rem",
+                                            fontWeight: 800,
+                                            letterSpacing: "0.04em",
+                                            color: "#34d399",
+                                            background: "rgba(16, 185, 129, 0.14)",
+                                            border: "1px solid rgba(16, 185, 129, 0.35)",
+                                            borderRadius: "999px",
+                                            padding: "3px 9px",
+                                        }}
+                                    >
+                                        <span className="material-icons-round" style={{ fontSize: "14px" }}>directions_walk</span>
+                                        WALK
+                                    </span>
+
+                                    <button
+                                        type="button"
+                                        className="viewer-ctx-btn"
+                                        onClick={handleWalkEyeLevel}
+                                        title="Move to human eye level (1.68m) in front of the IFC model"
+                                    >
+                                        <span className="material-icons-round">accessibility_new</span>
+                                        <span>Eye Level</span>
+                                    </button>
+
+                                    <button
+                                        type="button"
+                                        className="viewer-ctx-btn"
+                                        onClick={() => handleWalkElevation(3)}
+                                        title="Move up one floor (+3m) [Key: E / Space]"
+                                    >
+                                        <span className="material-icons-round">arrow_upward</span>
+                                        <span>+3m</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="viewer-ctx-btn"
+                                        onClick={() => handleWalkElevation(-3)}
+                                        title="Move down one floor (-3m) [Key: Q / C]"
+                                    >
+                                        <span className="material-icons-round">arrow_downward</span>
+                                        <span>-3m</span>
+                                    </button>
+
+                                    {(["slow", "normal", "fast"] as const).map((preset) => (
+                                        <button
+                                            key={preset}
+                                            type="button"
+                                            className={`viewer-ctx-btn ${walkSpeed === preset ? "active" : ""}`}
+                                            onClick={() => handleWalkSpeedChange(preset)}
+                                            title={`Walk speed: ${preset === "slow" ? "2 m/s" : preset === "normal" ? "5 m/s" : "12 m/s"} (Hold Shift to sprint)`}
+                                        >
+                                            <span>{preset === "slow" ? "Slow" : preset === "normal" ? "Normal" : "Fast"}</span>
+                                        </button>
+                                    ))}
+
+                                    <span
+                                        style={{
+                                            fontSize: "0.66rem",
+                                            color: "#94a3b8",
+                                            padding: "0 6px",
+                                            whiteSpace: "nowrap",
+                                        }}
+                                    >
+                                        WASD / Arrows · Drag: Look · Q/E: Up/Down · Shift: Sprint · Esc: Exit
+                                    </span>
+
+                                    <button
+                                        type="button"
+                                        className="viewer-ctx-btn"
+                                        onClick={toggleNavControlMode}
+                                        style={{ color: "#fca5a5" }}
+                                        title="Exit Walk Mode back to Orbit [Esc]"
+                                    >
+                                        <span className="material-icons-round">close</span>
+                                        <span>Exit</span>
                                     </button>
                                 </div>
                             )}
