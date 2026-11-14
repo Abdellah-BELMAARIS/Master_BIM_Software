@@ -1,1 +1,1 @@
-﻿export * from "./mcpBimServer.js";
+export * from "./mcpBimServer.js";
