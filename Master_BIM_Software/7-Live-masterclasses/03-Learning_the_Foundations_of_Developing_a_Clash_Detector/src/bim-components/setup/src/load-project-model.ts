@@ -262,9 +262,12 @@ export async function loadProjectModel(
   );
 
   if (
+    !project.modelType ||
     project.modelType === "empty" ||
+    (project.modelType === "cube" && !ifcMetaEarly && !hasBufferedCustomIfc && !lowerName.includes("pavilion") && !lowerName.includes("modular")) ||
     (project.modelCategory === "empty" && !hasBufferedCustomIfc) ||
-    (project.modelCategory === "ifc" && !project.ifcFileName && !ifcMetaEarly && !hasBufferedCustomIfc)
+    (project.modelCategory === "ifc" && !project.ifcFileName && !ifcMetaEarly && !hasBufferedCustomIfc) ||
+    (project.modelCategory === "3d" && (type === "empty" || type === "cube") && !project.ifcFileName && !hasBufferedCustomIfc)
   ) {
     console.log("[loadProjectModel] Empty workspace initialized (no preloaded IFC/3D model).");
     return {
