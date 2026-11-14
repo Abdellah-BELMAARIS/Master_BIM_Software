@@ -1,0 +1,102 @@
+[
+  {
+    "Code": "SPEC-WALL-01",
+    "Category": "IFCWALL",
+    "Name": "Reinforced Architectural Enclosure Wall System",
+    "Standard": "EN 1992-1-1 / ISO 19650",
+    "FireRating": "REI 120",
+    "ThermalUValue": "0.22 W/m²K",
+    "AcousticRating": "54 dB Rw",
+    "UnitCost": "$ 245 / m²",
+    "Manufacturer": "Holcim Structural Systems"
+  },
+  {
+    "Code": "SPEC-WALL-02",
+    "Category": "IFCWALLSTANDARDCASE",
+    "Name": "Standardized Partition & Perimeter Wall Assembly",
+    "Standard": "ASTM E119 / Eurocode 2",
+    "FireRating": "REI 90",
+    "ThermalUValue": "0.26 W/m²K",
+    "AcousticRating": "51 dB Rw",
+    "UnitCost": "$ 195 / m²",
+    "Manufacturer": "Knauf Performance Envelope"
+  },
+  {
+    "Code": "SPEC-SLAB-01",
+    "Category": "IFCSLAB",
+    "Name": "Post-Tensioned Structural Concrete Slab & Bowl Deck",
+    "Standard": "ACI 318 / EN 1992",
+    "FireRating": "REI 180",
+    "ThermalUValue": "0.18 W/m²K",
+    "AcousticRating": "58 dB Ln,w",
+    "UnitCost": "$ 310 / m²",
+    "Manufacturer": "CEMEX High-Load Mix"
+  },
+  {
+    "Code": "SPEC-COL-01",
+    "Category": "IFCCOLUMN",
+    "Name": "High-Strength Composite & Steel Compression Column",
+    "Standard": "EN 1993-1-1 / AISC 360",
+    "FireRating": "R 120",
+    "ThermalUValue": "N/A (Structural)",
+    "AcousticRating": "N/A",
+    "UnitCost": "$ 1,420 / unit",
+    "Manufacturer": "ArcelorMittal Heavy Sections"
+  },
+  {
+    "Code": "SPEC-BEAM-01",
+    "Category": "IFCBEAM",
+    "Name": "Long-Span Cantilever Steel Roof & Girder Beam",
+    "Standard": "EN 1993-1-1 / ISO 10721",
+    "FireRating": "R 90 (Intumescent)",
+    "ThermalUValue": "N/A (Structural)",
+    "AcousticRating": "N/A",
+    "UnitCost": "$ 980 / m",
+    "Manufacturer": "Tata Steel Long Span"
+  },
+  {
+    "Code": "SPEC-OPEN-01",
+    "Category": "IFCDOOR",
+    "Name": "Acoustic Fire-Rated Pivot & Emergency Exit Door",
+    "Standard": "EN 1634-1 / UL 10C",
+    "FireRating": "EI2 60-C5",
+    "ThermalUValue": "1.30 W/m²K",
+    "AcousticRating": "42 dB Rw",
+    "UnitCost": "$ 1,850 / unit",
+    "Manufacturer": "Assa Abloy Commercial"
+  },
+  {
+    "Code": "SPEC-GLAZ-01",
+    "Category": "IFCWINDOW",
+    "Name": "Triple-Glazed Solar Control Aluminum Curtain Window",
+    "Standard": "EN 14351-1 / ASHRAE 90.1",
+    "FireRating": "EW 30",
+    "ThermalUValue": "0.85 W/m²K",
+    "AcousticRating": "44 dB Rw",
+    "UnitCost": "$ 680 / m²",
+    "Manufacturer": "Schüco Façade Systems"
+  },
+  {
+    "Code": "SPEC-FOOT-01",
+    "Category": "IFCFOOTING",
+    "Name": "Sulfate-Resistant Deep Pad & Pile Cap Foundation",
+    "Standard": "EN 1997-1 / GeoCode 7",
+    "FireRating": "REI 240",
+    "ThermalUValue": "N/A (Substructure)",
+    "AcousticRating": "N/A",
+    "UnitCost": "$ 420 / m³",
+    "Manufacturer": "Lafarge Foundation Grade"
+  },
+  {
+    "Code": "SPEC-PROXY-01",
+    "Category": "IFCBUILDINGELEMENTPROXY",
+    "Name": "Custom Architectural Fixture, Solar PV, Pool & Venue Equipment",
+    "Standard": "ISO 16739-1 / IFC4",
+    "FireRating": "Class A1 / B-s1,d0",
+    "ThermalUValue": "Project Specific",
+    "AcousticRating": "Project Specific",
+    "UnitCost": "$ 540 / element",
+    "Manufacturer": "BIMPulse Certified Supply"
+  }
+]
+

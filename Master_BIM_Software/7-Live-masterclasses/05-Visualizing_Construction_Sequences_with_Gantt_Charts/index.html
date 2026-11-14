@@ -1,17 +1,237 @@
-<!doctype html>
-<html lang="en" class="bim-ui-dark">
+<!DOCTYPE html>
+<html lang="en">
 
 <head>
-  <meta charset="UTF-8" />
-  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>BIM App</title>
-  <link rel="stylesheet" href="./src/style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta
+        http-equiv="Content-Security-Policy"
+        content="default-src 'self' https: data: blob:; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' https: http://127.0.0.1:5174; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: blob: https:; font-src 'self' data: https:; connect-src 'self' data: blob: https: http://localhost:5001 http://127.0.0.1:5001 wss: ws://127.0.0.1:5174; worker-src 'self' blob:;"
+    >
+    <title>Master BIM Viewer</title>
+    <!-- Google Material Icons Round -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons+Round">
+    <!-- Main Stylesheet -->
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-  <bim-grid id="app"></bim-grid>
-  <script type="module" src="/src/main.ts"></script>
+    <!-- React Root Container (Lessons 3.2, 3.3 & 3.8 React Router) -->
+    <div id="app"></div>
+
+    <!-- Auxiliary Pages & Global Modals (AEC Team & Error Modal) -->
+    <main id="content" style="display: none;">
+        <!-- Page 3: Users / Team Page (Module 1 Challenge) -->
+        <div class="page" id="users-page" style="display: none;">
+            <!-- Users Header -->
+            <header id="users-header">
+                <div class="header-title-box">
+                    <span class="header-eyebrow">CDE ACCESS / STAKEHOLDERS</span>
+                    <h2>AEC Team & Roles</h2>
+                </div>
+                <div class="header-actions">
+                    <button class="btn-primary" id="new-user-btn">
+                        <span class="material-icons-round">person_add</span>
+                        <span>New Member</span>
+                    </button>
+                </div>
+            </header>
+
+            <div class="users-content-area">
+                <!-- Search & Role Filter Toolbar -->
+                <div class="users-toolbar">
+                    <div class="search-input-pill" style="width: 280px;">
+                        <span class="material-icons-round">search</span>
+                        <input type="text" id="user-search-input" placeholder="Search team by name, email, or role..." style="width: 100%;">
+                    </div>
+                    <div class="users-filter-group" id="users-filter-group">
+                        <button type="button" class="filter-pill active" data-role-filter="all">All (4)</button>
+                        <button type="button" class="filter-pill" data-role-filter="arch">Architects</button>
+                        <button type="button" class="filter-pill" data-role-filter="eng">Engineers</button>
+                        <button type="button" class="filter-pill" data-role-filter="lead">BIM Leads</button>
+                    </div>
+                </div>
+
+                <!-- Modern BIM Users Table Layout -->
+                <div class="users-table-container">
+                    <table class="users-table">
+                        <thead>
+                            <tr>
+                                <th>Member</th>
+                                <th>Discipline / Role</th>
+                                <th>Assigned Models</th>
+                                <th>Status</th>
+                                <th style="text-align: right;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table-body">
+                            <tr>
+                                <td>
+                                    <div class="user-cell">
+                                        <div class="user-avatar-circle badge-blue">AB</div>
+                                        <div>
+                                            <div class="user-name">Abdellah Belmaaris</div>
+                                            <div class="user-email">a.belmaaris@bimpulse.com</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="role-badge role-dev">BIM Software Lead</span></td>
+                                <td class="user-models-cell">Hospital Center, Urban Oasis</td>
+                                <td><span class="status-indicator status-online">Active</span></td>
+                                <td style="text-align: right;">
+                                    <button type="button" class="btn-icon user-options-btn" title="Options"><span
+                                            class="material-icons-round">more_vert</span></button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="user-cell">
+                                        <div class="user-avatar-circle badge-orange">JB</div>
+                                        <div>
+                                            <div class="user-name">Juan Brunetta</div>
+                                            <div class="user-email">j.brunetta@thatopen.com</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="role-badge role-arch">Lead Architect</span></td>
+                                <td class="user-models-cell">Hospital Center, TechHub</td>
+                                <td><span class="status-indicator status-online">Active</span></td>
+                                <td style="text-align: right;">
+                                    <button type="button" class="btn-icon user-options-btn" title="Options"><span
+                                            class="material-icons-round">more_vert</span></button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="user-cell">
+                                        <div class="user-avatar-circle badge-green">VA</div>
+                                        <div>
+                                            <div class="user-name">Valeria Alarcon</div>
+                                            <div class="user-email">v.alarcon@thatopen.com</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="role-badge role-eng">Structural Engineer</span></td>
+                                <td class="user-models-cell">Sustainable Housing</td>
+                                <td><span class="status-indicator status-online">Active</span></td>
+                                <td style="text-align: right;">
+                                    <button type="button" class="btn-icon user-options-btn" title="Options"><span
+                                            class="material-icons-round">more_vert</span></button>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>
+                                    <div class="user-cell">
+                                        <div class="user-avatar-circle badge-purple">SC</div>
+                                        <div>
+                                            <div class="user-name">Sarah Connor</div>
+                                            <div class="user-email">s.connor@bimpulse.com</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="role-badge role-bim">BIM Coordinator</span></td>
+                                <td class="user-models-cell">Heritage Restoration</td>
+                                <td><span class="status-indicator status-offline">Away</span></td>
+                                <td style="text-align: right;">
+                                    <button type="button" class="btn-icon user-options-btn" title="Options"><span
+                                            class="material-icons-round">more_vert</span></button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- New / Edit User Modal Dialog -->
+        <dialog id="new-user-modal">
+            <form id="new-user-form">
+                <h2 id="user-modal-title">New Team Member</h2>
+                <div class="input-list">
+                    <div class="form-field">
+                        <label><span class="material-icons-round">person</span> Full Name</label>
+                        <input type="text" id="user-name-input" placeholder="e.g. Alex Morgan" required>
+                    </div>
+
+                    <div class="form-field">
+                        <label><span class="material-icons-round">email</span> Email</label>
+                        <input type="email" id="user-email-input" placeholder="alex@bimpulse.com" required>
+                    </div>
+
+                    <div class="form-field">
+                        <label><span class="material-icons-round">badge</span> Discipline / Role</label>
+                        <select id="user-role-input">
+                            <option value="Lead Architect">Lead Architect</option>
+                            <option value="Structural Engineer">Structural Engineer</option>
+                            <option value="BIM Software Lead">BIM Software Lead</option>
+                            <option value="BIM Coordinator">BIM Coordinator</option>
+                        </select>
+                    </div>
+
+                    <div class="form-field">
+                        <label><span class="material-icons-round">domain</span> Assigned Models</label>
+                        <input type="text" id="user-models-input" placeholder="e.g. Hospital Center, Urban Oasis">
+                    </div>
+
+                    <div class="form-field">
+                        <label><span class="material-icons-round">check_circle</span> Status</label>
+                        <select id="user-status-input">
+                            <option value="Active">Active</option>
+                            <option value="Away">Away</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" id="cancel-user-btn" class="btn-cancel">Cancel</button>
+                    <button type="submit" id="user-submit-btn" class="btn-accept">Save Member</button>
+                </div>
+            </form>
+        </dialog>
+
+        <!-- Professional Error Notification Modal (Lesson 3.8 Challenge) -->
+        <dialog id="error-modal">
+            <div class="error-modal-card">
+                <div class="error-modal-header">
+                    <div class="error-icon-box">
+                        <span class="material-icons-round">warning_amber</span>
+                    </div>
+                    <div class="error-title-group">
+                        <span>Validation Error</span>
+                        <h3>Action Failed</h3>
+                    </div>
+                </div>
+                <div class="error-modal-body">
+                    <p id="error-modal-message">A project with that name already exists.</p>
+                </div>
+                <div class="error-modal-actions">
+                    <button type="button" id="close-error-modal-btn" class="btn-error-close">
+                        <span class="material-icons-round" style="font-size: 1.15rem;">check</span>
+                        <span>Understood</span>
+                    </button>
+                </div>
+            </div>
+        </dialog>
+    </main>
+
+    <!-- Floating User Actions Dropdown Menu (Direct child of body, position: fixed) -->
+    <div id="user-actions-dropdown" class="dropdown-menu" style="display: none;">
+        <button type="button" class="dropdown-item" id="user-menu-edit">
+            <span class="material-icons-round">edit</span>
+            <span>Edit User</span>
+        </button>
+        <button type="button" class="dropdown-item" id="user-menu-status">
+            <span class="material-icons-round">swap_horiz</span>
+            <span>Toggle Status</span>
+        </button>
+        <button type="button" class="dropdown-item text-danger" id="user-menu-delete">
+            <span class="material-icons-round">delete</span>
+            <span>Delete User</span>
+        </button>
+    </div>
+
+    <!-- Main Application Logic (Vite TypeScript & React Module from src/) -->
+    <script type="module" src="./src/bootstrap.tsx"></script>
 </body>
 
 </html>

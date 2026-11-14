@@ -9,15 +9,21 @@ export interface GanttTask {
   startDate: Date;
   endDate: Date;
   query: FRAGS.ItemsQueryParams[];
+  /** Optional fallback category regex for procedural Three.js twins */
+  categoryPattern?: string;
+  /** Optional storey name for procedural Three.js twins */
+  storeyName?: string;
+  /** Optional element count badge */
+  elementCount?: number;
 }
 
-const LABEL_W = 180;
-const ROW_H = 36;
+const LABEL_W = 190;
+const ROW_H = 34;
 const HEADER_H = 30;
 const BAR_H = 20;
 const BAR_R = 4;
 const BAR_Y_PAD = (ROW_H - BAR_H) / 2;
-const HANDLE_SIZE = 7; // half-width of the triangle handle
+const HANDLE_SIZE = 7;
 
 export class GanttChart extends LitElement {
   static styles = css`
@@ -25,6 +31,7 @@ export class GanttChart extends LitElement {
       display: block;
       width: 100%;
       height: 100%;
+      user-select: none;
     }
     .wrapper {
       width: 100%;
@@ -40,21 +47,24 @@ export class GanttChart extends LitElement {
 
   static properties = {
     tasks: { attribute: false },
+    playheadRatio: { type: Number },
+    activeTaskId: { type: String },
     _w: { state: true },
-    _playheadRatio: { state: true },
   };
 
   declare tasks: GanttTask[];
+  declare playheadRatio: number;
+  declare activeTaskId: string | null;
   declare private _w: number;
-  declare private _playheadRatio: number;
 
   private _ro: ResizeObserver | null = null;
 
   constructor() {
     super();
     this.tasks = [];
-    this._w = 0;
-    this._playheadRatio = 0; // starts at the left edge of the timeline
+    this.playheadRatio = 0;
+    this.activeTaskId = null;
+    this._w = 600;
   }
 
   disconnectedCallback() {
@@ -64,14 +74,13 @@ export class GanttChart extends LitElement {
 
   private _onRef = (el?: Element) => {
     if (!el) return;
-    this._w = (el as HTMLElement).clientWidth;
+    this._w = Math.max(320, (el as HTMLElement).clientWidth);
+    this._ro?.disconnect();
     this._ro = new ResizeObserver(([entry]) => {
-      this._w = entry.contentRect.width;
+      this._w = Math.max(320, entry.contentRect.width);
     });
     this._ro.observe(el);
   };
-
-  // ── derived timeline bounds ─────────────────────────────────────────────
 
   private get _start(): Date {
     if (!this.tasks.length) return new Date();
@@ -91,36 +100,35 @@ export class GanttChart extends LitElement {
     return Math.max(1, this._end.getTime() - this._start.getTime());
   }
 
-  // ── coordinate helpers ──────────────────────────────────────────────────
-
   private _x(date: Date, tlW: number): number {
     return LABEL_W + ((date.getTime() - this._start.getTime()) / this._span) * tlW;
   }
 
-  // ── playhead drag ───────────────────────────────────────────────────────
+  private _updatePlayheadFromClientX(clientX: number) {
+    const svgEl = this.shadowRoot?.querySelector("svg");
+    if (!svgEl) return;
+    const rect = svgEl.getBoundingClientRect();
+    const tlW = Math.max(1, this._w - LABEL_W);
+    const offsetX = clientX - rect.left - LABEL_W;
+    const ratio = Math.max(0, Math.min(1, offsetX / tlW));
+    this.playheadRatio = ratio;
+
+    const date = new Date(this._start.getTime() + ratio * this._span);
+    this.dispatchEvent(
+      new CustomEvent<{ date: Date; ratio: number }>("playheadchange", {
+        detail: { date, ratio },
+        bubbles: true,
+        composed: true,
+      }),
+    );
+  }
 
   private _onPlayheadMouseDown = (e: MouseEvent) => {
     e.preventDefault();
+    this._updatePlayheadFromClientX(e.clientX);
 
     const onMove = (ev: MouseEvent) => {
-      const svg = this.shadowRoot?.querySelector("svg");
-      if (!svg) return;
-      const rect = svg.getBoundingClientRect();
-      const tlW = Math.max(1, this._w - LABEL_W);
-      const offsetX = ev.clientX - rect.left - LABEL_W;
-      const ratio = Math.max(0, Math.min(1, offsetX / tlW));
-      this._playheadRatio = ratio;
-
-      const date = new Date(
-        this._start.getTime() + ratio * this._span,
-      );
-      this.dispatchEvent(
-        new CustomEvent<{ date: Date }>("playheadchange", {
-          detail: { date },
-          bubbles: true,
-          composed: true,
-        }),
-      );
+      this._updatePlayheadFromClientX(ev.clientX);
     };
 
     const onUp = () => {
@@ -132,29 +140,38 @@ export class GanttChart extends LitElement {
     document.addEventListener("mouseup", onUp);
   };
 
-  // ── SVG fragments ───────────────────────────────────────────────────────
+  private _onHeaderClick = (e: MouseEvent) => {
+    const svgEl = this.shadowRoot?.querySelector("svg");
+    if (!svgEl) return;
+    const rect = svgEl.getBoundingClientRect();
+    if (e.clientX - rect.left < LABEL_W) return;
+    this._updatePlayheadFromClientX(e.clientX);
+  };
 
   private _monthTicks(tlW: number, totalH: number) {
     const marks: unknown[] = [];
     const cursor = new Date(this._start.getFullYear(), this._start.getMonth(), 1);
+    let safety = 0;
 
-    while (cursor.getTime() <= this._end.getTime()) {
+    while (cursor.getTime() <= this._end.getTime() && safety < 60) {
+      safety++;
       const x = this._x(cursor, tlW);
-      const label = cursor.toLocaleString("default", {
-        month: "short",
-        year: "2-digit",
-      });
+      if (x >= LABEL_W - 2 && x <= LABEL_W + tlW + 2) {
+        const label = cursor.toLocaleString("default", {
+          month: "short",
+          year: "2-digit",
+        });
 
-      marks.push(svg`
-        <line x1=${x} y1="0" x2=${x} y2=${totalH}
-              stroke="rgba(255,255,255,0.07)" stroke-width="1" />
-        <text x=${x + 5} y=${HEADER_H / 2 + 4}
-              fill="rgba(255,255,255,0.35)"
-              font-size="11" font-family="sans-serif">
-          ${label}
-        </text>
-      `);
-
+        marks.push(svg`
+          <line x1=${x} y1="0" x2=${x} y2=${totalH}
+                stroke="rgba(255,255,255,0.08)" stroke-width="1" />
+          <text x=${x + 6} y=${HEADER_H / 2 + 4}
+                fill="rgba(255,255,255,0.45)"
+                font-size="11" font-family="sans-serif">
+            ${label}
+          </text>
+        `);
+      }
       cursor.setMonth(cursor.getMonth() + 1);
     }
 
@@ -162,40 +179,55 @@ export class GanttChart extends LitElement {
   }
 
   private _taskRows(tlW: number) {
+    const currentMs = this._start.getTime() + this.playheadRatio * this._span;
+
     return this.tasks.map((task, i) => {
       const rowY = HEADER_H + i * ROW_H;
       const x0 = this._x(task.startDate, tlW);
       const x1 = this._x(task.endDate, tlW);
-      const bw = Math.max(4, x1 - x0);
+      const bw = Math.max(6, x1 - x0);
       const by = rowY + BAR_Y_PAD;
+      const isSelected = this.activeTaskId === task.id;
+      const isBuilt = currentMs >= task.startDate.getTime() && this.playheadRatio > 0;
+      const displayLabel =
+        task.name.length > 23 ? `${task.name.slice(0, 21)}…` : task.name;
 
       return svg`
-        <g>
+        <g style="cursor:pointer" @click=${() => this._emitTaskClick(task)}>
           <rect x="0" y=${rowY}
                 width=${LABEL_W + tlW} height=${ROW_H}
-                fill=${i % 2 === 0 ? "rgba(255,255,255,0.02)" : "transparent"} />
+                fill=${isSelected
+                  ? "rgba(56, 189, 248, 0.12)"
+                  : i % 2 === 0
+                  ? "rgba(255,255,255,0.025)"
+                  : "transparent"} />
+
+          <circle cx="14" cy=${rowY + ROW_H / 2} r="4"
+                  fill=${task.color}
+                  opacity=${isBuilt || isSelected ? "1" : "0.45"} />
 
           <text x=${LABEL_W - 10} y=${rowY + ROW_H / 2}
-                fill="rgba(255,255,255,0.65)"
-                font-size="12" font-family="sans-serif"
+                fill=${isSelected ? "#f8fafc" : "rgba(255,255,255,0.75)"}
+                font-size="11.5" font-family="sans-serif" font-weight=${isSelected ? "700" : "500"}
                 text-anchor="end" dominant-baseline="middle">
-            ${task.name}
+            ${displayLabel}
           </text>
 
           <rect x=${x0} y=${by} width=${bw} height=${BAR_H}
                 rx=${BAR_R} ry=${BAR_R}
                 fill=${task.color}
-                style="cursor:pointer"
-                @click=${() => this._emitTaskClick(task)} />
+                opacity=${isBuilt || isSelected ? "0.95" : "0.55"}
+                stroke=${isSelected ? "#ffffff" : "rgba(255,255,255,0.18)"}
+                stroke-width=${isSelected ? "1.6" : "0.75"} />
 
-          ${bw > 55
+          ${bw > 64
             ? svg`
               <text x=${x0 + bw / 2} y=${by + BAR_H / 2}
-                    fill="rgba(255,255,255,0.9)"
-                    font-size="11" font-family="sans-serif" font-weight="600"
+                    fill="rgba(255,255,255,0.95)"
+                    font-size="10.5" font-family="sans-serif" font-weight="600"
                     text-anchor="middle" dominant-baseline="middle"
                     pointer-events="none">
-                ${task.name}
+                ${task.elementCount !== undefined ? `${task.elementCount} el` : task.name}
               </text>`
             : ""}
         </g>
@@ -204,9 +236,8 @@ export class GanttChart extends LitElement {
   }
 
   private _renderPlayhead(tlW: number, svgH: number) {
-    const px = LABEL_W + this._playheadRatio * tlW;
+    const px = LABEL_W + this.playheadRatio * tlW;
 
-    // Triangle handle pointing downward, sitting in the header row
     const handlePoints = `
       ${px - HANDLE_SIZE},2
       ${px + HANDLE_SIZE},2
@@ -215,24 +246,17 @@ export class GanttChart extends LitElement {
 
     return svg`
       <g @mousedown=${this._onPlayheadMouseDown} style="cursor:ew-resize">
-        <!-- wider invisible hit area for easier grabbing -->
-        <rect x=${px - 8} y="0" width="16" height=${svgH}
+        <rect x=${px - 9} y="0" width="18" height=${svgH}
               fill="transparent" />
-
-        <!-- vertical line -->
         <line x1=${px} y1="0" x2=${px} y2=${svgH}
-              stroke="rgba(255,255,255,0.85)" stroke-width="1.5"
+              stroke="#ef4444" stroke-width="2"
               pointer-events="none" />
-
-        <!-- triangle handle -->
         <polygon points=${handlePoints}
-                 fill="white" opacity="0.9"
+                 fill="#ef4444" stroke="#ffffff" stroke-width="0.8"
                  pointer-events="none" />
       </g>
     `;
   }
-
-  // ── events ──────────────────────────────────────────────────────────────
 
   private _emitTaskClick(task: GanttTask) {
     this.dispatchEvent(
@@ -244,63 +268,55 @@ export class GanttChart extends LitElement {
     );
   }
 
-  // ── render ──────────────────────────────────────────────────────────────
-
   render() {
-    const tlW = Math.max(0, this._w - LABEL_W);
+    const tlW = Math.max(100, this._w - LABEL_W);
     const svgH = HEADER_H + Math.max(1, this.tasks.length) * ROW_H;
 
     return html`
       <div class="wrapper" ${ref(this._onRef)}>
-        <svg width=${this._w} height=${svgH}>
+        <svg width=${LABEL_W + tlW} height=${svgH}>
+          <rect x="0" y="0" width=${LABEL_W + tlW} height=${HEADER_H}
+                fill="rgba(255,255,255,0.04)"
+                style="cursor:pointer"
+                @mousedown=${this._onHeaderClick} />
 
-          <!-- header background -->
-          <rect x="0" y="0" width=${this._w} height=${HEADER_H}
-                fill="rgba(255,255,255,0.035)" />
-
-          <!-- "TASK" column label -->
           <text x=${LABEL_W / 2} y=${HEADER_H / 2 + 4}
-                fill="rgba(255,255,255,0.3)"
-                font-size="10" font-family="sans-serif"
+                fill="rgba(255,255,255,0.45)"
+                font-size="10" font-family="sans-serif" font-weight="700"
                 text-anchor="middle" letter-spacing="1">
-            TASK
+            CONSTRUCTION TASK
           </text>
 
-          <!-- month ticks & labels -->
           ${this._monthTicks(tlW, svgH)}
 
-          <!-- header bottom rule -->
-          <line x1="0" y1=${HEADER_H} x2=${this._w} y2=${HEADER_H}
-                stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+          <line x1="0" y1=${HEADER_H} x2=${LABEL_W + tlW} y2=${HEADER_H}
+                stroke="rgba(255,255,255,0.12)" stroke-width="1" />
 
-          <!-- label / timeline divider -->
           <line x1=${LABEL_W} y1="0" x2=${LABEL_W} y2=${svgH}
-                stroke="rgba(255,255,255,0.1)" stroke-width="1" />
+                stroke="rgba(255,255,255,0.12)" stroke-width="1" />
 
-          <!-- task rows -->
           ${this._taskRows(tlW)}
 
-          <!-- empty state -->
           ${this.tasks.length === 0
             ? svg`
-              <text x=${this._w / 2} y=${HEADER_H + ROW_H / 2}
-                    fill="rgba(255,255,255,0.2)"
-                    font-size="13" font-family="sans-serif"
+              <text x=${LABEL_W + tlW / 2} y=${HEADER_H + ROW_H / 2}
+                    fill="rgba(255,255,255,0.35)"
+                    font-size="12" font-family="sans-serif"
                     text-anchor="middle" dominant-baseline="middle">
-                No tasks defined yet
+                Click "Auto-Generate" to build tasks from your loaded BIM model
               </text>`
             : ""}
 
-          <!-- playhead — rendered last so it sits on top -->
           ${this._renderPlayhead(tlW, svgH)}
-
         </svg>
       </div>
     `;
   }
 }
 
-customElements.define("bim-gantt-chart", GanttChart);
+if (!customElements.get("bim-gantt-chart")) {
+  customElements.define("bim-gantt-chart", GanttChart);
+}
 
 declare global {
   interface HTMLElementTagNameMap {

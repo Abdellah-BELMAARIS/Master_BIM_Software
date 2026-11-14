@@ -1,0 +1,123 @@
+[
+  {
+    "id": "56HQldHkpF0TYCtumrG7",
+    "name": "High-Speed Rail Viaduct - Superstructure Span E01 (IFC4)",
+    "description": "Civil infrastructure and alignment sample model in IFC4, featuring road corridors, bridge abutments, and earthworks terrain.",
+    "userRole": "Engineer",
+    "status": "Active",
+    "finishDate": "2028-02-15T00:00:00.000Z",
+    "cost": 3400000,
+    "progress": 0.5,
+    "modelKey": "bridge"
+  },
+  {
+    "id": "Aa6U8q2oNweeXZN2mTAO",
+    "name": "Metropolitan Civic Center - Architectural Model (IFC2X3)",
+    "description": "Comprehensive architectural BIM model authored in Autodesk Revit 2024, exported in IFC2X3 Coordination View V2.0 with curtain walls and spatial rooms.",
+    "userRole": "Architect",
+    "status": "Active",
+    "finishDate": "2027-08-30T00:00:00.000Z",
+    "cost": 1250000,
+    "progress": 0.45,
+    "modelKey": "tower"
+  },
+  {
+    "id": "AaxXyLdJL7nVpznhZO8I",
+    "name": "High-Speed Rail Viaduct - Retaining Abutment E07 (IFC4)",
+    "description": "Terminal approach abutment and retaining wall system in IFC4 with backfill drainage and transition approach slab.",
+    "userRole": "Engineer",
+    "status": "Active",
+    "finishDate": "2028-11-01T00:00:00.000Z",
+    "cost": 1450000,
+    "progress": 0.6,
+    "modelKey": "bridge"
+  },
+  {
+    "id": "DrbCPatzws9617G6tTtQ",
+    "name": "Apex 28-Story Commercial Skyscraper",
+    "description": "28-story corporate commercial high-rise with double-skin curtain wall glass, exterior diagrid steel, and rooftop helipad.",
+    "userRole": "Architect",
+    "status": "Active",
+    "finishDate": "2027-06-30T00:00:00.000Z",
+    "cost": 1450000,
+    "progress": 0.55,
+    "modelKey": "tower"
+  },
+  {
+    "id": "I5m1NquTZGbRuzfCFRUn",
+    "name": "Nordic Span Cable-Stayed Highway Bridge",
+    "description": "Monumental dual-pylon cable-stayed suspension bridge over deep fjord with 32 tension stay cables and roadway LED luminaires.",
+    "userRole": "Engineer",
+    "status": "Active",
+    "finishDate": "2027-09-15T00:00:00.000Z",
+    "cost": 2850000,
+    "progress": 0.35,
+    "modelKey": "bridge"
+  },
+  {
+    "id": "J4c7t5NhMqfDYBbPVXbr",
+    "name": "Atlas Grand Football Stadium (IFC4)",
+    "description": "65,000-seat professional association football stadium with 105m x 68m regulation grass pitch, 1,056 seating sectors, concourses, VIP lounge, and 48 perimeter steel columns.",
+    "userRole": "Engineer",
+    "status": "Active",
+    "finishDate": "2028-08-15T00:00:00.000Z",
+    "cost": 95000000,
+    "progress": 0.6,
+    "modelKey": "tower"
+  },
+  {
+    "id": "N6LhS3bixhj1ke2c4TsJ",
+    "name": "Azure Coast Luxury Eco-Villa",
+    "description": "Ultra-luxury Mediterranean architectural villa featuring infinity pool, teakwood deck, and smart bioclimatic shading.",
+    "userRole": "Architect",
+    "status": "Active",
+    "finishDate": "2026-12-15T00:00:00.000Z",
+    "cost": 485000,
+    "progress": 0.65,
+    "modelKey": "villa"
+  },
+  {
+    "id": "RNQkjkNrgvN4rkdyWeCu",
+    "name": "Metropolitan Civic Center - Structural Superstructure (IFC2X3)",
+    "description": "Full structural framing model with steel trusses, shear walls, and rebar schedules exported in IFC2X3 Coordination View V2.0.",
+    "userRole": "Engineer",
+    "status": "Pending",
+    "finishDate": "2027-11-20T00:00:00.000Z",
+    "cost": 2100000,
+    "progress": 0.3,
+    "modelKey": "tower"
+  },
+  {
+    "id": "TMauin8uJTsgZTa7rDPp",
+    "name": "ProVI Infrastructure Civil Overpass & Highway Viaduct (IFC4)",
+    "description": "Official That Open Company civil infrastructure overpass & roadway corridor in IFC4 schema, featuring road alignments, bridge abutments, and earthworks.",
+    "userRole": "Engineer",
+    "status": "Active",
+    "finishDate": "2027-04-15T00:00:00.000Z",
+    "cost": 850000,
+    "progress": 0.7,
+    "modelKey": "bridge"
+  },
+  {
+    "id": "XjoN3ehq7R8hyXgJ6vl7",
+    "name": "testing the cype loading",
+    "description": "testing the cype loading",
+    "userRole": "Architect",
+    "status": "Active",
+    "finishDate": "2026-11-13T00:00:00.000Z",
+    "cost": 100000,
+    "progress": 0.25,
+    "modelKey": "empty"
+  },
+  {
+    "id": "vMFkpZyjDCOGjp0dc94w",
+    "name": "10-Villa Residential Estate (IFC4)",
+    "description": "Master-planned 150m x 130m private estate featuring ten independent 2-storey architectural villas, private pools, solar panel arrays, and central boulevard.",
+    "userRole": "Architect",
+    "status": "Active",
+    "finishDate": "2027-06-30T00:00:00.000Z",
+    "cost": 3850000,
+    "progress": 0.55,
+    "modelKey": "villa"
+  }
+]

@@ -1,8 +1,8 @@
-# Visualizing Construction Sequences with Gantt Charts and That Open Engine
+# Learning the Foundations of Developing a Clash Detector
 
-Recorded Live Masterclass #6
+Recorded Live Masterclass #3
 
-Source: https://people.thatopen.com/c/recorded-live-masterclasses-master-bim-software-developer/visualizing-construction-sequences-with-gantt-charts-and-that-open-engine
+Source: https://people.thatopen.com/c/recorded-live-masterclasses-master-bim-software-developer/learning-the-foundations-of-developing-a-clash-detector
 
 ## Goal
 Continue the full BIM platform with this live session's features.
