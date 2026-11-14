@@ -349,6 +349,20 @@ const SANDBOX_ISSUES: CypeIssue[] = [
   },
 ];
 
+interface CypeInMemorySession {
+  auth: CypeAuthConfig;
+  projects: CypeProject[];
+  contributions: CypeContributionItem[];
+  issues: CypeIssue[];
+  selectedProjectId: string;
+  connectedUser: string;
+  syncStatus: string;
+}
+
+// Preserves the active CYPE login/workspace across SPA navigation without a page refresh,
+// while automatically resetting on a full browser page reload.
+let inMemoryCypeSession: CypeInMemorySession | null = null;
+
 /**
  * Module 5 — Section 5: CYPE BIMserver.center Connector
  * Connects That Open Engine to BIMserver.center REST API v1 (/login, /projects, /contributions, /issues)
@@ -378,7 +392,29 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
   constructor(components: OBC.Components) {
     super(components);
     components.add(CypeConnector.uuid, this);
-    this.auth = this.loadStoredSession();
+    if (inMemoryCypeSession) {
+      this.auth = { ...inMemoryCypeSession.auth };
+      this.projects = [...inMemoryCypeSession.projects];
+      this.contributions = [...inMemoryCypeSession.contributions];
+      this.issues = [...inMemoryCypeSession.issues];
+      this.selectedProjectId = inMemoryCypeSession.selectedProjectId;
+      this.connectedUser = inMemoryCypeSession.connectedUser;
+      this.syncStatus = inMemoryCypeSession.syncStatus;
+    } else {
+      this.auth = this.loadStoredSession();
+    }
+  }
+
+  private persistInMemorySession(): void {
+    inMemoryCypeSession = {
+      auth: { ...this.auth },
+      projects: [...this.projects],
+      contributions: [...this.contributions],
+      issues: [...this.issues],
+      selectedProjectId: this.selectedProjectId,
+      connectedUser: this.connectedUser,
+      syncStatus: this.syncStatus,
+    };
   }
 
   private loadStoredSession(): CypeAuthConfig {
@@ -410,6 +446,7 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
 
   saveAuth(partial: Partial<CypeAuthConfig>) {
     this.auth = { ...this.auth, ...partial };
+    this.persistInMemorySession();
     try {
       localStorage.setItem(CYPE_STORAGE_KEY, JSON.stringify({ mode: this.auth.mode }));
     } catch (error) {
@@ -427,6 +464,7 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
       refreshToken: "",
       expiresAt: 0,
     });
+    inMemoryCypeSession = null;
     this.syncStatus = "Cleared BIMserver.center session token.";
     this.onStateChanged.trigger();
   }
@@ -1263,6 +1301,9 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
   }
 
   dispose() {
+    if (this.auth.sessionId.trim()) {
+      this.persistInMemorySession();
+    }
     this.onStateChanged.reset();
     this.onLoadIfcRequested.reset();
     this.onImportIssueRequested.reset();
