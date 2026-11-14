@@ -753,16 +753,27 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
       String(data?.status || "").toUpperCase() === "ERROR";
 
     if (!ok || hasApiError) {
-      const rawErr = data?.error ?? data?.message;
-      const errMsg =
-        typeof rawErr === "string"
-          ? rawErr
-          : rawErr && typeof rawErr === "object"
-            ? rawErr.message || rawErr.description || JSON.stringify(rawErr)
-            : `HTTP ${status} (${JSON.stringify(data).slice(0, 160)})`;
-      throw new Error(errMsg);
+      throw new Error(this.formatApiError(data, `HTTP ${status}`));
     }
     return data;
+  }
+
+  private formatApiError(payload: any, fallback: string): string {
+    if (!payload) return fallback;
+    if (typeof payload === "string") return payload;
+    const rawErr = payload?.error ?? payload?.message ?? payload;
+    if (typeof rawErr === "string") return rawErr;
+    if (rawErr && typeof rawErr === "object") {
+      if (typeof rawErr.message === "string") return rawErr.message;
+      if (typeof rawErr.description === "string") return rawErr.description;
+      if (typeof rawErr.error === "string") return rawErr.error;
+      try {
+        return JSON.stringify(rawErr);
+      } catch {
+        return fallback;
+      }
+    }
+    return fallback;
   }
 
   async syncLiveWorkspace() {
@@ -1195,8 +1206,12 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
       parsed = { raw: rawText };
     }
 
-    if (!res.ok || parsed?.error) {
-      throw new Error(parsed?.error || parsed?.message || `File upload HTTP ${res.status}`);
+    const hasUploadErr =
+      (parsed?.error !== undefined && parsed?.error !== null && parsed?.error !== false && parsed?.error !== 0 && parsed?.error !== "") ||
+      String(parsed?.status || "").toUpperCase() === "ERROR";
+
+    if (!res.ok || hasUploadErr) {
+      throw new Error(this.formatApiError(parsed, `File upload HTTP ${res.status}`));
     }
   }
 
@@ -1375,7 +1390,8 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
         ? `Published "${cleanName}" (${resolvedFileName} · ${sizeLabel}) in Sandbox.`
         : `Published OpenBIM contribution "${cleanName}" (${resolvedDiscipline}).`;
     } catch (err: any) {
-      this.syncStatus = `BIMserver publish failed: ${err?.message || err}`;
+      const msg = err instanceof Error ? err.message : this.formatApiError(err, String(err));
+      this.syncStatus = `BIMserver publish failed: ${msg}`;
       throw err;
     } finally {
       this.isBusy = false;
