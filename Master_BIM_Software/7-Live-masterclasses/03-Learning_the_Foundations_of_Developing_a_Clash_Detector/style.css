@@ -5639,3 +5639,252 @@ bim-toolbar.toc-pro-appear-toolbar {
 .emb-opt.best { color: #f4f4f5; }
 .emb-big { font-size: 1.6rem; font-weight: 800; }
 @media (max-width: 768px) { [data-drawer="embeddings"] { width: 100%; } }
+
+/* =========================================================================
+   Unified Responsive Organization: Laptop, Tablet & Phone
+   ========================================================================= */
+
+/* Laptop / Compact Desktop (1025px - 1366px) */
+@media (max-width: 1366px) and (min-width: 1025px) {
+    .pro-kpi-strip {
+        gap: 0.7rem;
+        padding: 0.75rem 1.15rem 0;
+    }
+
+    .projects-toolbar.pro-projects-rail,
+    #projects-list.pro-projects-grid {
+        padding-left: 1.15rem;
+        padding-right: 1.15rem;
+    }
+
+    #projects-list.pro-projects-grid {
+        grid-template-columns: repeat(auto-fill, minmax(285px, 1fr));
+    }
+
+    .toc-dock-panel[data-drawer] {
+        width: min(390px, 38vw);
+    }
+}
+
+/* Tablet (641px - 1024px) */
+@media (max-width: 1024px) and (min-width: 641px) {
+    #main-header.pro-projects-header {
+        padding: 0.7rem 1rem;
+        gap: 0.7rem;
+    }
+
+    .pro-kpi-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.65rem;
+        padding: 0.75rem 1rem 0;
+    }
+
+    .projects-toolbar.pro-projects-rail {
+        padding: 0.75rem 1rem 0;
+        flex-wrap: wrap;
+        gap: 0.6rem;
+    }
+
+    #projects-list.pro-projects-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-auto-rows: 342px;
+        gap: 0.85rem;
+        padding: 0.85rem 1rem 1.25rem;
+    }
+
+    .toc-dock-panel[data-drawer] {
+        width: min(360px, 46vw);
+    }
+
+    .toc-viewcube-deck {
+        transform: scale(0.84);
+        transform-origin: top right;
+    }
+}
+
+/* Mobile Phones (<= 767px) */
+@media (max-width: 767px) {
+    /* 1. Safe-area & zero cut-off on Bottom App Navigation */
+    #sidebar {
+        height: calc(60px + env(safe-area-inset-bottom, 0px));
+        padding: 4px 10px calc(4px + env(safe-area-inset-bottom, 0px));
+        justify-content: flex-start;
+        gap: 6px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    #sidebar::-webkit-scrollbar {
+        display: none;
+    }
+
+    .sidebar-nav-section {
+        flex: 0 0 auto;
+        gap: 6px;
+    }
+
+    #nav-buttons > a > bim-button,
+    #nav-buttons > bim-button,
+    .nav-sub-item {
+        min-width: 68px;
+        height: 46px !important;
+        min-height: 46px !important;
+        max-height: 46px !important;
+        padding: 0.25rem 0.55rem;
+        flex-shrink: 0;
+    }
+
+    /* 2. Projects Studio Compact Mobile Layout */
+    #projects-page,
+    #users-page {
+        padding-bottom: calc(74px + env(safe-area-inset-bottom, 0px));
+    }
+
+    #main-header.pro-projects-header {
+        padding: 0.65rem 0.85rem;
+        gap: 0.55rem;
+    }
+
+    #main-header.pro-projects-header .header-search {
+        width: 100%;
+        order: 1;
+    }
+
+    #main-header.pro-projects-header .pro-header-actions {
+        width: 100%;
+        order: 2;
+        display: grid;
+        grid-template-columns: auto auto 1fr;
+        gap: 6px;
+    }
+
+    .pro-head-btn {
+        justify-content: center;
+        padding: 7px 10px;
+        font-size: 0.76rem;
+    }
+
+    .pro-kpi-strip {
+        grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+        gap: 6px;
+        padding: 0.6rem 0.85rem 0 !important;
+    }
+
+    .pro-kpi-card {
+        padding: 0.55rem 0.7rem;
+    }
+
+    .pro-kpi-value {
+        font-size: 1.12rem;
+    }
+
+    .projects-toolbar.pro-projects-rail {
+        padding: 0.6rem 0.85rem 0 !important;
+        gap: 0.55rem;
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .projects-category-filter-group {
+        display: flex;
+        flex-wrap: nowrap !important;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+        gap: 6px;
+        padding-bottom: 2px;
+        width: 100%;
+    }
+
+    .projects-category-filter-group::-webkit-scrollbar {
+        display: none;
+    }
+
+    .projects-category-filter-group > button {
+        flex-shrink: 0;
+        white-space: nowrap;
+        padding: 6px 10px;
+        font-size: 0.74rem;
+    }
+
+    .pro-rail-controls {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+        width: 100%;
+    }
+
+    .pro-rail-controls .projects-sort-group {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .pro-rail-controls .pro-view-switcher {
+        grid-column: 1 / -1;
+        justify-self: start;
+    }
+
+    #projects-list.pro-projects-grid {
+        padding: 0.75rem 0.85rem 1.25rem !important;
+        gap: 0.75rem;
+    }
+
+    /* 3. 3D Viewer Top Header, ViewCube & Action Bars */
+    .viewer-top-header {
+        top: 6px;
+        left: 6px;
+        right: 6px;
+        padding: 4px 6px;
+        gap: 4px;
+        border-radius: 10px;
+    }
+
+    .viewer-top-group {
+        flex-wrap: nowrap !important;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -webkit-overflow-scrolling: touch;
+        gap: 4px;
+        width: 100%;
+    }
+
+    .viewer-top-group::-webkit-scrollbar {
+        display: none;
+    }
+
+    .viewer-header-btn {
+        flex-shrink: 0;
+        padding: 5px 8px;
+    }
+
+    .toc-pro-bar {
+        max-width: calc(100vw - 14px) !important;
+        padding: 3px 4px;
+    }
+
+    .toc-viewcube-deck {
+        transform: scale(0.72);
+        transform-origin: top right;
+        top: calc(var(--toolbar-bottom, 108px) + 4px) !important;
+        right: 6px !important;
+    }
+
+    .viewer-bottom-dock {
+        bottom: calc(66px + env(safe-area-inset-bottom, 0px)) !important;
+        max-width: calc(100vw - 16px) !important;
+    }
+
+    .toc-dock-panel,
+    .toc-dock-panel[data-drawer] {
+        left: 8px !important;
+        right: 8px !important;
+        width: auto !important;
+        max-width: none !important;
+        top: auto !important;
+        bottom: calc(66px + env(safe-area-inset-bottom, 0px)) !important;
+        max-height: 62dvh !important;
+        border-radius: 14px;
+    }
+}
