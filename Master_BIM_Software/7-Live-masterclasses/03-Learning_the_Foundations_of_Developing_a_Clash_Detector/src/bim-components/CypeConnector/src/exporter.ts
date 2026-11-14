@@ -106,6 +106,98 @@ export function hasExportableSceneGeometry(components: OBC.Components): boolean 
   return collectSceneModelObjects(components).length > 0;
 }
 
+function toStandardMaterial(mat: THREE.Material | THREE.Material[] | undefined): THREE.MeshStandardMaterial {
+  const source = Array.isArray(mat) ? mat[0] : mat;
+  const anyMat = source as any;
+  const color = anyMat?.color instanceof THREE.Color ? anyMat.color.clone() : new THREE.Color(0xcbd5e1);
+  const opacity = typeof anyMat?.opacity === "number" ? anyMat.opacity : 1;
+  const transparent = Boolean(anyMat?.transparent) || opacity < 1;
+  return new THREE.MeshStandardMaterial({
+    color,
+    opacity,
+    transparent,
+    roughness: typeof anyMat?.roughness === "number" ? anyMat.roughness : 0.65,
+    metalness: typeof anyMat?.metalness === "number" ? anyMat.metalness : 0.1,
+    side: source?.side ?? THREE.DoubleSide,
+  });
+}
+
+function buildSanitizedGeometry(srcGeo: THREE.BufferGeometry): THREE.BufferGeometry | null {
+  const posAttr = srcGeo.getAttribute("position");
+  if (!posAttr || posAttr.count === 0) return null;
+
+  const geo = new THREE.BufferGeometry();
+  const posArray = new Float32Array(posAttr.count * 3);
+  for (let i = 0; i < posAttr.count; i++) {
+    posArray[i * 3] = posAttr.getX(i);
+    posArray[i * 3 + 1] = posAttr.getY(i);
+    posArray[i * 3 + 2] = posAttr.getZ(i);
+  }
+  geo.setAttribute("position", new THREE.BufferAttribute(posArray, 3));
+
+  const normAttr = srcGeo.getAttribute("normal");
+  if (normAttr && normAttr.count === posAttr.count) {
+    const normArray = new Float32Array(normAttr.count * 3);
+    for (let i = 0; i < normAttr.count; i++) {
+      normArray[i * 3] = normAttr.getX(i);
+      normArray[i * 3 + 1] = normAttr.getY(i);
+      normArray[i * 3 + 2] = normAttr.getZ(i);
+    }
+    geo.setAttribute("normal", new THREE.BufferAttribute(normArray, 3));
+  }
+
+  if (srcGeo.index && srcGeo.index.count > 0) {
+    const idxArray = new Uint32Array(srcGeo.index.count);
+    for (let i = 0; i < srcGeo.index.count; i++) {
+      idxArray[i] = srcGeo.index.getX(i);
+    }
+    geo.setIndex(new THREE.BufferAttribute(idxArray, 1));
+  }
+
+  return geo;
+}
+
+function appendSanitizedObject(sourceRoot: THREE.Object3D, exportRoot: THREE.Group): number {
+  sourceRoot.updateMatrixWorld(true);
+  let meshCount = 0;
+  const instanceMat = new THREE.Matrix4();
+  const worldMat = new THREE.Matrix4();
+
+  sourceRoot.traverse((child) => {
+    if (!child.visible || isSceneHelperObject(child)) return;
+
+    if (child instanceof THREE.InstancedMesh && child.geometry && child.count > 0) {
+      const geo = buildSanitizedGeometry(child.geometry);
+      if (!geo) return;
+      const mat = toStandardMaterial(child.material);
+      const maxInstances = Math.min(child.count, 2000);
+      for (let i = 0; i < maxInstances; i++) {
+        child.getMatrixAt(i, instanceMat);
+        worldMat.multiplyMatrices(child.matrixWorld, instanceMat);
+        const mesh = new THREE.Mesh(geo, mat);
+        mesh.name = `${child.name || "Instance"}_${i}`;
+        mesh.applyMatrix4(worldMat);
+        exportRoot.add(mesh);
+        meshCount++;
+      }
+      return;
+    }
+
+    if (child instanceof THREE.Mesh && child.geometry) {
+      const geo = buildSanitizedGeometry(child.geometry);
+      if (!geo) return;
+      const mat = toStandardMaterial(child.material);
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.name = child.name || `Mesh_${meshCount}`;
+      mesh.applyMatrix4(child.matrixWorld);
+      exportRoot.add(mesh);
+      meshCount++;
+    }
+  });
+
+  return meshCount;
+}
+
 /**
  * Exports one or all currently loaded models (Fragments/IFC or built-in 3D scene models such as 10-Villa)
  * to a binary .glb (glTF 2.0) file using Three.js GLTFExporter.
@@ -121,7 +213,6 @@ export async function exportLoadedModelsToGlb(
 
   const exportRoot = new THREE.Group();
   exportRoot.name = "MasterBIM_Export";
-  const restoreParents: Array<{ obj: THREE.Object3D; parent: THREE.Object3D | null }> = [];
   let exportedCount = 0;
   let defaultTitle = "master_bim_coordination";
 
@@ -141,11 +232,9 @@ export async function exportLoadedModelsToGlb(
     for (const [, model] of selected) {
       const obj = (model as any).object as THREE.Object3D | undefined;
       if (obj) {
-        restoreParents.push({ obj, parent: obj.parent });
-        exportRoot.add(obj);
+        exportedCount += appendSanitizedObject(obj, exportRoot);
       }
     }
-    exportedCount = selected.length;
     defaultTitle = selected.length === 1 ? selected[0][0] : "master_bim_coordination";
   } else {
     const sceneObjects = collectSceneModelObjects(components);
@@ -153,54 +242,42 @@ export async function exportLoadedModelsToGlb(
       throw new Error("Load or open a 3D / IFC model before exporting.");
     }
     for (const obj of sceneObjects) {
-      restoreParents.push({ obj, parent: obj.parent });
-      exportRoot.add(obj);
+      exportedCount += appendSanitizedObject(obj, exportRoot);
     }
-    exportedCount = sceneObjects.length;
     defaultTitle = sceneObjects[0]?.name || "master_bim_3d_scene";
   }
 
-  if (exportRoot.children.length === 0) {
+  if (exportRoot.children.length === 0 || exportedCount === 0) {
     throw new Error("No exportable 3D meshes were found in the active 3D scene.");
   }
 
-  try {
-    const exporter = new GLTFExporter();
-    const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
-      exporter.parse(
-        exportRoot,
-        (result) => {
-          if (result instanceof ArrayBuffer) {
-            resolve(result);
-          } else {
-            const json = JSON.stringify(result);
-            resolve(new TextEncoder().encode(json).buffer);
-          }
-        },
-        (error) => reject(error),
-        { binary: true, onlyVisible: false }
-      );
-    });
+  const exporter = new GLTFExporter();
+  const arrayBuffer = await new Promise<ArrayBuffer>((resolve, reject) => {
+    exporter.parse(
+      exportRoot,
+      (result) => {
+        if (result instanceof ArrayBuffer) {
+          resolve(result);
+        } else {
+          const json = JSON.stringify(result);
+          resolve(new TextEncoder().encode(json).buffer);
+        }
+      },
+      (error) => reject(error),
+      { binary: true, onlyVisible: false }
+    );
+  });
 
-    const blob = new Blob([arrayBuffer], { type: "model/gltf-binary" });
-    const rawTitle = baseName?.trim() || defaultTitle;
-    const fileName = `${sanitizeFileName(rawTitle)}.glb`;
+  const blob = new Blob([arrayBuffer], { type: "model/gltf-binary" });
+  const rawTitle = baseName?.trim() || defaultTitle;
+  const fileName = `${sanitizeFileName(rawTitle)}.glb`;
 
-    return {
-      blob,
-      fileName,
-      sizeLabel: formatSize(blob.size),
-      modelCount: exportedCount,
-    };
-  } finally {
-    for (const { obj, parent } of restoreParents) {
-      if (parent) {
-        parent.add(obj);
-      } else {
-        exportRoot.remove(obj);
-      }
-    }
-  }
+  return {
+    blob,
+    fileName,
+    sizeLabel: formatSize(blob.size),
+    modelCount: exportedCount,
+  };
 }
 
 /**
