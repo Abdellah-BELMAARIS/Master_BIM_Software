@@ -7,6 +7,24 @@ import { unwrapIfcAttr } from "../../DataEnhancer";
 
 export type GanttGroupingMode = "storeys" | "disciplines" | "rebar";
 
+const GANTT_STORAGE_KEY = "toc_gantt_schedule_v1";
+
+export const GANTT_TASK_PRESETS: Array<{
+  label: string;
+  regex: string;
+  color: string;
+}> = [
+  { label: "Foundations & Footings", regex: "IFCFOOTING|IFCPILE|IFCSITE", color: "#b45309" },
+  { label: "Rebar & Ferraillage", regex: "IFCREINFORCINGBAR|IFCREINFORCINGMESH|IFCTENDON", color: "#e11d48" },
+  { label: "Columns & Structural Frame", regex: "IFCCOLUMN|IFCMEMBER", color: "#2563eb" },
+  { label: "Beams & Girders", regex: "IFCBEAM", color: "#f59e0b" },
+  { label: "Slabs & Floor Decks", regex: "IFCSLAB", color: "#10b981" },
+  { label: "Walls & Core", regex: "IFCWALL|IFCWALLSTANDARDCASE", color: "#64748b" },
+  { label: "Roof & Stairs", regex: "IFCROOF|IFCSTAIR|IFCSTAIRFLIGHT|IFCRAILING", color: "#8b5cf6" },
+  { label: "Doors & Glazing", regex: "IFCDOOR|IFCWINDOW|IFCCURTAINWALL", color: "#06b6d4" },
+  { label: "MEP & HVAC Systems", regex: "IFCPIPE|IFCDUCT|IFCFLOW|IFCFURNISHINGELEMENT", color: "#ec4899" },
+];
+
 const TASK_PALETTE = [
   "#b45309",
   "#2563eb",
@@ -56,6 +74,7 @@ export class GanttSequencer extends OBC.Component implements OBC.Disposable {
 
   tasks: GanttTask[] = [];
   groupingMode: GanttGroupingMode = "storeys";
+  searchQuery = "";
   activeTaskId: string | null = null;
   playheadRatio = 0;
   currentDate: Date = new Date();
@@ -74,6 +93,107 @@ export class GanttSequencer extends OBC.Component implements OBC.Disposable {
   constructor(components: OBC.Components) {
     super(components);
     components.add(GanttSequencer.uuid, this);
+    this.restoreScheduleFromStorage();
+  }
+
+  setSearchQuery(query: string) {
+    this.searchQuery = query;
+    this.onStateChanged.trigger();
+  }
+
+  getFilteredTasks(): GanttTask[] {
+    const q = this.searchQuery.trim().toLowerCase();
+    if (!q) return this.tasks;
+    return this.tasks.filter(
+      (t) =>
+        t.name.toLowerCase().includes(q) ||
+        (t.storeyName && t.storeyName.toLowerCase().includes(q)) ||
+        (t.categoryPattern && t.categoryPattern.toLowerCase().includes(q)),
+    );
+  }
+
+  getSummary() {
+    const filtered = this.getFilteredTasks();
+    const totalElements = this.tasks.reduce((sum, t) => sum + (t.elementCount ?? 0), 0);
+    let spanLabel = "—";
+    if (this.tasks.length > 0) {
+      const minTs = Math.min(...this.tasks.map((t) => t.startDate.getTime()));
+      const maxTs = Math.max(...this.tasks.map((t) => t.endDate.getTime()));
+      const fmt = (ts: number) =>
+        new Date(ts).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "2-digit" });
+      spanLabel = `${fmt(minTs)} → ${fmt(maxTs)}`;
+    }
+    const activeTask = this.activeTaskId
+      ? this.tasks.find((t) => t.id === this.activeTaskId) ?? null
+      : null;
+    return {
+      totalTasks: this.tasks.length,
+      filteredTasks: filtered.length,
+      totalElements,
+      spanLabel,
+      activeTask,
+    };
+  }
+
+  private saveScheduleToStorage() {
+    try {
+      const payload = {
+        groupingMode: this.groupingMode,
+        tasks: this.tasks.map((t) => ({
+          id: t.id,
+          name: t.name,
+          color: t.color,
+          startDate: t.startDate.toISOString(),
+          endDate: t.endDate.toISOString(),
+          categoryPattern: t.categoryPattern,
+          storeyName: t.storeyName,
+          elementCount: t.elementCount ?? 0,
+        })),
+      };
+      localStorage.setItem(GANTT_STORAGE_KEY, JSON.stringify(payload));
+    } catch {}
+  }
+
+  private restoreScheduleFromStorage() {
+    try {
+      const raw = localStorage.getItem(GANTT_STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw);
+      if (parsed?.groupingMode === "storeys" || parsed?.groupingMode === "disciplines" || parsed?.groupingMode === "rebar") {
+        this.groupingMode = parsed.groupingMode;
+      }
+      if (Array.isArray(parsed?.tasks) && parsed.tasks.length > 0) {
+        this.tasks = parsed.tasks.map((t: any) => ({
+          id: String(t.id),
+          name: String(t.name),
+          color: String(t.color || "#38bdf8"),
+          startDate: new Date(t.startDate),
+          endDate: new Date(t.endDate),
+          categoryPattern: t.categoryPattern ? String(t.categoryPattern) : undefined,
+          storeyName: t.storeyName ? String(t.storeyName) : undefined,
+          elementCount: Number(t.elementCount ?? 0),
+          query: t.storeyName
+            ? [
+                {
+                  categories: [ALL_BLDG_ELEMENTS_REGEX],
+                  relation: {
+                    name: "ContainedInStructure",
+                    query: {
+                      categories: [/IFCBUILDINGSTOREY/],
+                      attributes: {
+                        queries: [{ name: /^Name$/, value: new RegExp(this.escapeRegex(String(t.storeyName)), "i") }],
+                      },
+                    },
+                  },
+                },
+              ]
+            : t.categoryPattern
+              ? [{ categories: [new RegExp(String(t.categoryPattern), "i")] }]
+              : undefined,
+        }));
+        this.statusMessage = `Restored ${this.tasks.length} saved Gantt tasks. Click Auto-Generate after loading a model to re-bind 3D elements.`;
+      }
+    } catch {}
   }
 
   private resolveWorld(): OBC.World | undefined {
@@ -351,6 +471,7 @@ export class GanttSequencer extends OBC.Component implements OBC.Disposable {
       this.currentDate = this.tasks[0]?.startDate ?? new Date();
 
       const totalMatched = this.tasks.reduce((acc, t) => acc + (t.elementCount ?? 0), 0);
+      this.saveScheduleToStorage();
       this.statusMessage =
         totalMatched > 0
           ? `Generated ${this.tasks.length} tasks (${totalMatched} elements mapped). Drag the red playhead or press Play.`
@@ -565,7 +686,68 @@ export class GanttSequencer extends OBC.Component implements OBC.Disposable {
     this.taskIdMaps.set(task.id, resolved.map);
     this.taskMeshes.set(task.id, resolved.meshes);
     this.tasks = [...this.tasks, task];
+    this.saveScheduleToStorage();
     this.statusMessage = `Added task "${task.name}" (${resolved.count} elements).`;
+    this.onStateChanged.trigger();
+  }
+
+  async addTaskFromSelection(input: {
+    name: string;
+    startDate: string;
+    endDate: string;
+    color: string;
+  }) {
+    const highlighter = this.components.get(OBF.Highlighter);
+    const sel = highlighter.selection.select || {};
+    const clonedMap: OBC.ModelIdMap = {};
+    let count = 0;
+    for (const [modelId, ids] of Object.entries(sel)) {
+      if (ids && ids.size > 0) {
+        clonedMap[modelId] = new Set(ids);
+        count += ids.size;
+      }
+    }
+    if (count === 0) {
+      this.statusMessage = "Select one or more 3D elements first to create a task from selection.";
+      this.onStateChanged.trigger();
+      return;
+    }
+
+    const start = new Date(input.startDate || Date.now());
+    const end = new Date(input.endDate || Date.now() + 14 * 86_400_000);
+    const id = `sel-${Date.now()}`;
+    const task: GanttTask = {
+      id,
+      name: input.name.trim() || `3D Selection (${count})`,
+      color: input.color || TASK_PALETTE[this.tasks.length % TASK_PALETTE.length],
+      startDate: start,
+      endDate: end > start ? end : new Date(start.getTime() + 7 * 86_400_000),
+      elementCount: count,
+      query: [],
+    };
+    this.ensureTaskHighlightStyle(task);
+    this.taskIdMaps.set(task.id, clonedMap);
+    this.taskMeshes.set(task.id, []);
+    this.tasks = [...this.tasks, task];
+    this.activeTaskId = task.id;
+    this.saveScheduleToStorage();
+    this.statusMessage = `Bound ${count} selected 3D elements to "${task.name}".`;
+    this.onStateChanged.trigger();
+  }
+
+  shiftTaskDays(taskId: string, deltaDays: number) {
+    const deltaMs = deltaDays * 86_400_000;
+    this.tasks = this.tasks.map((t) =>
+      t.id === taskId
+        ? {
+            ...t,
+            startDate: new Date(t.startDate.getTime() + deltaMs),
+            endDate: new Date(t.endDate.getTime() + deltaMs),
+          }
+        : t,
+    );
+    this.saveScheduleToStorage();
+    this.statusMessage = `Shifted task by ${deltaDays > 0 ? `+${deltaDays}` : deltaDays} days.`;
     this.onStateChanged.trigger();
   }
 
@@ -576,6 +758,9 @@ export class GanttSequencer extends OBC.Component implements OBC.Disposable {
     this.taskIdMaps.delete(taskId);
     this.taskMeshes.delete(taskId);
     this.activeBuiltIds.delete(taskId);
+    if (this.activeTaskId === taskId) this.activeTaskId = null;
+    this.saveScheduleToStorage();
+    this.statusMessage = t ? `Removed task "${t.name}".` : "Task removed.";
     this.onStateChanged.trigger();
   }
 
@@ -658,6 +843,7 @@ export class GanttSequencer extends OBC.Component implements OBC.Disposable {
     if (imported.length > 0) {
       this.tasks = imported;
       this.playheadRatio = 0;
+      this.saveScheduleToStorage();
       this.statusMessage = `Imported ${imported.length} tasks from CSV schedule.`;
       this.onStateChanged.trigger();
     }

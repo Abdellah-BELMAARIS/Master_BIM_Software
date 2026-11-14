@@ -1,7 +1,7 @@
 import * as BUI from "@thatopen/ui";
 import * as OBC from "@thatopen/components";
 import "../../components/GanttChart";
-import { GanttSequencer, GanttGroupingMode } from "../../bim-components/GanttSequencer";
+import { GanttSequencer, GanttGroupingMode, GANTT_TASK_PRESETS } from "../../bim-components/GanttSequencer";
 import type { GanttTask } from "../../components/GanttChart";
 
 export interface GanttSequenceSectionState {
@@ -20,6 +20,8 @@ export const ganttSequenceTemplate: BUI.StatefullComponent<GanttSequenceSectionS
 ) => {
   const { components } = state;
   const sequencer = components.get(GanttSequencer);
+  const filteredTasks = sequencer.getFilteredTasks();
+  const summary = sequencer.getSummary();
 
   const today = new Date().toISOString().slice(0, 10);
   const twoWeeks = new Date(Date.now() + 14 * 86_400_000).toISOString().slice(0, 10);
@@ -27,7 +29,7 @@ export const ganttSequenceTemplate: BUI.StatefullComponent<GanttSequenceSectionS
   let draftStart = state.newTaskStart ?? today;
   let draftEnd = state.newTaskEnd ?? twoWeeks;
   let draftCategory = state.newTaskCategory ?? "IFCWALL|IFCSLAB";
-  let draftColor = state.newTaskColor ?? "#38bdf8";
+  let draftColor = state.newTaskColor ?? "#2563eb";
 
   const onCsvSelected = async (e: Event) => {
     const input = e.target as HTMLInputElement;
@@ -105,6 +107,14 @@ export const ganttSequenceTemplate: BUI.StatefullComponent<GanttSequenceSectionS
         </div>
 
         <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px;">
+          <input
+            type="search"
+            placeholder="Filter tasks..."
+            .value=${sequencer.searchQuery}
+            @input=${(e: Event) => sequencer.setSearchQuery((e.target as HTMLInputElement).value)}
+            style="width: 125px; padding: 5px 8px; border-radius: 7px; border: 1px solid rgba(148, 163, 184, 0.28); background: rgba(20, 22, 28, 0.9); color: #e2e8f0; font-size: 0.71rem;"
+          />
+
           <button
             type="button"
             @click=${() => sequencer.toggleGhostMode()}
@@ -138,15 +148,72 @@ export const ganttSequenceTemplate: BUI.StatefullComponent<GanttSequenceSectionS
         </div>
       </div>
 
+      ${summary.activeTask
+        ? BUI.html`
+            <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 10px; border-radius: 7px; background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(56, 189, 248, 0.28); font-size: 0.7rem;">
+              <div style="display: flex; align-items: center; gap: 8px; color: #e2e8f0;">
+                <span style="width: 10px; height: 10px; border-radius: 50%; background: ${summary.activeTask.color}; display: inline-block;"></span>
+                <strong style="color: #f8fafc;">${summary.activeTask.name}</strong>
+                <span style="color: #94a3b8;">${summary.activeTask.elementCount ?? 0} elements</span>
+                <span style="color: #64748b;">(${summary.activeTask.startDate.toISOString().slice(0, 10)} → ${summary.activeTask.endDate.toISOString().slice(0, 10)})</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 5px;">
+                <button
+                  type="button"
+                  @click=${() => sequencer.shiftTaskDays(summary.activeTask!.id, -7)}
+                  style="padding: 3px 7px; border-radius: 5px; border: 1px solid rgba(148,163,184,0.3); background: rgba(15,23,42,0.8); color: #cbd5e1; font-size: 0.68rem; cursor: pointer;"
+                  title="Shift task 7 days earlier"
+                >
+                  -7d
+                </button>
+                <button
+                  type="button"
+                  @click=${() => sequencer.shiftTaskDays(summary.activeTask!.id, 7)}
+                  style="padding: 3px 7px; border-radius: 5px; border: 1px solid rgba(148,163,184,0.3); background: rgba(15,23,42,0.8); color: #cbd5e1; font-size: 0.68rem; cursor: pointer;"
+                  title="Shift task 7 days later"
+                >
+                  +7d
+                </button>
+                <button
+                  type="button"
+                  @click=${() => void sequencer.removeTask(summary.activeTask!.id)}
+                  style="padding: 3px 8px; border-radius: 5px; border: 1px solid rgba(239,68,68,0.45); background: rgba(239,68,68,0.16); color: #fca5a5; font-size: 0.68rem; font-weight: 700; cursor: pointer;"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
+          `
+        : ""}
+
       ${state.showAddForm
         ? BUI.html`
-            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 10px; border-radius: 8px; background: rgba(19, 20, 24, 0.9); border: 1px solid rgba(56, 189, 248, 0.3);">
+            <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 10px; border-radius: 8px; background: rgba(19, 20, 24, 0.92); border: 1px solid rgba(56, 189, 248, 0.32);">
+              <select
+                @change=${(e: Event) => {
+                  const idx = Number((e.target as HTMLSelectElement).value);
+                  const preset = GANTT_TASK_PRESETS[idx];
+                  if (preset) {
+                    update({
+                      newTaskName: preset.label,
+                      newTaskCategory: preset.regex,
+                      newTaskColor: preset.color,
+                    });
+                  }
+                }}
+                style="padding: 5px 7px; border-radius: 6px; border: 1px solid rgba(148,163,184,0.3); background: rgba(32,33,38,0.95); color: #7dd3fc; font-size: 0.71rem; font-weight: 600;"
+              >
+                <option value="">CYPE Preset...</option>
+                ${GANTT_TASK_PRESETS.map(
+                  (p, i) => BUI.html`<option value=${String(i)}>${p.label}</option>`,
+                )}
+              </select>
               <input
                 type="text"
                 placeholder="Task name (e.g. Level 1 Columns)"
                 .value=${draftName}
                 @input=${(e: Event) => { draftName = (e.target as HTMLInputElement).value; }}
-                style="flex: 1.4; min-width: 140px; padding: 5px 8px; border-radius: 6px; border: 1px solid rgba(148,163,184,0.3); background: rgba(32,33,38,0.9); color: #f8fafc; font-size: 0.71rem;"
+                style="flex: 1.3; min-width: 135px; padding: 5px 8px; border-radius: 6px; border: 1px solid rgba(148,163,184,0.3); background: rgba(32,33,38,0.9); color: #f8fafc; font-size: 0.71rem;"
               />
               <input
                 type="date"
@@ -165,7 +232,7 @@ export const ganttSequenceTemplate: BUI.StatefullComponent<GanttSequenceSectionS
                 placeholder="IFC Regex (IFCCOLUMN|IFCBEAM)"
                 .value=${draftCategory}
                 @input=${(e: Event) => { draftCategory = (e.target as HTMLInputElement).value; }}
-                style="flex: 1; min-width: 130px; padding: 5px 8px; border-radius: 6px; border: 1px solid rgba(148,163,184,0.3); background: rgba(32,33,38,0.9); color: #f8fafc; font-size: 0.71rem;"
+                style="flex: 1; min-width: 120px; padding: 5px 8px; border-radius: 6px; border: 1px solid rgba(148,163,184,0.3); background: rgba(32,33,38,0.9); color: #f8fafc; font-size: 0.71rem;"
               />
               <input
                 type="color"
@@ -173,6 +240,22 @@ export const ganttSequenceTemplate: BUI.StatefullComponent<GanttSequenceSectionS
                 @input=${(e: Event) => { draftColor = (e.target as HTMLInputElement).value; }}
                 style="width: 30px; height: 26px; border: none; border-radius: 4px; background: transparent; cursor: pointer;"
               />
+              <button
+                type="button"
+                @click=${async () => {
+                  await sequencer.addTaskFromSelection({
+                    name: draftName,
+                    startDate: draftStart,
+                    endDate: draftEnd,
+                    color: draftColor,
+                  });
+                  update({ showAddForm: false, newTaskName: "" });
+                }}
+                style="padding: 5px 10px; border-radius: 6px; border: 1px solid rgba(168, 85, 247, 0.5); background: rgba(168, 85, 247, 0.2); color: #e9d5ff; font-size: 0.71rem; font-weight: 700; cursor: pointer;"
+                title="Bind currently selected 3D elements to this task"
+              >
+                From 3D Selection
+              </button>
               <button
                 type="button"
                 @click=${async () => {
@@ -187,7 +270,7 @@ export const ganttSequenceTemplate: BUI.StatefullComponent<GanttSequenceSectionS
                 }}
                 style="padding: 5px 12px; border-radius: 6px; border: none; background: #0284c7; color: #fff; font-size: 0.71rem; font-weight: 700; cursor: pointer;"
               >
-                Add
+                Add by Query
               </button>
             </div>
           `
@@ -196,7 +279,7 @@ export const ganttSequenceTemplate: BUI.StatefullComponent<GanttSequenceSectionS
       <!-- Interactive SVG Gantt Chart -->
       <div style="flex: 1; min-height: 150px; border-radius: 9px; border: 1px solid rgba(148, 163, 184, 0.2); background: rgba(11, 15, 23, 0.88); overflow: hidden;">
         <bim-gantt-chart
-          .tasks=${sequencer.tasks}
+          .tasks=${filteredTasks}
           .playheadRatio=${sequencer.playheadRatio}
           .activeTaskId=${sequencer.activeTaskId}
           @playheadchange=${(e: CustomEvent<{ date: Date; ratio: number }>) => {
@@ -209,9 +292,14 @@ export const ganttSequenceTemplate: BUI.StatefullComponent<GanttSequenceSectionS
       </div>
 
       <!-- Status Strip -->
-      <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 8px; border-radius: 6px; background: rgba(32, 33, 38, 0.65); font-size: 0.69rem; color: #cbd5e1;">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; padding: 5px 10px; border-radius: 6px; background: rgba(32, 33, 38, 0.72); font-size: 0.69rem; color: #cbd5e1;">
         <span>${sequencer.statusMessage}</span>
-        <span style="color: #94a3b8; font-weight: 600;">${Math.round(sequencer.playheadRatio * 100)}%</span>
+        <div style="display: flex; align-items: center; gap: 10px; color: #94a3b8; font-weight: 600;">
+          <span>Tasks: <strong style="color: #e2e8f0;">${summary.filteredTasks}/${summary.totalTasks}</strong></span>
+          <span>Elements: <strong style="color: #38bdf8;">${summary.totalElements}</strong></span>
+          <span>Span: <strong style="color: #cbd5e1;">${summary.spanLabel}</strong></span>
+          <span style="color: #34d399;">${Math.round(sequencer.playheadRatio * 100)}%</span>
+        </div>
       </div>
     </div>
   `;
