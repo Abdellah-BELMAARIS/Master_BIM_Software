@@ -85,28 +85,46 @@ export class SheetsSync extends OBC.Component implements OBC.Disposable {
     this.ensureDefaultActionRules();
   }
 
-  private isLocalDevHost(): boolean {
+  isLocalDevHost(): boolean {
     if (typeof window === "undefined") return true;
     const h = window.location.hostname;
     return h === "localhost" || h === "127.0.0.1";
   }
 
+  isAppsScriptUrl(url = this.config.endpointUrl): boolean {
+    return url.trim().includes("script.google.com");
+  }
+
+  hasBackendEndpoint(): boolean {
+    const ep = this.config.endpointUrl.trim();
+    if (!ep) return false;
+    if (!this.isLocalDevHost() && ep.includes("127.0.0.1")) return false;
+    return true;
+  }
+
   private formatNetworkError(err: any, targetUrl: string): string {
     const raw = err?.message || "Network error";
-    if (targetUrl.includes("cloudfunctions.net") && this.isLocalDevHost()) {
-      return "Cloud URL is not deployed. Click 'Local (5001)' to use the running Firebase Functions Emulator.";
+    if (targetUrl.includes("cloudfunctions.net")) {
+      return this.isLocalDevHost()
+        ? "Cloud URL is not deployed. Click 'Emulator :5001' for local dev, or use 'Apps Script' for free live sync."
+        : "Firebase Cloud Functions require the Blaze plan. Use 'Apps Script' (free) or click 'CSV' to export.";
     }
     if (targetUrl.includes("127.0.0.1:5001") && raw.toLowerCase().includes("fetch")) {
-      return "Local Emulator (127.0.0.1:5001) is unreachable. Start it with: firebase emulators:start --only functions";
+      return this.isLocalDevHost()
+        ? "Local Emulator (127.0.0.1:5001) is unreachable. Start it with: firebase emulators:start --only functions"
+        : "Local Emulator (127.0.0.1:5001) cannot be used from the deployed website. Paste an Apps Script Web App URL or click 'CSV'.";
     }
     return raw;
   }
 
   private loadSavedConfig(): SheetsSyncConfig {
+    const defaultEndpoint = this.isLocalDevHost()
+      ? `${LOCAL_EMULATOR_BASE_URL}/writeBimDataToSheets`
+      : "";
     const defaults: SheetsSyncConfig = {
       spreadsheetId: "",
       sheetName: "BIM_Schedule",
-      endpointUrl: `${LOCAL_EMULATOR_BASE_URL}/writeBimDataToSheets`,
+      endpointUrl: defaultEndpoint,
       mode: "replace",
       categories: ["WALL", "SLAB", "COLUMN", "BEAM", "DOOR", "WINDOW", "ROOF", "FURNISHING"],
     };
@@ -120,6 +138,14 @@ export class SheetsSync extends OBC.Component implements OBC.Disposable {
           parsed.endpointUrl.includes("cloudfunctions.net")
         ) {
           parsed.endpointUrl = `${LOCAL_EMULATOR_BASE_URL}/writeBimDataToSheets`;
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+        } else if (
+          !this.isLocalDevHost() &&
+          typeof parsed.endpointUrl === "string" &&
+          (parsed.endpointUrl.includes("127.0.0.1") ||
+            parsed.endpointUrl.includes("cloudfunctions.net"))
+        ) {
+          parsed.endpointUrl = "";
           localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
         }
         return parsed;
@@ -462,17 +488,40 @@ export class SheetsSync extends OBC.Component implements OBC.Disposable {
     if (ep && !ep.includes("script.google.com")) {
       return ep.replace(/\/writeBimDataToSheets\/?$/i, "").replace(/\/$/, "");
     }
+    if (!this.isLocalDevHost()) {
+      return "";
+    }
     return LOCAL_EMULATOR_BASE_URL;
   }
 
+  private getAppsScriptEndpoint(): string {
+    const ep = this.config.endpointUrl.trim();
+    return this.isAppsScriptUrl(ep) ? ep : "";
+  }
+
+  private requireBackendUrl(): string {
+    const appsScript = this.getAppsScriptEndpoint();
+    if (appsScript) return appsScript;
+    const base = this.resolveFunctionsBaseUrl();
+    if (base) return base;
+    throw new Error(
+      "Paste your free Google Apps Script Web App URL (click 'Apps Script Code' below) to browse or create Google Sheets from the live site."
+    );
+  }
+
   /**
-   * Lesson 3.1 – 3.3: Calls Google Drive API v3 via Firebase Function to list shared spreadsheets
+   * Lesson 3.1 – 3.3: Calls Google Drive API v3 via Firebase Function or Apps Script Web App
    */
   async listDriveSheets(folderId?: string): Promise<DriveSheetFile[]> {
-    const base = this.resolveFunctionsBaseUrl();
-    const url = folderId
-      ? `${base}/listDriveSpreadsheets?folderId=${encodeURIComponent(folderId)}`
-      : `${base}/listDriveSpreadsheets`;
+    const appsScript = this.getAppsScriptEndpoint();
+    const url = appsScript
+      ? `${appsScript}?action=listDriveSpreadsheets${folderId ? `&folderId=${encodeURIComponent(folderId)}` : ""}`
+      : (() => {
+          const base = this.requireBackendUrl();
+          return folderId
+            ? `${base}/listDriveSpreadsheets?folderId=${encodeURIComponent(folderId)}`
+            : `${base}/listDriveSpreadsheets`;
+        })();
 
     try {
       const res = await fetch(url);
@@ -480,7 +529,7 @@ export class SheetsSync extends OBC.Component implements OBC.Disposable {
       if (typeof data?.serviceAccountEmail === "string" && data.serviceAccountEmail) {
         this.serviceAccountEmail = data.serviceAccountEmail;
       }
-      if (!res.ok) {
+      if (!res.ok || data?.status === "error") {
         throw new Error(data?.error || `HTTP ${res.status}`);
       }
       this.driveFiles = data.files || [];
@@ -500,13 +549,14 @@ export class SheetsSync extends OBC.Component implements OBC.Disposable {
    * Queries sheet tab names for a selected Spreadsheet ID
    */
   async loadSheetTabs(spreadsheetId = this.config.spreadsheetId): Promise<SheetTabMeta[]> {
-    if (!spreadsheetId) return [];
-    const base = this.resolveFunctionsBaseUrl();
-    const res = await fetch(
-      `${base}/getSpreadsheetTabs?spreadsheetId=${encodeURIComponent(spreadsheetId)}`
-    );
+    const appsScript = this.getAppsScriptEndpoint();
+    if (!spreadsheetId && !appsScript) return [];
+    const url = appsScript
+      ? `${appsScript}?action=getSpreadsheetTabs&spreadsheetId=${encodeURIComponent(spreadsheetId)}`
+      : `${this.requireBackendUrl()}/getSpreadsheetTabs?spreadsheetId=${encodeURIComponent(spreadsheetId)}`;
+    const res = await fetch(url);
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
+    if (!res.ok || data?.status === "error") {
       throw new Error(data?.error || `HTTP ${res.status}`);
     }
     this.sheetTabs = data.tabs || [];
@@ -517,23 +567,29 @@ export class SheetsSync extends OBC.Component implements OBC.Disposable {
   }
 
   /**
-   * Creates a new BIM Google Sheet via Drive/Sheets API
+   * Creates a new BIM Google Sheet via Drive/Sheets API or Apps Script Web App
    */
   async createDriveSheet(title: string, folderId?: string): Promise<{ spreadsheetId: string; spreadsheetUrl?: string }> {
-    const base = this.resolveFunctionsBaseUrl();
-    const url = `${base}/createDriveSpreadsheet`;
+    const appsScript = this.getAppsScriptEndpoint();
     const targetFolderId = folderId || this.driveFolders[0]?.id;
+    const url = appsScript || `${this.requireBackendUrl()}/createDriveSpreadsheet`;
     try {
       const res = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, folderId: targetFolderId }),
+        headers: appsScript
+          ? { "Content-Type": "text/plain;charset=utf-8" }
+          : { "Content-Type": "application/json" },
+        body: JSON.stringify(
+          appsScript
+            ? { action: "createDriveSpreadsheet", title, folderId: targetFolderId }
+            : { title, folderId: targetFolderId }
+        ),
       });
       const data = await res.json().catch(() => ({}));
       if (typeof data?.serviceAccountEmail === "string" && data.serviceAccountEmail) {
         this.serviceAccountEmail = data.serviceAccountEmail;
       }
-      if (!res.ok) {
+      if (!res.ok || data?.status === "error") {
         throw new Error(data?.error || `HTTP ${res.status}`);
       }
       if (data.spreadsheetId) {
@@ -552,16 +608,21 @@ export class SheetsSync extends OBC.Component implements OBC.Disposable {
     spreadsheetId = this.config.spreadsheetId,
     sheetName = ""
   ): Promise<Record<string, string>[]> {
-    if (!spreadsheetId) {
+    const appsScript = this.getAppsScriptEndpoint();
+    if (!spreadsheetId && !appsScript) {
       throw new Error("Select or enter a Spreadsheet ID first.");
     }
-    const base = this.resolveFunctionsBaseUrl();
-    const params = new URLSearchParams({ spreadsheetId });
+    const params = new URLSearchParams();
+    if (appsScript) params.set("action", "readSheetData");
+    if (spreadsheetId) params.set("spreadsheetId", spreadsheetId);
     if (sheetName) params.set("sheetName", sheetName);
 
-    const res = await fetch(`${base}/readSheetData?${params.toString()}`);
+    const url = appsScript
+      ? `${appsScript}?${params.toString()}`
+      : `${this.requireBackendUrl()}/readSheetData?${params.toString()}`;
+    const res = await fetch(url);
     const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
+    if (!res.ok || data?.status === "error") {
       throw new Error(data?.error || `HTTP ${res.status}`);
     }
 
@@ -724,21 +785,58 @@ export class SheetsSync extends OBC.Component implements OBC.Disposable {
     return `Executed ${executed} BIM Sheet Action rule(s).`;
   }
 
+  private resolveWriteEndpoint(): string {
+    const ep = this.config.endpointUrl.trim();
+    if (ep) return ep;
+    const base = this.resolveFunctionsBaseUrl();
+    return base ? `${base}/writeBimDataToSheets` : "";
+  }
+
+  private async postSheetWrite(
+    sheetName: string,
+    mode: "append" | "replace",
+    rows: any[][]
+  ): Promise<{ endpoint: string; isAppsScript: boolean; updatedCells?: number }> {
+    const endpoint = this.resolveWriteEndpoint();
+    if (!endpoint) {
+      throw new Error(
+        "No Google Sheets endpoint configured. Paste a free Apps Script Web App URL (click 'Apps Script Code') or click 'CSV' to export."
+      );
+    }
+    const isAppsScript = this.isAppsScriptUrl(endpoint);
+    const spreadsheetId = this.config.spreadsheetId.trim();
+    if (!spreadsheetId && !isAppsScript) {
+      throw new Error(
+        "Select a Google Spreadsheet from Drive or paste a Spreadsheet ID/URL above first — or click CSV to export offline."
+      );
+    }
+    try {
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: isAppsScript
+          ? { "Content-Type": "text/plain;charset=utf-8" }
+          : { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...(isAppsScript ? { action: "writeBimDataToSheets" } : {}),
+          spreadsheetId,
+          sheetName,
+          mode,
+          rows,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || data?.status === "error") {
+        throw new Error(data?.error || `HTTP ${res.status}`);
+      }
+      return { endpoint, isAppsScript, updatedCells: data.updatedCells };
+    } catch (err: any) {
+      throw new Error(this.formatNetworkError(err, endpoint));
+    }
+  }
+
   async pushActionRulesToSheet(targetTabName = "Sheet_Actions"): Promise<SheetsSyncResult> {
     if (this.sheetActionRows.length === 0) {
       this.syncActionRulesFromSchedule();
-    }
-    const spreadsheetId = this.config.spreadsheetId.trim();
-    if (!spreadsheetId) {
-      const fail: SheetsSyncResult = {
-        success: false,
-        transport: "firebase-function",
-        rowCount: this.sheetActionRows.length,
-        message: "Select or paste a Google Spreadsheet ID above first to push Sheet Actions.",
-        timestamp: new Date().toLocaleTimeString(),
-      };
-      this.lastResult = fail;
-      return fail;
     }
 
     const matrix: any[][] = [["Category", "Action", "Color", "Elements"]];
@@ -751,28 +849,12 @@ export class SheetsSync extends OBC.Component implements OBC.Disposable {
       ]);
     }
 
-    const endpoint =
-      this.config.endpointUrl.trim() || `${this.resolveFunctionsBaseUrl()}/writeBimDataToSheets`;
-    const res = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        spreadsheetId,
-        sheetName: targetTabName,
-        mode: "replace",
-        rows: matrix,
-      }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      throw new Error(data?.error || `HTTP ${res.status}`);
-    }
-
+    const res = await this.postSheetWrite(targetTabName, "replace", matrix);
     const okRes: SheetsSyncResult = {
       success: true,
-      transport: "firebase-function",
+      transport: res.isAppsScript ? "apps-script" : "firebase-function",
       rowCount: this.sheetActionRows.length,
-      updatedCells: data.updatedCells || matrix.length * 4,
+      updatedCells: res.updatedCells || matrix.length * 4,
       message: `Pushed ${this.sheetActionRows.length} Sheet Action rules to tab "${targetTabName}".`,
       timestamp: new Date().toLocaleTimeString(),
     };
@@ -800,43 +882,34 @@ export class SheetsSync extends OBC.Component implements OBC.Disposable {
     }
 
     const sheetName = targetTabName || this.config.sheetName || "Category_Counts";
-    const endpoint = this.config.endpointUrl.trim() || `${this.resolveFunctionsBaseUrl()}/writeBimDataToSheets`;
-    const spreadsheetId = this.config.spreadsheetId.trim();
-
-    if (!spreadsheetId) {
-      const failRes: SheetsSyncResult = {
-        success: false,
-        transport: "firebase-function",
+    const endpoint = this.resolveWriteEndpoint();
+    if (!endpoint) {
+      const csv = matrix.map((r) => r.map((c) => `"${String(c ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = `${sheetName}-${Date.now()}.csv`;
+      link.click();
+      const csvRes: SheetsSyncResult = {
+        success: true,
+        transport: "csv-export",
         rowCount: matrix.length - 1,
-        message: "Select a Google Spreadsheet from Drive or paste a Spreadsheet ID above first (shared as Editor with your Service Account).",
+        updatedCells: matrix.length * 2,
+        message: `Downloaded ${matrix.length - 1} BIM category counts as CSV. Add an Apps Script URL above for live Google Sheets sync.`,
         timestamp: new Date().toLocaleTimeString(),
       };
-      this.lastResult = failRes;
-      this.onSyncCompleted.trigger(failRes);
-      return failRes;
+      this.lastResult = csvRes;
+      this.onSyncCompleted.trigger(csvRes);
+      return csvRes;
     }
 
     try {
-      const res = await fetch(endpoint, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          spreadsheetId,
-          sheetName,
-          mode: "replace",
-          rows: matrix,
-        }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(data?.error || `HTTP ${res.status}`);
-      }
-
+      const res = await this.postSheetWrite(sheetName, "replace", matrix);
       const result: SheetsSyncResult = {
         success: true,
-        transport: "firebase-function",
+        transport: res.isAppsScript ? "apps-script" : "firebase-function",
         rowCount: matrix.length - 1,
-        updatedCells: data.updatedCells || matrix.length * 2,
+        updatedCells: res.updatedCells || matrix.length * 2,
         message: `Wrote ${matrix.length - 1} BIM category counts into tab "${sheetName}"!`,
         timestamp: new Date().toLocaleTimeString(),
       };
@@ -844,10 +917,10 @@ export class SheetsSync extends OBC.Component implements OBC.Disposable {
       this.onSyncCompleted.trigger(result);
       return result;
     } catch (err: any) {
-      const errMsg = this.formatNetworkError(err, endpoint);
+      const errMsg = err?.message || "Sync failed";
       const failResult: SheetsSyncResult = {
         success: false,
-        transport: "firebase-function",
+        transport: this.isAppsScriptUrl(endpoint) ? "apps-script" : "firebase-function",
         rowCount: matrix.length - 1,
         message: errMsg,
         timestamp: new Date().toLocaleTimeString(),
@@ -880,47 +953,20 @@ export class SheetsSync extends OBC.Component implements OBC.Disposable {
 
     const sheetMatrix = this.toSheetMatrix(this.rows, true);
     const matrix = this.toSheetMatrix(this.rows, false);
-    const endpoint = this.config.endpointUrl.trim();
-    const spreadsheetId = this.config.spreadsheetId.trim();
+    const endpoint = this.resolveWriteEndpoint();
 
     if (endpoint) {
-      const isAppsScript = endpoint.includes("script.google.com");
-      if (!spreadsheetId && !isAppsScript) {
-        const failRes: SheetsSyncResult = {
-          success: false,
-          transport: "firebase-function",
-          rowCount: this.rows.length,
-          message: "Select a Google Spreadsheet from Drive or paste a Spreadsheet ID/URL above first — or click CSV to export offline.",
-          timestamp: new Date().toLocaleTimeString(),
-        };
-        this.lastResult = failRes;
-        this.onSyncCompleted.trigger(failRes);
-        return failRes;
-      }
       try {
-        const res = await fetch(endpoint, {
-          method: "POST",
-          headers: isAppsScript
-            ? { "Content-Type": "text/plain;charset=utf-8" }
-            : { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            spreadsheetId,
-            sheetName: this.config.sheetName || "BIM_Schedule",
-            mode: this.config.mode,
-            rows: sheetMatrix,
-          }),
-        });
-
-        const data = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          throw new Error(data?.error || `HTTP ${res.status}`);
-        }
-
+        const res = await this.postSheetWrite(
+          this.config.sheetName || "BIM_Schedule",
+          this.config.mode,
+          sheetMatrix
+        );
         const successRes: SheetsSyncResult = {
           success: true,
-          transport: isAppsScript ? "apps-script" : "firebase-function",
+          transport: res.isAppsScript ? "apps-script" : "firebase-function",
           rowCount: this.rows.length,
-          updatedCells: data.updatedCells ?? matrix.length * 10,
+          updatedCells: res.updatedCells ?? matrix.length * 10,
           message: `Synced ${this.rows.length} BIM elements to Google Sheet "${this.config.sheetName}"!`,
           timestamp: new Date().toLocaleTimeString(),
         };
@@ -930,9 +976,9 @@ export class SheetsSync extends OBC.Component implements OBC.Disposable {
       } catch (err: any) {
         const errRes: SheetsSyncResult = {
           success: false,
-          transport: isAppsScript ? "apps-script" : "firebase-function",
+          transport: this.isAppsScriptUrl(endpoint) ? "apps-script" : "firebase-function",
           rowCount: this.rows.length,
-          message: `Sync failed (${this.formatNetworkError(err, endpoint)}).`,
+          message: `Sync failed (${err?.message || "Network error"}).`,
           timestamp: new Date().toLocaleTimeString(),
         };
         this.lastResult = errRes;
@@ -948,7 +994,7 @@ export class SheetsSync extends OBC.Component implements OBC.Disposable {
       transport: "csv-export",
       rowCount: this.rows.length,
       updatedCells: matrix.length * 10,
-      message: `Downloaded ${this.rows.length}-row BIM schedule CSV (ready to open in Google Sheets / Excel). Add Firebase Function URL above for live cloud sync.`,
+      message: `Downloaded ${this.rows.length}-row BIM schedule CSV (ready for Google Sheets / Excel). Paste a free Apps Script URL above for live cloud sync.`,
       timestamp: new Date().toLocaleTimeString(),
     };
     this.lastResult = csvRes;
@@ -959,12 +1005,12 @@ export class SheetsSync extends OBC.Component implements OBC.Disposable {
   async syncAllTabsToWorkbook(): Promise<SheetsSyncResult> {
     if (this.rows.length === 0) await this.extractSchedule();
     const takeoffRes = await this.syncToGoogleSheets();
-    if (!takeoffRes.success) return takeoffRes;
+    if (!takeoffRes.success || takeoffRes.transport === "csv-export") return takeoffRes;
     await this.writeCategorySummaryToSheet("Category_Counts");
     await this.pushActionRulesToSheet("Sheet_Actions");
     const ok: SheetsSyncResult = {
       success: true,
-      transport: "firebase-function",
+      transport: takeoffRes.transport,
       rowCount: this.rows.length,
       message: `Synced Full Pro Workbook (${this.rows.length} elements + Category_Counts + Sheet_Actions tabs)!`,
       timestamp: new Date().toLocaleTimeString(),
@@ -985,10 +1031,6 @@ export class SheetsSync extends OBC.Component implements OBC.Disposable {
       severity: string;
     }>
   ): Promise<SheetsSyncResult> {
-    const spreadsheetId = this.config.spreadsheetId.trim();
-    if (!spreadsheetId) {
-      throw new Error("Select or enter a Google Spreadsheet ID first to push Clash Audit.");
-    }
     const matrix: any[][] = [
       ["Clash ID", "Element A", "Class A", "Element B", "Class B", "Overlap (m3)", "Severity"],
       ...clashes.map((c) => [
@@ -1001,25 +1043,12 @@ export class SheetsSync extends OBC.Component implements OBC.Disposable {
         c.severity.toUpperCase(),
       ]),
     ];
-    const endpoint =
-      this.config.endpointUrl.trim() || `${this.resolveFunctionsBaseUrl()}/writeBimDataToSheets`;
-    const res = await fetch(endpoint, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        spreadsheetId,
-        sheetName: "Clash_Audit",
-        mode: "replace",
-        rows: matrix,
-      }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) throw new Error(data?.error || `HTTP ${res.status}`);
+    const res = await this.postSheetWrite("Clash_Audit", "replace", matrix);
     const ok: SheetsSyncResult = {
       success: true,
-      transport: "firebase-function",
+      transport: res.isAppsScript ? "apps-script" : "firebase-function",
       rowCount: clashes.length,
-      updatedCells: data.updatedCells || matrix.length * 7,
+      updatedCells: res.updatedCells || matrix.length * 7,
       message: `Exported ${clashes.length} 3D Clash checks to Google Sheet tab "Clash_Audit"!`,
       timestamp: new Date().toLocaleTimeString(),
     };
@@ -1055,23 +1084,80 @@ export class SheetsSync extends OBC.Component implements OBC.Disposable {
   }
 }
 
-export const APPS_SCRIPT_TEMPLATE = `function doPost(e) {
-  var payload = JSON.parse(e.postData.contents);
-  var ss = payload.spreadsheetId
-    ? SpreadsheetApp.openById(payload.spreadsheetId)
+export const APPS_SCRIPT_TEMPLATE = `function jsonOut(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function openSs(spreadsheetId) {
+  return spreadsheetId
+    ? SpreadsheetApp.openById(spreadsheetId)
     : SpreadsheetApp.getActiveSpreadsheet();
-  var sheet = ss.getSheetByName(payload.sheetName || "BIM_Schedule")
-    || ss.insertSheet(payload.sheetName || "BIM_Schedule");
-  if (payload.mode === "replace") sheet.clearContents();
-  var rows = payload.rows || [];
-  if (rows.length > 0) {
-    var startRow = sheet.getLastRow() + 1;
-    sheet.getRange(startRow, 1, rows.length, rows[0].length).setValues(rows);
+}
+
+function doGet(e) {
+  try {
+    var p = (e && e.parameter) || {};
+    var action = p.action || "listDriveSpreadsheets";
+    if (action === "listDriveSpreadsheets") {
+      var files = [];
+      var q = "mimeType = 'application/vnd.google-apps.spreadsheet' and trashed = false";
+      if (p.folderId) q += " and '" + p.folderId + "' in parents";
+      var it = DriveApp.searchFiles(q);
+      while (it.hasNext() && files.length < 30) {
+        var f = it.next();
+        files.push({ id: f.getId(), name: f.getName(), webViewLink: f.getUrl() });
+      }
+      return jsonOut({ status: "success", files: files, folders: [] });
+    }
+    if (action === "getSpreadsheetTabs") {
+      var ss = openSs(p.spreadsheetId);
+      var tabs = ss.getSheets().map(function(s) {
+        return { sheetId: s.getSheetId(), title: s.getName(), rowCount: s.getLastRow() };
+      });
+      return jsonOut({ status: "success", tabs: tabs });
+    }
+    if (action === "readSheetData") {
+      var ss = openSs(p.spreadsheetId);
+      var sheet = p.sheetName ? ss.getSheetByName(p.sheetName) : ss.getSheets()[0];
+      var values = sheet ? sheet.getDataRange().getValues() : [];
+      return jsonOut({ status: "success", values: values });
+    }
+    return jsonOut({ status: "error", error: "Unknown action: " + action });
+  } catch (err) {
+    return jsonOut({ status: "error", error: String(err) });
   }
-  return ContentService.createTextOutput(JSON.stringify({
-    status: "success",
-    updatedCells: rows.length * (rows[0] ? rows[0].length : 0)
-  })).setMimeType(ContentService.MimeType.JSON);
+}
+
+function doPost(e) {
+  try {
+    var payload = JSON.parse((e && e.postData && e.postData.contents) || "{}");
+    if (payload.action === "createDriveSpreadsheet") {
+      var created = SpreadsheetApp.create(payload.title || "BIM Quantity Takeoff");
+      var first = created.getSheets()[0];
+      if (first) first.setName("BIM_Schedule");
+      return jsonOut({
+        status: "success",
+        spreadsheetId: created.getId(),
+        spreadsheetUrl: created.getUrl()
+      });
+    }
+    var ss = openSs(payload.spreadsheetId);
+    var tab = payload.sheetName || "BIM_Schedule";
+    var sheet = ss.getSheetByName(tab) || ss.insertSheet(tab);
+    if (payload.mode === "replace") sheet.clearContents();
+    var rows = payload.rows || [];
+    if (rows.length > 0) {
+      var startRow = sheet.getLastRow() + 1;
+      sheet.getRange(startRow, 1, rows.length, rows[0].length).setValues(rows);
+    }
+    return jsonOut({
+      status: "success",
+      updatedCells: rows.length * (rows[0] ? rows[0].length : 0)
+    });
+  } catch (err) {
+    return jsonOut({ status: "error", error: String(err) });
+  }
 }`;
 
 export { FRAGS };

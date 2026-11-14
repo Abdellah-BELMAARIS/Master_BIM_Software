@@ -5,7 +5,6 @@ import {
   APPS_SCRIPT_TEMPLATE,
   BimScheduleRow,
   LOCAL_EMULATOR_BASE_URL,
-  CLOUD_FUNCTIONS_BASE_URL,
 } from "../../bim-components/SheetsSync";
 
 export interface SheetsSectionState {
@@ -72,10 +71,12 @@ export const sheetsTemplate: BUI.StatefullComponent<SheetsSectionState> = (
 
   if (!autoDriveDiscoverySet.has(sheetsSync)) {
     autoDriveDiscoverySet.add(sheetsSync);
-    sheetsSync
-      .listDriveSheets()
-      .then(() => update())
-      .catch(() => {});
+    if (sheetsSync.hasBackendEndpoint()) {
+      sheetsSync
+        .listDriveSheets()
+        .then(() => update())
+        .catch(() => {});
+    }
   }
 
   const cfg = sheetsSync.config;
@@ -300,11 +301,13 @@ export const sheetsTemplate: BUI.StatefullComponent<SheetsSectionState> = (
             <span style="font-size: 0.62rem; padding: 1px 6px; border-radius: 4px; background: rgba(16, 185, 129, 0.25); color: #34d399; font-weight: 700;">SEC 3 PRO</span>
           </div>
           <span style="font-size: 0.72rem; color: #94a3b8;">
-            ${cfg.endpointUrl.includes("127.0.0.1")
+            ${cfg.endpointUrl.includes("script.google.com")
+              ? "Apps Script Web App Ready"
+              : cfg.endpointUrl.includes("127.0.0.1")
               ? "Local Emulator (127.0.0.1:5001) Active"
               : cfg.endpointUrl
-              ? "Cloud Webhook / Function Ready"
-              : "Instant Extraction & CSV/Sheets Bridge"}
+              ? "Cloud Function Ready"
+              : "Deployed Mode · CSV & Apps Script Ready"}
           </span>
         </div>
 
@@ -578,46 +581,56 @@ export const sheetsTemplate: BUI.StatefullComponent<SheetsSectionState> = (
             <button
               type="button"
               @click=${() => {
-                sheetsSync.saveConfig({ endpointUrl: `${LOCAL_EMULATOR_BASE_URL}/writeBimDataToSheets` });
-                update({ driveError: "" });
+                update({
+                  showAdvancedUrl: true,
+                  showScriptModal: true,
+                  driveError: "",
+                });
               }}
               style="
                 padding: 3px 7px; border-radius: 5px; font-size: 0.64rem; font-weight: 700; cursor: pointer;
-                background: ${cfg.endpointUrl.includes("127.0.0.1") ? "rgba(56, 189, 248, 0.25)" : "rgba(32, 33, 38, 0.8)"};
-                border: 1px solid ${cfg.endpointUrl.includes("127.0.0.1") ? "#38bdf8" : "rgba(148, 163, 184, 0.25)"};
-                color: ${cfg.endpointUrl.includes("127.0.0.1") ? "#38bdf8" : "#94a3b8"};
+                background: ${cfg.endpointUrl.includes("script.google.com") ? "rgba(16, 185, 129, 0.25)" : "rgba(32, 33, 38, 0.8)"};
+                border: 1px solid ${cfg.endpointUrl.includes("script.google.com") ? "#10b981" : "rgba(148, 163, 184, 0.25)"};
+                color: ${cfg.endpointUrl.includes("script.google.com") ? "#34d399" : "#94a3b8"};
               "
-            >Emulator :5001</button>
-            <button
-              type="button"
-              @click=${() => {
-                sheetsSync.saveConfig({ endpointUrl: `${CLOUD_FUNCTIONS_BASE_URL}/writeBimDataToSheets` });
-                update();
-              }}
-              style="
-                padding: 3px 7px; border-radius: 5px; font-size: 0.64rem; font-weight: 700; cursor: pointer;
-                background: ${cfg.endpointUrl.includes("cloudfunctions.net") ? "rgba(56, 189, 248, 0.25)" : "rgba(32, 33, 38, 0.8)"};
-                border: 1px solid ${cfg.endpointUrl.includes("cloudfunctions.net") ? "#38bdf8" : "rgba(148, 163, 184, 0.25)"};
-                color: ${cfg.endpointUrl.includes("cloudfunctions.net") ? "#38bdf8" : "#94a3b8"};
-              "
-            >Cloud URL</button>
+            >Apps Script</button>
+            ${sheetsSync.isLocalDevHost()
+              ? BUI.html`
+                  <button
+                    type="button"
+                    @click=${() => {
+                      sheetsSync.saveConfig({ endpointUrl: `${LOCAL_EMULATOR_BASE_URL}/writeBimDataToSheets` });
+                      update({ driveError: "" });
+                    }}
+                    style="
+                      padding: 3px 7px; border-radius: 5px; font-size: 0.64rem; font-weight: 700; cursor: pointer;
+                      background: ${cfg.endpointUrl.includes("127.0.0.1") ? "rgba(56, 189, 248, 0.25)" : "rgba(32, 33, 38, 0.8)"};
+                      border: 1px solid ${cfg.endpointUrl.includes("127.0.0.1") ? "#38bdf8" : "rgba(148, 163, 184, 0.25)"};
+                      color: ${cfg.endpointUrl.includes("127.0.0.1") ? "#38bdf8" : "#94a3b8"};
+                    "
+                  >Emulator :5001</button>
+                `
+              : ""}
             <button
               type="button"
               @click=${() => update({ showAdvancedUrl: !state.showAdvancedUrl })}
               style="background: transparent; border: none; color: #94a3b8; font-size: 0.64rem; font-weight: 600; cursor: pointer; text-decoration: underline;"
-            >${state.showAdvancedUrl ? "Hide URL" : "Custom URL"}</button>
+            >${state.showAdvancedUrl ? "Hide URL" : "Webhook URL"}</button>
           </div>
         </div>
 
         ${state.showAdvancedUrl
           ? BUI.html`
               <label style="display: flex; flex-direction: column; gap: 3px; font-size: 0.68rem; color: #94a3b8;">
-                <span>Firebase Function / Apps Script URL</span>
+                <span>Apps Script Web App URL (or Custom Function URL)</span>
                 <input
                   type="text"
                   .value=${cfg.endpointUrl}
-                  @input=${(e: Event) => sheetsSync.saveConfig({ endpointUrl: (e.target as HTMLInputElement).value })}
-                  placeholder="${LOCAL_EMULATOR_BASE_URL}/writeBimDataToSheets"
+                  @input=${(e: Event) => {
+                    sheetsSync.saveConfig({ endpointUrl: (e.target as HTMLInputElement).value });
+                    update({ driveError: "" });
+                  }}
+                  placeholder="https://script.google.com/macros/s/.../exec"
                   style="padding: 6px 8px; border-radius: 6px; background: rgba(32, 33, 38, 0.85); border: 1px solid rgba(148, 163, 184, 0.3); color: #f8fafc; font-size: 0.71rem;"
                 />
               </label>
