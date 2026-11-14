@@ -464,7 +464,7 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                 ro.observe(toolbarEl);
             }
             const tr = toolbarEl?.getBoundingClientRect();
-            const toolbarVisible = Boolean(hasActiveModel && !isFloatingToolbarCollapsed && tr && tr.height > 10);
+            const toolbarVisible = Boolean(!isFloatingToolbarCollapsed && tr && tr.height > 10);
             const toolbarBottom = toolbarVisible
                 ? Math.round(tr!.bottom - wrapperRect.top)
                 : modeBarBottom;
@@ -494,9 +494,9 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
         if (!wrapper) return;
         const floatingGrid = wrapper.querySelector(".toc-viewport-floating-grid") as HTMLElement | null;
         if (floatingGrid) {
-            floatingGrid.style.display = (!hasActiveModel || isFloatingToolbarCollapsed) ? "none" : "";
+            floatingGrid.style.display = isFloatingToolbarCollapsed ? "none" : "";
         }
-    }, [isFloatingToolbarCollapsed, engineReadyTick, hasActiveModel]);
+    }, [isFloatingToolbarCollapsed, engineReadyTick]);
 
     // Dynamically resize That Open Engine viewport & camera aspect when Full View is toggled
     React.useEffect(() => {
@@ -3342,23 +3342,21 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
 
                                 <div className="viewer-dock-sep" />
 
-                                {hasActiveModel && (
-                                    <button
-                                        type="button"
-                                        className={`viewer-dock-item ${isMeasuring ? "active" : ""}`}
-                                        onClick={() => {
-                                            const next = !isMeasuring;
-                                            toggleMeasuring();
-                                            setActiveBottomSubbar(next ? "measure" : null);
-                                        }}
-                                        title="Measure Distance & Polygon Area"
-                                    >
-                                        <span className="material-icons-round">straighten</span>
-                                        <span className="viewer-dock-label">
-                                            Measure{measurementsCount > 0 ? ` (${measurementsCount})` : ""}
-                                        </span>
-                                    </button>
-                                )}
+                                <button
+                                    type="button"
+                                    className={`viewer-dock-item ${isMeasuring ? "active" : ""}`}
+                                    onClick={() => {
+                                        const next = !isMeasuring;
+                                        toggleMeasuring();
+                                        setActiveBottomSubbar(next ? "measure" : null);
+                                    }}
+                                    title="Measure Distance & Polygon Area"
+                                >
+                                    <span className="material-icons-round">straighten</span>
+                                    <span className="viewer-dock-label">
+                                        Measure{measurementsCount > 0 ? ` (${measurementsCount})` : ""}
+                                    </span>
+                                </button>
 
                                 <button
                                     type="button"
@@ -3376,17 +3374,15 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                     </span>
                                 </button>
 
-                                {hasActiveModel && (
-                                    <button
-                                        type="button"
-                                        className={`viewer-dock-item ${!isFloatingToolbarCollapsed ? "active" : ""}`}
-                                        onClick={() => setIsFloatingToolbarCollapsed((prev) => !prev)}
-                                        title="Toggle Appearance & Fragments Edit Toolbar"
-                                    >
-                                        <span className="material-icons-round">tune</span>
-                                        <span className="viewer-dock-label">Appear</span>
-                                    </button>
-                                )}
+                                <button
+                                    type="button"
+                                    className={`viewer-dock-item ${!isFloatingToolbarCollapsed ? "active" : ""}`}
+                                    onClick={() => setIsFloatingToolbarCollapsed((prev) => !prev)}
+                                    title="Toggle Appearance & Fragments Edit Toolbar"
+                                >
+                                    <span className="material-icons-round">tune</span>
+                                    <span className="viewer-dock-label">Appear</span>
+                                </button>
 
                                 <div className="viewer-dock-sep" />
 
