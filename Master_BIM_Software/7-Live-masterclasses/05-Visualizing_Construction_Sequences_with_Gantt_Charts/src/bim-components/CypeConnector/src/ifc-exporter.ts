@@ -47,7 +47,40 @@ interface ExportableMeshSource {
   matrixWorld: THREE.Matrix4;
 }
 
-const MAX_EXPORT_MESHES = 300;
+const MAX_EXPORT_MESHES = 5000;
+const FRAGMENT_BATCH_SIZE = 300;
+const MAX_TRIS_PER_MESH = 2000;
+
+interface IfcStyleDef {
+  r: number;
+  g: number;
+  b: number;
+  transparency: number;
+}
+
+const IFC_STYLE_TABLE: Record<string, IfcStyleDef> = {
+  IFCREINFORCINGBAR: { r: 0.88, g: 0.11, b: 0.28, transparency: 0 },
+  IFCREINFORCINGMESH: { r: 0.88, g: 0.11, b: 0.28, transparency: 0 },
+  IFCTENDON: { r: 0.88, g: 0.11, b: 0.28, transparency: 0 },
+  IFCCOLUMN: { r: 0.15, g: 0.39, b: 0.92, transparency: 0 },
+  IFCBEAM: { r: 0.96, g: 0.62, b: 0.04, transparency: 0 },
+  IFCMEMBER: { r: 0.15, g: 0.39, b: 0.92, transparency: 0 },
+  IFCFOOTING: { r: 0.71, g: 0.33, b: 0.04, transparency: 0 },
+  IFCPILE: { r: 0.71, g: 0.33, b: 0.04, transparency: 0 },
+  IFCSLAB: { r: 0.06, g: 0.73, b: 0.51, transparency: 0 },
+  IFCWALL: { r: 0.78, g: 0.82, b: 0.87, transparency: 0 },
+  IFCWALLSTANDARDCASE: { r: 0.78, g: 0.82, b: 0.87, transparency: 0 },
+  IFCROOF: { r: 0.55, g: 0.36, b: 0.96, transparency: 0 },
+  IFCSTAIR: { r: 0.55, g: 0.36, b: 0.96, transparency: 0 },
+  IFCWINDOW: { r: 0.02, g: 0.71, b: 0.83, transparency: 0.55 },
+  IFCCURTAINWALL: { r: 0.02, g: 0.71, b: 0.83, transparency: 0.5 },
+  IFCDOOR: { r: 0.85, g: 0.47, b: 0.02, transparency: 0 },
+  IFCPIPE: { r: 0.93, g: 0.28, b: 0.6, transparency: 0 },
+  IFCDUCT: { r: 0.93, g: 0.28, b: 0.6, transparency: 0 },
+  IFCFLOW: { r: 0.93, g: 0.28, b: 0.6, transparency: 0 },
+};
+
+const DEFAULT_IFC_STYLE: IfcStyleDef = { r: 0.58, g: 0.64, b: 0.72, transparency: 0 };
 
 function hasReadableBufferArray(attr: unknown): attr is THREE.BufferAttribute {
   if (!attr || typeof attr !== "object") return false;
@@ -77,55 +110,56 @@ async function collectFragmentMeshSources(
     }
     if (!Array.isArray(localIds) || localIds.length === 0) continue;
 
-    const remaining = MAX_EXPORT_MESHES - sources.length;
-    const sliceIds = localIds.slice(0, remaining);
-
-    let geomGroups: any[][] = [];
-    try {
-      geomGroups = await anyModel.getItemsGeometry(sliceIds);
-    } catch {
-      continue;
-    }
-
-    let itemsData: any[] = [];
-    if (typeof anyModel.getItemsData === "function") {
-      try {
-        itemsData = await anyModel.getItemsData(sliceIds, {
-          attributesDefault: false,
-          attributes: ["Name"],
-        });
-      } catch {
-        itemsData = [];
-      }
-    }
-
     const modelObj = anyModel.object as THREE.Object3D | undefined;
     if (modelObj) modelObj.updateMatrixWorld(true);
     const modelMatrix = modelObj ? modelObj.matrixWorld : new THREE.Matrix4();
 
-    for (let i = 0; i < sliceIds.length && sources.length < MAX_EXPORT_MESHES; i++) {
-      const meshes = geomGroups[i];
-      if (!Array.isArray(meshes) || meshes.length === 0) continue;
+    const targetIds = localIds.slice(0, MAX_EXPORT_MESHES - sources.length);
+    for (let offset = 0; offset < targetIds.length && sources.length < MAX_EXPORT_MESHES; offset += FRAGMENT_BATCH_SIZE) {
+      const batchIds = targetIds.slice(offset, offset + FRAGMENT_BATCH_SIZE);
+      let geomGroups: any[][] = [];
+      try {
+        geomGroups = await anyModel.getItemsGeometry(batchIds);
+      } catch {
+        continue;
+      }
 
-      const meta = itemsData[i];
-      const rawName = String(meta?.Name?.value ?? meta?.Name ?? `Element_${sliceIds[i]}`).trim();
-      const rawCat = String(meta?._category?.value ?? meta?._category ?? "").trim().toUpperCase();
-      const ifcClass = rawCat.startsWith("IFC") ? rawCat : inferIfcClass(rawName);
+      let itemsData: any[] = [];
+      if (typeof anyModel.getItemsData === "function") {
+        try {
+          itemsData = await anyModel.getItemsData(batchIds, {
+            attributesDefault: false,
+            attributes: ["Name"],
+          });
+        } catch {
+          itemsData = [];
+        }
+      }
 
-      for (const m of meshes) {
-        if (sources.length >= MAX_EXPORT_MESHES) break;
-        if (!m?.positions || m.positions.length < 9) continue;
-        const worldMat = new THREE.Matrix4().multiplyMatrices(
-          modelMatrix,
-          m.transform instanceof THREE.Matrix4 ? m.transform : new THREE.Matrix4()
-        );
-        sources.push({
-          name: rawName || `Element_${sources.length + 1}`,
-          ifcClass,
-          positions: m.positions,
-          indices: m.indices,
-          matrixWorld: worldMat,
-        });
+      for (let i = 0; i < batchIds.length && sources.length < MAX_EXPORT_MESHES; i++) {
+        const meshes = geomGroups[i];
+        if (!Array.isArray(meshes) || meshes.length === 0) continue;
+
+        const meta = itemsData[i];
+        const rawName = String(meta?.Name?.value ?? meta?.Name ?? `Element_${batchIds[i]}`).trim();
+        const rawCat = String(meta?._category?.value ?? meta?._category ?? "").trim().toUpperCase();
+        const ifcClass = rawCat.startsWith("IFC") ? rawCat : inferIfcClass(rawName);
+
+        for (const m of meshes) {
+          if (sources.length >= MAX_EXPORT_MESHES) break;
+          if (!m?.positions || m.positions.length < 9) continue;
+          const worldMat = new THREE.Matrix4().multiplyMatrices(
+            modelMatrix,
+            m.transform instanceof THREE.Matrix4 ? m.transform : new THREE.Matrix4()
+          );
+          sources.push({
+            name: rawName || `Element_${sources.length + 1}`,
+            ifcClass,
+            positions: m.positions,
+            indices: m.indices,
+            matrixWorld: worldMat,
+          });
+        }
       }
     }
   }
@@ -238,6 +272,20 @@ export async function exportSceneToIfc4(
   add(`IFCRELAGGREGATES('${generateIfcGuid()}',#${ownerId},$,$,#${siteId},(#${bldgId}))`);
   add(`IFCRELAGGREGATES('${generateIfcGuid()}',#${ownerId},$,$,#${bldgId},(#${storeyId}))`);
 
+  const styleIdCache = new Map<string, number>();
+  const getStyleId = (ifcClass: string): number => {
+    const existing = styleIdCache.get(ifcClass);
+    if (existing) return existing;
+    const def = IFC_STYLE_TABLE[ifcClass] ?? DEFAULT_IFC_STYLE;
+    const colId = add(`IFCCOLOURRGB($,${def.r},${def.g},${def.b})`);
+    const rendId = add(
+      `IFCSURFACESTYLERENDERING(#${colId},${def.transparency},$,$,$,$,$,$,.NOTDEFINED.)`
+    );
+    const surfStyleId = add(`IFCSURFACESTYLE('${ifcClass}',.BOTH.,(#${rendId}))`);
+    styleIdCache.set(ifcClass, surfStyleId);
+    return surfStyleId;
+  };
+
   const elementIds: number[] = [];
   const v = new THREE.Vector3();
 
@@ -251,8 +299,7 @@ export async function exportSceneToIfc4(
     const triCount = index ? Math.floor(index.length / 3) : Math.floor(vertCount / 3);
     if (triCount === 0) continue;
 
-    // Keep each mesh compact (<= 400 tris) so large parametric scenes stay fast & lightweight
-    const step = Math.max(1, Math.ceil(triCount / 400));
+    const step = Math.max(1, Math.ceil(triCount / MAX_TRIS_PER_MESH));
     const coords: string[] = [];
     const faces: string[] = [];
     let vCounter = 1;
@@ -281,6 +328,7 @@ export async function exportSceneToIfc4(
 
     const ptListId = add(`IFCCARTESIANPOINTLIST3D((${coords.join(",")}))`);
     const faceSetId = add(`IFCTRIANGULATEDFACESET(#${ptListId},$,.T.,(${faces.join(",")}),$)`);
+    add(`IFCSTYLEDITEM(#${faceSetId},(#${getStyleId(src.ifcClass)}),$)`);
     const shapeRepId = add(`IFCSHAPEREPRESENTATION(#${bodySubCtxId},'Body','Tessellation',(#${faceSetId}))`);
     const prodShapeId = add(`IFCPRODUCTDEFINITIONSHAPE($,$,(#${shapeRepId}))`);
     const elemPlaceId = add(`IFCLOCALPLACEMENT(#${storeyPlaceId},#${worldPlaceId})`);
