@@ -1194,13 +1194,33 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
           description: `Published from Master BIM Viewer (${resolvedDiscipline} · ${resolvedFileName})`,
         });
 
-        const contributionId = String(
-          created?.id ?? created?.contribution_id ?? created?.record?.id ?? ""
+        let contributionId = String(
+          created?.id ??
+            created?.contribution_id ??
+            created?.record?.id ??
+            created?.data?.id ??
+            created?.contribution?.id ??
+            created?.records?.[0]?.id ??
+            (typeof created === "number" || typeof created === "string" ? created : "")
         ).trim();
+
+        if (!contributionId && fileBlob) {
+          await this.fetchProjectContributions(this.selectedProjectId);
+          const match = this.getActiveContributions().find(
+            (c) => c.name.trim().toLowerCase() === cleanName.toLowerCase()
+          );
+          if (match?.id) {
+            contributionId = String(match.id).trim();
+          }
+        }
 
         if (fileBlob) {
           if (!contributionId) {
-            throw new Error("Contribution created, but BIMserver.center did not return a contribution ID for file upload.");
+            throw new Error(
+              `Contribution created, but BIMserver.center did not return a contribution ID (keys: ${
+                created && typeof created === "object" ? Object.keys(created).join(", ") || "empty" : typeof created
+              }).`
+            );
           }
           this.syncStatus = `Uploading ${resolvedFileName} (${sizeLabel}) to BIMserver.center...`;
           this.onStateChanged.trigger();
