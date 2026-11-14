@@ -18,7 +18,7 @@ if (missingKeys.length) {
   const root = createRoot(appRoot);
   root.render(
     <main className="firebase-config-notice">
-      <h1>Configure Firebase to start the Master BIM Clash Detector workspace</h1>
+      <h1>Configure Firebase to start Master BIM Viewer</h1>
       <p>
         Copy <code>.env.example</code> to <code>.env.local</code> in the project root and enter
         your own Firebase web app settings.
@@ -28,11 +28,11 @@ if (missingKeys.length) {
   );
 } else {
   void import("./index").catch((error: unknown) => {
-    console.error("Could not start the Master BIM Clash Detector workspace:", error);
+    console.error("Could not start Master BIM Viewer:", error);
     const root = createRoot(appRoot);
     root.render(
       <main className="firebase-config-notice">
-        <h1>Could not start the Master BIM Clash Detector workspace</h1>
+        <h1>Could not start Master BIM Viewer</h1>
         <pre>{error instanceof Error ? error.message : String(error)}</pre>
       </main>,
     );
