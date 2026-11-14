@@ -717,26 +717,6 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                 proStudioContainerRef.current.replaceChildren(proSection);
                 const pro = components.get(BimProSuite);
                 pro.onStateChanged.add(() => updatePro());
-                pro.onClashLogRequested.add(async (clashes) => {
-                    if (!project) return;
-                    const createdTodos = clashes.slice(0, 15).map((c, idx) => ({
-                        id: Date.now() + idx,
-                        text: `[Clash ${c.id}] ${c.aName} × ${c.bName} (${c.overlapVolumeM3} m³)`,
-                        date: new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10),
-                        status: "pending" as const,
-                        priority: c.severity,
-                        completed: false,
-                    }));
-                    project.todos = [...createdTodos, ...(project.todos || [])];
-                    forceUpdate();
-                    try {
-                        await updateDoc(doc(db, "projects", project.id), {
-                            todos: project.todos,
-                        });
-                    } catch {}
-                    pro.statusMessage = `Logged ${createdTodos.length} clash(es) into Project Tasks.`;
-                    updatePro();
-                });
             } catch (err) {
                 console.warn("[ProStudio] Error mounting UI:", err);
             }
