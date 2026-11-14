@@ -58,6 +58,13 @@ export const ganttSequenceTemplate: BUI.StatefullComponent<GanttSequenceSectionS
             >
               By Disciplines
             </button>
+            <button
+              type="button"
+              @click=${() => sequencer.generateSequence("rebar")}
+              style="padding: 5px 10px; border: none; border-left: 1px solid rgba(148,163,184,0.2); font-size: 0.71rem; font-weight: 700; cursor: pointer; background: ${sequencer.groupingMode === "rebar" ? "rgba(225, 29, 72, 0.28)" : "rgba(32, 33, 38, 0.8)"}; color: ${sequencer.groupingMode === "rebar" ? "#fda4af" : "#94a3b8"};"
+            >
+              Structure &amp; Ferraillage
+            </button>
           </div>
 
           <button

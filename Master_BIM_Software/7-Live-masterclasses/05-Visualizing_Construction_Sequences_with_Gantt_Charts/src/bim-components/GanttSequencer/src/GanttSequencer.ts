@@ -5,19 +5,19 @@ import type * as FRAGS from "@thatopen/fragments";
 import type { GanttTask } from "../../../components/GanttChart";
 import { unwrapIfcAttr } from "../../DataEnhancer";
 
-export type GanttGroupingMode = "storeys" | "disciplines";
+export type GanttGroupingMode = "storeys" | "disciplines" | "rebar";
 
 const TASK_PALETTE = [
-  "#f59e0b",
-  "#38bdf8",
-  "#a855f7",
+  "#b45309",
+  "#2563eb",
   "#10b981",
-  "#ef4444",
+  "#f59e0b",
+  "#8b5cf6",
   "#06b6d4",
+  "#e11d48",
   "#ec4899",
+  "#64748b",
   "#84cc16",
-  "#f97316",
-  "#6366f1",
 ];
 
 const DISCIPLINE_SEQUENCE: Array<{
@@ -26,18 +26,21 @@ const DISCIPLINE_SEQUENCE: Array<{
   color: string;
   weeks: number;
 }> = [
-  { name: "Site & Foundations", regex: "IFCFOOTING|IFCPILE|IFCSITE", color: "#f59e0b", weeks: 3 },
-  { name: "Columns & Structural Frame", regex: "IFCCOLUMN|IFCMEMBER", color: "#ef4444", weeks: 4 },
-  { name: "Beams & Girders", regex: "IFCBEAM", color: "#f97316", weeks: 3 },
-  { name: "Slabs & Floor Decks", regex: "IFCSLAB", color: "#38bdf8", weeks: 4 },
-  { name: "Walls & Core", regex: "IFCWALL|IFCWALLSTANDARDCASE|IFCCURTAINWALL", color: "#10b981", weeks: 5 },
-  { name: "Roof & Stairs", regex: "IFCROOF|IFCSTAIR|IFCSTAIRFLIGHT|IFCRAILING", color: "#a855f7", weeks: 3 },
-  { name: "Doors & Windows", regex: "IFCDOOR|IFCWINDOW", color: "#06b6d4", weeks: 3 },
+  { name: "Site & Foundations", regex: "IFCFOOTING|IFCPILE|IFCSITE", color: "#b45309", weeks: 3 },
+  { name: "Rebar & Ferraillage", regex: "IFCREINFORCINGBAR|IFCREINFORCINGMESH|IFCTENDON", color: "#e11d48", weeks: 3 },
+  { name: "Columns & Structural Frame", regex: "IFCCOLUMN|IFCMEMBER", color: "#2563eb", weeks: 4 },
+  { name: "Beams & Girders", regex: "IFCBEAM", color: "#f59e0b", weeks: 3 },
+  { name: "Slabs & Floor Decks", regex: "IFCSLAB", color: "#10b981", weeks: 4 },
+  { name: "Walls & Core", regex: "IFCWALL|IFCWALLSTANDARDCASE", color: "#64748b", weeks: 5 },
+  { name: "Roof & Stairs", regex: "IFCROOF|IFCSTAIR|IFCSTAIRFLIGHT|IFCRAILING", color: "#8b5cf6", weeks: 3 },
+  { name: "Doors & Glazing", regex: "IFCDOOR|IFCWINDOW|IFCCURTAINWALL", color: "#06b6d4", weeks: 3 },
   { name: "MEP & Fixtures", regex: "IFCPIPE|IFCDUCT|IFCFLOW|IFCFURNISHINGELEMENT", color: "#ec4899", weeks: 4 },
 ];
 
+const REBAR_STRUCTURE_SEQUENCE = DISCIPLINE_SEQUENCE.slice(0, 7);
+
 const ALL_BLDG_ELEMENTS_REGEX =
-  /IFCWALL|IFCWALLSTANDARDCASE|IFCSLAB|IFCCOLUMN|IFCBEAM|IFCMEMBER|IFCFOOTING|IFCROOF|IFCDOOR|IFCWINDOW|IFCSTAIR|IFCSTAIRFLIGHT|IFCRAILING|IFCCURTAINWALL|IFCFURNISHINGELEMENT|IFCPIPE|IFCDUCT|IFCFLOW/;
+  /IFCWALL|IFCWALLSTANDARDCASE|IFCSLAB|IFCCOLUMN|IFCBEAM|IFCMEMBER|IFCFOOTING|IFCREINFORCINGBAR|IFCREINFORCINGMESH|IFCTENDON|IFCROOF|IFCDOOR|IFCWINDOW|IFCSTAIR|IFCSTAIRFLIGHT|IFCRAILING|IFCCURTAINWALL|IFCFURNISHINGELEMENT|IFCPIPE|IFCDUCT|IFCFLOW/;
 
 /**
  * Module 6 (Folder 05): GanttSequencer Component
@@ -169,6 +172,32 @@ export class GanttSequencer extends OBC.Component implements OBC.Disposable {
     return { map: {}, meshes: matched, count: matched.length };
   }
 
+  private getStoreyRank(name: string): number {
+    const s = name.toLowerCase();
+    if (/basement|sous[- ]?sol|sotano|sótano|subfloor|-\d+/.test(s)) return -1;
+    if (/foundation|footing|semelle|fondation|site|slab on grade/.test(s)) return -0.5;
+    if (/ground|rdc|rez[- ]?de|planta baja|pb\b|level\s*0\b|nivel\s*0\b|floor\s*0\b/.test(s)) return 0;
+    if (/roof|terrace|toiture|cubierta|attic|penthouse/.test(s)) return 999;
+    if (/first|1st|nivel\s*1\b|level\s*1\b|r\+1|uno\b/.test(s)) return 1;
+    if (/second|2nd|nivel\s*2\b|level\s*2\b|r\+2|dos\b/.test(s)) return 2;
+    if (/third|3rd|nivel\s*3\b|level\s*3\b|r\+3|tres\b/.test(s)) return 3;
+    if (/fourth|4th|nivel\s*4\b|level\s*4\b|r\+4|cuatro\b/.test(s)) return 4;
+    if (/fifth|5th|nivel\s*5\b|level\s*5\b|r\+5|cinco\b/.test(s)) return 5;
+    const numMatch = s.match(/(?:level|nivel|floor|etage|étage|r\+)\s*(\d+)/i);
+    if (numMatch) return Number(numMatch[1]);
+    return 50;
+  }
+
+  private getStoreyColor(name: string, idx: number): string {
+    const rank = this.getStoreyRank(name);
+    if (rank < 0) return "#b45309";
+    if (rank === 0) return "#10b981";
+    if (rank === 1) return "#2563eb";
+    if (rank === 2) return "#38bdf8";
+    if (rank >= 999) return "#8b5cf6";
+    return TASK_PALETTE[idx % TASK_PALETTE.length];
+  }
+
   private async discoverStoreyNames(): Promise<string[]> {
     const fragments = this.components.get(OBC.FragmentsManager);
     const names = new Set<string>();
@@ -215,9 +244,11 @@ export class GanttSequencer extends OBC.Component implements OBC.Disposable {
       }
     }
 
-    return [...names].sort((a, b) =>
-      a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" })
-    );
+    return [...names].sort((a, b) => {
+      const rankDiff = this.getStoreyRank(a) - this.getStoreyRank(b);
+      if (rankDiff !== 0) return rankDiff;
+      return a.localeCompare(b, undefined, { numeric: true, sensitivity: "base" });
+    });
   }
 
   async generateSequence(mode: GanttGroupingMode = this.groupingMode): Promise<GanttTask[]> {
@@ -225,7 +256,13 @@ export class GanttSequencer extends OBC.Component implements OBC.Disposable {
     this.groupingMode = mode;
     this.pause();
     await this.clearAllHighlights();
-    this.statusMessage = `Scanning model (${mode === "storeys" ? "by Building Storeys" : "by Disciplines"})...`;
+    const modeLabel =
+      mode === "storeys"
+        ? "by Construction Storeys"
+        : mode === "rebar"
+        ? "by Structure & Ferraillage"
+        : "by CYPE Disciplines";
+    this.statusMessage = `Scanning model (${modeLabel})...`;
     this.onStateChanged.trigger();
 
     try {
@@ -247,7 +284,7 @@ export class GanttSequencer extends OBC.Component implements OBC.Disposable {
             nextTasks.push({
               id: `storey-${idx + 1}`,
               name: storeyName,
-              color: TASK_PALETTE[idx % TASK_PALETTE.length],
+              color: this.getStoreyColor(storeyName, idx),
               startDate,
               endDate,
               storeyName,
@@ -271,9 +308,9 @@ export class GanttSequencer extends OBC.Component implements OBC.Disposable {
       }
 
       if (nextTasks.length === 0) {
-        // Disciplines mode or fallback if model has no storeys
+        const seq = mode === "rebar" ? REBAR_STRUCTURE_SEQUENCE : DISCIPLINE_SEQUENCE;
         let cursor = new Date(baseStart);
-        DISCIPLINE_SEQUENCE.forEach((def, idx) => {
+        seq.forEach((def, idx) => {
           const startDate = new Date(cursor);
           const endDate = new Date(cursor);
           endDate.setDate(endDate.getDate() + def.weeks * 7);

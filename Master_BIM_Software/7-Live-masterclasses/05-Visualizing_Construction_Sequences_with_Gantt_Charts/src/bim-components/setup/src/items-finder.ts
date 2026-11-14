@@ -18,9 +18,12 @@ export const setupItemsFinder = (components: OBC.Components) => {
   // Core Discipline & Category Queries (Regex-based IFC Class matching)
   registerQuery("Walls & Enclosures", [{ categories: [/WALL/] }]);
   registerQuery("Slabs, Seating & Decks", [{ categories: [/SLAB/] }]);
-  registerQuery("Structural Columns & Beams", [{ categories: [/COLUMN|BEAM|MEMBER|FOOTING/] }]);
+  registerQuery("Foundations & Footings", [{ categories: [/FOOTING|PILE/] }]);
+  registerQuery("Structural Columns & Beams", [{ categories: [/COLUMN|BEAM|MEMBER/] }]);
+  registerQuery("Rebar & Ferraillage", [{ categories: [/REINFORCING|TENDON|MESH/] }]);
   registerQuery("Doors & Glazing Openings", [{ categories: [/DOOR|WINDOW|CURTAINWALL/] }]);
   registerQuery("Roofs, Stairs & Circulation", [{ categories: [/ROOF|STAIR|RAMP|RAILING/] }]);
+  registerQuery("MEP & HVAC Systems", [{ categories: [/PIPE|DUCT|FLOW|CABLE|TERMINAL/] }]);
   registerQuery("Fixtures, Solar & Proxies", [{ categories: [/PROXY|FURNISHING/] }]);
 
   // Lesson 3.12 Relational Queries (Spatial Containment & Property Set Relations)
