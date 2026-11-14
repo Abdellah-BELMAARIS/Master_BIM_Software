@@ -3,10 +3,19 @@ import * as OBC from "@thatopen/components";
 import * as OBCF from "@thatopen/components-front";
 import { DataEnhancer, unwrapIfcAttr } from "../../DataEnhancer";
 import { SheetsSync } from "../../SheetsSync";
+import {
+  ClashDetectionMode,
+  ClashElementRecord,
+  ClashPipelineMetrics,
+  runFourStageClashPipeline,
+} from "./clash-engine";
+
+export type { ClashDetectionMode, ClashPipelineMetrics };
 
 export interface ClashResultItem {
   id: string;
   modelId: string;
+  bModelId?: string;
   aLocalId: number;
   bLocalId: number;
   aName: string;
@@ -15,6 +24,9 @@ export interface ClashResultItem {
   bCategory: string;
   overlapVolumeM3: number;
   severity: "high" | "medium" | "low";
+  mode?: ClashDetectionMode;
+  clusterId?: string;
+  collisionPoint?: THREE.Vector3;
   box: THREE.Box3;
 }
 
@@ -52,7 +64,10 @@ export class BimProSuite extends OBC.Component implements OBC.Disposable {
 
   disciplineA = "IFCCOLUMN|IFCBEAM|IFCMEMBER|IFCFOOTING";
   disciplineB = "IFCWALL|IFCWALLSTANDARDCASE|IFCSLAB|IFCROOF|IFCPIPE|IFCDUCT";
+  clashMode: ClashDetectionMode = "hard";
   toleranceMeters = -0.02;
+  clusterProximityMeters = 2.5;
+  clashMetrics: ClashPipelineMetrics | null = null;
   statusMessage = "Ready for 3D Clash QA, 4D Phasing & Property Export";
   isBusy = false;
 
@@ -118,6 +133,7 @@ export class BimProSuite extends OBC.Component implements OBC.Disposable {
     this.onStateChanged.trigger();
 
     this.clearClashMarkers();
+    this.clashMetrics = null;
 
     const found: ClashResultItem[] = [];
     const fragments = this.components.get(OBC.FragmentsManager);
@@ -125,20 +141,29 @@ export class BimProSuite extends OBC.Component implements OBC.Disposable {
     const world = this.resolveWorld();
 
     try {
+      const itemsA: ClashElementRecord[] = [];
+      const itemsB: ClashElementRecord[] = [];
+
       if (fragments.initialized && fragments.list.size > 0) {
         const mapA = await finder.getItems([{ categories: [new RegExp(catA, "i")] }]);
         const mapB = await finder.getItems([{ categories: [new RegExp(catB, "i")] }]);
 
         for (const [modelId, model] of fragments.list) {
           if (!model) continue;
-          const idsA = mapA[modelId] ? [...mapA[modelId]].slice(0, 140) : [];
-          const idsB = mapB[modelId] ? [...mapB[modelId]].slice(0, 140) : [];
-          if (idsA.length === 0 || idsB.length === 0) continue;
+          const idsA = mapA[modelId] ? [...mapA[modelId]].slice(0, 350) : [];
+          const idsB = mapB[modelId] ? [...mapB[modelId]].slice(0, 350) : [];
+          if (idsA.length === 0 && idsB.length === 0) continue;
+
+          const modelPos = ((model as any).object as THREE.Object3D | undefined)?.position;
+          const offset = modelPos ? modelPos.clone() : new THREE.Vector3();
 
           const [boxesA, boxesB, dataRes] = await Promise.all([
-            model.getBoxes(idsA),
-            model.getBoxes(idsB),
-            fragments.getData({ [modelId]: new Set([...idsA, ...idsB]) }, { attributesDefault: true }),
+            idsA.length > 0 ? model.getBoxes(idsA) : Promise.resolve([]),
+            idsB.length > 0 ? model.getBoxes(idsB) : Promise.resolve([]),
+            fragments.getData(
+              { [modelId]: new Set([...idsA, ...idsB]) },
+              { attributesDefault: true }
+            ),
           ]);
 
           const metaById = new Map<number, { name: string; cat: string }>();
@@ -149,54 +174,123 @@ export class BimProSuite extends OBC.Component implements OBC.Disposable {
             if (Number.isFinite(lid)) metaById.set(lid, { name: eName, cat: cName });
           }
 
-          for (let i = 0; i < idsA.length && found.length < 40; i++) {
-            const boxA = boxesA[i];
-            if (!boxA || boxA.isEmpty()) continue;
-            const testA = boxA.clone().expandByScalar(tolerance);
-            const idA = idsA[i];
+          idsA.forEach((idA, idx) => {
+            const b = boxesA[idx];
+            if (!b || b.isEmpty()) return;
+            const worldBox = b.clone().translate(offset);
+            const meta = metaById.get(idA) || { name: `Element #${idA}`, cat: "Discipline A" };
+            itemsA.push({
+              key: `${modelId}:${idA}`,
+              modelId,
+              localId: idA,
+              name: meta.name,
+              category: meta.cat.replace(/^Ifc/i, ""),
+              box: worldBox,
+            });
+          });
 
-            for (let j = 0; j < idsB.length && found.length < 40; j++) {
-              const idB = idsB[j];
-              if (idA === idB) continue;
-              const boxB = boxesB[j];
-              if (!boxB || boxB.isEmpty()) continue;
-
-              if (testA.intersectsBox(boxB)) {
-                const overlap = boxA.clone().intersect(boxB);
-                if (overlap.isEmpty()) continue;
-                const sz = new THREE.Vector3();
-                overlap.getSize(sz);
-                const vol = Number((sz.x * sz.y * sz.z).toFixed(3));
-                if (vol <= 0.001) continue;
-
-                const metaA = metaById.get(idA) || { name: `Element #${idA}`, cat: "Discipline A" };
-                const metaB = metaById.get(idB) || { name: `Element #${idB}`, cat: "Discipline B" };
-
-                found.push({
-                  id: `CL-${String(found.length + 1).padStart(2, "0")}`,
-                  modelId,
-                  aLocalId: idA,
-                  bLocalId: idB,
-                  aName: metaA.name,
-                  bName: metaB.name,
-                  aCategory: metaA.cat.replace(/^Ifc/i, ""),
-                  bCategory: metaB.cat.replace(/^Ifc/i, ""),
-                  overlapVolumeM3: vol,
-                  severity: vol > 0.25 ? "high" : vol > 0.05 ? "medium" : "low",
-                  box: overlap,
-                });
-              }
-            }
-          }
+          idsB.forEach((idB, idx) => {
+            const b = boxesB[idx];
+            if (!b || b.isEmpty()) return;
+            const worldBox = b.clone().translate(offset);
+            const meta = metaById.get(idB) || { name: `Element #${idB}`, cat: "Discipline B" };
+            itemsB.push({
+              key: `${modelId}:${idB}`,
+              modelId,
+              localId: idB,
+              name: meta.name,
+              category: meta.cat.replace(/^Ifc/i, ""),
+              box: worldBox,
+            });
+          });
         }
+      } else if (world?.scene?.three) {
+        // Fallback for built-in 3D scene models (e.g. 10-Villa, Tower, Bridge)
+        const reA = new RegExp(catA, "i");
+        const reB = new RegExp(catB, "i");
+        let seq = 1;
+        world.scene.three.traverse((obj) => {
+          if (!(obj instanceof THREE.Mesh) || !obj.visible) return;
+          const name = obj.name || `Mesh_${seq}`;
+          const lower = name.toLowerCase();
+          if (
+            lower.includes("grid") ||
+            lower.includes("helper") ||
+            lower.includes("__pro_clash") ||
+            lower.includes("ground") ||
+            lower.includes("sky")
+          ) {
+            return;
+          }
+          obj.updateMatrixWorld(true);
+          const box = new THREE.Box3().setFromObject(obj);
+          if (box.isEmpty()) return;
+
+          const id = seq++;
+          const rec: ClashElementRecord = {
+            key: `scene:${id}`,
+            modelId: "__scene__",
+            localId: id,
+            name,
+            category: "3D Scene",
+            box,
+            mesh: obj,
+          };
+          const matchesA = reA.test(name);
+          const matchesB = reB.test(name);
+          if (matchesA) itemsA.push(rec);
+          if (matchesB) itemsB.push(rec);
+          if (!matchesA && !matchesB) {
+            if (id % 2 === 1) itemsA.push(rec);
+            else itemsB.push(rec);
+          }
+        });
       }
 
-      // Draw crisp translucent red 3D Clash Cubes inside World Scene
+      const effectiveTolerance =
+        this.clashMode === "clearance"
+          ? Math.max(0.05, Math.abs(tolerance))
+          : this.clashMode === "containment"
+            ? 0
+            : tolerance;
+
+      const { results, metrics } = runFourStageClashPipeline(itemsA, itemsB, {
+        mode: this.clashMode,
+        toleranceMeters: effectiveTolerance,
+        clusterProximityMeters: this.clusterProximityMeters,
+        maxResults: 60,
+      });
+
+      this.clashMetrics = metrics;
+
+      for (let i = 0; i < results.length; i++) {
+        const r = results[i];
+        found.push({
+          id: `CL-${String(i + 1).padStart(2, "0")}`,
+          modelId: r.a.modelId,
+          bModelId: r.bModelId,
+          aLocalId: r.a.localId,
+          bLocalId: r.b.localId,
+          aName: r.a.name,
+          bName: r.b.name,
+          aCategory: r.a.category,
+          bCategory: r.b.category,
+          overlapVolumeM3: r.overlapVolumeM3,
+          severity: r.severity,
+          mode: r.mode,
+          clusterId: r.clusterId,
+          collisionPoint: r.collisionPoint,
+          box: r.overlapBox,
+        });
+      }
+
+      // Draw crisp translucent 3D Clash Cubes + collision point markers inside World Scene
       if (world?.scene?.three && found.length > 0) {
         const markerGroup = new THREE.Group();
         markerGroup.name = "__pro_clash_markers";
         const size = new THREE.Vector3();
         const center = new THREE.Vector3();
+        const sphereGeom = new THREE.SphereGeometry(0.16, 12, 12);
 
         for (const clash of found) {
           clash.box.getSize(size);
@@ -206,16 +300,25 @@ export class BimProSuite extends OBC.Component implements OBC.Disposable {
             Math.max(size.y, 0.25),
             Math.max(size.z, 0.25)
           );
+          const colorHex = clash.severity === "high" ? 0xef4444 : 0xf59e0b;
           const mat = new THREE.MeshBasicMaterial({
-            color: clash.severity === "high" ? 0xef4444 : 0xf59e0b,
+            color: colorHex,
             transparent: true,
-            opacity: 0.55,
+            opacity: 0.45,
             depthTest: true,
           });
           const mesh = new THREE.Mesh(geom, mat);
           mesh.position.copy(center);
           mesh.name = "__pro_clash_markers_item";
           markerGroup.add(mesh);
+
+          if (clash.collisionPoint) {
+            const ptMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+            const ptMesh = new THREE.Mesh(sphereGeom, ptMat);
+            ptMesh.position.copy(clash.collisionPoint);
+            ptMesh.name = "__pro_clash_markers_point";
+            markerGroup.add(ptMesh);
+          }
         }
         world.scene.three.add(markerGroup);
       }
@@ -223,8 +326,8 @@ export class BimProSuite extends OBC.Component implements OBC.Disposable {
       this.clashes = found;
       this.statusMessage =
         found.length > 0
-          ? `Detected ${found.length} 3D intersection clash(es). Click any clash to inspect.`
-          : "Zero clashes detected at current tolerance — clean coordination!";
+          ? `4-Stage Scan (${metrics.durationMs}ms): ${found.length} ${this.clashMode} clash(es) in ${metrics.clusterCount} cluster(s) · ${metrics.discardedPct}% discarded.`
+          : `Zero ${this.clashMode} clashes (${metrics.elementsA}×${metrics.elementsB} elements, ${metrics.discardedPct}% pruned in ${metrics.durationMs}ms).`;
       return found;
     } catch (err: any) {
       this.statusMessage = `Clash scan error: ${err?.message || err}`;
@@ -258,10 +361,13 @@ export class BimProSuite extends OBC.Component implements OBC.Disposable {
 
     await hl.clear("__clash_a");
     await hl.clear("__clash_b");
-    await Promise.all([
-      hl.highlightByID("__clash_a", { [clash.modelId]: new Set([clash.aLocalId]) }, false, false),
-      hl.highlightByID("__clash_b", { [clash.modelId]: new Set([clash.bLocalId]) }, false, false),
-    ]);
+    if (clash.modelId !== "__scene__") {
+      const bModel = clash.bModelId && clash.bModelId !== "__scene__" ? clash.bModelId : clash.modelId;
+      await Promise.all([
+        hl.highlightByID("__clash_a", { [clash.modelId]: new Set([clash.aLocalId]) }, false, false),
+        hl.highlightByID("__clash_b", { [bModel]: new Set([clash.bLocalId]) }, false, false),
+      ]);
+    }
 
     const controls = (world?.camera as { controls?: { fitToBox: Function } })?.controls;
     if (controls) {

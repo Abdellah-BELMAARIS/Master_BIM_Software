@@ -136,6 +136,42 @@ export const proStudioTemplate: BUI.StatefullComponent<ProStudioSectionState> = 
                 </select>
               </label>
 
+              <div style="display: grid; grid-template-columns: 1.3fr 1fr; gap: 6px;">
+                <label style="display: flex; flex-direction: column; gap: 3px; font-size: 0.67rem; color: #94a3b8;">
+                  <span>Detection Mode</span>
+                  <select
+                    .value=${pro.clashMode}
+                    @change=${(e: Event) => {
+                      pro.clashMode = (e.target as HTMLSelectElement).value as any;
+                      if (pro.clashMode === "clearance" && pro.toleranceMeters <= 0) {
+                        pro.toleranceMeters = 0.25;
+                      } else if (pro.clashMode === "hard" && pro.toleranceMeters > 0) {
+                        pro.toleranceMeters = -0.02;
+                      }
+                      update();
+                    }}
+                    style="padding: 6px 8px; border-radius: 6px; background: rgba(32, 33, 38, 0.9); border: 1px solid rgba(148, 163, 184, 0.28); color: #f8fafc; font-size: 0.71rem;"
+                  >
+                    <option value="hard">Hard Clash (Intersection)</option>
+                    <option value="clearance">Clearance (Soft Distance)</option>
+                    <option value="containment">Full Containment</option>
+                  </select>
+                </label>
+                <label style="display: flex; flex-direction: column; gap: 3px; font-size: 0.67rem; color: #94a3b8;">
+                  <span>${pro.clashMode === "clearance" ? "Clearance (m)" : "Tolerance (m)"}</span>
+                  <input
+                    type="number"
+                    step="0.01"
+                    .value=${String(pro.toleranceMeters)}
+                    @input=${(e: Event) => {
+                      const val = Number((e.target as HTMLInputElement).value);
+                      if (Number.isFinite(val)) pro.toleranceMeters = val;
+                    }}
+                    style="padding: 6px 8px; border-radius: 6px; background: rgba(32, 33, 38, 0.9); border: 1px solid rgba(148, 163, 184, 0.28); color: #f8fafc; font-size: 0.71rem; box-sizing: border-box;"
+                  />
+                </label>
+              </div>
+
               <div style="display: flex; gap: 6px; margin-top: 2px;">
                 <button
                   type="button"
@@ -175,6 +211,34 @@ export const proStudioTemplate: BUI.StatefullComponent<ProStudioSectionState> = 
           : ""}
             </div>
 
+            ${pro.clashMetrics
+          ? BUI.html`
+                  <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; padding: 7px 9px; border-radius: 8px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(56, 189, 248, 0.24); font-size: 0.63rem; text-align: center;">
+                    <div>
+                      <div style="color: #64748b; font-weight: 700;">1. AABB</div>
+                      <div style="color: #f8fafc; font-weight: 800;">${pro.clashMetrics.elementsA}×${pro.clashMetrics.elementsB}</div>
+                    </div>
+                    <div>
+                      <div style="color: #64748b; font-weight: 700;">2. Sweep 1D</div>
+                      <div style="color: #7dd3fc; font-weight: 800;">${pro.clashMetrics.sweepPrunePairs}</div>
+                    </div>
+                    <div>
+                      <div style="color: #64748b; font-weight: 700;">3. 3D Box</div>
+                      <div style="color: #fbbf24; font-weight: 800;">${pro.clashMetrics.aabbCandidates}</div>
+                    </div>
+                    <div>
+                      <div style="color: #64748b; font-weight: 700;">4. Verified</div>
+                      <div style="color: #34d399; font-weight: 800;">${pro.clashMetrics.verifiedClashes} (${pro.clashMetrics.clusterCount}C)</div>
+                    </div>
+                    <div style="grid-column: 1 / -1; padding-top: 3px; border-top: 1px solid rgba(148, 163, 184, 0.14); color: #94a3b8; display: flex; justify-content: space-between;">
+                      <span>Pruned: <strong style="color: #34d399;">${pro.clashMetrics.discardedPct}%</strong></span>
+                      <span>Brute-force: ${pro.clashMetrics.bruteForcePairs}</span>
+                      <span>Time: <strong style="color: #7dd3fc;">${pro.clashMetrics.durationMs}ms</strong></span>
+                    </div>
+                  </div>
+                `
+          : ""}
+
             <!-- Clash Results Table -->
             <div style="flex: 1; overflow-y: auto; border-radius: 9px; border: 1px solid rgba(148, 163, 184, 0.2); background: rgba(9, 13, 22, 0.85);">
               ${pro.clashes.length === 0
@@ -186,11 +250,14 @@ export const proStudioTemplate: BUI.StatefullComponent<ProStudioSectionState> = 
                         @click=${() => pro.focusClash(c)}
                         style="display: flex; flex-direction: column; gap: 3px; width: 100%; padding: 8px 10px; border: none; border-bottom: 1px solid rgba(148, 163, 184, 0.12); background: transparent; text-align: left; cursor: pointer;"
                       >
-                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+                        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center; gap: 6px;">
                           <span style="font-size: 0.70rem; font-weight: 800; color: ${c.severity === "high" ? "#f87171" : "#fbbf24"};">
                             ${c.id} · ${c.severity.toUpperCase()} (${c.overlapVolumeM3} m³)
                           </span>
-                          <span style="font-size: 0.65rem; color: #7dd3fc;">Inspect →</span>
+                          <span style="display: inline-flex; align-items: center; gap: 4px;">
+                            ${c.clusterId ? BUI.html`<span style="font-size: 0.60rem; font-weight: 700; padding: 1px 5px; border-radius: 999px; background: rgba(56, 189, 248, 0.16); color: #7dd3fc;">${c.clusterId}</span>` : ""}
+                            <span style="font-size: 0.65rem; color: #7dd3fc;">Inspect →</span>
+                          </span>
                         </div>
                         <div style="font-size: 0.72rem; color: #f8fafc; font-weight: 600;">
                           ${c.aName} <span style="color: #94a3b8;">×</span> ${c.bName}
