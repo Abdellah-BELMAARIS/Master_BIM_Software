@@ -4,6 +4,7 @@ import {
   CypeConnector,
   CypeContributionItem,
   CypeIssue,
+  PublishDeliverableSource,
   CYPE_PROXY_ENDPOINT,
   CYPE_USER_PROFILE_URL,
   CYPE_DEV_PORTAL_URL,
@@ -19,6 +20,10 @@ export interface CypeSectionState {
   showUploadForm?: boolean;
   uploadName?: string;
   uploadDiscipline?: CypeContributionItem["discipline"];
+  uploadSource?: PublishDeliverableSource;
+  uploadModelId?: string;
+  uploadFile?: File | null;
+  alsoDownload?: boolean;
   issueStatusFilter?: "all" | CypeIssue["status"];
   newIssueTitle?: string;
   newIssueDiscipline?: CypeIssue["discipline"];
@@ -382,11 +387,18 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
             </div>
 
             ${state.showUploadForm
-          ? BUI.html`
-                  <div style="display: flex; flex-direction: column; gap: 7px; padding: 10px 12px; border-radius: 10px; background: #121316; border: 1px solid rgba(16, 185, 129, 0.35);">
+          ? (() => {
+              const loadedModels = cype.getLoadedModelIds();
+              const uploadSource: PublishDeliverableSource =
+                state.uploadSource || (loadedModels.length > 0 ? "glb" : "file");
+              const selectedModelId = state.uploadModelId || "";
+              const alsoDownload = Boolean(state.alsoDownload);
+
+              return BUI.html`
+                  <div style="display: flex; flex-direction: column; gap: 8px; padding: 11px 12px; border-radius: 10px; background: #121316; border: 1px solid rgba(16, 185, 129, 0.35);">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                       <span style="font-size: 0.68rem; font-weight: 700; color: #34d399; text-transform: uppercase; letter-spacing: 0.05em;">
-                        Publish to BIMserver.center
+                        Publish &amp; Export Studio
                       </span>
                       <button
                         type="button"
@@ -394,6 +406,7 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
                         style="background: transparent; border: none; color: #94a3b8; cursor: pointer; font-size: 0.72rem;"
                       >✕</button>
                     </div>
+
                     <input
                       type="text"
                       .value=${state.uploadName ?? `BIM Coordination Update (${new Date().toLocaleDateString()})`}
@@ -401,39 +414,148 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
                       placeholder="Contribution name..."
                       style="width: 100%; padding: 6px 9px; border-radius: 7px; background: #18191d; border: 1px solid rgba(255, 255, 255, 0.12); color: #f8fafc; font-size: 0.71rem; box-sizing: border-box;"
                     />
-                    <div style="display: flex; gap: 6px;">
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
                       <select
                         .value=${state.uploadDiscipline || "Coordination"}
                         @change=${(e: Event) =>
-              update({
-                uploadDiscipline: (e.target as HTMLSelectElement)
-                  .value as CypeContributionItem["discipline"],
-              })}
-                        style="flex: 1; padding: 6px 8px; border-radius: 7px; background: #18191d; border: 1px solid rgba(255, 255, 255, 0.12); color: #f8fafc; font-size: 0.71rem;"
+                  update({
+                    uploadDiscipline: (e.target as HTMLSelectElement)
+                      .value as CypeContributionItem["discipline"],
+                  })}
+                        style="padding: 6px 8px; border-radius: 7px; background: #18191d; border: 1px solid rgba(255, 255, 255, 0.12); color: #f8fafc; font-size: 0.71rem;"
                       >
                         <option value="Coordination">Coordination</option>
                         <option value="Architecture">Architecture</option>
                         <option value="Structure">Structure</option>
                         <option value="MEP">MEP</option>
                       </select>
+
+                      <select
+                        .value=${uploadSource}
+                        @change=${(e: Event) =>
+                  update({
+                    uploadSource: (e.target as HTMLSelectElement)
+                      .value as PublishDeliverableSource,
+                  })}
+                        style="padding: 6px 8px; border-radius: 7px; background: #18191d; border: 1px solid rgba(255, 255, 255, 0.12); color: #f8fafc; font-size: 0.71rem;"
+                      >
+                        <option value="glb">Edited 3D Model (.glb)</option>
+                        <option value="frag">Edited Fragments (.frag)</option>
+                        <option value="file">Local File (.ifc / .bcf / .glb)</option>
+                        <option value="metadata">Metadata Entry Only</option>
+                      </select>
+                    </div>
+
+                    ${uploadSource === "glb" || uploadSource === "frag"
+                  ? BUI.html`
+                        <select
+                          .value=${selectedModelId}
+                          @change=${(e: Event) =>
+                      update({ uploadModelId: (e.target as HTMLSelectElement).value })}
+                          style="width: 100%; padding: 6px 8px; border-radius: 7px; background: #18191d; border: 1px solid rgba(255, 255, 255, 0.12); color: #cbd5e1; font-size: 0.7rem;"
+                        >
+                          ${uploadSource === "glb"
+                        ? BUI.html`<option value="">All Loaded Models (${loadedModels.length})</option>`
+                        : BUI.html`<option value="">Active First Model (${loadedModels[0] || "none"})</option>`}
+                          ${loadedModels.map(
+                          (id) => BUI.html`<option value=${id}>${id}</option>`
+                        )}
+                        </select>
+                      `
+                  : uploadSource === "file"
+                    ? BUI.html`
+                          <label style="display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 9px; border-radius: 7px; background: #18191d; border: 1px dashed rgba(56, 189, 248, 0.4); color: #e2e8f0; font-size: 0.69rem; cursor: pointer;">
+                            <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                              ${state.uploadFile
+                          ? `${state.uploadFile.name} (${Math.max(1, Math.round(state.uploadFile.size / 1024))} KB)`
+                          : "Choose .ifc, .glb, .gltf, .bcf, or .pdf..."}
+                            </span>
+                            <span style="color: #38bdf8; font-weight: 700; flex-shrink: 0;">Browse</span>
+                            <input
+                              type="file"
+                              accept=".ifc,.glb,.gltf,.bcf,.bcfzip,.frag,.pdf"
+                              style="display: none;"
+                              @change=${(e: Event) => {
+                          const file = (e.target as HTMLInputElement).files?.[0] || null;
+                          update({
+                            uploadFile: file,
+                            uploadName:
+                              state.uploadName ||
+                              (file ? file.name.replace(/\.[^.]+$/, "") : undefined),
+                          });
+                        }}
+                            />
+                          </label>
+                        `
+                    : ""}
+
+                    ${uploadSource === "glb" || uploadSource === "frag"
+                  ? BUI.html`
+                        <label style="display: flex; align-items: center; gap: 6px; font-size: 0.66rem; color: #94a3b8; cursor: pointer;">
+                          <input
+                            type="checkbox"
+                            .checked=${alsoDownload}
+                            @change=${(e: Event) =>
+                        update({ alsoDownload: (e.target as HTMLInputElement).checked })}
+                          />
+                          <span>Also save local .${uploadSource} backup copy</span>
+                        </label>
+                      `
+                  : ""}
+
+                    <div style="display: flex; gap: 6px;">
+                      ${uploadSource === "glb" || uploadSource === "frag"
+                  ? BUI.html`
+                          <button
+                            type="button"
+                            ?disabled=${cype.isBusy || loadedModels.length === 0}
+                            @click=${() => {
+                        const title = (
+                          state.uploadName ||
+                          `BIM_Export_${new Date().toISOString().slice(0, 10)}`
+                        ).trim();
+                        void cype
+                          .exportActiveModel(uploadSource, selectedModelId || undefined, title)
+                          .catch(() => {});
+                      }}
+                            style="flex: 1; padding: 7px 10px; border-radius: 7px; border: 1px solid rgba(56, 189, 248, 0.45); background: rgba(56, 189, 248, 0.12); color: #7dd3fc; font-size: 0.7rem; font-weight: 700; cursor: pointer;"
+                          >
+                            Export .${uploadSource.toUpperCase()}
+                          </button>
+                        `
+                  : ""}
                       <button
                         type="button"
+                        ?disabled=${cype.isBusy}
                         @click=${() => {
-              const title = (
-                state.uploadName ||
-                `BIM Coordination Update (${new Date().toLocaleDateString()})`
-              ).trim();
-              const disc = state.uploadDiscipline || "Coordination";
-              void cype.publishContribution(title, disc);
-              update({ showUploadForm: false });
-            }}
-                        style="padding: 6px 12px; border-radius: 7px; border: none; background: #10b981; color: #052e16; font-size: 0.71rem; font-weight: 700; cursor: pointer;"
+                    const title = (
+                      state.uploadName ||
+                      `BIM Coordination Update (${new Date().toLocaleDateString()})`
+                    ).trim();
+                    const disc = state.uploadDiscipline || "Coordination";
+                    void cype
+                      .publishContribution({
+                        name: title,
+                        discipline: disc,
+                        source: uploadSource,
+                        modelId: selectedModelId || undefined,
+                        file: state.uploadFile || null,
+                        alsoDownload,
+                      })
+                      .then(() => {
+                        update({ showUploadForm: false, uploadFile: null });
+                      })
+                      .catch(() => {});
+                  }}
+                        style="flex: 1; padding: 7px 12px; border-radius: 7px; border: none; background: #10b981; color: #052e16; font-size: 0.71rem; font-weight: 700; cursor: pointer;"
                       >
-                        Publish Now
+                        ${cype.isBusy ? "Publishing..." : "Publish Now"}
                       </button>
                     </div>
                   </div>
-                `
+                `;
+            })()
           : BUI.html`
                   <button
                     type="button"

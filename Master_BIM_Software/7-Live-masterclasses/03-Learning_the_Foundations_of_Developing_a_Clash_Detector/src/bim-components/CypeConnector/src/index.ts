@@ -1,4 +1,21 @@
 import * as OBC from "@thatopen/components";
+import {
+  downloadBlob,
+  exportLoadedModelsToGlb,
+  exportLoadedModelToFrag,
+  getLoadedModelIds,
+} from "./exporter";
+
+export type PublishDeliverableSource = "glb" | "frag" | "file" | "metadata";
+
+export interface PublishContributionOptions {
+  name: string;
+  discipline?: CypeContributionItem["discipline"];
+  source?: PublishDeliverableSource;
+  modelId?: string;
+  file?: File | null;
+  alsoDownload?: boolean;
+}
 
 export const CYPE_DEFAULT_ORIGIN = "http://127.0.0.1:5173";
 export const CYPE_PROXY_ENDPOINT =
@@ -1056,47 +1073,167 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
     this.onStateChanged.trigger();
   }
 
+  getLoadedModelIds(): string[] {
+    return getLoadedModelIds(this.components);
+  }
+
+  async exportActiveModel(
+    format: "glb" | "frag" = "glb",
+    modelId?: string,
+    baseName?: string
+  ): Promise<void> {
+    this.isBusy = true;
+    this.syncStatus = `Exporting edited model as .${format}...`;
+    this.onStateChanged.trigger();
+
+    try {
+      const artifact =
+        format === "frag"
+          ? await exportLoadedModelToFrag(this.components, modelId, baseName)
+          : await exportLoadedModelsToGlb(this.components, modelId, baseName);
+      downloadBlob(artifact.blob, artifact.fileName);
+      this.syncStatus = `Exported ${artifact.fileName} (${artifact.sizeLabel}).`;
+    } catch (err: any) {
+      this.syncStatus = `Export failed: ${err?.message || err}`;
+      throw err;
+    } finally {
+      this.isBusy = false;
+      this.onStateChanged.trigger();
+    }
+  }
+
+  private async uploadContributionFile(contributionId: string, fileBlob: Blob, fileName: string): Promise<void> {
+    const formData = new FormData();
+    formData.append("id", contributionId);
+    formData.append("contribution_id", contributionId);
+    formData.append("file", fileBlob, fileName);
+
+    const res = await fetch(`${CYPE_API_BASE}/apiupload.asp`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${this.auth.sessionId.trim()}`,
+      },
+      body: formData,
+    });
+
+    const rawText = await res.text();
+    let parsed: any = {};
+    try {
+      parsed = rawText ? JSON.parse(rawText) : {};
+    } catch {
+      parsed = { raw: rawText };
+    }
+
+    if (!res.ok || parsed?.error) {
+      throw new Error(parsed?.error || parsed?.message || `File upload HTTP ${res.status}`);
+    }
+  }
+
   async publishContribution(
-    name: string,
+    nameOrOptions: string | PublishContributionOptions,
     discipline: CypeContributionItem["discipline"] = "Coordination",
     fileName = "coordination_package.ifc"
   ) {
-    const cleanName = name.trim() || `Master BIM Snapshot (${new Date().toLocaleTimeString()})`;
-    if (this.auth.mode === "live-cype" && this.auth.sessionId.trim()) {
-      try {
-        await this.callProxy("/contributions", "POST", {
+    const opts: PublishContributionOptions =
+      typeof nameOrOptions === "string"
+        ? { name: nameOrOptions, discipline, source: "metadata" }
+        : nameOrOptions;
+
+    const resolvedDiscipline = opts.discipline || "Coordination";
+    const source: PublishDeliverableSource = opts.source || "metadata";
+    const cleanName = opts.name.trim() || `Master BIM Snapshot (${new Date().toLocaleTimeString()})`;
+
+    this.isBusy = true;
+    this.syncStatus = `Preparing "${cleanName}" (${source.toUpperCase()})...`;
+    this.onStateChanged.trigger();
+
+    try {
+      let fileBlob: Blob | null = null;
+      let resolvedFileName = fileName;
+      let sizeLabel = "OpenBIM IFC";
+
+      if (source === "glb") {
+        const artifact = await exportLoadedModelsToGlb(this.components, opts.modelId, cleanName);
+        fileBlob = artifact.blob;
+        resolvedFileName = artifact.fileName;
+        sizeLabel = artifact.sizeLabel;
+      } else if (source === "frag") {
+        const artifact = await exportLoadedModelToFrag(this.components, opts.modelId, cleanName);
+        fileBlob = artifact.blob;
+        resolvedFileName = artifact.fileName;
+        sizeLabel = artifact.sizeLabel;
+      } else if (source === "file") {
+        if (!opts.file) {
+          throw new Error("Choose a local .ifc, .glb, .gltf, .bcf, or .pdf file to upload.");
+        }
+        fileBlob = opts.file;
+        resolvedFileName = opts.file.name;
+        sizeLabel =
+          opts.file.size >= 1024 * 1024
+            ? `${(opts.file.size / (1024 * 1024)).toFixed(2)} MB`
+            : `${Math.max(1, Math.round(opts.file.size / 1024))} KB`;
+      }
+
+      if (fileBlob && opts.alsoDownload && source !== "file") {
+        downloadBlob(fileBlob, resolvedFileName);
+      }
+
+      if (this.auth.mode === "live-cype" && this.auth.sessionId.trim()) {
+        this.syncStatus = `Creating BIMserver.center contribution "${cleanName}"...`;
+        this.onStateChanged.trigger();
+
+        const created = await this.callProxy("/contributions", "POST", {
           project_id: Number(this.selectedProjectId) || this.selectedProjectId,
           name: cleanName,
-          description: `Published from Master BIM Viewer (${discipline})`,
+          description: `Published from Master BIM Viewer (${resolvedDiscipline} · ${resolvedFileName})`,
         });
+
+        const contributionId = String(
+          created?.id ?? created?.contribution_id ?? created?.record?.id ?? ""
+        ).trim();
+
+        if (fileBlob) {
+          if (!contributionId) {
+            throw new Error("Contribution created, but BIMserver.center did not return a contribution ID for file upload.");
+          }
+          this.syncStatus = `Uploading ${resolvedFileName} (${sizeLabel}) to BIMserver.center...`;
+          this.onStateChanged.trigger();
+          await this.uploadContributionFile(contributionId, fileBlob, resolvedFileName);
+        }
+
         await this.fetchProjectContributions(this.selectedProjectId);
-        this.syncStatus = `Published contribution "${cleanName}" to BIMserver.center!`;
-        this.onStateChanged.trigger();
-        return;
-      } catch (err: any) {
-        this.syncStatus = `BIMserver publish failed: ${err?.message || err}`;
-        this.onStateChanged.trigger();
+        this.syncStatus = fileBlob
+          ? `Published "${cleanName}" with ${resolvedFileName} (${sizeLabel}) to BIMserver.center!`
+          : `Published contribution "${cleanName}" to BIMserver.center!`;
         return;
       }
-    }
 
-    const published: CypeContributionItem = {
-      id: `cype-pub-${Date.now()}`,
-      projectId: this.selectedProjectId,
-      name: cleanName,
-      appSource: "Master BIM Viewer",
-      discipline,
-      version: `Rev 0${this.contributions.length + 1}`,
-      sizeLabel: "OpenBIM IFC",
-      modifiedAt: "Just now",
-      ifcFileName: fileName,
-      streamUrl:
-        this.getActiveContributions()[0]?.streamUrl ||
-        "/models/ifc/aurora_ten_villa_estate_ifc4.ifc",
-    };
-    this.contributions = [published, ...this.contributions];
-    this.syncStatus = `Published OpenBIM contribution "${cleanName}" (${discipline}).`;
-    this.onStateChanged.trigger();
+      const published: CypeContributionItem = {
+        id: `cype-pub-${Date.now()}`,
+        projectId: this.selectedProjectId,
+        name: cleanName,
+        appSource: "Master BIM Viewer",
+        discipline: resolvedDiscipline,
+        version: `Rev 0${this.contributions.length + 1}`,
+        sizeLabel,
+        modifiedAt: "Just now",
+        ifcFileName: resolvedFileName,
+        streamUrl: fileBlob
+          ? URL.createObjectURL(fileBlob)
+          : this.getActiveContributions()[0]?.streamUrl ||
+            "/models/ifc/aurora_ten_villa_estate_ifc4.ifc",
+      };
+      this.contributions = [published, ...this.contributions];
+      this.syncStatus = fileBlob
+        ? `Published "${cleanName}" (${resolvedFileName} · ${sizeLabel}) in Sandbox.`
+        : `Published OpenBIM contribution "${cleanName}" (${resolvedDiscipline}).`;
+    } catch (err: any) {
+      this.syncStatus = `BIMserver publish failed: ${err?.message || err}`;
+      throw err;
+    } finally {
+      this.isBusy = false;
+      this.onStateChanged.trigger();
+    }
   }
 
   dispose() {
