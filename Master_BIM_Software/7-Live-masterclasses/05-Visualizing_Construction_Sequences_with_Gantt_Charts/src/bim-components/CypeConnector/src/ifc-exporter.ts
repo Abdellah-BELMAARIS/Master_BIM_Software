@@ -148,10 +148,15 @@ async function collectFragmentMeshSources(
         for (const m of meshes) {
           if (sources.length >= MAX_EXPORT_MESHES) break;
           if (!m?.positions || m.positions.length < 9) continue;
-          const worldMat = new THREE.Matrix4().multiplyMatrices(
-            modelMatrix,
-            m.transform instanceof THREE.Matrix4 ? m.transform : new THREE.Matrix4()
-          );
+          const localMat =
+            m.transform instanceof THREE.Matrix4
+              ? m.transform
+              : m.transform?.elements?.length === 16
+                ? new THREE.Matrix4().fromArray(m.transform.elements)
+                : Array.isArray(m.transform) && m.transform.length === 16
+                  ? new THREE.Matrix4().fromArray(m.transform)
+                  : new THREE.Matrix4();
+          const worldMat = new THREE.Matrix4().multiplyMatrices(modelMatrix, localMat);
           sources.push({
             name: rawName || `Element_${sources.length + 1}`,
             ifcClass,
