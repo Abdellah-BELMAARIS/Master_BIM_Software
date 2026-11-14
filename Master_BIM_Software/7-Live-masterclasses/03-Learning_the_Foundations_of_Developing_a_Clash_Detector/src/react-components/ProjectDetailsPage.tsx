@@ -10,7 +10,6 @@ import { IProject, IProjectTask, Project } from "../classes/Project";
 import { ProjectsManager } from "../classes/ProjectsManager";
 import { ProjectInfoCard } from "./details/ProjectInfoCard";
 import { ProjectTasksList } from "./details/ProjectTasksList";
-import { EmbeddingsStudio } from "./EmbeddingsStudio";
 import { ProjectNotFound } from "./details/ProjectNotFound";
 import { ThreeViewer } from "./ThreeViewer";
 import * as templates from "../ui-templates";
@@ -183,7 +182,6 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
         | "pro-studio"
         | "fragments-edit"
         | "modeler"
-        | "embeddings"
         | "cype";
     const [activeDrawer, setActiveDrawer] = React.useState<DockDrawerId | null>(null);
     const [isDrawerExpanded, setIsDrawerExpanded] = React.useState<boolean>(false);
@@ -2235,16 +2233,6 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                                     <span>Parametric Modeler</span>
                                                 </span>
                                             </button>
-                                            <button
-                                                type="button"
-                                                className={`viewer-menu-item ${activeDrawer === "embeddings" ? "active" : ""}`}
-                                                onClick={() => toggleDrawer("embeddings")}
-                                            >
-                                                <span className="viewer-menu-item-left">
-                                                    <span className="material-icons-round">psychology</span>
-                                                    <span>AI Semantic Search</span>
-                                                </span>
-                                            </button>
                                         </div>
                                     )}
                                 </div>
@@ -2554,24 +2542,6 @@ export function ProjectDetailsPage(props: ProjectDetailsPageProps) {
                                     {renderDockHeaderActions("Close Parametric Modeler")}
                                 </div>
                                 <div ref={modelerContainerRef} className="toc-dock-body"></div>
-                            </div>
-
-                            {/* Dockable AI Semantic Embeddings Drawer */}
-                            <div
-                                className={`toc-dock-panel toc-dock-right ${isDrawerExpanded ? "is-expanded" : ""}`}
-                                data-drawer="embeddings"
-                                style={{ display: activeDrawer === "embeddings" ? "flex" : "none" }}
-                            >
-                                <div className="toc-dock-header">
-                                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                                        <span className="material-icons-round" style={{ color: "#a78bfa", fontSize: "18px" }}>psychology</span>
-                                        <span style={{ fontSize: "0.85rem", fontWeight: 700, color: "#f4f4f5" }}>AI Semantic Search</span>
-                                    </div>
-                                    {renderDockHeaderActions("Close AI Semantic Search")}
-                                </div>
-                                <div className="toc-dock-body">
-                                    <EmbeddingsStudio getComponents={() => componentsRef.current} />
-                                </div>
                             </div>
 
                             <bim-grid
