@@ -8,41 +8,9 @@
     ],
     "rewrites": [
       {
-        "source": "/cypeLogin",
-        "function": "cypeLogin"
-      },
-      {
-        "source": "/cypeExchangeSession",
-        "function": "cypeExchangeSession"
-      },
-      {
-        "source": "/cypeProxy",
-        "function": "cypeProxy"
-      },
-      {
-        "source": "/cypeDownloadFile",
-        "function": "cypeDownloadFile"
-      },
-      {
         "source": "**",
         "destination": "/index.html"
       }
     ]
-  },
-  "functions": [
-    {
-      "source": "functions",
-      "codebase": "default",
-      "ignore": [
-        "node_modules",
-        ".git",
-        "firebase-debug.log",
-        "firebase-debug.*.log",
-        "*.local"
-      ],
-      "predeploy": [
-        "npm --prefix \"$RESOURCE_DIR\" run build"
-      ]
-    }
-  ]
+  }
 }

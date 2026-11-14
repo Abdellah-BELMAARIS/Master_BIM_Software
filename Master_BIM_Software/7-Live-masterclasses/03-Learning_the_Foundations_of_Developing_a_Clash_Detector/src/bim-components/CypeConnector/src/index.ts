@@ -8,6 +8,15 @@ export const CYPE_PROXY_ENDPOINT =
     : `${CYPE_DEFAULT_ORIGIN}/cypeProxy`);
 export const CYPE_USER_PROFILE_URL = "https://bimserver.center/en/";
 export const CYPE_DEV_PORTAL_URL = "https://developers.bimserver.center/";
+export const CYPE_API_BASE = "https://apis.bimserver.center/v1/BIMSERVER";
+const CYPE_DEFAULT_SCOPES = [
+  "DATA_USER_READ",
+  "PROJECTS_USER_READ",
+  "PROJECTS_USER_WRITE",
+  "CONTRIBUTIONS_USER_READ",
+  "CONTRIBUTIONS_USER_WRITE",
+  "OFFLINE_ACCESS",
+];
 
 export interface CypeProject {
   id: string;
@@ -434,6 +443,43 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
     return this.resolveFunctionUrl("cypeProxy");
   }
 
+  private shouldUseDirectApi(): boolean {
+    if (import.meta.env.VITE_CYPE_FUNCTIONS_URL?.trim()) return false;
+    if (typeof window === "undefined") return false;
+    const host = window.location.hostname;
+    const isLocal = host === "localhost" || host === "127.0.0.1" || host === "::1";
+    if (isLocal) return false;
+    return this.auth.proxyEndpoint.trim().startsWith(window.location.origin);
+  }
+
+  private async fetchJsonWithDirectFallback(
+    proxyUrl: string,
+    proxyBody: unknown,
+    directUrl: string,
+    directInit: RequestInit
+  ): Promise<{ ok: boolean; status: number; data: any }> {
+    if (!this.shouldUseDirectApi()) {
+      try {
+        const res = await fetch(proxyUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(proxyBody),
+        });
+        const ct = res.headers.get("content-type") || "";
+        if (!ct.includes("text/html") && res.status !== 404 && res.status !== 405) {
+          const data = await res.json().catch(() => ({}));
+          return { ok: res.ok, status: res.status, data };
+        }
+      } catch {
+        // Fall back to direct CORS API call when proxy is unavailable
+      }
+    }
+
+    const directRes = await fetch(directUrl, directInit);
+    const data = await directRes.json().catch(() => ({}));
+    return { ok: directRes.ok, status: directRes.status, data };
+  }
+
   isSessionValid(): boolean {
     if (!this.auth.sessionId.trim()) return false;
     if (this.auth.expiresAt > 0 && this.auth.expiresAt <= Date.now() + 60_000) {
@@ -468,24 +514,25 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
         throw new Error("Enter your CYPE app client ID and secret to connect.");
       }
       const redirectUri = `${window.location.origin}/`;
-      const res = await fetch(this.resolveFunctionUrl("cypeLogin"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          clientId: this.auth.clientId.trim(),
-          clientSecret: this.auth.clientSecret.trim(),
-          redirectUri,
-        }),
-      });
-      const ct = res.headers.get("content-type") || "";
-      if (ct.includes("text/html")) {
-        throw new Error(
-          "No CYPE proxy backend is active on this origin. Deploy the CYPE proxy (Vercel/Render) and set VITE_CYPE_FUNCTIONS_URL, or run locally at http://127.0.0.1:5173/."
-        );
-      }
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data?.url || !data?.session_temp) {
-        throw new Error(data?.error || data?.message || `HTTP ${res.status}`);
+      const clientId = this.auth.clientId.trim();
+      const clientSecret = this.auth.clientSecret.trim();
+      const { ok, status, data } = await this.fetchJsonWithDirectFallback(
+        this.resolveFunctionUrl("cypeLogin"),
+        { clientId, clientSecret, redirectUri },
+        `${CYPE_API_BASE}/login`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Accept: "application/json" },
+          body: JSON.stringify({
+            client_id: clientId,
+            client_secret: clientSecret,
+            redirect_uri: redirectUri,
+            scope: CYPE_DEFAULT_SCOPES,
+          }),
+        }
+      );
+      if (!ok || !data?.url || !data?.session_temp) {
+        throw new Error(data?.error || data?.message || `HTTP ${status}`);
       }
       const authorizationUrl = getCypeAuthorizationUrl(data.url);
 
@@ -547,13 +594,14 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
     this.onStateChanged.trigger();
 
     try {
-      const res = await fetch(this.resolveFunctionUrl("cypeExchangeSession"), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ sessionTemp, securityId }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok || !data?.session_id) {
+      const qs = new URLSearchParams({ security_id: String(securityId) });
+      const { ok, data } = await this.fetchJsonWithDirectFallback(
+        this.resolveFunctionUrl("cypeExchangeSession"),
+        { sessionTemp, securityId },
+        `${CYPE_API_BASE}/login/${encodeURIComponent(String(sessionTemp))}?${qs.toString()}`,
+        { method: "GET", headers: { Accept: "application/json" } }
+      );
+      if (!ok || !data?.session_id) {
         throw new Error(data?.error || data?.message || "Authorization not yet confirmed by user.");
       }
 
@@ -587,18 +635,24 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
     if (!this.auth.clientSecret.trim()) {
       throw new Error("Re-enter your CYPE app secret to refresh the session.");
     }
-    const res = await fetch(this.resolveFunctionUrl("cypeExchangeSession"), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        refreshToken: this.auth.refreshToken,
-        clientId: this.auth.clientId.trim(),
-        clientSecret: this.auth.clientSecret.trim(),
-      }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok || !data?.session_id) {
-      throw new Error(data?.error || `HTTP ${res.status}`);
+    const clientId = this.auth.clientId.trim();
+    const clientSecret = this.auth.clientSecret.trim();
+    const { ok, status, data } = await this.fetchJsonWithDirectFallback(
+      this.resolveFunctionUrl("cypeExchangeSession"),
+      { refreshToken: this.auth.refreshToken, clientId, clientSecret },
+      `${CYPE_API_BASE}/login/refresh_token`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          client_id: clientId,
+          client_secret: clientSecret,
+          refresh_token: this.auth.refreshToken,
+        }),
+      }
+    );
+    if (!ok || !data?.session_id) {
+      throw new Error(data?.error || `HTTP ${status}`);
     }
     this.saveAuth({
       sessionId: data.session_id,
@@ -615,19 +669,23 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
       throw new Error("BIMserver.center API paths must be relative to the configured endpoint.");
     }
     const proxy = this.auth.proxyEndpoint.trim();
-    const res = await fetch(proxy, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        endpoint,
-        sessionId: this.auth.sessionId.trim(),
+    const sessionId = this.auth.sessionId.trim();
+    const { ok, status, data } = await this.fetchJsonWithDirectFallback(
+      proxy,
+      { endpoint, sessionId, method, body },
+      `${CYPE_API_BASE}${endpoint}`,
+      {
         method,
-        body,
-      }),
-    });
-    const data = await res.json().catch(() => ({}));
-    if (!res.ok) {
-      throw new Error(data?.error || data?.message || `HTTP ${res.status}`);
+        headers: {
+          Authorization: `Bearer ${sessionId}`,
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+        body: method !== "GET" && body ? JSON.stringify(body) : undefined,
+      }
+    );
+    if (!ok) {
+      throw new Error(data?.error || data?.message || `HTTP ${status}`);
     }
     return data;
   }
@@ -883,7 +941,7 @@ export class CypeConnector extends OBC.Component implements OBC.Disposable {
 
     try {
       let buffer: ArrayBuffer;
-      if (item.isRemoteBinary && this.auth.mode === "live-cype") {
+      if (item.isRemoteBinary && this.auth.mode === "live-cype" && !this.shouldUseDirectApi()) {
         try {
           const res = await fetch(this.resolveFunctionUrl("cypeDownloadFile"), {
             method: "POST",

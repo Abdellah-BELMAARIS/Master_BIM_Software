@@ -98,8 +98,8 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
     s === "pending"
       ? "rgba(245, 158, 11, 0.18)"
       : s === "solved"
-      ? "rgba(16, 185, 129, 0.18)"
-      : "rgba(148, 163, 184, 0.18)";
+        ? "rgba(16, 185, 129, 0.18)"
+        : "rgba(148, 163, 184, 0.18)";
 
   const statusPillColor = (s: CypeIssue["status"]) =>
     s === "pending" ? "#fbbf24" : s === "solved" ? "#34d399" : "#94a3b8";
@@ -189,7 +189,7 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
       </div>
 
       ${tab === "models"
-        ? BUI.html`
+      ? BUI.html`
             <!-- Project Context Card -->
             <div style="display: flex; flex-direction: column; gap: 7px; padding: 10px 12px; border-radius: 10px; background: rgba(15, 23, 42, 0.82); border: 1px solid rgba(56, 189, 248, 0.24);">
               <div style="display: flex; justify-content: space-between; align-items: center;">
@@ -201,19 +201,19 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
                 style="width: 100%; padding: 7px 9px; border-radius: 8px; background: rgba(30, 41, 59, 0.92); border: 1px solid rgba(56, 189, 248, 0.35); color: #f8fafc; font-size: 0.76rem; font-weight: 600;"
               >
                 ${cype.projects.map(
-                  (p) => BUI.html`<option value=${p.id} ?selected=${p.id === cype.selectedProjectId}>${p.name}</option>`
-                )}
+        (p) => BUI.html`<option value=${p.id} ?selected=${p.id === cype.selectedProjectId}>${p.name}</option>`
+      )}
               </select>
               ${activeProject
-                ? BUI.html`<div style="font-size: 0.67rem; color: #94a3b8; line-height: 1.35;">${activeProject.description}</div>`
-                : ""}
+          ? BUI.html`<div style="font-size: 0.67rem; color: #94a3b8; line-height: 1.35;">${activeProject.description}</div>`
+          : ""}
             </div>
 
             <!-- Discipline Filter Chips -->
             <div style="display: flex; flex-wrap: wrap; gap: 5px;">
               ${(["All", "Architecture", "Structure", "MEP", "Coordination"] as const).map((disc) => {
-                const active = disciplineFilter === disc;
-                return BUI.html`
+            const active = disciplineFilter === disc;
+            return BUI.html`
                   <button
                     type="button"
                     @click=${() => update({ disciplineFilter: disc })}
@@ -222,7 +222,7 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
                     ${disc}
                   </button>
                 `;
-              })}
+          })}
             </div>
 
             <!-- Search & Count Bar -->
@@ -238,22 +238,22 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
                 ${visibleDocs.length} / ${allDocs.length}
               </span>
               ${visibleDocs.length > 0
-                ? BUI.html`
+          ? BUI.html`
                     <button
                       type="button"
                       ?disabled=${Boolean(cype.loadingDocId)}
                       @click=${async () => {
-                        for (const doc of visibleDocs) {
-                          await cype.loadContributionIfc(doc);
-                        }
-                      }}
+              for (const doc of visibleDocs) {
+                await cype.loadContributionIfc(doc);
+              }
+            }}
                       title="Federate all currently filtered IFC models into the 3D viewer"
                       style="padding: 5px 9px; border-radius: 6px; border: 1px solid rgba(56, 189, 248, 0.35); background: rgba(56, 189, 248, 0.12); color: #7dd3fc; font-size: 0.66rem; font-weight: 700; cursor: pointer; white-space: nowrap;"
                     >
                       Load All
                     </button>
                   `
-                : ""}
+          : ""}
               <button
                 type="button"
                 @click=${() => update({ viewMode: (state.viewMode || "table") === "table" ? "cards" : "table" })}
@@ -267,34 +267,34 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
             <!-- OpenBIM Contributions Cards -->
             <div style="display: flex; flex-direction: column; gap: 8px; flex: 1; overflow-y: auto; padding-right: 2px;">
               ${visibleDocs.length === 0
-                ? BUI.html`
+          ? BUI.html`
                     <div style="display: flex; flex-direction: column; align-items: center; gap: 8px; padding: 22px 16px; text-align: center; border-radius: 10px; background: #121316; border: 1px dashed rgba(255, 255, 255, 0.14); font-size: 0.72rem; color: #94a3b8;">
                       <span class="material-icons-round" style="font-size: 22px; color: #64748b;">cloud_off</span>
                       <div>
                         ${isLiveMode && !sessionHealthy
-                          ? "Sign in to BIMserver.center to load your cloud projects and IFC models."
-                          : allDocs.length === 0
-                          ? "This project has no OpenBIM IFC contributions yet."
-                          : "No models match your current search or discipline filter."}
+              ? "Sign in to BIMserver.center to load your cloud projects and IFC models."
+              : allDocs.length === 0
+                ? "This project has no OpenBIM IFC contributions yet."
+                : "No models match your current search or discipline filter."}
                       </div>
                       <div style="display: flex; gap: 6px; flex-wrap: wrap; justify-content: center;">
                         ${isLiveMode && !sessionHealthy
-                          ? BUI.html`
+              ? BUI.html`
                               <button
                                 type="button"
                                 @click=${() => update({ activeTab: "auth" })}
                                 style="padding: 5px 10px; border-radius: 6px; border: none; background: #0284c7; color: #fff; font-size: 0.68rem; font-weight: 700; cursor: pointer;"
                               >Go to CYPE Auth →</button>
                             `
-                          : allDocs.length === 0
-                          ? BUI.html`
+              : allDocs.length === 0
+                ? BUI.html`
                               <button
                                 type="button"
                                 @click=${() => void cype.syncLiveWorkspace()}
                                 style="padding: 5px 10px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.14); background: #18191d; color: #e2e8f0; font-size: 0.68rem; font-weight: 700; cursor: pointer;"
                               >↻ Sync Workspace</button>
                             `
-                          : BUI.html`
+                : BUI.html`
                               <button
                                 type="button"
                                 @click=${() => update({ disciplineFilter: "All", searchQuery: "" })}
@@ -304,8 +304,8 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
                       </div>
                     </div>
                   `
-                : (state.viewMode || "table") === "table"
-                ? BUI.html`
+          : (state.viewMode || "table") === "table"
+            ? BUI.html`
                     <div style="border-radius: 10px; border: 1px solid rgba(255, 255, 255, 0.1); background: #121316; overflow: auto;">
                       <table style="width: 100%; border-collapse: collapse; font-size: 0.69rem; text-align: left;">
                         <thead>
@@ -319,9 +319,9 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
                         </thead>
                         <tbody>
                           ${visibleDocs.map((doc) => {
-                            const isLoading = cype.loadingDocId === doc.id;
-                            const accent = DISCIPLINE_ACCENT[doc.discipline] || "#38bdf8";
-                            return BUI.html`
+              const isLoading = cype.loadingDocId === doc.id;
+              const accent = DISCIPLINE_ACCENT[doc.discipline] || "#38bdf8";
+              return BUI.html`
                               <tr style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
                                 <td style="padding: 7px 9px; color: #f8fafc; font-weight: 600; word-break: break-word;">${doc.name}</td>
                                 <td style="padding: 7px 6px; color: ${accent}; font-weight: 700; white-space: nowrap;">${doc.discipline}</td>
@@ -338,15 +338,15 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
                                 </td>
                               </tr>
                             `;
-                          })}
+            })}
                         </tbody>
                       </table>
                     </div>
                   `
-                : visibleDocs.map((doc) => {
-                    const isLoading = cype.loadingDocId === doc.id;
-                    const accent = DISCIPLINE_ACCENT[doc.discipline] || "#38bdf8";
-                    return BUI.html`
+            : visibleDocs.map((doc) => {
+              const isLoading = cype.loadingDocId === doc.id;
+              const accent = DISCIPLINE_ACCENT[doc.discipline] || "#38bdf8";
+              return BUI.html`
                       <div style="display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 10px; background: rgba(15, 23, 42, 0.88); border: 1px solid rgba(148, 163, 184, 0.2); border-left: 3px solid ${accent};">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
                           <div style="min-width: 0;">
@@ -378,11 +378,11 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
                         </div>
                       </div>
                     `;
-                  })}
+            })}
             </div>
 
             ${state.showUploadForm
-              ? BUI.html`
+          ? BUI.html`
                   <div style="display: flex; flex-direction: column; gap: 7px; padding: 10px 12px; border-radius: 10px; background: #121316; border: 1px solid rgba(16, 185, 129, 0.35);">
                     <div style="display: flex; justify-content: space-between; align-items: center;">
                       <span style="font-size: 0.68rem; font-weight: 700; color: #34d399; text-transform: uppercase; letter-spacing: 0.05em;">
@@ -405,10 +405,10 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
                       <select
                         .value=${state.uploadDiscipline || "Coordination"}
                         @change=${(e: Event) =>
-                          update({
-                            uploadDiscipline: (e.target as HTMLSelectElement)
-                              .value as CypeContributionItem["discipline"],
-                          })}
+              update({
+                uploadDiscipline: (e.target as HTMLSelectElement)
+                  .value as CypeContributionItem["discipline"],
+              })}
                         style="flex: 1; padding: 6px 8px; border-radius: 7px; background: #18191d; border: 1px solid rgba(255, 255, 255, 0.12); color: #f8fafc; font-size: 0.71rem;"
                       >
                         <option value="Coordination">Coordination</option>
@@ -419,14 +419,14 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
                       <button
                         type="button"
                         @click=${() => {
-                          const title = (
-                            state.uploadName ||
-                            `BIM Coordination Update (${new Date().toLocaleDateString()})`
-                          ).trim();
-                          const disc = state.uploadDiscipline || "Coordination";
-                          void cype.publishContribution(title, disc);
-                          update({ showUploadForm: false });
-                        }}
+              const title = (
+                state.uploadName ||
+                `BIM Coordination Update (${new Date().toLocaleDateString()})`
+              ).trim();
+              const disc = state.uploadDiscipline || "Coordination";
+              void cype.publishContribution(title, disc);
+              update({ showUploadForm: false });
+            }}
                         style="padding: 6px 12px; border-radius: 7px; border: none; background: #10b981; color: #052e16; font-size: 0.71rem; font-weight: 700; cursor: pointer;"
                       >
                         Publish Now
@@ -434,7 +434,7 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
                     </div>
                   </div>
                 `
-              : BUI.html`
+          : BUI.html`
                   <button
                     type="button"
                     @click=${() => update({ showUploadForm: true })}
@@ -445,7 +445,7 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
                   </button>
                 `}
           `
-        : tab === "issues"
+      : tab === "issues"
         ? BUI.html`
             <!-- Issue Composer Card -->
             <div style="display: flex; flex-direction: column; gap: 7px; padding: 10px 12px; border-radius: 10px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(245, 158, 11, 0.3);">
@@ -479,11 +479,11 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
                 <button
                   type="button"
                   @click=${() => {
-                    if (newIssueDraft.trim()) {
-                      cype.createIssue(newIssueDraft.trim(), issueDisc, issuePri);
-                      update({ newIssueTitle: "" });
-                    }
-                  }}
+            if (newIssueDraft.trim()) {
+              cype.createIssue(newIssueDraft.trim(), issueDisc, issuePri);
+              update({ newIssueTitle: "" });
+            }
+          }}
                   style="padding: 6px 12px; border-radius: 7px; border: none; background: linear-gradient(135deg, #d97706, #f59e0b); color: #fff; font-size: 0.71rem; font-weight: 700; cursor: pointer;"
                 >
                   + Log Issue
@@ -495,15 +495,15 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
             <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px; flex-wrap: wrap;">
               <div style="display: flex; gap: 5px;">
                 ${(["all", "pending", "solved"] as const).map((st) => {
-                  const active = issueStatusFilter === st;
-                  return BUI.html`
+            const active = issueStatusFilter === st;
+            return BUI.html`
                     <button
                       type="button"
                       @click=${() => update({ issueStatusFilter: st })}
                       style="padding: 4px 9px; border-radius: 999px; font-size: 0.67rem; font-weight: 700; text-transform: capitalize; cursor: pointer; background: ${active ? "rgba(245, 158, 11, 0.22)" : "rgba(30, 41, 59, 0.65)"}; border: 1px solid ${active ? "#f59e0b" : "rgba(148, 163, 184, 0.2)"}; color: ${active ? "#fbbf24" : "#94a3b8"};"
                     >${st}</button>
                   `;
-                })}
+          })}
               </div>
               <button
                 type="button"
@@ -516,15 +516,15 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
 
             <div style="display: flex; flex-direction: column; gap: 8px; flex: 1; overflow-y: auto; padding-right: 2px;">
               ${visibleIssues.length === 0
-                ? BUI.html`
+            ? BUI.html`
                     <div style="padding: 24px 16px; text-align: center; border-radius: 10px; border: 1px dashed rgba(148, 163, 184, 0.25); font-size: 0.72rem; color: #64748b;">
                       No coordination issues match this status filter.
                     </div>
                   `
-                : visibleIssues.map((iss) => {
-                    const imported = cype.importedIssueIds.has(iss.id);
-                    const pColor = PRIORITY_COLOR[iss.priority] || "#94a3b8";
-                    return BUI.html`
+            : visibleIssues.map((iss) => {
+              const imported = cype.importedIssueIds.has(iss.id);
+              const pColor = PRIORITY_COLOR[iss.priority] || "#94a3b8";
+              return BUI.html`
                       <div style="display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border-radius: 10px; background: rgba(15, 23, 42, 0.88); border: 1px solid rgba(148, 163, 184, 0.2); border-left: 3px solid ${pColor};">
                         <div style="display: flex; justify-content: space-between; align-items: center; gap: 6px;">
                           <div style="display: flex; align-items: center; gap: 7px;">
@@ -550,7 +550,7 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
                         </div>
                       </div>
                     `;
-                  })}
+            })}
             </div>
           `
         : BUI.html`
@@ -559,41 +559,39 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
               <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
                 <span style="font-size: 0.66rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: #94a3b8;">Secure Backend Proxy</span>
                 <span style="font-size: 0.63rem; font-weight: 700; color: ${isSameOriginProxy ? "#34d399" : "#94a3b8"};">
-                  ${
-                    isSameOriginProxy
-                      ? isLocalDevOrigin
-                        ? "● Built-in Web Proxy"
-                        : "● Firebase Hosting + Functions"
-                      : "● External Proxy"
-                  }
+                  ${isSameOriginProxy
+            ? isLocalDevOrigin
+              ? "● Built-in Web Proxy"
+              : "● Direct BIMserver.center API"
+            : "● External Proxy"
+          }
                 </span>
               </div>
-              <code style="display: block; overflow-wrap: anywhere; color: #e2e8f0; background: #18191d; padding: 6px 8px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.06); font-size: 0.65rem;">${cype.auth.proxyEndpoint || CYPE_PROXY_ENDPOINT}</code>
+              <code style="display: block; overflow-wrap: anywhere; color: #e2e8f0; background: #18191d; padding: 6px 8px; border-radius: 6px; border: 1px solid rgba(255, 255, 255, 0.06); font-size: 0.65rem;">${isSameOriginProxy && !isLocalDevOrigin ? "https://apis.bimserver.center/v1/BIMSERVER" : cype.auth.proxyEndpoint || CYPE_PROXY_ENDPOINT}</code>
               <p style="margin: 0; color: #94a3b8; font-size: 0.64rem; line-height: 1.4;">
-                ${
-                  isSameOriginProxy
-                    ? isLocalDevOrigin
-                      ? "Handled directly by the built-in Vite web server proxy (/cypeProxy) on this origin."
-                      : "Routed via Firebase Hosting rewrites (/cypeProxy) to Firebase Cloud Functions on this origin."
-                    : "Using external CYPE proxy URL configured via VITE_CYPE_FUNCTIONS_URL."
-                }
+                ${isSameOriginProxy
+            ? isLocalDevOrigin
+              ? "Handled directly by the built-in Vite web server proxy (/cypeProxy) on this origin."
+              : "Connected directly to BIMserver.center REST API over HTTPS (100% free Firebase Spark Hosting)."
+            : "Using external CYPE proxy URL configured via VITE_CYPE_FUNCTIONS_URL."
+          }
               </p>
 
               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
                 <button
                   type="button"
                   @click=${() => {
-                    cype.saveAuth({ mode: "sandbox" });
-                    cype.syncLiveWorkspace();
-                  }}
+            cype.saveAuth({ mode: "sandbox" });
+            cype.syncLiveWorkspace();
+          }}
                   style="padding: 7px; border-radius: 8px; font-size: 0.71rem; font-weight: 700; cursor: pointer; background: ${!isLiveMode ? "rgba(16, 185, 129, 0.22)" : "rgba(30, 41, 59, 0.5)"}; border: 1px solid ${!isLiveMode ? "#10b981" : "rgba(148, 163, 184, 0.22)"}; color: ${!isLiveMode ? "#34d399" : "#94a3b8"};"
                 >OpenBIM Sandbox</button>
                 <button
                   type="button"
                   @click=${() => {
-                    cype.saveAuth({ mode: "live-cype" });
-                    if (cype.auth.sessionId.trim()) cype.syncLiveWorkspace();
-                  }}
+            cype.saveAuth({ mode: "live-cype" });
+            if (cype.auth.sessionId.trim()) cype.syncLiveWorkspace();
+          }}
                   style="padding: 7px; border-radius: 8px; font-size: 0.71rem; font-weight: 700; cursor: pointer; background: ${isLiveMode ? "rgba(56, 189, 248, 0.22)" : "rgba(30, 41, 59, 0.5)"}; border: 1px solid ${isLiveMode ? "#38bdf8" : "rgba(148, 163, 184, 0.22)"}; color: ${isLiveMode ? "#7dd3fc" : "#94a3b8"};"
                 >Live BIMserver.center</button>
               </div>
@@ -678,9 +676,9 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
                   <button
                     type="button"
                     @click=${() => {
-                      cype.saveAuth({ mode: "live-cype" });
-                      cype.syncLiveWorkspace();
-                    }}
+            cype.saveAuth({ mode: "live-cype" });
+            cype.syncLiveWorkspace();
+          }}
                     style="padding: 0 10px; border-radius: 7px; border: 1px solid rgba(56, 189, 248, 0.45); background: rgba(56, 189, 248, 0.16); color: #7dd3fc; font-size: 0.69rem; font-weight: 700; cursor: pointer; flex-shrink: 0;"
                   >
                     Sync Live
@@ -693,14 +691,14 @@ export const cypeTemplate: BUI.StatefullComponent<CypeSectionState> = (
                   BIMserver Developers Portal ↗
                 </a>
                 ${hasSession
-                  ? BUI.html`
+            ? BUI.html`
                       <button
                         type="button"
                         @click=${() => cype.clearSession()}
                         style="background: transparent; border: none; color: #f87171; font-size: 0.67rem; font-weight: 700; cursor: pointer;"
                       >Sign Out</button>
                     `
-                  : ""}
+            : ""}
               </div>
             </div>
             <p style="margin: 0; color: #64748b; font-size: 0.64rem; line-height: 1.4;">
